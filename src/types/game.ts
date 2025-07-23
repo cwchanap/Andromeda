@@ -1,10 +1,10 @@
 // Core type definitions for the space exploration game
-import type { Vector3 } from 'three';
+import type { Vector3 } from "three";
 
 export interface CelestialBodyData {
   id: string;
   name: string;
-  type: 'star' | 'planet' | 'moon';
+  type: "star" | "planet" | "moon";
   description: string;
   keyFacts: {
     diameter: string;
@@ -27,7 +27,7 @@ export interface CelestialBodyData {
 }
 
 export interface GameState {
-  currentView: 'menu' | 'solar-system';
+  currentView: "menu" | "solar-system";
   selectedBody: CelestialBodyData | null;
   camera: {
     position: Vector3;

@@ -1,14 +1,14 @@
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
 
 interface SolarSystemSceneProps {
   initialCameraPosition?: THREE.Vector3;
   enableControls?: boolean;
 }
 
-export default function SolarSystemScene({ 
-  initialCameraPosition, 
-  enableControls = true 
+export default function SolarSystemScene({
+  initialCameraPosition,
+  enableControls = true,
 }: SolarSystemSceneProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -27,10 +27,10 @@ export default function SolarSystemScene({
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      1000,
     );
     cameraRef.current = camera;
-    
+
     if (initialCameraPosition) {
       camera.position.copy(initialCameraPosition);
     } else {
@@ -61,10 +61,10 @@ export default function SolarSystemScene({
     // Animation loop
     const animate = () => {
       requestAnimationFrame(animate);
-      
+
       // Basic rotation for the sun
       sun.rotation.y += 0.01;
-      
+
       renderer.render(scene, camera);
     };
     animate();
@@ -72,16 +72,16 @@ export default function SolarSystemScene({
     // Handle window resize
     const handleResize = () => {
       if (!camera || !renderer) return;
-      
+
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }
