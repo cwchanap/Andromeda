@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import SolarSystemScene from "../components/SolarSystemScene.tsx";
+import SolarSystemView from "../components/SolarSystemView.tsx";
 ---
 
 <html lang="en">
@@ -14,13 +14,13 @@ import SolarSystemScene from "../components/SolarSystemScene.tsx";
 
   <body>
     <div id="solar-system-container">
-      <SolarSystemScene client:load />
+      <SolarSystemView client:load />
 
       <!-- UI overlay for controls and info -->
       <div class="ui-overlay">
         <button id="back-to-menu" class="ui-button">Back to Menu</button>
         <div class="controls-hint">
-          <p>Click and drag to rotate • Scroll to zoom • Explore the solar system in 360°</p>
+          <p>Click and drag to rotate • Scroll to zoom • Click planets to learn more</p>
         </div>
       </div>
     </div>

@@ -7,11 +7,23 @@ import type { CelestialBodyData } from "../types/game";
 interface SolarSystemSceneProps {
   initialCameraPosition?: THREE.Vector3;
   enableControls?: boolean;
+  onPlanetSelect?: (planet: CelestialBodyData) => void;
+  selectedPlanetId?: string;
+  onZoomChange?: (zoom: number) => void;
+  onZoomControlsReady?: (controls: {
+    zoomIn: () => void;
+    zoomOut: () => void;
+    resetView: () => void;
+  }) => void;
 }
 
 export default function SolarSystemScene({
   initialCameraPosition,
   enableControls = true,
+  onPlanetSelect,
+  selectedPlanetId,
+  onZoomChange,
+  onZoomControlsReady,
 }: SolarSystemSceneProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -19,9 +31,115 @@ export default function SolarSystemScene({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const celestialBodiesRef = useRef<Map<string, THREE.Mesh>>(new Map());
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const hoveredObjectRef = useRef<THREE.Mesh | null>(null);
 
   useEffect(() => {
     if (!mountRef.current) return;
+
+    // Interaction helper functions
+    const updateMousePosition = (event: MouseEvent | TouchEvent) => {
+      const rect = mountRef.current!.getBoundingClientRect();
+      let clientX: number, clientY: number;
+
+      if (event instanceof TouchEvent) {
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+      } else {
+        clientX = event.clientX;
+        clientY = event.clientY;
+      }
+
+      mouseRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    };
+
+    const findIntersectedObject = (): THREE.Mesh | null => {
+      if (!cameraRef.current || !sceneRef.current) return null;
+
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      const celestialBodies = Array.from(celestialBodiesRef.current.values());
+      const intersects = raycasterRef.current.intersectObjects(celestialBodies);
+
+      return intersects.length > 0
+        ? (intersects[0].object as THREE.Mesh)
+        : null;
+    };
+
+    const updateHoverState = (hoveredMesh: THREE.Mesh | null) => {
+      // Reset previous hover state
+      if (
+        hoveredObjectRef.current &&
+        hoveredObjectRef.current !== hoveredMesh
+      ) {
+        const material = hoveredObjectRef.current
+          .material as THREE.MeshPhongMaterial;
+        material.emissive.setHex(0x000000); // Reset emissive
+      }
+
+      // Set new hover state
+      if (hoveredMesh) {
+        const material = hoveredMesh.material as THREE.MeshPhongMaterial;
+        material.emissive.setHex(0x333333); // Add subtle glow
+      }
+
+      hoveredObjectRef.current = hoveredMesh;
+    };
+
+    const findCelestialBodyById = (
+      mesh: THREE.Mesh,
+    ): CelestialBodyData | null => {
+      return mesh.userData.celestialBodyData || null;
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      updateMousePosition(event);
+      const intersectedObject = findIntersectedObject();
+      updateHoverState(intersectedObject);
+
+      // Update cursor style
+      if (mountRef.current) {
+        mountRef.current.style.cursor = intersectedObject
+          ? "pointer"
+          : "default";
+      }
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (event.touches.length === 1) {
+        updateMousePosition(event);
+        const intersectedObject = findIntersectedObject();
+        updateHoverState(intersectedObject);
+      }
+    };
+
+    const handleClick = (event: MouseEvent) => {
+      updateMousePosition(event);
+      const intersectedObject = findIntersectedObject();
+
+      if (intersectedObject && onPlanetSelect) {
+        const celestialBody = findCelestialBodyById(intersectedObject);
+        if (celestialBody) {
+          onPlanetSelect(celestialBody);
+        }
+      }
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (event.changedTouches.length === 1) {
+        const touch = event.changedTouches[0];
+        updateMousePosition(touch as unknown as MouseEvent);
+        const intersectedObject = findIntersectedObject();
+
+        if (intersectedObject && onPlanetSelect) {
+          const celestialBody = findCelestialBodyById(intersectedObject);
+          if (celestialBody) {
+            onPlanetSelect(celestialBody);
+          }
+        }
+      }
+    };
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -60,11 +178,24 @@ export default function SolarSystemScene({
       // Configure controls for solar system exploration
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
-      controls.screenSpacePanning = false;
-      controls.minDistance = 10;
-      controls.maxDistance = 200;
+      controls.screenSpacePanning = true; // Allow panning to move around freely
+      controls.minDistance = 5;
+      controls.maxDistance = 300;
       controls.maxPolarAngle = Math.PI;
-      controls.target.set(0, 0, 0); // Focus on the center of the solar system
+      // Don't lock target to center - allow free exploration
+      // controls.target.set(0, 0, 0); // Removed this line
+
+      // Track zoom changes
+      let lastZoom = camera.position.distanceTo(controls.target);
+      controls.addEventListener("change", () => {
+        if (controls) {
+          const currentZoom = camera.position.distanceTo(controls.target);
+          if (Math.abs(currentZoom - lastZoom) > 0.1 && onZoomChange) {
+            onZoomChange(currentZoom);
+            lastZoom = currentZoom;
+          }
+        }
+      });
     }
 
     // Lighting setup
@@ -97,6 +228,12 @@ export default function SolarSystemScene({
       }
 
       const mesh = new THREE.Mesh(geometry, material);
+
+      // Add user data for identification
+      mesh.userData = {
+        celestialBodyId: bodyData.id,
+        celestialBodyData: bodyData,
+      };
 
       // Position the body
       if (bodyData.orbitRadius) {
@@ -163,9 +300,58 @@ export default function SolarSystemScene({
     };
     window.addEventListener("resize", handleResize);
 
+    // Add interaction event listeners
+    if (mountRef.current) {
+      mountRef.current.addEventListener("mousemove", handleMouseMove);
+      mountRef.current.addEventListener("click", handleClick);
+      mountRef.current.addEventListener("touchmove", handleTouchMove, {
+        passive: true,
+      });
+      mountRef.current.addEventListener("touchend", handleTouchEnd);
+    }
+
+    // Function to update selection states
+    const updateSelectionStates = () => {
+      celestialBodies.forEach((mesh, id) => {
+        const material = mesh.material as THREE.MeshPhongMaterial;
+        const isSelected = selectedPlanetId === id;
+
+        // Reset to base state first
+        if (mesh.userData.celestialBodyData.type === "star") {
+          // Keep star's natural emissive
+          material.emissive.setHex(
+            parseInt(
+              mesh.userData.celestialBodyData.material.emissive?.replace(
+                "#",
+                "0x",
+              ) || "0xFFA500",
+            ),
+          );
+        } else {
+          material.emissive.setHex(0x000000);
+        }
+
+        // Add selection highlight
+        if (isSelected) {
+          material.emissive.addScalar(0.2); // Brighten selected object
+        }
+      });
+    };
+
+    // Update selection states initially and when selectedPlanetId changes
+    updateSelectionStates();
+
     // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
+
+      // Remove interaction event listeners
+      if (mountRef.current) {
+        mountRef.current.removeEventListener("mousemove", handleMouseMove);
+        mountRef.current.removeEventListener("click", handleClick);
+        mountRef.current.removeEventListener("touchmove", handleTouchMove);
+        mountRef.current.removeEventListener("touchend", handleTouchEnd);
+      }
 
       // Dispose of controls
       if (controls) {
@@ -184,12 +370,131 @@ export default function SolarSystemScene({
         }
       });
 
-      if (mountRef.current && renderer.domElement) {
-        mountRef.current.removeChild(renderer.domElement);
+      // Dispose of renderer and remove canvas
+      if (renderer) {
+        if (
+          mountRef.current &&
+          renderer.domElement &&
+          mountRef.current.contains(renderer.domElement)
+        ) {
+          mountRef.current.removeChild(renderer.domElement);
+        }
+        renderer.dispose();
+        renderer.forceContextLoss();
       }
-      renderer.dispose();
+
+      // Clear refs
+      sceneRef.current = null;
+      rendererRef.current = null;
+      cameraRef.current = null;
+      controlsRef.current = null;
+      celestialBodiesRef.current.clear();
     };
-  }, [initialCameraPosition, enableControls]);
+  }, [
+    initialCameraPosition,
+    enableControls,
+    selectedPlanetId,
+    onPlanetSelect,
+    onZoomChange,
+  ]);
+
+  // Create zoom control methods
+  useEffect(() => {
+    if (onZoomControlsReady && controlsRef.current && cameraRef.current) {
+      const zoomControls = {
+        zoomIn: () => {
+          if (controlsRef.current && cameraRef.current) {
+            const controls = controlsRef.current;
+            const camera = cameraRef.current;
+            const currentDistance = camera.position.distanceTo(controls.target);
+            const newDistance = Math.max(
+              currentDistance * 0.8,
+              controls.minDistance,
+            );
+
+            const direction = camera.position
+              .clone()
+              .sub(controls.target)
+              .normalize();
+            camera.position
+              .copy(controls.target)
+              .add(direction.multiplyScalar(newDistance));
+
+            if (onZoomChange) {
+              onZoomChange(newDistance);
+            }
+          }
+        },
+        zoomOut: () => {
+          if (controlsRef.current && cameraRef.current) {
+            const controls = controlsRef.current;
+            const camera = cameraRef.current;
+            const currentDistance = camera.position.distanceTo(controls.target);
+            const newDistance = Math.min(
+              currentDistance * 1.25,
+              controls.maxDistance,
+            );
+
+            const direction = camera.position
+              .clone()
+              .sub(controls.target)
+              .normalize();
+            camera.position
+              .copy(controls.target)
+              .add(direction.multiplyScalar(newDistance));
+
+            if (onZoomChange) {
+              onZoomChange(newDistance);
+            }
+          }
+        },
+        resetView: () => {
+          if (cameraRef.current && controlsRef.current) {
+            const camera = cameraRef.current;
+            const controls = controlsRef.current;
+            const defaultPosition =
+              initialCameraPosition || new THREE.Vector3(0, 20, 50);
+
+            camera.position.copy(defaultPosition);
+            controls.target.set(0, 0, 0);
+            camera.lookAt(0, 0, 0);
+            controls.update();
+
+            if (onZoomChange) {
+              onZoomChange(camera.position.distanceTo(controls.target));
+            }
+          }
+        },
+      };
+
+      onZoomControlsReady(zoomControls);
+    }
+  }, []); // Empty dependency array - only run once
+
+  // Update selection states when selectedPlanetId changes
+  useEffect(() => {
+    if (celestialBodiesRef.current.size > 0) {
+      celestialBodiesRef.current.forEach((mesh, id) => {
+        const material = mesh.material as THREE.MeshPhongMaterial;
+        const isSelected = selectedPlanetId === id;
+
+        // Reset to base state first
+        if (mesh.userData.celestialBodyData.type === "star") {
+          // Keep star's natural emissive
+          const emissiveColor =
+            mesh.userData.celestialBodyData.material.emissive || "#FFA500";
+          material.emissive.setHex(parseInt(emissiveColor.replace("#", "0x")));
+        } else {
+          material.emissive.setHex(0x000000);
+        }
+
+        // Add selection highlight
+        if (isSelected) {
+          material.emissive.addScalar(0.2); // Brighten selected object
+        }
+      });
+    }
+  }, [selectedPlanetId]);
 
   return <div ref={mountRef} className="solar-system-scene" />;
 }
