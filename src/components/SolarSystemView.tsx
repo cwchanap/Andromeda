@@ -2,12 +2,19 @@ import { useState, useCallback } from "react";
 import SolarSystemScene from "./SolarSystemScene";
 import PlanetInfoModal from "./PlanetInfoModal";
 import NavigationControls from "./NavigationControls";
+import { Button } from "./ui/button";
+import { useGameContext } from "../context/GameContext";
 import type { CelestialBodyData } from "../types/game";
 
 export default function SolarSystemView() {
-  const [selectedPlanet, setSelectedPlanet] =
-    useState<CelestialBodyData | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  const {
+    gameState,
+    selectCelestialBody,
+    navigateToView,
+    showInfoModal,
+    settings,
+  } = useGameContext();
+
   const [currentZoom, setCurrentZoom] = useState<number>(50);
   const [zoomControls, setZoomControls] = useState<{
     zoomIn: () => void;
@@ -15,14 +22,21 @@ export default function SolarSystemView() {
     resetView: () => void;
   } | null>(null);
 
-  const handlePlanetSelect = useCallback((planet: CelestialBodyData) => {
-    setSelectedPlanet(planet);
-    setShowModal(true);
-  }, []);
+  const handlePlanetSelect = useCallback(
+    (planet: CelestialBodyData) => {
+      selectCelestialBody(planet);
+      showInfoModal(true);
+    },
+    [selectCelestialBody, showInfoModal],
+  );
 
   const handleCloseModal = useCallback(() => {
-    setShowModal(false);
-  }, []);
+    showInfoModal(false);
+  }, [showInfoModal]);
+
+  const handleBackToMenu = useCallback(() => {
+    navigateToView("menu");
+  }, [navigateToView]);
 
   const handleZoomIn = useCallback(() => {
     zoomControls?.zoomIn();
@@ -58,28 +72,56 @@ export default function SolarSystemView() {
 
   return (
     <div className="relative h-full w-full">
+      {/* Back to Menu Button */}
+      {gameState.ui.showControls && (
+        <div className="absolute top-4 left-4 z-50">
+          <Button
+            variant="outline"
+            onClick={handleBackToMenu}
+            className="bg-background/80 backdrop-blur-sm"
+          >
+            ← Back to Menu
+          </Button>
+        </div>
+      )}
+
       <SolarSystemScene
         onPlanetSelect={handlePlanetSelect}
-        selectedPlanetId={selectedPlanet?.id}
+        selectedPlanetId={gameState.selectedBody?.id}
         onZoomChange={handleZoomChange}
         onZoomControlsReady={handleZoomControlsReady}
+        enableControls={true}
       />
 
-      <NavigationControls
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-        onResetView={handleResetView}
-        currentZoom={currentZoom}
-        maxZoom={300}
-        minZoom={5}
-      />
+      {gameState.ui.showControls && (
+        <NavigationControls
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetView={handleResetView}
+          currentZoom={currentZoom}
+          maxZoom={300}
+          minZoom={5}
+        />
+      )}
 
       <PlanetInfoModal
-        planetData={selectedPlanet}
-        isOpen={showModal}
+        planetData={gameState.selectedBody}
+        isOpen={gameState.ui.showInfoModal}
         onClose={handleCloseModal}
         onAskAI={handleAskAI}
       />
+
+      {/* Control Hints */}
+      {settings.showControlHints && gameState.ui.showControls && (
+        <div className="absolute bottom-4 left-4 z-40">
+          <div className="bg-background/80 rounded-lg p-3 shadow-lg backdrop-blur-sm">
+            <p className="text-muted-foreground text-sm">
+              Click and drag to rotate • Scroll to zoom • Click planets to learn
+              more
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

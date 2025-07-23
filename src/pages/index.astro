@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import MainMenu from "../components/MainMenu.astro";
+import MainMenuWrapper from "../components/MainMenuWrapper.tsx";
 ---
 
 <html lang="en">
@@ -13,6 +13,6 @@ import MainMenu from "../components/MainMenu.astro";
   </head>
 
   <body>
-    <MainMenu />
+    <MainMenuWrapper client:load />
   </body>
 </html>
