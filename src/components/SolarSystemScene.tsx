@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { solarSystemData } from "../data/celestialBodies";
@@ -17,7 +17,7 @@ interface SolarSystemSceneProps {
   }) => void;
 }
 
-export default function SolarSystemScene({
+function SolarSystemScene({
   initialCameraPosition,
   enableControls = true,
   onPlanetSelect,
@@ -266,6 +266,16 @@ export default function SolarSystemScene({
 
     // Animation loop
     const animate = () => {
+      // Early return if component is unmounted or refs are cleared
+      if (
+        !mountRef.current ||
+        !sceneRef.current ||
+        !rendererRef.current ||
+        !cameraRef.current
+      ) {
+        return;
+      }
+
       requestAnimationFrame(animate);
 
       // Update controls if enabled
@@ -286,7 +296,12 @@ export default function SolarSystemScene({
         }
       });
 
-      renderer.render(scene, camera);
+      // Only render if all required objects are available
+      try {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      } catch (error) {
+        console.warn("Three.js render error:", error);
+      }
     };
     animate();
 
@@ -498,3 +513,6 @@ export default function SolarSystemScene({
 
   return <div ref={mountRef} className="solar-system-scene" />;
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(SolarSystemScene);

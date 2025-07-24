@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import type { ReactNode } from "react";
 import type { GameState, CelestialBodyData } from "../types/game";
 import type { GameSettings } from "../components/SettingsModal";
@@ -211,32 +217,26 @@ export function GameProvider({
     [updateGameState],
   );
 
-  const showInfoModal = useCallback(
-    (show: boolean) => {
-      updateGameState({
-        ui: { ...gameState.ui, showInfoModal: show },
-      });
-    },
-    [updateGameState, gameState.ui],
-  );
+  const showInfoModal = useCallback((show: boolean) => {
+    setGameState((prev) => ({
+      ...prev,
+      ui: { ...prev.ui, showInfoModal: show },
+    }));
+  }, []);
 
-  const showChatbot = useCallback(
-    (show: boolean) => {
-      updateGameState({
-        ui: { ...gameState.ui, showChatbot: show },
-      });
-    },
-    [updateGameState, gameState.ui],
-  );
+  const showChatbot = useCallback((show: boolean) => {
+    setGameState((prev) => ({
+      ...prev,
+      ui: { ...prev.ui, showChatbot: show },
+    }));
+  }, []);
 
-  const showControls = useCallback(
-    (show: boolean) => {
-      updateGameState({
-        ui: { ...gameState.ui, showControls: show },
-      });
-    },
-    [updateGameState, gameState.ui],
-  );
+  const showControls = useCallback((show: boolean) => {
+    setGameState((prev) => ({
+      ...prev,
+      ui: { ...prev.ui, showControls: show },
+    }));
+  }, []);
 
   const resetGameState = useCallback(() => {
     const defaultState = loadGameState();
@@ -244,18 +244,32 @@ export function GameProvider({
     persistGameState(defaultState);
   }, [persistGameState]);
 
-  const contextValue: GameContextType = {
-    gameState,
-    settings,
-    updateGameState,
-    updateSettings,
-    selectCelestialBody,
-    navigateToView,
-    showInfoModal,
-    showChatbot,
-    showControls,
-    resetGameState,
-  };
+  const contextValue: GameContextType = useMemo(
+    () => ({
+      gameState,
+      settings,
+      updateGameState,
+      updateSettings,
+      selectCelestialBody,
+      navigateToView,
+      showInfoModal,
+      showChatbot,
+      showControls,
+      resetGameState,
+    }),
+    [
+      gameState,
+      settings,
+      updateGameState,
+      updateSettings,
+      selectCelestialBody,
+      navigateToView,
+      showInfoModal,
+      showChatbot,
+      showControls,
+      resetGameState,
+    ],
+  );
 
   return (
     <GameContext.Provider value={contextValue}>{children}</GameContext.Provider>

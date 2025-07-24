@@ -1,9 +1,15 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -20,7 +26,7 @@ export interface GameSettings {
   showControlHints: boolean;
 }
 
-export default function SettingsModal({
+function SettingsModal({
   isOpen,
   onClose,
   onSave,
@@ -52,6 +58,10 @@ export default function SettingsModal({
             Game Settings
             <Badge variant="secondary">Configuration</Badge>
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Configure game settings including animations, audio, graphics
+            quality, and control sensitivity
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -206,3 +216,6 @@ export default function SettingsModal({
     </Dialog>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(SettingsModal);
