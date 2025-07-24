@@ -141,6 +141,80 @@ function SolarSystemScene({
       }
     };
 
+    // Keyboard controls for enhanced navigation
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!controlsRef.current || !cameraRef.current) return;
+
+      const controls = controlsRef.current;
+      const camera = cameraRef.current;
+
+      switch (event.code) {
+        case "KeyW":
+        case "ArrowUp": {
+          // Move forward
+          event.preventDefault();
+          const forwardDirection = new THREE.Vector3(0, 0, -1);
+          forwardDirection.applyQuaternion(camera.quaternion);
+          camera.position.add(forwardDirection.multiplyScalar(2));
+          controls.target.add(forwardDirection.multiplyScalar(2));
+          break;
+        }
+
+        case "KeyS":
+        case "ArrowDown": {
+          // Move backward
+          event.preventDefault();
+          const backwardDirection = new THREE.Vector3(0, 0, 1);
+          backwardDirection.applyQuaternion(camera.quaternion);
+          camera.position.add(backwardDirection.multiplyScalar(2));
+          controls.target.add(backwardDirection.multiplyScalar(2));
+          break;
+        }
+
+        case "KeyA":
+        case "ArrowLeft": {
+          // Move left
+          event.preventDefault();
+          const leftDirection = new THREE.Vector3(-1, 0, 0);
+          leftDirection.applyQuaternion(camera.quaternion);
+          camera.position.add(leftDirection.multiplyScalar(2));
+          controls.target.add(leftDirection.multiplyScalar(2));
+          break;
+        }
+
+        case "KeyD":
+        case "ArrowRight": {
+          // Move right
+          event.preventDefault();
+          const rightDirection = new THREE.Vector3(1, 0, 0);
+          rightDirection.applyQuaternion(camera.quaternion);
+          camera.position.add(rightDirection.multiplyScalar(2));
+          controls.target.add(rightDirection.multiplyScalar(2));
+          break;
+        }
+
+        case "Equal":
+        case "NumpadAdd":
+          // Zoom in
+          event.preventDefault();
+          break;
+
+        case "Minus":
+        case "NumpadSubtract":
+          // Zoom out
+          event.preventDefault();
+          break;
+
+        case "KeyR":
+        case "Home":
+          // Reset view
+          event.preventDefault();
+          break;
+      }
+
+      controls.update();
+    };
+
     // Scene setup
     const scene = new THREE.Scene();
     sceneRef.current = scene;
@@ -175,27 +249,37 @@ function SolarSystemScene({
       controls = new OrbitControls(camera, renderer.domElement);
       controlsRef.current = controls;
 
-      // Configure controls for solar system exploration
+      // Configure controls for solar system exploration with smooth constraints
       controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
+      controls.dampingFactor = 0.08; // Slightly more damping for smoother movement
       controls.screenSpacePanning = true; // Allow panning to move around freely
       controls.enablePan = true; // Enable panning
       controls.enableRotate = true; // Enable rotation/orbiting
       controls.enableZoom = true; // Enable zooming
+
+      // Enhanced distance constraints for better exploration
       controls.minDistance = 5;
       controls.maxDistance = 300;
-      controls.maxPolarAngle = Math.PI; // Allow full vertical rotation
-      controls.minPolarAngle = 0; // Allow full vertical rotation
+
+      // Vertical rotation constraints to prevent disorientation
+      controls.maxPolarAngle = Math.PI * 0.95; // Prevent going completely under
+      controls.minPolarAngle = Math.PI * 0.05; // Prevent going completely over
+
+      // Horizontal rotation is unlimited for full exploration
+      controls.minAzimuthAngle = -Infinity;
+      controls.maxAzimuthAngle = Infinity;
 
       // Set initial target but allow it to move with panning
       controls.target.set(0, 0, 0);
 
-      // Configure panning behavior for better camera movement
-      controls.panSpeed = 1.0; // Adjust panning speed
-      controls.rotateSpeed = 1.0; // Adjust rotation speed
-      controls.zoomSpeed = 1.0; // Adjust zoom speed
+      // Configure movement speeds for smooth and intuitive control
+      controls.panSpeed = 0.8; // Slightly slower panning for precision
+      controls.rotateSpeed = 0.5; // Moderate rotation speed
+      controls.zoomSpeed = 0.6; // Controlled zoom speed
 
-      // Configure mouse button behavior for intuitive camera control
+      // Enable auto-rotation stop when user interacts
+      controls.autoRotate = false;
+      controls.autoRotateSpeed = 0; // Configure mouse button behavior for intuitive camera control
       controls.mouseButtons = {
         LEFT: THREE.MOUSE.ROTATE, // Left click + drag = rotate/orbit camera
         MIDDLE: THREE.MOUSE.DOLLY, // Middle click + drag = zoom
@@ -348,6 +432,9 @@ function SolarSystemScene({
       mountRef.current.addEventListener("touchend", handleTouchEnd);
     }
 
+    // Add keyboard event listener for camera controls
+    window.addEventListener("keydown", handleKeyDown);
+
     // Function to update selection states
     const updateSelectionStates = () => {
       celestialBodies.forEach((mesh, id) => {
@@ -382,6 +469,7 @@ function SolarSystemScene({
     // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("keydown", handleKeyDown);
 
       // Remove interaction event listeners
       if (mountRef.current) {
@@ -436,12 +524,64 @@ function SolarSystemScene({
     onZoomChange,
   ]);
 
-  // Create zoom control methods
+  // Create zoom control methods with smooth transitions
   useEffect(() => {
     if (onZoomControlsReady && controlsRef.current && cameraRef.current) {
+      // Animation state
+      let isAnimating = false;
+
+      const animateCamera = (
+        targetPosition: THREE.Vector3,
+        targetLookAt: THREE.Vector3,
+        duration: number = 500,
+      ) => {
+        if (isAnimating || !cameraRef.current || !controlsRef.current) return;
+
+        isAnimating = true;
+        const camera = cameraRef.current;
+        const controls = controlsRef.current;
+
+        const startPosition = camera.position.clone();
+        const startTarget = controls.target.clone();
+        const startTime = Date.now();
+
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+
+          // Smooth easing function
+          const easeInOutCubic = (t: number) =>
+            t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+          const easedProgress = easeInOutCubic(progress);
+
+          // Interpolate camera position
+          camera.position.lerpVectors(
+            startPosition,
+            targetPosition,
+            easedProgress,
+          );
+          controls.target.lerpVectors(startTarget, targetLookAt, easedProgress);
+
+          controls.update();
+
+          if (onZoomChange) {
+            onZoomChange(camera.position.distanceTo(controls.target));
+          }
+
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            isAnimating = false;
+          }
+        };
+
+        requestAnimationFrame(animate);
+      };
+
       const zoomControls = {
         zoomIn: () => {
-          if (controlsRef.current && cameraRef.current) {
+          if (controlsRef.current && cameraRef.current && !isAnimating) {
             const controls = controlsRef.current;
             const camera = cameraRef.current;
             const currentDistance = camera.position.distanceTo(controls.target);
@@ -454,17 +594,15 @@ function SolarSystemScene({
               .clone()
               .sub(controls.target)
               .normalize();
-            camera.position
-              .copy(controls.target)
+            const targetPosition = controls.target
+              .clone()
               .add(direction.multiplyScalar(newDistance));
 
-            if (onZoomChange) {
-              onZoomChange(newDistance);
-            }
+            animateCamera(targetPosition, controls.target.clone(), 300);
           }
         },
         zoomOut: () => {
-          if (controlsRef.current && cameraRef.current) {
+          if (controlsRef.current && cameraRef.current && !isAnimating) {
             const controls = controlsRef.current;
             const camera = cameraRef.current;
             const currentDistance = camera.position.distanceTo(controls.target);
@@ -477,30 +615,20 @@ function SolarSystemScene({
               .clone()
               .sub(controls.target)
               .normalize();
-            camera.position
-              .copy(controls.target)
+            const targetPosition = controls.target
+              .clone()
               .add(direction.multiplyScalar(newDistance));
 
-            if (onZoomChange) {
-              onZoomChange(newDistance);
-            }
+            animateCamera(targetPosition, controls.target.clone(), 300);
           }
         },
         resetView: () => {
-          if (cameraRef.current && controlsRef.current) {
-            const camera = cameraRef.current;
-            const controls = controlsRef.current;
+          if (cameraRef.current && controlsRef.current && !isAnimating) {
             const defaultPosition =
               initialCameraPosition || new THREE.Vector3(0, 20, 50);
+            const defaultTarget = new THREE.Vector3(0, 0, 0);
 
-            camera.position.copy(defaultPosition);
-            controls.target.set(0, 0, 0);
-            camera.lookAt(0, 0, 0);
-            controls.update();
-
-            if (onZoomChange) {
-              onZoomChange(camera.position.distanceTo(controls.target));
-            }
+            animateCamera(defaultPosition, defaultTarget, 800);
           }
         },
       };

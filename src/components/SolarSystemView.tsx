@@ -114,11 +114,17 @@ export default function SolarSystemView() {
       {/* Control Hints */}
       {settings.showControlHints && gameState.ui.showControls && (
         <div className="absolute bottom-4 left-4 z-40">
-          <div className="bg-background/80 rounded-lg p-3 shadow-lg backdrop-blur-sm">
-            <p className="text-muted-foreground text-sm">
-              Click and drag to rotate • Scroll to zoom • Click planets to learn
-              more
-            </p>
+          <div className="bg-background/90 max-w-sm rounded-lg p-4 shadow-lg backdrop-blur-sm">
+            <div className="text-muted-foreground space-y-2 text-sm">
+              <div className="text-foreground mb-2 font-medium">Controls:</div>
+              <div>• Left click + drag: Rotate view</div>
+              <div>• Right click + drag: Pan camera</div>
+              <div>• Scroll wheel: Zoom in/out</div>
+              <div>• WASD / Arrow keys: Move camera</div>
+              <div>• +/- keys: Zoom in/out</div>
+              <div>• R key: Reset view</div>
+              <div>• Click planets: View information</div>
+            </div>
           </div>
         </div>
       )}
