@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import SolarSystemScene from "./SolarSystemScene";
 import PlanetInfoModal from "./PlanetInfoModal";
 import NavigationControls from "./NavigationControls";
+import AIChatbot from "./AIChatbot";
 import { Button } from "./ui/button";
 import { useGameContext } from "../context/GameContext";
 import type { CelestialBodyData } from "../types/game";
@@ -12,6 +13,7 @@ export default function SolarSystemView() {
     selectCelestialBody,
     navigateToView,
     showInfoModal,
+    showChatbot,
     settings,
   } = useGameContext();
 
@@ -33,6 +35,10 @@ export default function SolarSystemView() {
   const handleCloseModal = useCallback(() => {
     showInfoModal(false);
   }, [showInfoModal]);
+
+  const handleCloseChatbot = useCallback(() => {
+    showChatbot(false);
+  }, [showChatbot]);
 
   const handleBackToMenu = useCallback(() => {
     navigateToView("menu");
@@ -65,22 +71,30 @@ export default function SolarSystemView() {
     setCurrentZoom(zoom);
   }, []);
 
-  const handleAskAI = (question: string) => {
-    // This will be implemented in task 8 (AI chatbot functionality)
-    console.log("AI Question:", question);
-  };
+  const handleAskAI = useCallback(() => {
+    // Close the info modal and open the chatbot with the current context
+    showInfoModal(false);
+    showChatbot(true);
+  }, [showInfoModal, showChatbot]);
 
   return (
     <div className="relative h-full w-full">
       {/* Back to Menu Button */}
       {gameState.ui.showControls && (
-        <div className="absolute top-4 left-4 z-50">
+        <div className="absolute top-4 left-4 z-50 flex gap-2">
           <Button
             variant="outline"
             onClick={handleBackToMenu}
             className="bg-background/80 backdrop-blur-sm"
           >
             ← Back to Menu
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => showChatbot(true)}
+            className="bg-background/80 backdrop-blur-sm"
+          >
+            🤖 Ask AI
           </Button>
         </div>
       )}
@@ -109,6 +123,12 @@ export default function SolarSystemView() {
         isOpen={gameState.ui.showInfoModal}
         onClose={handleCloseModal}
         onAskAI={handleAskAI}
+      />
+
+      <AIChatbot
+        context={gameState.selectedBody}
+        isOpen={gameState.ui.showChatbot}
+        onClose={handleCloseChatbot}
       />
 
       {/* Control Hints */}

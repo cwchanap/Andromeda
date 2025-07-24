@@ -16,7 +16,7 @@ interface PlanetInfoModalProps {
   planetData: CelestialBodyData | null;
   isOpen: boolean;
   onClose: () => void;
-  onAskAI?: (question: string) => void;
+  onAskAI?: () => void;
 }
 
 function PlanetInfoModal({
@@ -66,8 +66,8 @@ function PlanetInfoModal({
   }, [isOpen, onClose, displayData]);
 
   const handleAskAI = () => {
-    if (onAskAI && displayData) {
-      onAskAI(`Tell me more about ${displayData.name}`);
+    if (onAskAI) {
+      onAskAI();
     }
   };
 

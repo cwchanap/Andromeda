@@ -281,9 +281,9 @@ function SolarSystemScene({
       controls.autoRotate = false;
       controls.autoRotateSpeed = 0; // Configure mouse button behavior for intuitive camera control
       controls.mouseButtons = {
-        LEFT: THREE.MOUSE.ROTATE, // Left click + drag = rotate/orbit camera
+        LEFT: THREE.MOUSE.PAN, // Left click + drag = pan camera
         MIDDLE: THREE.MOUSE.DOLLY, // Middle click + drag = zoom
-        RIGHT: THREE.MOUSE.PAN, // Right click + drag = pan camera
+        RIGHT: THREE.MOUSE.ROTATE, // Right click + drag = rotate/orbit camera
       };
 
       // Configure touch behavior for mobile devices
