@@ -22,7 +22,10 @@ export const solarSystemData: SolarSystemData = {
       composition: ["Hydrogen (73%)", "Helium (25%)", "Other elements (2%)"],
       temperature: "5,778 K (surface), 15 million K (core)",
     },
-    images: [],
+    images: [
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=800&h=600&fit=crop",
+    ],
     position: new THREE.Vector3(0, 0, 0),
     scale: 2.5,
     material: {
@@ -46,7 +49,10 @@ export const solarSystemData: SolarSystemData = {
         temperature: "427°C (day), -173°C (night)",
         moons: 0,
       },
-      images: [],
+      images: [
+        "https://images.unsplash.com/photo-1614728894747-a83421048a1c?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1614732414444-096040ec8c6d?w=800&h=600&fit=crop",
+      ],
       position: new THREE.Vector3(4, 0, 0),
       scale: 0.38,
       material: {
@@ -69,7 +75,10 @@ export const solarSystemData: SolarSystemData = {
         temperature: "462°C (surface)",
         moons: 0,
       },
-      images: [],
+      images: [
+        "https://images.unsplash.com/photo-1614313909025-f5ad7017eae5?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1446776741262-4e5e1d2b4f1b?w=800&h=600&fit=crop",
+      ],
       position: new THREE.Vector3(6, 0, 0),
       scale: 0.95,
       material: {
@@ -97,7 +106,11 @@ export const solarSystemData: SolarSystemData = {
         temperature: "15°C (average)",
         moons: 1,
       },
-      images: [],
+      images: [
+        "https://images.unsplash.com/photo-1614728263952-84ea256f9679?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1614732414444-096040ec8c6d?w=800&h=600&fit=crop",
+      ],
       position: new THREE.Vector3(8, 0, 0),
       scale: 1.0,
       material: {
@@ -125,7 +138,10 @@ export const solarSystemData: SolarSystemData = {
         temperature: "-65°C (average)",
         moons: 2,
       },
-      images: [],
+      images: [
+        "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1614732414444-096040ec8c6d?w=800&h=600&fit=crop",
+      ],
       position: new THREE.Vector3(11, 0, 0),
       scale: 0.53,
       material: {
