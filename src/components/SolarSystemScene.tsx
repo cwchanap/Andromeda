@@ -179,11 +179,34 @@ function SolarSystemScene({
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
       controls.screenSpacePanning = true; // Allow panning to move around freely
+      controls.enablePan = true; // Enable panning
+      controls.enableRotate = true; // Enable rotation/orbiting
+      controls.enableZoom = true; // Enable zooming
       controls.minDistance = 5;
       controls.maxDistance = 300;
-      controls.maxPolarAngle = Math.PI;
-      // Don't lock target to center - allow free exploration
-      // controls.target.set(0, 0, 0); // Removed this line
+      controls.maxPolarAngle = Math.PI; // Allow full vertical rotation
+      controls.minPolarAngle = 0; // Allow full vertical rotation
+
+      // Set initial target but allow it to move with panning
+      controls.target.set(0, 0, 0);
+
+      // Configure panning behavior for better camera movement
+      controls.panSpeed = 1.0; // Adjust panning speed
+      controls.rotateSpeed = 1.0; // Adjust rotation speed
+      controls.zoomSpeed = 1.0; // Adjust zoom speed
+
+      // Configure mouse button behavior for intuitive camera control
+      controls.mouseButtons = {
+        LEFT: THREE.MOUSE.ROTATE, // Left click + drag = rotate/orbit camera
+        MIDDLE: THREE.MOUSE.DOLLY, // Middle click + drag = zoom
+        RIGHT: THREE.MOUSE.PAN, // Right click + drag = pan camera
+      };
+
+      // Configure touch behavior for mobile devices
+      controls.touches = {
+        ONE: THREE.TOUCH.ROTATE, // One finger = rotate
+        TWO: THREE.TOUCH.DOLLY_PAN, // Two fingers = zoom and pan
+      };
 
       // Track zoom changes
       let lastZoom = camera.position.distanceTo(controls.target);
