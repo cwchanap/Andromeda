@@ -9,6 +9,8 @@ interface NavigationControlsProps {
   currentZoom?: number;
   maxZoom?: number;
   minZoom?: number;
+  isMobile?: boolean;
+  isTouch?: boolean;
 }
 
 export default function NavigationControls({
@@ -18,6 +20,8 @@ export default function NavigationControls({
   currentZoom,
   maxZoom = 200,
   minZoom = 10,
+  isMobile = false,
+  isTouch = false,
 }: NavigationControlsProps) {
   const isZoomInDisabled = currentZoom ? currentZoom <= minZoom : false;
   const isZoomOutDisabled = currentZoom ? currentZoom >= maxZoom : false;
@@ -37,23 +41,33 @@ export default function NavigationControls({
   };
 
   return (
-    <div className="fixed right-4 bottom-4 z-50">
-      <div className="bg-background/90 flex min-w-[120px] flex-col gap-3 rounded-lg border p-3 shadow-lg backdrop-blur-sm">
+    <div
+      className={`fixed z-50 ${isMobile ? "right-2 bottom-16" : "right-4 bottom-4"}`}
+    >
+      <div
+        className={`bg-background/90 flex flex-col gap-3 rounded-lg border p-3 shadow-lg backdrop-blur-sm ${isMobile ? "min-w-[100px]" : "min-w-[120px]"}`}
+      >
         {/* Zoom Level Indicator */}
         {currentZoom && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Eye className="text-muted-foreground h-3 w-3" />
-              <div className="text-xs font-medium">
+              <Eye
+                className={`text-muted-foreground ${isMobile ? "h-2.5 w-2.5" : "h-3 w-3"}`}
+              />
+              <div
+                className={`font-medium ${isMobile ? "text-xs" : "text-xs"}`}
+              >
                 {getZoomDescription(currentZoom)}
               </div>
             </div>
             <Progress
               value={zoomPercentage}
-              className="h-1.5"
+              className={`${isMobile ? "h-1" : "h-1.5"}`}
               title={`Zoom: ${Math.round(currentZoom)}`}
             />
-            <div className="text-muted-foreground text-center text-xs">
+            <div
+              className={`text-muted-foreground text-center ${isMobile ? "text-xs" : "text-xs"}`}
+            >
               {Math.round(currentZoom)}x zoom
             </div>
           </div>
@@ -61,7 +75,7 @@ export default function NavigationControls({
 
         <div className="bg-border h-px" />
 
-        {/* Control Buttons */}
+        {/* Control Buttons - Larger for touch devices */}
         <div className="flex flex-col gap-2">
           <Button
             variant="outline"
@@ -69,9 +83,11 @@ export default function NavigationControls({
             onClick={onZoomIn}
             disabled={isZoomInDisabled}
             title="Zoom In (Get Closer)"
-            className="h-10 w-10 transition-all hover:scale-105"
+            className={`transition-all hover:scale-105 ${isMobile || isTouch ? "h-12 w-12" : "h-10 w-10"}`}
           >
-            <ZoomIn className="h-4 w-4" />
+            <ZoomIn
+              className={`${isMobile || isTouch ? "h-5 w-5" : "h-4 w-4"}`}
+            />
           </Button>
 
           <Button
@@ -80,9 +96,11 @@ export default function NavigationControls({
             onClick={onZoomOut}
             disabled={isZoomOutDisabled}
             title="Zoom Out (Get Further)"
-            className="h-10 w-10 transition-all hover:scale-105"
+            className={`transition-all hover:scale-105 ${isMobile || isTouch ? "h-12 w-12" : "h-10 w-10"}`}
           >
-            <ZoomOut className="h-4 w-4" />
+            <ZoomOut
+              className={`${isMobile || isTouch ? "h-5 w-5" : "h-4 w-4"}`}
+            />
           </Button>
 
           <div className="bg-border mx-1 h-px" />
@@ -92,9 +110,11 @@ export default function NavigationControls({
             size="icon"
             onClick={onResetView}
             title="Reset to Default View"
-            className="h-10 w-10 transition-all hover:scale-105"
+            className={`transition-all hover:scale-105 ${isMobile || isTouch ? "h-12 w-12" : "h-10 w-10"}`}
           >
-            <Home className="h-4 w-4" />
+            <Home
+              className={`${isMobile || isTouch ? "h-5 w-5" : "h-4 w-4"}`}
+            />
           </Button>
         </div>
       </div>

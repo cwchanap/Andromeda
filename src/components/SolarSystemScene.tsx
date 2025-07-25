@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { solarSystemData } from "../data/celestialBodies";
 import type { CelestialBodyData } from "../types/game";
+import type { MobileOptimizationSettings } from "../hooks/useMobileOptimization";
 
 interface SolarSystemSceneProps {
   initialCameraPosition?: THREE.Vector3;
@@ -15,6 +16,7 @@ interface SolarSystemSceneProps {
     zoomOut: () => void;
     resetView: () => void;
   }) => void;
+  mobileOptimization?: MobileOptimizationSettings;
 }
 
 function SolarSystemScene({
@@ -24,6 +26,7 @@ function SolarSystemScene({
   selectedPlanetId,
   onZoomChange,
   onZoomControlsReady,
+  mobileOptimization,
 }: SolarSystemSceneProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -236,11 +239,25 @@ function SolarSystemScene({
       camera.lookAt(0, 0, 0);
     }
 
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Renderer setup with mobile optimization
+    const renderer = new THREE.WebGLRenderer({
+      antialias: mobileOptimization?.antialias ?? true,
+    });
     rendererRef.current = renderer;
+
+    // Apply mobile optimization settings
+    const pixelRatio =
+      mobileOptimization?.pixelRatio ?? window.devicePixelRatio;
+    renderer.setPixelRatio(Math.min(pixelRatio, 2)); // Cap at 2x for performance
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x000011);
+
+    // Enable/disable shadow maps based on mobile optimization
+    if (mobileOptimization?.shadowMapEnabled ?? true) {
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
+
     mountRef.current.appendChild(renderer.domElement);
 
     // Camera controls setup
@@ -314,11 +331,17 @@ function SolarSystemScene({
     sunLight.position.set(0, 0, 0);
     scene.add(sunLight);
 
-    // Function to create a celestial body mesh
+    // Function to create a celestial body mesh with mobile optimization
     const createCelestialBodyMesh = (
       bodyData: CelestialBodyData,
     ): THREE.Mesh => {
-      const geometry = new THREE.SphereGeometry(bodyData.scale, 32, 32);
+      // Use optimized geometry segments for mobile
+      const segments = mobileOptimization?.sphereSegments ?? 32;
+      const geometry = new THREE.SphereGeometry(
+        bodyData.scale,
+        segments,
+        segments,
+      );
 
       let material: THREE.Material;
       if (bodyData.type === "star") {

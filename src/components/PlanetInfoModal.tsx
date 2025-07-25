@@ -17,6 +17,7 @@ interface PlanetInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAskAI?: () => void;
+  isMobile?: boolean;
 }
 
 function PlanetInfoModal({
@@ -24,6 +25,7 @@ function PlanetInfoModal({
   isOpen,
   onClose,
   onAskAI,
+  isMobile = false,
 }: PlanetInfoModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const [displayData, setDisplayData] = useState<CelestialBodyData | null>(
@@ -80,7 +82,7 @@ function PlanetInfoModal({
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent
-        className="max-h-[80vh] max-w-2xl overflow-y-auto"
+        className={`overflow-y-auto ${isMobile ? "max-h-[90vh] max-w-[95vw] p-3" : "max-h-[80vh] max-w-2xl"}`}
         ref={modalRef}
         aria-labelledby="planet-modal-title"
         aria-describedby="planet-modal-description"
