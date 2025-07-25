@@ -4,6 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { solarSystemData } from "../data/celestialBodies";
 import type { CelestialBodyData } from "../types/game";
 import type { MobileOptimizationSettings } from "../hooks/useMobileOptimization";
+import { WebGLErrorHandler, ErrorLogger } from "../utils/errorHandling";
 
 interface SolarSystemSceneProps {
   initialCameraPosition?: THREE.Vector3;
@@ -41,6 +42,7 @@ function SolarSystemScene({
   const orbitAnimationRef = useRef<{ [key: string]: number }>({});
   const clockRef = useRef<THREE.Clock>(new THREE.Clock());
   const starsRef = useRef<THREE.Points | null>(null);
+  const webglHandlerRef = useRef<WebGLErrorHandler | null>(null);
   const transitionRef = useRef<{
     isTransitioning: boolean;
     startTime: number;
@@ -252,11 +254,59 @@ function SolarSystemScene({
       camera.lookAt(0, 0, 0);
     }
 
-    // Renderer setup with mobile optimization
-    const renderer = new THREE.WebGLRenderer({
-      antialias: mobileOptimization?.antialias ?? true,
-    });
-    rendererRef.current = renderer;
+    // Renderer setup with mobile optimization and error handling
+    let renderer: THREE.WebGLRenderer;
+
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: mobileOptimization?.antialias ?? true,
+      });
+      rendererRef.current = renderer;
+    } catch (error) {
+      ErrorLogger.getInstance().log({
+        message: `Failed to create WebGL renderer: ${error instanceof Error ? error.message : String(error)}`,
+        code: "WEBGL_RENDERER_FAILED",
+        severity: "critical",
+        timestamp: Date.now(),
+        context: {
+          userAgent: navigator.userAgent,
+          webglSupport: WebGLErrorHandler.prototype.checkWebGLSupport(),
+        },
+      });
+
+      // Try to create a fallback renderer
+      try {
+        renderer = new THREE.WebGLRenderer({
+          antialias: false,
+          powerPreference: "low-power",
+        });
+        rendererRef.current = renderer;
+      } catch {
+        throw new Error("WebGL is not supported or available on this device");
+      }
+    }
+
+    // Set up WebGL context loss handling
+    const webglHandler = new WebGLErrorHandler(
+      renderer,
+      () => {
+        // Context lost callback - pause rendering
+        if (animationIdRef.current) {
+          cancelAnimationFrame(animationIdRef.current);
+        }
+      },
+      () => {
+        // Context restored callback - reinitialize scene
+        // This would trigger a re-render of the component
+        setTimeout(() => {
+          if (mountRef.current) {
+            // Force re-initialization by calling the effect again
+            window.location.reload(); // Simple solution for MVP
+          }
+        }, 100);
+      },
+    );
+    webglHandlerRef.current = webglHandler;
 
     // Apply mobile optimization settings
     const pixelRatio =
@@ -709,6 +759,12 @@ function SolarSystemScene({
         }
         renderer.dispose();
         renderer.forceContextLoss();
+      }
+
+      // Clean up WebGL error handler
+      if (webglHandlerRef.current) {
+        webglHandlerRef.current.cleanup();
+        webglHandlerRef.current = null;
       }
 
       // Clear refs

@@ -1,4 +1,5 @@
 import type { CelestialBodyData } from "../types/game";
+import { APIErrorHandler } from "../utils/errorHandling";
 
 export interface AIMessage {
     role: "user" | "assistant" | "system";
@@ -57,13 +58,46 @@ export class AIService {
     }
 
     /**
-     * Generate a response from the AI service
-     * In a real implementation, this would call an actual AI API
+     * Generate a response from the AI service with error handling and retry logic
      */
     async generateResponse(
         message: string,
         context?: CelestialBodyData,
     ): Promise<string> {
+        try {
+            return await APIErrorHandler.withRetry(
+                () => this.performAIRequest(message, context),
+                "AI_CHAT",
+            );
+        } catch {
+            // If all retries failed, return a fallback response
+            const fallback = APIErrorHandler.createFallbackResponse("AI_CHAT");
+            return (
+                fallback.message ||
+                "I'm sorry, I'm having trouble right now. Please try again later."
+            );
+        }
+    }
+
+    /**
+     * Perform the actual AI request (currently simulated)
+     * In a real implementation, this would call an actual AI API
+     */
+    private async performAIRequest(
+        message: string,
+        context?: CelestialBodyData,
+    ): Promise<string> {
+        // Check for offline mode
+        if (localStorage.getItem("offlineMode") === "true") {
+            throw new Error("Application is in offline mode");
+        }
+
+        // Simulate potential network issues
+        if (Math.random() < 0.1) {
+            // 10% chance of simulated failure
+            throw new Error("Network request failed");
+        }
+
         // Mock implementation - replace with actual AI service call
         await this.simulateDelay();
 
