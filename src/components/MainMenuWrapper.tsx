@@ -1,5 +1,5 @@
 import { GameProvider } from "../context/GameContext";
-import MainMenuReact from "./MainMenuReact";
+import MainMenu from "./MainMenu";
 import type { ReactNode } from "react";
 
 interface MainMenuWrapperProps {
@@ -9,7 +9,7 @@ interface MainMenuWrapperProps {
 export default function MainMenuWrapper({ children }: MainMenuWrapperProps) {
   return (
     <GameProvider initialView="menu">
-      <MainMenuReact />
+      <MainMenu />
       {children}
     </GameProvider>
   );

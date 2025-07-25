@@ -4,7 +4,7 @@ import SettingsModal from "./SettingsModal";
 import { useGameContext } from "../context/GameContext";
 import type { GameSettings } from "./SettingsModal";
 
-export default function MainMenuReact() {
+export default function MainMenu() {
   const [showSettings, setShowSettings] = useState(false);
   const { settings, updateSettings, navigateToView } = useGameContext();
 
