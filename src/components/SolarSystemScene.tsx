@@ -37,6 +37,19 @@ function SolarSystemScene({
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const hoveredObjectRef = useRef<THREE.Mesh | null>(null);
+  const animationIdRef = useRef<number | null>(null);
+  const orbitAnimationRef = useRef<{ [key: string]: number }>({});
+  const clockRef = useRef<THREE.Clock>(new THREE.Clock());
+  const starsRef = useRef<THREE.Points | null>(null);
+  const transitionRef = useRef<{
+    isTransitioning: boolean;
+    startTime: number;
+    duration: number;
+    startPosition: THREE.Vector3;
+    targetPosition: THREE.Vector3;
+    startTarget: THREE.Vector3;
+    targetTarget: THREE.Vector3;
+  } | null>(null);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -331,6 +344,70 @@ function SolarSystemScene({
     sunLight.position.set(0, 0, 0);
     scene.add(sunLight);
 
+    // Create starfield background
+    const createStarfield = () => {
+      const starCount =
+        mobileOptimization?.animationsEnabled !== false ? 2000 : 1000;
+      const starsGeometry = new THREE.BufferGeometry();
+      const starsMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.7,
+        sizeAttenuation: false,
+      });
+
+      const starsPositions = new Float32Array(starCount * 3);
+      const starsColors = new Float32Array(starCount * 3);
+
+      for (let i = 0; i < starCount; i++) {
+        // Create stars in a sphere around the solar system
+        const radius = 400 + Math.random() * 600;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+
+        starsPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        starsPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+        starsPositions[i * 3 + 2] = radius * Math.cos(phi);
+
+        // Add slight color variation to stars
+        const starBrightness = 0.5 + Math.random() * 0.5;
+        const colorVariation = Math.random();
+
+        if (colorVariation < 0.1) {
+          // Blue stars (rare)
+          starsColors[i * 3] = starBrightness * 0.7;
+          starsColors[i * 3 + 1] = starBrightness * 0.8;
+          starsColors[i * 3 + 2] = starBrightness;
+        } else if (colorVariation < 0.3) {
+          // Yellow/Orange stars
+          starsColors[i * 3] = starBrightness;
+          starsColors[i * 3 + 1] = starBrightness * 0.8;
+          starsColors[i * 3 + 2] = starBrightness * 0.4;
+        } else {
+          // White stars (most common)
+          starsColors[i * 3] = starBrightness;
+          starsColors[i * 3 + 1] = starBrightness;
+          starsColors[i * 3 + 2] = starBrightness;
+        }
+      }
+
+      starsGeometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(starsPositions, 3),
+      );
+      starsGeometry.setAttribute(
+        "color",
+        new THREE.BufferAttribute(starsColors, 3),
+      );
+
+      starsMaterial.vertexColors = true;
+
+      const stars = new THREE.Points(starsGeometry, starsMaterial);
+      starsRef.current = stars;
+      scene.add(stars);
+    };
+
+    createStarfield();
+
     // Function to create a celestial body mesh with mobile optimization
     const createCelestialBodyMesh = (
       bodyData: CelestialBodyData,
@@ -392,9 +469,14 @@ function SolarSystemScene({
       celestialBodies.set(planet.id, planetMesh);
     });
 
+    // Initialize orbit animations with staggered start times for visual appeal
+    solarSystemData.planets.forEach((planet, index) => {
+      orbitAnimationRef.current[planet.id] = index * 0.5; // Stagger orbits
+    });
+
     celestialBodiesRef.current = celestialBodies;
 
-    // Animation loop
+    // Enhanced animation loop with orbital motion and smooth transitions
     const animate = () => {
       // Early return if component is unmounted or refs are cleared
       if (
@@ -406,25 +488,97 @@ function SolarSystemScene({
         return;
       }
 
-      requestAnimationFrame(animate);
+      animationIdRef.current = requestAnimationFrame(animate);
+
+      // Get delta time for smooth, frame-rate independent animations
+      const deltaTime = clockRef.current.getDelta();
+      const elapsedTime = clockRef.current.getElapsedTime();
 
       // Update controls if enabled
       if (controls) {
         controls.update();
       }
 
-      // Rotate the sun
-      const sunMesh = celestialBodies.get("sun");
-      if (sunMesh) {
-        sunMesh.rotation.y += 0.01;
+      // Handle smooth view transitions
+      if (transitionRef.current && transitionRef.current.isTransitioning) {
+        const transition = transitionRef.current;
+        const elapsed = Date.now() - transition.startTime;
+        const progress = Math.min(elapsed / transition.duration, 1);
+
+        // Smooth easing function for natural camera movement
+        const easeInOutCubic = (t: number) =>
+          t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        const easedProgress = easeInOutCubic(progress);
+
+        // Interpolate camera position and target
+        if (cameraRef.current && controlsRef.current) {
+          cameraRef.current.position.lerpVectors(
+            transition.startPosition,
+            transition.targetPosition,
+            easedProgress,
+          );
+          controlsRef.current.target.lerpVectors(
+            transition.startTarget,
+            transition.targetTarget,
+            easedProgress,
+          );
+          controlsRef.current.update();
+
+          if (onZoomChange) {
+            onZoomChange(
+              cameraRef.current.position.distanceTo(controlsRef.current.target),
+            );
+          }
+        }
+
+        if (progress >= 1) {
+          transitionRef.current.isTransitioning = false;
+          transitionRef.current = null;
+        }
       }
 
-      // Rotate planets on their axes
-      celestialBodies.forEach((mesh, id) => {
-        if (id !== "sun") {
-          mesh.rotation.y += 0.02; // Planets rotate faster than the sun
+      // Animate celestial bodies
+      if (mobileOptimization?.animationsEnabled !== false) {
+        // Rotate the sun with slight wobble for more realistic appearance
+        const sunMesh = celestialBodies.get("sun");
+        if (sunMesh) {
+          sunMesh.rotation.y += deltaTime * 0.1;
+          sunMesh.rotation.x = Math.sin(elapsedTime * 0.2) * 0.02; // Subtle wobble
         }
-      });
+
+        // Animate planets with orbital motion and individual rotation
+        celestialBodies.forEach((mesh, id) => {
+          if (id !== "sun") {
+            const planetData = mesh.userData
+              .celestialBodyData as CelestialBodyData;
+
+            // Planet self-rotation (day cycle)
+            mesh.rotation.y += deltaTime * (0.5 + Math.random() * 0.3); // Varied rotation speeds
+
+            // Orbital motion around the sun
+            if (planetData.orbitRadius && planetData.orbitSpeed) {
+              orbitAnimationRef.current[id] +=
+                deltaTime * planetData.orbitSpeed;
+
+              const orbitAngle = orbitAnimationRef.current[id];
+              const x = Math.cos(orbitAngle) * planetData.orbitRadius;
+              const z = Math.sin(orbitAngle) * planetData.orbitRadius;
+
+              // Add slight vertical oscillation for more dynamic orbits
+              const y = Math.sin(orbitAngle * 2) * 0.2;
+
+              mesh.position.set(x, y, z);
+            }
+          }
+        });
+
+        // Subtle starfield rotation for depth perception
+        if (starsRef.current) {
+          starsRef.current.rotation.y += deltaTime * 0.001;
+          starsRef.current.rotation.x += deltaTime * 0.0005;
+        }
+      }
 
       // Only render if all required objects are available
       try {
@@ -433,6 +587,9 @@ function SolarSystemScene({
         console.warn("Three.js render error:", error);
       }
     };
+
+    // Start the animation loop
+    clockRef.current.start();
     animate();
 
     // Handle window resize
@@ -491,6 +648,18 @@ function SolarSystemScene({
 
     // Cleanup
     return () => {
+      // Stop animation loop
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current);
+      }
+
+      // Clear animation state
+      orbitAnimationRef.current = {};
+      transitionRef.current = null;
+      if (clockRef.current) {
+        clockRef.current.stop();
+      }
+
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("keydown", handleKeyDown);
 
@@ -505,6 +674,16 @@ function SolarSystemScene({
       // Dispose of controls
       if (controls) {
         controls.dispose();
+      }
+
+      // Dispose of starfield
+      if (starsRef.current) {
+        if (starsRef.current.geometry) {
+          starsRef.current.geometry.dispose();
+        }
+        if (starsRef.current.material) {
+          (starsRef.current.material as THREE.Material).dispose();
+        }
       }
 
       // Dispose of all celestial body geometries and materials
@@ -538,6 +717,8 @@ function SolarSystemScene({
       cameraRef.current = null;
       controlsRef.current = null;
       celestialBodiesRef.current.clear();
+      starsRef.current = null;
+      animationIdRef.current = null;
     };
   }, [
     initialCameraPosition,
@@ -550,66 +731,36 @@ function SolarSystemScene({
   // Create zoom control methods with smooth transitions
   useEffect(() => {
     if (onZoomControlsReady && controlsRef.current && cameraRef.current) {
-      // Animation state
-      let isAnimating = false;
-
-      const animateCamera = (
+      const startSmoothTransition = (
         targetPosition: THREE.Vector3,
         targetLookAt: THREE.Vector3,
         duration: number = 500,
       ) => {
-        if (isAnimating || !cameraRef.current || !controlsRef.current) return;
+        if (!cameraRef.current || !controlsRef.current) return;
 
-        isAnimating = true;
-        const camera = cameraRef.current;
-        const controls = controlsRef.current;
-
-        const startPosition = camera.position.clone();
-        const startTarget = controls.target.clone();
-        const startTime = Date.now();
-
-        const animate = () => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-
-          // Smooth easing function
-          const easeInOutCubic = (t: number) =>
-            t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-          const easedProgress = easeInOutCubic(progress);
-
-          // Interpolate camera position
-          camera.position.lerpVectors(
-            startPosition,
-            targetPosition,
-            easedProgress,
-          );
-          controls.target.lerpVectors(startTarget, targetLookAt, easedProgress);
-
-          controls.update();
-
-          if (onZoomChange) {
-            onZoomChange(camera.position.distanceTo(controls.target));
-          }
-
-          if (progress < 1) {
-            requestAnimationFrame(animate);
-          } else {
-            isAnimating = false;
-          }
+        transitionRef.current = {
+          isTransitioning: true,
+          startTime: Date.now(),
+          duration,
+          startPosition: cameraRef.current.position.clone(),
+          targetPosition: targetPosition.clone(),
+          startTarget: controlsRef.current.target.clone(),
+          targetTarget: targetLookAt.clone(),
         };
-
-        requestAnimationFrame(animate);
       };
 
       const zoomControls = {
         zoomIn: () => {
-          if (controlsRef.current && cameraRef.current && !isAnimating) {
+          if (
+            controlsRef.current &&
+            cameraRef.current &&
+            !transitionRef.current?.isTransitioning
+          ) {
             const controls = controlsRef.current;
             const camera = cameraRef.current;
             const currentDistance = camera.position.distanceTo(controls.target);
             const newDistance = Math.max(
-              currentDistance * 0.8,
+              currentDistance * 0.7, // More aggressive zoom for better UX
               controls.minDistance,
             );
 
@@ -621,16 +772,20 @@ function SolarSystemScene({
               .clone()
               .add(direction.multiplyScalar(newDistance));
 
-            animateCamera(targetPosition, controls.target.clone(), 300);
+            startSmoothTransition(targetPosition, controls.target.clone(), 400);
           }
         },
         zoomOut: () => {
-          if (controlsRef.current && cameraRef.current && !isAnimating) {
+          if (
+            controlsRef.current &&
+            cameraRef.current &&
+            !transitionRef.current?.isTransitioning
+          ) {
             const controls = controlsRef.current;
             const camera = cameraRef.current;
             const currentDistance = camera.position.distanceTo(controls.target);
             const newDistance = Math.min(
-              currentDistance * 1.25,
+              currentDistance * 1.4, // More aggressive zoom for better UX
               controls.maxDistance,
             );
 
@@ -642,16 +797,20 @@ function SolarSystemScene({
               .clone()
               .add(direction.multiplyScalar(newDistance));
 
-            animateCamera(targetPosition, controls.target.clone(), 300);
+            startSmoothTransition(targetPosition, controls.target.clone(), 400);
           }
         },
         resetView: () => {
-          if (cameraRef.current && controlsRef.current && !isAnimating) {
+          if (
+            cameraRef.current &&
+            controlsRef.current &&
+            !transitionRef.current?.isTransitioning
+          ) {
             const defaultPosition =
               initialCameraPosition || new THREE.Vector3(0, 20, 50);
             const defaultTarget = new THREE.Vector3(0, 0, 0);
 
-            animateCamera(defaultPosition, defaultTarget, 800);
+            startSmoothTransition(defaultPosition, defaultTarget, 1000);
           }
         },
       };

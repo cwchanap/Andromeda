@@ -10,6 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { useEffect, useRef, useState, memo } from "react";
+import { PlanetInfoSkeleton, FadeInTransition } from "./LoadingAnimation";
+import {
+  useSimulatedLoading,
+  LOADING_STAGES,
+} from "../hooks/useLoadingProgress";
 import type { CelestialBodyData } from "../types/game";
 
 interface PlanetInfoModalProps {
@@ -31,13 +36,33 @@ function PlanetInfoModal({
   const [displayData, setDisplayData] = useState<CelestialBodyData | null>(
     null,
   );
+  const [isContentLoaded, setIsContentLoaded] = useState(false);
+
+  // Loading simulation for planet data
+  const { loadingState, startSimulation, completeLoading } =
+    useSimulatedLoading(LOADING_STAGES.PLANET_INFO, false);
 
   // Update display data when modal opens with new planet data
   useEffect(() => {
     if (isOpen && planetData) {
       setDisplayData(planetData);
+      setIsContentLoaded(false);
+
+      // Start loading simulation
+      startSimulation();
+
+      // Simulate content loading
+      const loadingTimer = setTimeout(
+        () => {
+          setIsContentLoaded(true);
+          completeLoading();
+        },
+        1000 + Math.random() * 500,
+      ); // 1-1.5 seconds
+
+      return () => clearTimeout(loadingTimer);
     }
-  }, [isOpen, planetData]);
+  }, [isOpen, planetData, startSimulation, completeLoading]);
 
   // Clear display data when modal closes completely
   useEffect(() => {
@@ -45,6 +70,7 @@ function PlanetInfoModal({
       // Clear display data after a delay to allow closing animation
       const timeoutId = setTimeout(() => {
         setDisplayData(null);
+        setIsContentLoaded(false);
       }, 300); // Match typical modal closing animation duration
 
       return () => clearTimeout(timeoutId);
@@ -87,119 +113,132 @@ function PlanetInfoModal({
         aria-labelledby="planet-modal-title"
         aria-describedby="planet-modal-description"
       >
-        <DialogHeader>
-          <DialogTitle
-            id="planet-modal-title"
-            className="flex items-center gap-3"
-          >
-            <div
-              className="h-6 w-6 rounded-full"
-              style={{ backgroundColor: displayData.material.color }}
-              aria-hidden="true"
-            />
-            {displayData.name}
-            <Badge
-              variant={
-                displayData.type === "star" ? "destructive" : "secondary"
-              }
-            >
-              {displayData.type}
-            </Badge>
-          </DialogTitle>
-          <DialogDescription id="planet-modal-description" className="sr-only">
-            Detailed information about {displayData.name}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {displayData.description}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Key Facts</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <h4 className="text-sm font-semibold">Diameter</h4>
-                  <p className="text-muted-foreground text-sm">
-                    {displayData.keyFacts.diameter}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-semibold">Distance from Sun</h4>
-                  <p className="text-muted-foreground text-sm">
-                    {displayData.keyFacts.distanceFromSun}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-semibold">Orbital Period</h4>
-                  <p className="text-muted-foreground text-sm">
-                    {displayData.keyFacts.orbitalPeriod}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-semibold">Temperature</h4>
-                  <p className="text-muted-foreground text-sm">
-                    {displayData.keyFacts.temperature}
-                  </p>
-                </div>
-
-                {displayData.keyFacts.moons !== undefined && (
-                  <div>
-                    <h4 className="text-sm font-semibold">Moons</h4>
-                    <p className="text-muted-foreground text-sm">
-                      {displayData.keyFacts.moons}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              <div>
-                <h4 className="mb-2 text-sm font-semibold">Composition</h4>
-                <div className="flex flex-wrap gap-2">
-                  {displayData.keyFacts.composition.map((component, index) => (
-                    <Badge key={index} variant="outline">
-                      {component}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end gap-3">
-            {onAskAI && (
-              <Button
-                variant="outline"
-                onClick={handleAskAI}
-                aria-label={`Ask AI about ${displayData.name}`}
+        {loadingState.isLoading ? (
+          <PlanetInfoSkeleton />
+        ) : (
+          <FadeInTransition isLoaded={isContentLoaded} duration={400}>
+            <DialogHeader>
+              <DialogTitle
+                id="planet-modal-title"
+                className="flex items-center gap-3"
               >
-                Ask AI About {displayData.name}
-              </Button>
-            )}
-            <Button
-              onClick={onClose}
-              aria-label={`Close ${displayData.name} information modal`}
-            >
-              Close
-            </Button>
-          </div>
-        </div>
+                <div
+                  className="h-6 w-6 rounded-full"
+                  style={{ backgroundColor: displayData.material.color }}
+                  aria-hidden="true"
+                />
+                {displayData.name}
+                <Badge
+                  variant={
+                    displayData.type === "star" ? "destructive" : "secondary"
+                  }
+                >
+                  {displayData.type}
+                </Badge>
+              </DialogTitle>
+              <DialogDescription
+                id="planet-modal-description"
+                className="sr-only"
+              >
+                Detailed information about {displayData.name}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {displayData.description}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Key Facts</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <h4 className="text-sm font-semibold">Diameter</h4>
+                      <p className="text-muted-foreground text-sm">
+                        {displayData.keyFacts.diameter}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-semibold">
+                        Distance from Sun
+                      </h4>
+                      <p className="text-muted-foreground text-sm">
+                        {displayData.keyFacts.distanceFromSun}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-semibold">Orbital Period</h4>
+                      <p className="text-muted-foreground text-sm">
+                        {displayData.keyFacts.orbitalPeriod}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-semibold">Temperature</h4>
+                      <p className="text-muted-foreground text-sm">
+                        {displayData.keyFacts.temperature}
+                      </p>
+                    </div>
+
+                    {displayData.keyFacts.moons !== undefined && (
+                      <div>
+                        <h4 className="text-sm font-semibold">Moons</h4>
+                        <p className="text-muted-foreground text-sm">
+                          {displayData.keyFacts.moons}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="mb-2 text-sm font-semibold">Composition</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {displayData.keyFacts.composition.map(
+                        (component, index) => (
+                          <Badge key={index} variant="outline">
+                            {component}
+                          </Badge>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end gap-3">
+                {onAskAI && (
+                  <Button
+                    variant="outline"
+                    onClick={handleAskAI}
+                    aria-label={`Ask AI about ${displayData.name}`}
+                  >
+                    Ask AI About {displayData.name}
+                  </Button>
+                )}
+                <Button
+                  onClick={onClose}
+                  aria-label={`Close ${displayData.name} information modal`}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </FadeInTransition>
+        )}
       </DialogContent>
     </Dialog>
   );

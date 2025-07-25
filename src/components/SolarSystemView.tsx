@@ -4,6 +4,7 @@ import PlanetInfoModal from "./PlanetInfoModal";
 import NavigationControls from "./NavigationControls";
 import AIChatbot from "./AIChatbot";
 import { Button } from "./ui/button";
+import { AmbientParticles } from "./ParticleSystem";
 import { useGameContext } from "../context/GameContext";
 import { useResponsive, useTouchDevice } from "../hooks/useResponsive";
 import { useMobileOptimization } from "../hooks/useMobileOptimization";
@@ -84,6 +85,10 @@ export default function SolarSystemView() {
 
   return (
     <div className="relative h-full w-full">
+      {/* Ambient particle effects - only on higher performance devices */}
+      {!isLowPerformanceDevice && mobileSettings.particleEffectsEnabled && (
+        <AmbientParticles />
+      )}
       {/* Back to Menu and AI Button - Responsive positioning */}
       {gameState.ui.showControls && (
         <div
