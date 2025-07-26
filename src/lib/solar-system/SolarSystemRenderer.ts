@@ -98,11 +98,6 @@ export class SolarSystemRenderer {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setClearColor(0x000011, 1);
 
-        if (this.config.shadows) {
-            this.renderer.shadowMap.enabled = true;
-            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        }
-
         container.appendChild(this.renderer.domElement);
     }
 

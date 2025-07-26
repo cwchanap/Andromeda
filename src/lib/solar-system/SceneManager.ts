@@ -24,26 +24,28 @@ export class SceneManager {
     }
 
     /**
-     * Sets up scene lighting
+     * Sets up enhanced scene lighting for realistic planet rendering
      */
     private setupLighting(): void {
         // Ambient light for general illumination
-        this.ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+        this.ambientLight = new THREE.AmbientLight(0x404040, 0.4);
         this.scene.add(this.ambientLight);
 
-        // Directional light from the sun
-        this.directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        // Main directional light from the sun (more intense)
+        this.directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
         this.directionalLight.position.set(0, 0, 0); // Sun position
 
-        if (this.config.shadows) {
-            this.directionalLight.castShadow = true;
-            this.directionalLight.shadow.mapSize.width = 2048;
-            this.directionalLight.shadow.mapSize.height = 2048;
-            this.directionalLight.shadow.camera.near = 0.5;
-            this.directionalLight.shadow.camera.far = 500;
-        }
-
         this.scene.add(this.directionalLight);
+
+        // Add point light at sun position for better illumination
+        const sunLight = new THREE.PointLight(0xffffff, 1.5, 500);
+        sunLight.position.set(0, 0, 0);
+        this.scene.add(sunLight);
+
+        // Add subtle fill light to prevent completely dark sides
+        const fillLight = new THREE.DirectionalLight(0x404080, 0.3);
+        fillLight.position.set(100, 50, 100);
+        this.scene.add(fillLight);
     }
 
     /**
@@ -134,16 +136,37 @@ export class SceneManager {
     }
 
     /**
-     * Updates animations (stars twinkling, etc.)
+     * Updates animations (stars twinkling, background effects)
      */
     updateAnimations(deltaTime: number): void {
         if (this.particles) {
-            // Gentle rotation of star field
+            // Gentle rotation of starfield
             this.particles.rotation.y += 0.0001 * deltaTime;
-        }
-    }
+            this.particles.rotation.x += 0.00005 * deltaTime;
 
-    /**
+            // Animate star twinkling
+            const positions = this.particles.geometry.attributes.position;
+            const colors = this.particles.geometry.attributes.color;
+
+            for (let i = 0; i < positions.count; i++) {
+                // Subtle twinkling effect
+                const twinkle =
+                    0.8 + 0.4 * Math.sin(Date.now() * 0.001 + i * 0.1);
+                const colorIndex = i * 3;
+
+                // Preserve original color ratios while applying twinkle
+                const baseR = colors.array[colorIndex];
+                const baseG = colors.array[colorIndex + 1];
+                const baseB = colors.array[colorIndex + 2];
+
+                colors.array[colorIndex] = baseR * twinkle;
+                colors.array[colorIndex + 1] = baseG * twinkle;
+                colors.array[colorIndex + 2] = baseB * twinkle;
+            }
+
+            colors.needsUpdate = true;
+        }
+    } /**
      * Updates lighting based on performance settings
      */
     updateLighting(performanceMode: "low" | "medium" | "high"): void {

@@ -138,15 +138,12 @@ export class InteractionManager {
     private updateHoverState(hoveredMesh: THREE.Mesh | null): void {
         // Reset previous hover state
         if (this.hoveredObject && this.hoveredObject !== hoveredMesh) {
-            const material = this.hoveredObject
-                .material as THREE.MeshPhongMaterial;
-            material.emissive.setHex(0x000000);
+            this.resetMaterialHover(this.hoveredObject);
         }
 
         // Set new hover state
         if (hoveredMesh) {
-            const material = hoveredMesh.material as THREE.MeshPhongMaterial;
-            material.emissive.setHex(0x333333);
+            this.setMaterialHover(hoveredMesh);
         }
 
         // Update hover object reference
@@ -158,6 +155,54 @@ export class InteractionManager {
                 ? this.celestialBodyManager.getBodyData(hoveredMesh)
                 : null;
             this.events.onPlanetHover?.(celestialBody);
+        }
+    }
+
+    /**
+     * Sets hover effect on material
+     */
+    private setMaterialHover(mesh: THREE.Mesh): void {
+        const material = mesh.material;
+
+        if (material instanceof THREE.MeshStandardMaterial) {
+            // For standard materials (planets), adjust emissive color
+            if (!material.userData.originalEmissive) {
+                material.userData.originalEmissive = material.emissive.clone();
+            }
+            material.emissive.setHex(0x333333);
+        } else if (material instanceof THREE.MeshBasicMaterial) {
+            // For basic materials (stars), adjust opacity or add outline effect
+            if (!material.userData.originalOpacity) {
+                material.userData.originalOpacity = material.opacity;
+            }
+            material.opacity = Math.min(1.0, material.opacity * 1.2);
+        } else if (material instanceof THREE.MeshPhongMaterial) {
+            // Fallback for any remaining phong materials
+            material.emissive.setHex(0x333333);
+        }
+    }
+
+    /**
+     * Resets hover effect on material
+     */
+    private resetMaterialHover(mesh: THREE.Mesh): void {
+        const material = mesh.material;
+
+        if (material instanceof THREE.MeshStandardMaterial) {
+            // Reset emissive color
+            if (material.userData.originalEmissive) {
+                material.emissive.copy(material.userData.originalEmissive);
+            } else {
+                material.emissive.setHex(0x000000);
+            }
+        } else if (material instanceof THREE.MeshBasicMaterial) {
+            // Reset opacity
+            if (material.userData.originalOpacity !== undefined) {
+                material.opacity = material.userData.originalOpacity;
+            }
+        } else if (material instanceof THREE.MeshPhongMaterial) {
+            // Fallback for any remaining phong materials
+            material.emissive.setHex(0x000000);
         }
     }
 
