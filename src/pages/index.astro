@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
-import MainMenuWrapper from "../components/MainMenuWrapper.tsx";
+import MainMenu from "../components/MainMenu.svelte";
+import ErrorBoundary from "../components/ErrorBoundary.svelte";
 ---
 
 <html lang="en">
@@ -13,6 +14,8 @@ import MainMenuWrapper from "../components/MainMenuWrapper.tsx";
   </head>
 
   <body>
-    <MainMenuWrapper client:load />
+    <ErrorBoundary client:load>
+      <MainMenu client:load />
+    </ErrorBoundary>
   </body>
 </html>

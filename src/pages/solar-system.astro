@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
-import SolarSystemWrapper from "../components/SolarSystemWrapper.tsx";
+import SolarSystemWrapper from "../components/SolarSystemWrapper.svelte";
+import TestComponent from "../components/TestComponent.svelte";
 ---
 
 <html lang="en">
@@ -14,7 +15,7 @@ import SolarSystemWrapper from "../components/SolarSystemWrapper.tsx";
 
   <body>
     <div id="solar-system-container">
-      <SolarSystemWrapper client:load />
+      <SolarSystemWrapper client:only="svelte" />
     </div>
 
     <style>
