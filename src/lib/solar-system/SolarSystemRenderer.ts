@@ -98,6 +98,10 @@ export class SolarSystemRenderer {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setClearColor(0x000011, 1);
 
+        // Explicitly disable shadows completely
+        this.renderer.shadowMap.enabled = false;
+        this.renderer.shadowMap.type = THREE.PCFShadowMap; // Set type but keep disabled
+
         container.appendChild(this.renderer.domElement);
     }
 

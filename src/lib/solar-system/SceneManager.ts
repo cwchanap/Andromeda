@@ -35,17 +35,32 @@ export class SceneManager {
         this.directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
         this.directionalLight.position.set(0, 0, 0); // Sun position
 
+        // Explicitly disable shadows on directional light
+        this.directionalLight.castShadow = false;
+
         this.scene.add(this.directionalLight);
 
         // Add point light at sun position for better illumination
         const sunLight = new THREE.PointLight(0xffffff, 1.5, 500);
         sunLight.position.set(0, 0, 0);
+
+        // Explicitly disable shadows on point light
+        sunLight.castShadow = false;
+
         this.scene.add(sunLight);
 
         // Add subtle fill light to prevent completely dark sides
         const fillLight = new THREE.DirectionalLight(0x404080, 0.3);
         fillLight.position.set(100, 50, 100);
+
+        // Explicitly disable shadows on fill light
+        fillLight.castShadow = false;
+
         this.scene.add(fillLight);
+
+        console.log(
+            "Lighting setup complete - all shadows explicitly disabled",
+        );
     }
 
     /**
@@ -102,6 +117,11 @@ export class SceneManager {
         });
 
         this.particles = new THREE.Points(geometry, material);
+
+        // Explicitly disable shadows on particles
+        this.particles.castShadow = false;
+        this.particles.receiveShadow = false;
+
         this.scene.add(this.particles);
     }
 

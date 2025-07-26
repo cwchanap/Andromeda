@@ -25,25 +25,42 @@ export class CelestialBodyManager {
         mesh.userData = { celestialBodyData: data };
         mesh.name = data.id;
 
+        // Explicitly disable shadows on all celestial body meshes
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+
         // Create a group to hold the main body and any additional effects
         const celestialGroup = new THREE.Group();
         celestialGroup.add(mesh);
 
+        // Explicitly disable shadows on the celestial group
+        celestialGroup.castShadow = false;
+        celestialGroup.receiveShadow = false;
+
         // Add atmospheric glow for planets with atmospheres (FIXED - no shadow artifacts)
         if (data.material.atmosphereColor && data.type === "planet") {
             const atmosphereMesh = this.createAtmosphere(data);
+            // Explicitly disable shadows on atmosphere
+            atmosphereMesh.castShadow = false;
+            atmosphereMesh.receiveShadow = false;
             celestialGroup.add(atmosphereMesh);
         }
 
         // Add rings for Saturn
         if (data.id === "saturn") {
             const rings = this.createRings(data);
+            // Explicitly disable shadows on rings
+            rings.castShadow = false;
+            rings.receiveShadow = false;
             celestialGroup.add(rings);
         }
 
         // Add Sun glow effect
         if (data.type === "star") {
             const sunGlow = this.createSunGlow(data);
+            // Explicitly disable shadows on sun glow
+            sunGlow.castShadow = false;
+            sunGlow.receiveShadow = false;
             celestialGroup.add(sunGlow);
         }
 
@@ -195,24 +212,31 @@ export class CelestialBodyManager {
     }
 
     /**
-     * Creates atmospheric glow effect for planets (FIXED - no more shadow artifacts)
+     * Creates atmospheric glow effect for planets (COMPLETELY SHADOW-FREE)
      */
     private createAtmosphere(data: CelestialBodyData): THREE.Mesh {
         const atmosphereGeometry = new THREE.SphereGeometry(1.08, 32, 32);
         const atmosphereMaterial = new THREE.MeshBasicMaterial({
             color: data.material.atmosphereColor,
             transparent: true,
-            opacity: 0.05, // Much lower opacity
-            side: THREE.FrontSide, // Changed from BackSide to FrontSide
+            opacity: 0.03, // Even lower opacity to prevent visual artifacts
+            side: THREE.FrontSide,
             blending: THREE.AdditiveBlending,
-            depthWrite: false, // Prevent depth buffer writes that could cause sorting issues
+            depthWrite: false, // Prevent depth buffer writes
+            depthTest: false, // Additional depth testing disabled
         });
 
         const atmosphereMesh = new THREE.Mesh(
             atmosphereGeometry,
             atmosphereMaterial,
         );
+
         atmosphereMesh.scale.setScalar(data.scale);
+
+        // Explicit shadow disabling
+        atmosphereMesh.castShadow = false;
+        atmosphereMesh.receiveShadow = false;
+
         return atmosphereMesh;
     }
 
@@ -278,14 +302,23 @@ export class CelestialBodyManager {
         const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
         ringMesh.rotation.x = Math.PI / 2; // Rotate to be horizontal
         ringMesh.scale.setScalar(data.scale);
+
+        // Explicitly disable shadows on rings
+        ringMesh.castShadow = false;
+        ringMesh.receiveShadow = false;
+
         return ringMesh;
     }
 
     /**
-     * Creates enhanced sun glow effect with corona
+     * Creates enhanced sun glow effect with corona (COMPLETELY SHADOW-FREE)
      */
     private createSunGlow(data: CelestialBodyData): THREE.Group {
         const glowGroup = new THREE.Group();
+
+        // Explicitly disable shadows on the glow group
+        glowGroup.castShadow = false;
+        glowGroup.receiveShadow = false;
 
         // Inner glow
         const innerGlowGeometry = new THREE.SphereGeometry(1.1, 32, 32);
@@ -295,9 +328,15 @@ export class CelestialBodyManager {
             opacity: 0.6,
             side: THREE.BackSide,
             blending: THREE.AdditiveBlending,
+            depthWrite: false,
         });
         const innerGlow = new THREE.Mesh(innerGlowGeometry, innerGlowMaterial);
         innerGlow.scale.setScalar(data.scale);
+
+        // Disable shadows on inner glow
+        innerGlow.castShadow = false;
+        innerGlow.receiveShadow = false;
+
         glowGroup.add(innerGlow);
 
         // Outer corona
@@ -308,9 +347,15 @@ export class CelestialBodyManager {
             opacity: 0.2,
             side: THREE.BackSide,
             blending: THREE.AdditiveBlending,
+            depthWrite: false,
         });
         const corona = new THREE.Mesh(coronaGeometry, coronaMaterial);
         corona.scale.setScalar(data.scale);
+
+        // Disable shadows on corona
+        corona.castShadow = false;
+        corona.receiveShadow = false;
+
         glowGroup.add(corona);
 
         // Distant glow
@@ -321,12 +366,18 @@ export class CelestialBodyManager {
             opacity: 0.1,
             side: THREE.BackSide,
             blending: THREE.AdditiveBlending,
+            depthWrite: false,
         });
         const distantGlow = new THREE.Mesh(
             distantGlowGeometry,
             distantGlowMaterial,
         );
         distantGlow.scale.setScalar(data.scale);
+
+        // Disable shadows on distant glow
+        distantGlow.castShadow = false;
+        distantGlow.receiveShadow = false;
+
         glowGroup.add(distantGlow);
 
         return glowGroup;
