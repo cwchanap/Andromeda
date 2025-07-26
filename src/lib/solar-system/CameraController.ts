@@ -39,6 +39,9 @@ export class CameraController {
         this.controls.enableZoom = true;
         this.controls.enableRotate = true;
         this.controls.enablePan = true;
+        // Swap left/right mouse drag actions
+        this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+        this.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
 
         // Set limits
         this.controls.maxDistance = 500;
