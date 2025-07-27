@@ -5,7 +5,7 @@ import jsxA11y from "eslint-plugin-jsx-a11y";
 
 export default tseslint.config(
   {
-    ignores: ["dist", ".astro"],
+    ignores: ["dist", ".astro", ".vercel"],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

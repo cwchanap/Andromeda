@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Build and Development:**
 - `npm run dev` or `npm start` - Start development server
-- `npm run build` - Build for production  
+- `npm run build` - Build for production (configured for Vercel deployment)
 - `npm run preview` - Preview production build
 - `npm run clean` - Clean build artifacts
 
@@ -68,9 +68,10 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 ### Development Patterns
 
 **Component Architecture:**
-- Astro pages (.astro) for routing and SSG
+- Astro pages (.astro) for routing with SSR/SSG capability
 - Svelte components (.svelte) for interactive UI
 - TypeScript throughout with strict type checking
+- Vercel adapter configured for server-side rendering and deployment
 
 **3D Rendering Approach:**
 - Modular manager classes for different 3D concerns
