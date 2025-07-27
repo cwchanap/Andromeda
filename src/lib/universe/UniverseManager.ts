@@ -253,15 +253,17 @@ class DefaultSystemValidator implements SystemValidator {
         }
 
         // Validate orbital mechanics
-        system.celestialBodies.forEach((body, index) => {
-            if (body.orbitRadius && body.orbitRadius <= 0) {
-                warnings.push({
-                    field: `celestialBodies[${index}].orbitRadius`,
-                    message: "Orbit radius should be positive",
-                    severity: "warning",
-                });
-            }
-        });
+        if (Array.isArray(system.celestialBodies)) {
+            system.celestialBodies.forEach((body, index) => {
+                if (body.orbitRadius && body.orbitRadius <= 0) {
+                    warnings.push({
+                        field: `celestialBodies[${index}].orbitRadius`,
+                        message: "Orbit radius should be positive",
+                        severity: "warning",
+                    });
+                }
+            });
+        }
 
         return {
             isValid: errors.length === 0,

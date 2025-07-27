@@ -365,13 +365,13 @@ export const getRelativeScale = (
  * Format distance for display
  */
 export const formatDistance = (distanceKm: number): string => {
+    const AU = 149597870.7;
+    if (isNaN(distanceKm)) return "Invalid distance";
     if (distanceKm === 0) return "0 km";
-    if (distanceKm < 1000) return `${distanceKm.toLocaleString()} km`;
-    if (distanceKm < 1000000)
-        return `${(distanceKm / 1000).toFixed(1)} thousand km`;
-    if (distanceKm < 1000000000)
-        return `${(distanceKm / 1000000).toFixed(1)} million km`;
-    return `${(distanceKm / 1000000000).toFixed(2)} billion km`;
+    if (distanceKm >= AU) {
+        return `${(distanceKm / AU).toFixed(2)} AU`;
+    }
+    return `${distanceKm.toLocaleString()} km`;
 };
 
 /**
