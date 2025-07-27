@@ -28,6 +28,7 @@ const defaultGameState: GameState = {
         showInfoModal: false,
         showChatbot: false,
         showControls: false,
+        showSystemSelector: false,
     },
     settings: {
         enableAnimations: true,
@@ -68,7 +69,7 @@ export const gameActions = {
         gameState.update((state) => ({ ...state, selectedBody: body }));
     },
 
-    navigateToView: (view: "menu" | "solar-system") => {
+    navigateToView: (view: "menu" | "solar-system" | "system-selector") => {
         gameState.update((state) => ({ ...state, currentView: view }));
     },
 
@@ -90,6 +91,72 @@ export const gameActions = {
         gameState.update((state) => ({
             ...state,
             ui: { ...state.ui, showControls: show },
+        }));
+    },
+
+    showSystemSelector: (show: boolean) => {
+        gameState.update((state) => ({
+            ...state,
+            ui: { ...state.ui, showSystemSelector: show },
+        }));
+    },
+
+    // Universe/system management actions
+    switchToSystem: (systemId: string) => {
+        gameState.update((state) => ({
+            ...state,
+            universe: {
+                ...state.universe,
+                currentSystemId: systemId,
+                availableSystems: state.universe?.availableSystems || [],
+                systemTransition: undefined,
+            },
+        }));
+    },
+
+    startSystemTransition: (fromSystemId: string, toSystemId: string) => {
+        gameState.update((state) => ({
+            ...state,
+            universe: {
+                ...state.universe,
+                currentSystemId: fromSystemId,
+                availableSystems: state.universe?.availableSystems || [],
+                systemTransition: {
+                    isTransitioning: true,
+                    fromSystemId,
+                    toSystemId,
+                    progress: 0,
+                },
+            },
+        }));
+    },
+
+    updateSystemTransitionProgress: (progress: number) => {
+        gameState.update((state) => ({
+            ...state,
+            universe: state.universe
+                ? {
+                      ...state.universe,
+                      systemTransition: state.universe.systemTransition
+                          ? {
+                                ...state.universe.systemTransition,
+                                progress,
+                            }
+                          : undefined,
+                  }
+                : undefined,
+        }));
+    },
+
+    completeSystemTransition: (systemId: string) => {
+        gameState.update((state) => ({
+            ...state,
+            universe: {
+                ...state.universe,
+                currentSystemId: systemId,
+                availableSystems: state.universe?.availableSystems || [],
+                systemTransition: undefined,
+            },
         }));
     },
 

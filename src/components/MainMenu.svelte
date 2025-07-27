@@ -15,6 +15,10 @@
     window.location.href = '/solar-system';
   };
 
+  const handleSystemSelector = () => {
+    gameActions.showSystemSelector(true);
+  };
+
   const handleOpenSettings = () => {
     showSettings = true;
   };
@@ -29,6 +33,7 @@
   
   const menuItems = [
     { label: "Start Game", action: handleStartGame },
+    { label: "System Selector", action: handleSystemSelector },
     { label: "Settings", action: handleOpenSettings }
   ];
 

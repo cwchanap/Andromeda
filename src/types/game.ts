@@ -1,5 +1,6 @@
 // Core type definitions for the space exploration game
 import type { Vector3 } from "three";
+import type { GamePlugin } from "./universe";
 
 export interface CelestialBodyData {
     id: string;
@@ -38,7 +39,7 @@ export interface CelestialBodyData {
 }
 
 export interface GameState {
-    currentView: "menu" | "solar-system";
+    currentView: "menu" | "solar-system" | "system-selector";
     selectedBody: CelestialBodyData | null;
     camera: {
         position: Vector3;
@@ -49,11 +50,23 @@ export interface GameState {
         showInfoModal: boolean;
         showChatbot: boolean;
         showControls: boolean;
+        showSystemSelector: boolean;
     };
     settings: {
         enableAnimations: boolean;
         audioEnabled: boolean;
         controlSensitivity: number;
+    };
+    // Multi-system support
+    universe?: {
+        currentSystemId: string;
+        availableSystems: string[];
+        systemTransition?: {
+            isTransitioning: boolean;
+            fromSystemId: string;
+            toSystemId: string;
+            progress: number;
+        };
     };
 }
 
@@ -62,4 +75,39 @@ export interface SolarSystemData {
     planets: CelestialBodyData[];
     systemScale: number;
     systemCenter: Vector3;
+}
+
+/**
+ * Extended system data interface for backward compatibility and future expansion
+ */
+export interface ExtendedSystemData extends SolarSystemData {
+    id: string;
+    name: string;
+    description: string;
+    systemType: "solar" | "binary" | "multiple" | "exotic";
+    metadata?: {
+        discoveredBy?: string;
+        discoveryDate?: string;
+        distance?: string;
+        constellation?: string;
+        spectralClass?: string;
+        habitableZone?: {
+            inner: number;
+            outer: number;
+        };
+    };
+}
+
+/**
+ * Plugin management interfaces
+ */
+export interface PluginManager {
+    loadedPlugins: Map<string, GamePlugin>;
+    enabledPlugins: Set<string>;
+    loadPlugin: (plugin: GamePlugin) => Promise<void>;
+    unloadPlugin: (pluginId: string) => Promise<void>;
+    enablePlugin: (pluginId: string) => Promise<void>;
+    disablePlugin: (pluginId: string) => Promise<void>;
+    getPlugin: (pluginId: string) => GamePlugin | null;
+    getAllPlugins: () => GamePlugin[];
 }
