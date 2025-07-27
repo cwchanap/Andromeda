@@ -11,9 +11,10 @@ import { CelestialBodyManager } from "./CelestialBodyManager";
 import { SceneManager } from "./SceneManager";
 import { InteractionManager } from "./InteractionManager";
 import { CameraController } from "./CameraController";
+import { PerformanceMonitor } from "../performance/PerformanceMonitor";
 
 /**
- * Main solar system renderer - framework agnostic
+ * Main solar system renderer - framework agnostic with performance optimization
  */
 export class SolarSystemRenderer {
     private scene: THREE.Scene;
@@ -23,10 +24,11 @@ export class SolarSystemRenderer {
     private animationId: number | null = null;
 
     // Managers
-    private sceneManager: SceneManager;
-    private celestialBodyManager: CelestialBodyManager;
-    private interactionManager: InteractionManager;
-    private cameraController: CameraController;
+    private sceneManager!: SceneManager;
+    private celestialBodyManager!: CelestialBodyManager;
+    private interactionManager!: InteractionManager;
+    private cameraController!: CameraController;
+    private performanceMonitor: PerformanceMonitor;
 
     // State
     private isInitialized = false;
@@ -68,16 +70,29 @@ export class SolarSystemRenderer {
             alpha: true,
         });
 
+        this.setupRenderer(container);
+        this.setupManagers();
+        this.setupEventListeners();
+        this.setupPerformanceMonitoring();
+    }
+
+    /**
+     * Sets up managers
+     */
+    private setupManagers(): void {
         // Initialize managers
         this.sceneManager = new SceneManager(this.scene, this.config);
-        this.celestialBodyManager = new CelestialBodyManager(this.scene);
+        this.celestialBodyManager = new CelestialBodyManager(
+            this.scene,
+            this.camera,
+        );
         this.cameraController = new CameraController(this.camera, {
             onCameraChange: this.events.onCameraChange,
             onZoomChange: this.events.onZoomChange,
         });
 
         this.interactionManager = new InteractionManager(
-            container,
+            this.renderer.domElement,
             this.camera,
             this.scene,
             {
@@ -85,9 +100,30 @@ export class SolarSystemRenderer {
                 onPlanetHover: this.events.onPlanetHover,
             },
         );
+    }
 
-        this.setupRenderer(container);
-        this.setupEventListeners();
+    /**
+     * Setup performance monitoring
+     */
+    private setupPerformanceMonitoring(): void {
+        this.performanceMonitor = new PerformanceMonitor(this.renderer);
+
+        // Start monitoring
+        this.performanceMonitor.startMonitoring();
+
+        // Add performance callbacks
+        this.performanceMonitor.onMetrics((metrics) => {
+            // Log performance metrics periodically
+            if (metrics.fps > 0 && metrics.fps % 10 === 0) {
+                console.log(
+                    `Performance: ${metrics.fps} FPS, ${metrics.frameTime.toFixed(2)}ms frame time`,
+                );
+            }
+        });
+
+        this.performanceMonitor.onWarning((suggestions) => {
+            console.warn("Performance warnings:", suggestions);
+        });
     }
 
     /**
@@ -168,19 +204,31 @@ export class SolarSystemRenderer {
     private render(): void {
         if (!this.isInitialized || this.isDisposed) return;
 
+        // Start performance monitoring
+        this.performanceMonitor.frameStart();
+
         const deltaTime = this.clock.getDelta();
 
         // Update animations
         if (this.config.enableAnimations) {
-            this.celestialBodyManager.updateOrbitalAnimations(deltaTime);
+            this.celestialBodyManager.updateAnimations(deltaTime);
             this.sceneManager.updateAnimations(deltaTime);
         }
+
+        // Update LOD levels based on camera position
+        this.celestialBodyManager.updateLOD();
 
         // Update controls
         this.cameraController.update();
 
+        // Start render timing
+        this.performanceMonitor.renderStart();
+
         // Render scene
         this.renderer.render(this.scene, this.camera);
+
+        // End performance monitoring
+        this.performanceMonitor.frameEnd();
 
         // Update render stats
         if (this.events.onRenderStats) {
@@ -235,7 +283,7 @@ export class SolarSystemRenderer {
      * Focuses camera on a specific planet
      */
     private focusOnPlanet(planetId: string): void {
-        const planetMesh = this.celestialBodyManager.getBody(planetId);
+        const planetMesh = this.celestialBodyManager.getCelestialBody(planetId);
         if (!planetMesh) return;
 
         const planetPosition = planetMesh.position.clone();
@@ -279,7 +327,9 @@ export class SolarSystemRenderer {
      * Selects a celestial body
      */
     selectCelestialBody(bodyId: string | null): void {
-        this.celestialBodyManager.highlightBody(bodyId);
+        if (bodyId) {
+            this.celestialBodyManager.highlightCelestialBody(bodyId);
+        }
 
         if (bodyId) {
             this.focusOnPlanet(bodyId);
@@ -305,6 +355,9 @@ export class SolarSystemRenderer {
         this.sceneManager.dispose();
         this.interactionManager.dispose();
         this.cameraController.dispose();
+
+        // Dispose performance monitor
+        this.performanceMonitor.dispose();
 
         // Dispose Three.js resources
         this.renderer.dispose();

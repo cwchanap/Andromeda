@@ -124,7 +124,8 @@ export class InteractionManager {
         if (!this.celestialBodyManager) return null;
 
         this.raycaster.setFromCamera(this.mouse, this.camera);
-        const celestialBodies = this.celestialBodyManager.getAllBodies();
+        const celestialBodies =
+            this.celestialBodyManager.getAllCelestialBodies();
         const intersects = this.raycaster.intersectObjects(celestialBodies);
 
         return intersects.length > 0

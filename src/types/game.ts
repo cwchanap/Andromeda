@@ -24,6 +24,8 @@ export interface CelestialBodyData {
         normalMap?: string;
         bumpMap?: string;
         specularMap?: string;
+        roughnessMap?: string;
+        emissiveMap?: string;
         roughness?: number;
         metalness?: number;
         shininess?: number;
