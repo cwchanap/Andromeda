@@ -1,0 +1,150 @@
+/* High Contrast Theme for Accessibility */
+
+/* High contrast mode styles */
+:root[data-high-contrast="true"] {
+  /* High contrast color palette */
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #333333;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #ffffff;
+  --accent: #ffffff;
+  --accent-foreground: #000000;
+  --destructive: #ff0000;
+  --destructive-foreground: #ffffff;
+  --border: #ffffff;
+  --input: #ffffff;
+  --ring: #ffffff;
+  --card: #1a1a1a;
+  --card-foreground: #ffffff;
+  --popover: #000000;
+  --popover-foreground: #ffffff;
+}
+
+/* High contrast button styles */
+:root[data-high-contrast="true"] .btn {
+  border: 2px solid #ffffff !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+:root[data-high-contrast="true"] .btn:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+:root[data-high-contrast="true"] .btn:focus {
+  outline: 3px solid #ffff00 !important;
+  outline-offset: 2px;
+}
+
+/* High contrast input styles */
+:root[data-high-contrast="true"] input,
+:root[data-high-contrast="true"] select,
+:root[data-high-contrast="true"] textarea {
+  border: 2px solid #ffffff !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+:root[data-high-contrast="true"] input:focus,
+:root[data-high-contrast="true"] select:focus,
+:root[data-high-contrast="true"] textarea:focus {
+  outline: 3px solid #ffff00 !important;
+  outline-offset: 2px;
+}
+
+/* High contrast modal and dialog styles */
+:root[data-high-contrast="true"] [role="dialog"],
+:root[data-high-contrast="true"] .modal-overlay {
+  background: #000000 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* High contrast card styles */
+:root[data-high-contrast="true"] .card {
+  background: #1a1a1a !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* High contrast text styles */
+:root[data-high-contrast="true"] h1,
+:root[data-high-contrast="true"] h2,
+:root[data-high-contrast="true"] h3,
+:root[data-high-contrast="true"] h4,
+:root[data-high-contrast="true"] h5,
+:root[data-high-contrast="true"] h6 {
+  color: #ffffff !important;
+}
+
+:root[data-high-contrast="true"] p,
+:root[data-high-contrast="true"] span,
+:root[data-high-contrast="true"] div {
+  color: #ffffff !important;
+}
+
+/* High contrast link styles */
+:root[data-high-contrast="true"] a {
+  color: #ffff00 !important;
+  text-decoration: underline !important;
+}
+
+:root[data-high-contrast="true"] a:hover {
+  color: #ffffff !important;
+  background: #ffff00 !important;
+}
+
+/* High contrast focus indicators */
+:root[data-high-contrast="true"] *:focus {
+  outline: 3px solid #ffff00 !important;
+  outline-offset: 2px;
+}
+
+/* High contrast separator styles */
+:root[data-high-contrast="true"] hr,
+:root[data-high-contrast="true"] .separator {
+  border-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* High contrast badge styles */
+:root[data-high-contrast="true"] .badge {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+/* High contrast progress bar styles */
+:root[data-high-contrast="true"] .progress {
+  background: #333333 !important;
+  border: 1px solid #ffffff !important;
+}
+
+:root[data-high-contrast="true"] .progress-bar {
+  background: #ffffff !important;
+}
+
+/* High contrast selection styles */
+:root[data-high-contrast="true"] ::selection {
+  background: #ffff00 !important;
+  color: #000000 !important;
+}
+
+/* High contrast scrollbar styles */
+:root[data-high-contrast="true"] ::-webkit-scrollbar {
+  background: #000000 !important;
+}
+
+:root[data-high-contrast="true"] ::-webkit-scrollbar-thumb {
+  background: #ffffff !important;
+  border: 1px solid #000000 !important;
+}
+
+:root[data-high-contrast="true"] ::-webkit-scrollbar-track {
+  background: #1a1a1a !important;
+}

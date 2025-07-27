@@ -8,6 +8,12 @@ export interface GameSettings {
     controlSensitivity: number;
     graphicsQuality: "low" | "medium" | "high";
     showControlHints: boolean;
+    // Accessibility settings
+    highContrastMode: boolean;
+    reducedMotion: boolean;
+    enableKeyboardNavigation: boolean;
+    announceSceneChanges: boolean;
+    screenReaderMode: boolean;
 }
 
 const defaultGameState: GameState = {
@@ -36,6 +42,12 @@ const defaultSettings: GameSettings = {
     controlSensitivity: 1.0,
     graphicsQuality: "medium",
     showControlHints: true,
+    // Accessibility defaults
+    highContrastMode: false,
+    reducedMotion: false,
+    enableKeyboardNavigation: true,
+    announceSceneChanges: true,
+    screenReaderMode: false,
 };
 
 // Create writable stores

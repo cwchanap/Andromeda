@@ -1,0 +1,106 @@
+/* Reduced Motion Styles for Accessibility */
+
+/* Reduced motion styles */
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Disable specific animations that might cause motion sensitivity */
+:root[data-reduced-motion="true"] .animate-pulse,
+:root[data-reduced-motion="true"] .animate-spin,
+:root[data-reduced-motion="true"] .animate-bounce {
+  animation: none !important;
+}
+
+/* Disable transform animations */
+:root[data-reduced-motion="true"] .transform,
+:root[data-reduced-motion="true"] .hover\:scale-\[\d+\],
+:root[data-reduced-motion="true"] .hover\:-translate-y-\[\d+\] {
+  transform: none !important;
+}
+
+/* Disable hover transform effects */
+:root[data-reduced-motion="true"] *:hover {
+  transform: none !important;
+}
+
+/* Reduce opacity transitions but keep them for usability */
+:root[data-reduced-motion="true"] * {
+  transition-property: opacity, background-color, border-color, color, fill, stroke !important;
+  transition-duration: 0.1s !important;
+}
+
+/* Disable parallax scrolling effects */
+:root[data-reduced-motion="true"] [style*="transform: translate3d"],
+:root[data-reduced-motion="true"] [style*="transform: translateY"] {
+  transform: none !important;
+}
+
+/* Disable auto-playing media */
+:root[data-reduced-motion="true"] video {
+  animation-play-state: paused !important;
+}
+
+/* Provide static alternatives for animated backgrounds */
+:root[data-reduced-motion="true"] .bg-gradient-to-br,
+:root[data-reduced-motion="true"] .bg-gradient-to-r {
+  background: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  animation: none !important;
+}
+
+/* Disable CSS-based looping animations - handled globally */
+:root[data-reduced-motion="true"] * {
+  animation-play-state: paused !important;
+}
+
+/* Ensure focus indicators are still visible but not animated */
+:root[data-reduced-motion="true"] *:focus {
+  transition: none !important;
+  outline: 2px solid currentColor !important;
+  outline-offset: 2px !important;
+}
+
+/* Disable loading spinner animations */
+:root[data-reduced-motion="true"] .loading-spinner,
+:root[data-reduced-motion="true"] .spinner {
+  animation: none !important;
+  opacity: 0.7 !important;
+}
+
+/* Static alternatives for animated icons */
+:root[data-reduced-motion="true"] .animate-icon::after {
+  content: "⚡" !important;
+  animation: none !important;
+}
+
+/* Disable Three.js related animations (will be handled in JavaScript) */
+:root[data-reduced-motion="true"] canvas {
+  animation: none !important;
+}
+
+/* Ensure modal and dialog transitions are minimal */
+:root[data-reduced-motion="true"] [role="dialog"],
+:root[data-reduced-motion="true"] .modal {
+  animation: none !important;
+  transition: opacity 0.1s ease !important;
+}
+
+/* Disable marquee and scrolling text */
+:root[data-reduced-motion="true"] marquee {
+  animation: none !important;
+  animation-play-state: paused !important;
+}
+
+/* Reduce motion for custom CSS animations */
+:root[data-reduced-motion="true"] .fade-in,
+:root[data-reduced-motion="true"] .slide-in,
+:root[data-reduced-motion="true"] .zoom-in {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}

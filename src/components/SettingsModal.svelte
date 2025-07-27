@@ -34,6 +34,12 @@
       controlSensitivity: 1.0,
       graphicsQuality: "medium",
       showControlHints: true,
+      // Accessibility defaults
+      highContrastMode: false,
+      reducedMotion: false,
+      enableKeyboardNavigation: true,
+      announceSceneChanges: true,
+      screenReaderMode: false,
     };
     settings = defaultSettings;
   };
@@ -167,6 +173,97 @@
               <span>Slow (0.1x)</span>
               <span>Fast (2.0x)</span>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <!-- Accessibility Settings -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Accessibility Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-semibold">High Contrast Mode</h4>
+              <p class="text-muted-foreground text-sm">
+                Enable high contrast colors for better visibility
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              bind:checked={settings.highContrastMode}
+              class="h-4 w-4"
+              aria-describedby="high-contrast-desc"
+            />
+          </div>
+
+          <Separator />
+
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-semibold">Reduced Motion</h4>
+              <p class="text-muted-foreground text-sm">
+                Minimize animations and transitions
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              bind:checked={settings.reducedMotion}
+              class="h-4 w-4"
+              aria-describedby="reduced-motion-desc"
+            />
+          </div>
+
+          <Separator />
+
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-semibold">Keyboard Navigation</h4>
+              <p class="text-muted-foreground text-sm">
+                Enable keyboard controls for 3D navigation
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              bind:checked={settings.enableKeyboardNavigation}
+              class="h-4 w-4"
+              aria-describedby="keyboard-nav-desc"
+            />
+          </div>
+
+          <Separator />
+
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-semibold">Announce Scene Changes</h4>
+              <p class="text-muted-foreground text-sm">
+                Announce when celestial bodies are selected
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              bind:checked={settings.announceSceneChanges}
+              class="h-4 w-4"
+              aria-describedby="announce-changes-desc"
+            />
+          </div>
+
+          <Separator />
+
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-semibold">Screen Reader Mode</h4>
+              <p class="text-muted-foreground text-sm">
+                Optimize interface for screen readers
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              bind:checked={settings.screenReaderMode}
+              class="h-4 w-4"
+              aria-describedby="screen-reader-desc"
+            />
           </div>
         </CardContent>
       </Card>

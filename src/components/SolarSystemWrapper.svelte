@@ -1,6 +1,8 @@
 <script lang="ts">
   import LoadingAnimation from './LoadingAnimation.svelte';
   import ErrorBoundary from './ErrorBoundary.svelte';
+  import KeyboardNavigation from './KeyboardNavigation.svelte';
+  import AccessibilityManager from './AccessibilityManager.svelte';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { SolarSystemRenderer } from '../lib/solar-system/SolarSystemRenderer';
@@ -20,11 +22,13 @@
     zoomOut: () => void;
     resetView: () => void;
   } | null = null;
+  let currentSelectedIndex = -1;
   
   // Reactive state from stores
   $: selectedBody = $gameState.selectedBody;
   $: showInfoModal = $gameState.ui.showInfoModal;
   $: enableAnimations = $settings.enableAnimations;
+  $: enableKeyboardNav = $settings.enableKeyboardNavigation;
   
   const handlePlanetSelect = (planet: CelestialBodyData) => {
     gameActions.selectCelestialBody(planet);
@@ -46,6 +50,26 @@
   
   const handleZoomControlsReady = (controls: typeof zoomControls) => {
     zoomControls = controls;
+  };
+
+  // Keyboard navigation handlers
+  const handleKeyboardPlanetSelect = (planet: CelestialBodyData) => {
+    // Update selected index for keyboard navigation state
+    const allBodies = [solarSystemData.sun, ...solarSystemData.planets];
+    currentSelectedIndex = allBodies.findIndex(body => body.id === planet.id);
+    handlePlanetSelect(planet);
+  };
+
+  const handleKeyboardZoomIn = () => {
+    if (zoomControls) zoomControls.zoomIn();
+  };
+
+  const handleKeyboardZoomOut = () => {
+    if (zoomControls) zoomControls.zoomOut();
+  };
+
+  const handleKeyboardResetView = () => {
+    if (zoomControls) zoomControls.resetView();
   };
   
   onMount(() => {
@@ -257,11 +281,28 @@
       
       <!-- Planet Info Modal -->
       {#if showInfoModal && selectedBody}
-        <div class="modal-overlay" on:click={handleCloseModal} role="dialog" aria-modal="true">
-          <div class="modal-content" on:click|stopPropagation>
-            <button class="modal-close" on:click={handleCloseModal}>×</button>
-            <h2>{selectedBody.name}</h2>
-            <p>{selectedBody.description}</p>
+        <div 
+          class="modal-overlay" 
+          on:click={handleCloseModal} 
+          on:keydown={(e) => e.key === 'Escape' && handleCloseModal()}
+          role="dialog" 
+          aria-modal="true"
+          aria-labelledby="modal-title"
+          aria-describedby="modal-description"
+          tabindex="-1"
+        >
+          <div 
+            class="modal-content" 
+            role="document"
+          >
+            <button 
+              class="modal-close" 
+              on:click={handleCloseModal}
+              aria-label="Close planet information modal"
+              type="button"
+            >×</button>
+            <h2 id="modal-title">{selectedBody.name}</h2>
+            <p id="modal-description">{selectedBody.description}</p>
             <div class="planet-facts">
               <h3>Key Facts:</h3>
               <ul>
@@ -276,6 +317,47 @@
       {/if}
     </div>
   {/if}
+  
+  <!-- Accessibility Components -->
+  <AccessibilityManager />
+  
+  {#if enableKeyboardNav}
+    <KeyboardNavigation
+      onPlanetSelect={handleKeyboardPlanetSelect}
+      onZoomIn={handleKeyboardZoomIn}
+      onZoomOut={handleKeyboardZoomOut}
+      onResetView={handleKeyboardResetView}
+      currentSelectedIndex={currentSelectedIndex}
+    />
+  {/if}
+  
+  <!-- Screen Reader Descriptions -->
+  <div class="sr-only" aria-live="polite" aria-atomic="true">
+    {#if isLoading}
+      Loading solar system visualization. Progress: {Math.round(loadingProgress)}%
+    {:else if selectedBody}
+      Currently selected: {selectedBody.name}. {selectedBody.description}
+    {:else}
+      Solar system loaded. Use arrow keys to navigate between celestial bodies, Enter to select.
+    {/if}
+  </div>
+  
+  <!-- 3D Scene Description for Screen Readers -->
+  <div class="sr-only">
+    <h2>3D Solar System Visualization</h2>
+    <p>
+      This is an interactive 3D representation of our solar system. 
+      The Sun is at the center, surrounded by the eight planets: 
+      Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune.
+    </p>
+    <p>
+      You can navigate using keyboard controls: 
+      Arrow keys to select different planets, 
+      Enter or Space to view details, 
+      Plus and Minus keys to zoom, 
+      and Zero to reset the view.
+    </p>
+  </div>
   
   {#if !isLoading && !isSceneReady}
     <!-- Error State -->
@@ -520,5 +602,17 @@
     z-index: 1000;
     pointer-events: none;
     font-family: monospace;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 </style>
