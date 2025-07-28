@@ -1,34 +1,19 @@
 ---
-import "../styles/global.css";
-import SolarSystemWrapper from "../components/SolarSystemWrapper.svelte";
+// Redirect to new planetary routing structure
+export const prerender = false;
+
+if (Astro.request.method === 'GET') {
+  return Astro.redirect('/planetary/solar', 301);
+}
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Solar System - Space Exploration Game</title>
+    <meta http-equiv="refresh" content="0; url=/planetary/solar" />
+    <title>Redirecting...</title>
   </head>
-
   <body>
-    <div id="solar-system-container">
-      <SolarSystemWrapper client:only="svelte" />
-    </div>
-
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-      }
-
-      #solar-system-container {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-      }
-    </style>
+    <p>Redirecting to <a href="/planetary/solar">Solar System</a>...</p>
   </body>
 </html>
