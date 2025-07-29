@@ -36,6 +36,24 @@ export interface CelestialBodyData {
     };
     orbitRadius?: number;
     orbitSpeed?: number;
+    rings?: {
+        enabled: boolean;
+        innerRadius: number;
+        outerRadius: number;
+        color: string;
+        opacity: number;
+        texture?: string;
+        segments?: number; // Number of segments for ring geometry
+        thetaSegments?: number; // Number of segments around the ring
+        // Particle system properties for realistic ring appearance
+        particleSystem?: {
+            enabled: boolean;
+            particleCount: number;
+            particleSize: number;
+            particleVariation: number; // Size variation (0-1)
+            densityVariation: number; // Density variation for gaps (0-1)
+        };
+    };
 }
 
 export interface GameState {

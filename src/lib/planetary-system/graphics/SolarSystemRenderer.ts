@@ -218,6 +218,9 @@ export class SolarSystemRenderer {
         // Update LOD levels based on camera position
         this.celestialBodyManager.updateLOD();
 
+        // Update orbit line opacity based on camera distance
+        this.celestialBodyManager.updateOrbitLineOpacity(this.camera.position);
+
         // Update controls
         this.cameraController.update();
 
@@ -321,6 +324,20 @@ export class SolarSystemRenderer {
         if (newConfig.enableControls !== undefined) {
             this.cameraController.enableControls(newConfig.enableControls);
         }
+    }
+
+    /**
+     * Toggle visibility of orbit lines
+     */
+    toggleOrbitLines(visible: boolean): void {
+        this.celestialBodyManager.toggleOrbitLines(visible);
+    }
+
+    /**
+     * Set orbit line visibility for a specific celestial body
+     */
+    setOrbitLineVisibility(bodyId: string, visible: boolean): void {
+        this.celestialBodyManager.setOrbitLineVisibility(bodyId, visible);
     }
 
     /**

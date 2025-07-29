@@ -46,25 +46,43 @@ export class CelestialBodyManager {
     async createCelestialBody(
         data: CelestialBodyData,
     ): Promise<THREE.Object3D> {
-        // For now, create a simple fallback implementation to avoid breaking the build
-        // This will be enhanced with LOD and asset loading later
+        // Create a group to hold the planet and its rings
+        const celestialGroup = new THREE.Group();
+        celestialGroup.position.copy(data.position);
+        celestialGroup.scale.setScalar(data.scale);
+        celestialGroup.userData = { celestialBodyData: data };
+        celestialGroup.name = data.id;
+
+        // Create the main celestial body
         const geometry = this.createFallbackGeometry(data);
         const material = this.createFallbackMaterial(data);
 
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.copy(data.position);
-        mesh.scale.setScalar(data.scale);
-        mesh.userData = { celestialBodyData: data };
-        mesh.name = data.id;
         mesh.castShadow = false;
         mesh.receiveShadow = false;
+        mesh.name = `${data.id}_body`;
+
+        celestialGroup.add(mesh);
+
+        // Add rings if configured
+        if (data.rings && data.rings.enabled) {
+            const ringObject = this.createRings(data);
+            if (ringObject) {
+                celestialGroup.add(ringObject);
+            }
+        }
+
+        // Create orbit path visualization
+        if (data.orbitRadius && data.orbitRadius > 0) {
+            this.createOrbitLine(data);
+        }
 
         // Store references
-        this.bodies.set(data.id, mesh);
+        this.bodies.set(data.id, celestialGroup);
         this.bodyData.set(data.id, data);
-        this.scene.add(mesh);
+        this.scene.add(celestialGroup);
 
-        return mesh;
+        return celestialGroup;
     }
 
     private createFallbackGeometry(
@@ -98,10 +116,241 @@ export class CelestialBodyManager {
     }
 
     /**
+     * Creates ring geometry for celestial bodies (like Saturn)
+     */
+    private createRings(data: CelestialBodyData): THREE.Object3D | null {
+        if (!data.rings || !data.rings.enabled) {
+            return null;
+        }
+
+        const ringConfig = data.rings;
+
+        // Use particle system if enabled, otherwise fall back to solid ring
+        if (ringConfig.particleSystem && ringConfig.particleSystem.enabled) {
+            return this.createParticleRings(data);
+        } else {
+            return this.createSolidRings(data);
+        }
+    }
+
+    /**
+     * Creates particle-based rings that look like small rocks/asteroids
+     */
+    private createParticleRings(data: CelestialBodyData): THREE.Object3D {
+        const ringConfig = data.rings!;
+        const particleConfig = ringConfig.particleSystem!;
+
+        const ringGroup = new THREE.Group();
+        ringGroup.name = `${data.id}_rings`;
+
+        // Create individual rock particles
+        const rockGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const rockMaterial = new THREE.MeshStandardMaterial({
+            color: ringConfig.color,
+            transparent: true,
+            opacity: ringConfig.opacity,
+            metalness: 0.3,
+            roughness: 0.9,
+        });
+
+        let particlesCreated = 0;
+        let attempts = 0;
+        const maxAttempts = particleConfig.particleCount * 2; // Prevent infinite loop
+
+        // Generate particles in the ring area
+        while (
+            particlesCreated < particleConfig.particleCount &&
+            attempts < maxAttempts
+        ) {
+            attempts++;
+
+            // Random position in ring
+            const angle = Math.random() * Math.PI * 2;
+            const radius =
+                ringConfig.innerRadius +
+                Math.random() *
+                    (ringConfig.outerRadius - ringConfig.innerRadius);
+
+            // Apply density variation - create some gaps but ensure we get enough particles
+            if (
+                Math.random() < particleConfig.densityVariation &&
+                particlesCreated > particleConfig.particleCount * 0.5
+            ) {
+                continue; // Skip this particle to create gaps, but only after we have enough particles
+            }
+
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            const y = (Math.random() - 0.5) * 0.05; // Small vertical variation
+
+            // Create individual rock particle
+            const rock = new THREE.Mesh(rockGeometry, rockMaterial.clone());
+
+            // Vary particle size
+            const baseSize = particleConfig.particleSize;
+            const sizeVariation = baseSize * particleConfig.particleVariation;
+            const size = baseSize + (Math.random() - 0.5) * sizeVariation;
+
+            rock.scale.set(
+                size * (0.8 + Math.random() * 0.4), // Width variation
+                size * (0.3 + Math.random() * 0.4), // Height variation
+                size * (0.8 + Math.random() * 0.4), // Depth variation
+            );
+
+            rock.position.set(x, y, z);
+
+            // Random rotation for each particle
+            rock.rotation.set(
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2,
+            );
+
+            rock.castShadow = false;
+            rock.receiveShadow = false;
+
+            ringGroup.add(rock);
+            particlesCreated++;
+        }
+
+        console.log(
+            `Created ${particlesCreated} ring particles for ${data.id}`,
+        );
+
+        // Rotate rings to be horizontal (Saturn's rings are roughly in the equatorial plane)
+        ringGroup.rotation.x = Math.PI / 2;
+
+        return ringGroup;
+    }
+
+    /**
+     * Creates traditional solid ring geometry (fallback)
+     */
+    private createSolidRings(data: CelestialBodyData): THREE.Mesh {
+        const ringConfig = data.rings!;
+
+        // Create ring geometry - using RingGeometry
+        const ringGeometry = new THREE.RingGeometry(
+            ringConfig.innerRadius,
+            ringConfig.outerRadius,
+            ringConfig.thetaSegments || 64,
+            ringConfig.segments || 1,
+        );
+
+        // Create ring material
+        const ringMaterial = new THREE.MeshStandardMaterial({
+            color: ringConfig.color,
+            transparent: true,
+            opacity: ringConfig.opacity,
+            side: THREE.DoubleSide, // Render both sides of the ring
+            metalness: 0.1,
+            roughness: 0.8,
+        });
+
+        // If texture is provided, load it
+        if (ringConfig.texture) {
+            const textureLoader = new THREE.TextureLoader();
+            ringMaterial.map = textureLoader.load(ringConfig.texture);
+        }
+
+        const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+        ringMesh.name = `${data.id}_rings`;
+        ringMesh.castShadow = false;
+        ringMesh.receiveShadow = false;
+
+        // Rotate rings to be horizontal (Saturn's rings are roughly in the equatorial plane)
+        ringMesh.rotation.x = Math.PI / 2;
+
+        return ringMesh;
+    }
+
+    /**
+     * Creates orbit line visualization for celestial bodies
+     */
+    private createOrbitLine(data: CelestialBodyData): void {
+        if (!data.orbitRadius || data.orbitRadius <= 0) {
+            return;
+        }
+
+        // Create orbit path geometry
+        const orbitPoints: THREE.Vector3[] = [];
+        const segments = 128; // Number of segments for smooth circle
+
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            const x = Math.cos(angle) * data.orbitRadius;
+            const z = Math.sin(angle) * data.orbitRadius;
+            orbitPoints.push(new THREE.Vector3(x, 0, z));
+        }
+
+        const orbitGeometry = new THREE.BufferGeometry().setFromPoints(
+            orbitPoints,
+        );
+
+        // Create orbit line material - subtle and unobtrusive
+        const orbitMaterial = new THREE.LineBasicMaterial({
+            color: 0x444444,
+            transparent: true,
+            opacity: 0.3,
+        });
+
+        const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+        orbitLine.name = `${data.id}_orbit`;
+
+        // Store and add to scene
+        this.orbitLines.set(data.id, orbitLine);
+        this.scene.add(orbitLine);
+    }
+
+    /**
      * Update all LOD levels based on camera position
      */
     updateLOD(): void {
         this.performanceManager.updateLOD();
+    }
+
+    /**
+     * Toggle visibility of all orbit lines
+     */
+    toggleOrbitLines(visible: boolean): void {
+        this.orbitLines.forEach((line) => {
+            line.visible = visible;
+        });
+    }
+
+    /**
+     * Set orbit line visibility for a specific celestial body
+     */
+    setOrbitLineVisibility(id: string, visible: boolean): void {
+        const orbitLine = this.orbitLines.get(id);
+        if (orbitLine) {
+            orbitLine.visible = visible;
+        }
+    }
+
+    /**
+     * Update orbit line opacity based on camera distance
+     */
+    updateOrbitLineOpacity(cameraPosition: THREE.Vector3): void {
+        this.orbitLines.forEach((line, id) => {
+            const data = this.bodyData.get(id);
+            if (!data || !data.orbitRadius) return;
+
+            // Calculate distance from camera to orbit center
+            const distance = cameraPosition.length();
+
+            // Adjust opacity based on distance - closer = more visible
+            let opacity = 0.3;
+            if (distance > data.orbitRadius * 3) {
+                opacity = Math.max(
+                    0.1,
+                    0.3 - (distance - data.orbitRadius * 3) * 0.01,
+                );
+            }
+
+            const material = line.material as THREE.LineBasicMaterial;
+            material.opacity = opacity;
+        });
     }
 
     /**
@@ -204,21 +453,68 @@ export class CelestialBodyManager {
      * Update celestial body animations (rotation, orbit)
      */
     updateAnimations(deltaTime: number): void {
+        const time = Date.now() * 0.001;
+
         this.bodies.forEach((body, id) => {
             const data = this.bodyData.get(id);
             if (!data) return;
 
-            // Apply rotation
-            if (data.type === "planet" || data.type === "star") {
-                body.rotation.y += deltaTime * 0.01;
+            // Apply rotation to the body itself (not the group)
+            const bodyMesh = body.getObjectByName(`${id}_body`);
+            if (bodyMesh && (data.type === "planet" || data.type === "star")) {
+                // Different rotation speeds for different body types
+                const rotationSpeed = data.type === "star" ? 0.005 : 0.02;
+                bodyMesh.rotation.y += deltaTime * rotationSpeed;
             }
 
             // Apply orbital motion if defined
             if (data.orbitRadius && data.orbitSpeed) {
-                const time = Date.now() * 0.001;
                 const angle = time * data.orbitSpeed;
                 body.position.x = Math.cos(angle) * data.orbitRadius;
                 body.position.z = Math.sin(angle) * data.orbitRadius;
+            }
+
+            // Rotate rings slowly for visual effect (Saturn's rings)
+            if (data.rings && data.rings.enabled) {
+                const ringObject = body.getObjectByName(`${id}_rings`);
+                if (ringObject) {
+                    // For particle rings, rotate the entire group and occasionally update individual particles
+                    if (
+                        data.rings.particleSystem &&
+                        data.rings.particleSystem.enabled &&
+                        ringObject instanceof THREE.Group
+                    ) {
+                        // Rotate the entire ring group slowly
+                        ringObject.rotation.z += deltaTime * 0.001;
+
+                        // Only animate a subset of particles per frame for performance
+                        const frameIndex = Math.floor(time * 10) % 200; // Update different particles every 0.1 seconds
+                        const particlesToUpdate = Math.min(
+                            25,
+                            ringObject.children.length,
+                        ); // Update 25 particles per frame (up from 10)
+
+                        for (let i = 0; i < particlesToUpdate; i++) {
+                            const particleIndex =
+                                (frameIndex * particlesToUpdate + i) %
+                                ringObject.children.length;
+                            const particle = ringObject.children[particleIndex];
+
+                            if (particle instanceof THREE.Mesh) {
+                                // Slower, less frequent individual rotations
+                                const rotSpeed = 0.0005;
+                                particle.rotation.x += deltaTime * rotSpeed;
+                                particle.rotation.y +=
+                                    deltaTime * rotSpeed * 0.7;
+                                particle.rotation.z +=
+                                    deltaTime * rotSpeed * 0.3;
+                            }
+                        }
+                    } else {
+                        // Traditional solid ring rotation
+                        ringObject.rotation.z += deltaTime * 0.001;
+                    }
+                }
             }
         });
     }

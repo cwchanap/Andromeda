@@ -228,6 +228,22 @@ export const solarSystemData: SolarSystemData = {
             },
             orbitRadius: 22,
             orbitSpeed: 0.009,
+            rings: {
+                enabled: true,
+                innerRadius: 1.3375, // 50% closer (was 2.675)
+                outerRadius: 1.7125, // 50% closer (was 3.425)
+                color: "#D4AF37",
+                opacity: 0.7,
+                segments: 64,
+                thetaSegments: 128,
+                particleSystem: {
+                    enabled: true,
+                    particleCount: 5000, // 5x denser (was 1000)
+                    particleSize: 0.02,
+                    particleVariation: 0.6,
+                    densityVariation: 0.2,
+                },
+            },
         },
         {
             id: "uranus",

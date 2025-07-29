@@ -292,6 +292,87 @@ describe("Celestial Bodies Data", () => {
     });
 });
 
+describe("Ring System Configuration", () => {
+    describe("Saturn Rings", () => {
+        it("should have ring configuration for Saturn", () => {
+            const saturn = getCelestialBodyById("saturn");
+            expect(saturn).toBeDefined();
+            expect(saturn?.rings).toBeDefined();
+            expect(saturn?.rings?.enabled).toBe(true);
+        });
+
+        it("should have valid ring properties for Saturn", () => {
+            const saturn = getCelestialBodyById("saturn");
+            expect(saturn?.rings).toMatchObject({
+                enabled: true,
+                innerRadius: expect.any(Number),
+                outerRadius: expect.any(Number),
+                color: expect.any(String),
+                opacity: expect.any(Number),
+            });
+
+            // Validate ring dimensions
+            if (saturn?.rings) {
+                expect(saturn.rings.outerRadius).toBeGreaterThan(
+                    saturn.rings.innerRadius,
+                );
+                expect(saturn.rings.opacity).toBeGreaterThan(0);
+                expect(saturn.rings.opacity).toBeLessThanOrEqual(1);
+
+                // Validate reduced width (should be around 0.375, giving some tolerance)
+                const ringWidth =
+                    saturn.rings.outerRadius - saturn.rings.innerRadius;
+                expect(ringWidth).toBeCloseTo(0.375, 1);
+            }
+        });
+
+        it("should have particle system configuration for Saturn", () => {
+            const saturn = getCelestialBodyById("saturn");
+            expect(saturn?.rings?.particleSystem).toBeDefined();
+            expect(saturn?.rings?.particleSystem).toMatchObject({
+                enabled: true,
+                particleCount: expect.any(Number),
+                particleSize: expect.any(Number),
+                particleVariation: expect.any(Number),
+                densityVariation: expect.any(Number),
+            });
+
+            if (saturn?.rings?.particleSystem) {
+                const ps = saturn.rings.particleSystem;
+                expect(ps.particleCount).toBeGreaterThan(0);
+                expect(ps.particleCount).toBeLessThan(10000); // Reasonable performance limit (increased from 5000)
+                expect(ps.particleSize).toBeGreaterThan(0);
+                expect(ps.particleVariation).toBeGreaterThanOrEqual(0);
+                expect(ps.particleVariation).toBeLessThanOrEqual(1);
+                expect(ps.densityVariation).toBeGreaterThanOrEqual(0);
+                expect(ps.densityVariation).toBeLessThanOrEqual(1);
+            }
+        });
+
+        it("should have optional ring segments configuration", () => {
+            const saturn = getCelestialBodyById("saturn");
+            if (saturn?.rings) {
+                if (saturn.rings.segments !== undefined) {
+                    expect(saturn.rings.segments).toBeGreaterThan(0);
+                }
+                if (saturn.rings.thetaSegments !== undefined) {
+                    expect(saturn.rings.thetaSegments).toBeGreaterThan(0);
+                }
+            }
+        });
+    });
+
+    describe("Other Planets", () => {
+        it("should not have rings for non-ringed planets", () => {
+            const earth = getCelestialBodyById("earth");
+            const mars = getCelestialBodyById("mars");
+
+            expect(earth?.rings?.enabled).toBeFalsy();
+            expect(mars?.rings?.enabled).toBeFalsy();
+        });
+    });
+});
+
 describe("Error Handling", () => {
     it("should handle invalid input gracefully in utility functions", () => {
         expect(() => formatDistance(NaN)).not.toThrow();
