@@ -5,13 +5,13 @@ import type {
     PlanetarySystemEvents,
 } from "./types";
 import type { CelestialBodyData } from "../../types/game";
-import { SolarSystemRenderer } from "../solar-system/SolarSystemRenderer";
+import { SolarSystemRenderer } from "./graphics/SolarSystemRenderer";
 import type {
     SolarSystemConfig,
     SolarSystemEvents,
     SolarSystemControls,
     CameraState,
-} from "../solar-system/types";
+} from "./graphics/types";
 
 /**
  * Unified renderer that adapts the existing SolarSystemRenderer

@@ -6,12 +6,12 @@ import type {
     SolarSystemControls,
     RenderStats,
 } from "./types";
-import type { CelestialBodyData } from "../../types/game";
+import type { CelestialBodyData } from "../../../types/game";
 import { CelestialBodyManager } from "./CelestialBodyManager";
 import { SceneManager } from "./SceneManager";
 import { InteractionManager } from "./InteractionManager";
 import { CameraController } from "./CameraController";
-import { PerformanceMonitor } from "../performance/PerformanceMonitor";
+import { PerformanceMonitor } from "../../performance/PerformanceMonitor";
 
 /**
  * Main solar system renderer - framework agnostic with performance optimization

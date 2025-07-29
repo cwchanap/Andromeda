@@ -6,7 +6,7 @@
 
 - **Pages**: Astro static routes (`src/pages/`) with SSR for fast initial loads
 - **Components**: Svelte 5 components with reactive state management (`src/components/`)
-- **3D Engine**: Framework-agnostic Three.js renderer system (`src/lib/solar-system/`)
+- **3D Engine**: Framework-agnostic Three.js renderer system (`src/lib/planetary-system/graphics/`)
 - **State**: Svelte stores for global game state (`src/stores/gameStore.ts`)
 - **Data**: Static celestial body definitions (`src/data/celestialBodies.ts`)
 
@@ -108,7 +108,7 @@ npm run clean        # Remove dist and .astro directories
 ## Project-Specific Conventions
 
 ### File Organization
-- 3D logic stays in `src/lib/solar-system/` (framework-agnostic)
+- 3D logic stays in `src/lib/planetary-system/graphics/` (framework-agnostic)
 - Svelte components handle UI concerns only
 - Types defined in `src/types/` are shared across layers
 - Utilities in `src/utils/` for data processing and formatting

@@ -5,10 +5,10 @@
   import AccessibilityManager from './AccessibilityManager.svelte';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
-  import { SolarSystemRenderer } from '../lib/solar-system/SolarSystemRenderer';
+  import { SolarSystemRenderer } from '../lib/planetary-system/graphics/SolarSystemRenderer';
   import { solarSystemData } from '../data/celestialBodies';
   import type { CelestialBodyData } from '../types/game';
-  import type { SolarSystemConfig, SolarSystemEvents } from '../lib/solar-system/types';
+  import type { SolarSystemConfig, SolarSystemEvents } from '../lib/planetary-system/graphics/types';
   
   let solarSystemRenderer: SolarSystemRenderer | null = null;
   let isLoading = true;

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { CelestialBodyData } from "../../types/game";
+import type { CelestialBodyData } from "../../../types/game";
 import { PerformanceManager } from "./PerformanceManager";
 import { AssetLoader } from "./AssetLoader";
 
