@@ -61,6 +61,7 @@ export class CelestialBodyManager {
         mesh.castShadow = false;
         mesh.receiveShadow = false;
         mesh.name = `${data.id}_body`;
+        mesh.userData = { celestialBodyData: data }; // Add userData to the mesh too
 
         celestialGroup.add(mesh);
 
@@ -381,6 +382,21 @@ export class CelestialBodyManager {
         // Check if the object has celestial body data in userData
         if (mesh.userData && mesh.userData.celestialBodyData) {
             return mesh.userData.celestialBodyData as CelestialBodyData;
+        }
+
+        // Check if the parent has celestial body data (for grouped objects like rings)
+        if (
+            mesh.parent &&
+            mesh.parent.userData &&
+            mesh.parent.userData.celestialBodyData
+        ) {
+            return mesh.parent.userData.celestialBodyData as CelestialBodyData;
+        }
+
+        // Fallback: try to get by name/id - check if it's a _body mesh
+        if (mesh.name && mesh.name.endsWith("_body")) {
+            const bodyId = mesh.name.replace("_body", "");
+            return this.bodyData.get(bodyId) || null;
         }
 
         // Fallback: try to get by name/id
