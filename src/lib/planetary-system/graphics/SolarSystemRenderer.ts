@@ -178,6 +178,15 @@ export class SolarSystemRenderer {
                 this.celestialBodyManager.createCelestialBody(bodyData);
             });
 
+            // Setup initial Line2 resolution for thick orbit lines
+            const container = this.renderer.domElement.parentElement;
+            if (container) {
+                this.celestialBodyManager.updateLineResolution(
+                    container.clientWidth,
+                    container.clientHeight,
+                );
+            }
+
             // Setup camera controls
             this.cameraController.initialize(this.renderer.domElement);
 
@@ -275,6 +284,9 @@ export class SolarSystemRenderer {
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
+
+        // Update Line2 resolution for thick orbit lines
+        this.celestialBodyManager.updateLineResolution(width, height);
     }
 
     /**

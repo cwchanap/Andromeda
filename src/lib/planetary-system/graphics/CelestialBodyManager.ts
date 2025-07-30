@@ -1,4 +1,7 @@
 import * as THREE from "three";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import type { CelestialBodyData } from "../../../types/game";
 import { PerformanceManager } from "./PerformanceManager";
 import { AssetLoader } from "./AssetLoader";
@@ -8,7 +11,7 @@ import { AssetLoader } from "./AssetLoader";
  */
 export class CelestialBodyManager {
     private bodies = new Map<string, THREE.Object3D>();
-    private orbitLines = new Map<string, THREE.Line>();
+    private orbitLines = new Map<string, Line2>();
     private bodyData = new Map<string, CelestialBodyData>();
     private performanceManager: PerformanceManager;
     private assetLoader: AssetLoader;
@@ -273,29 +276,29 @@ export class CelestialBodyManager {
             return;
         }
 
-        // Create orbit path geometry
-        const orbitPoints: THREE.Vector3[] = [];
+        // Create orbit path geometry using LineGeometry for thick lines
+        const orbitPoints: number[] = [];
         const segments = 128; // Number of segments for smooth circle
 
         for (let i = 0; i <= segments; i++) {
             const angle = (i / segments) * Math.PI * 2;
             const x = Math.cos(angle) * data.orbitRadius;
             const z = Math.sin(angle) * data.orbitRadius;
-            orbitPoints.push(new THREE.Vector3(x, 0, z));
+            orbitPoints.push(x, 0, z); // LineGeometry expects flat array
         }
 
-        const orbitGeometry = new THREE.BufferGeometry().setFromPoints(
-            orbitPoints,
-        );
+        const orbitGeometry = new LineGeometry();
+        orbitGeometry.setPositions(orbitPoints);
 
-        // Create orbit line material - subtle and unobtrusive
-        const orbitMaterial = new THREE.LineBasicMaterial({
+        // Create orbit line material with 5x thickness - subtle and unobtrusive
+        const orbitMaterial = new LineMaterial({
             color: 0x444444,
             transparent: true,
             opacity: 0.3,
+            linewidth: 5, // 5x thicker than default (which is typically 1)
         });
 
-        const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+        const orbitLine = new Line2(orbitGeometry, orbitMaterial);
         orbitLine.name = `${data.id}_orbit`;
 
         // Store and add to scene
@@ -316,6 +319,16 @@ export class CelestialBodyManager {
     toggleOrbitLines(visible: boolean): void {
         this.orbitLines.forEach((line) => {
             line.visible = visible;
+        });
+    }
+
+    /**
+     * Update resolution for Line2 materials (needed for thick lines)
+     */
+    updateLineResolution(width: number, height: number): void {
+        this.orbitLines.forEach((line) => {
+            const material = line.material as LineMaterial;
+            material.resolution.set(width, height);
         });
     }
 
@@ -349,7 +362,7 @@ export class CelestialBodyManager {
                 );
             }
 
-            const material = line.material as THREE.LineBasicMaterial;
+            const material = line.material as LineMaterial;
             material.opacity = opacity;
         });
     }
