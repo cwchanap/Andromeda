@@ -49,6 +49,14 @@ export const solarSystemData: SolarSystemData = {
             texture:
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=512&h=512&fit=crop",
         },
+        modalTheme: {
+            primary: "#FFA500",
+            secondary: "#FF6B35",
+            accent: "#FFCC33",
+            background:
+                "linear-gradient(135deg, rgba(255, 165, 0, 0.15) 0%, rgba(255, 107, 53, 0.1) 50%, rgba(255, 204, 51, 0.15) 100%)",
+            textColor: "#FFF8E1",
+        },
     },
 
     planets: [
@@ -76,6 +84,14 @@ export const solarSystemData: SolarSystemData = {
                 color: "#8C7853",
                 roughness: 0.9,
                 metalness: 0.3,
+            },
+            modalTheme: {
+                primary: "#8C7853",
+                secondary: "#A68B5B",
+                accent: "#D4B896",
+                background:
+                    "linear-gradient(135deg, #1a1612 0%, #2d1810 50%, #1a1612 100%)",
+                textColor: "#E5D5B8",
             },
             orbitRadius: 4,
             orbitSpeed: 0.048,
@@ -109,6 +125,14 @@ export const solarSystemData: SolarSystemData = {
                 roughness: 0.8,
                 metalness: 0.0,
                 atmosphereColor: "#FFEB7A",
+            },
+            modalTheme: {
+                primary: "#FFC649",
+                secondary: "#FFB347",
+                accent: "#FFEB7A",
+                background:
+                    "linear-gradient(135deg, #2d2318 0%, #3d2f1f 50%, #2d2318 100%)",
+                textColor: "#FFF5E6",
             },
             orbitRadius: 6,
             orbitSpeed: 0.035,
@@ -147,6 +171,14 @@ export const solarSystemData: SolarSystemData = {
                 texture:
                     "https://images.unsplash.com/photo-1614728263952-84ea256f9679?w=512&h=512&fit=crop",
             },
+            modalTheme: {
+                primary: "#4A90E2",
+                secondary: "#2E8B57",
+                accent: "#87CEEB",
+                background:
+                    "linear-gradient(135deg, rgba(74, 144, 226, 0.15) 0%, rgba(46, 139, 87, 0.1) 50%, rgba(135, 206, 235, 0.15) 100%)",
+                textColor: "#E6F3FF",
+            },
             orbitRadius: 8,
             orbitSpeed: 0.03,
         },
@@ -181,6 +213,14 @@ export const solarSystemData: SolarSystemData = {
                 metalness: 0.2,
                 atmosphereColor: "#FFA07A",
             },
+            modalTheme: {
+                primary: "#CD5C5C",
+                secondary: "#B22222",
+                accent: "#FA8072",
+                background:
+                    "linear-gradient(135deg, rgba(205, 92, 92, 0.15) 0%, rgba(178, 34, 34, 0.1) 50%, rgba(250, 128, 114, 0.15) 100%)",
+                textColor: "#FFE4E1",
+            },
             orbitRadius: 11,
             orbitSpeed: 0.024,
         },
@@ -209,6 +249,14 @@ export const solarSystemData: SolarSystemData = {
                 opacity: 0.95,
                 atmosphereColor: "#F4E6A1",
             },
+            modalTheme: {
+                primary: "#D8CA9D",
+                secondary: "#B8860B",
+                accent: "#F4E6A1",
+                background:
+                    "linear-gradient(135deg, #2a251f 0%, #3c342a 50%, #2a251f 100%)",
+                textColor: "#F5F5DC",
+            },
             orbitRadius: 16,
             orbitSpeed: 0.013,
         },
@@ -236,6 +284,14 @@ export const solarSystemData: SolarSystemData = {
                 transparent: true,
                 opacity: 0.95,
                 atmosphereColor: "#F4E6A1",
+            },
+            modalTheme: {
+                primary: "#DAA520",
+                secondary: "#B8860B",
+                accent: "#FFD700",
+                background:
+                    "linear-gradient(135deg, rgba(218, 165, 32, 0.15) 0%, rgba(184, 134, 11, 0.1) 50%, rgba(255, 215, 0, 0.15) 100%)",
+                textColor: "#FFFACD",
             },
             orbitRadius: 22,
             orbitSpeed: 0.009,
@@ -281,6 +337,14 @@ export const solarSystemData: SolarSystemData = {
                 opacity: 0.95,
                 atmosphereColor: "#7FEFFF",
             },
+            modalTheme: {
+                primary: "#4FD0E7",
+                secondary: "#40B5CC",
+                accent: "#7FEFFF",
+                background:
+                    "linear-gradient(135deg, #0f1f2a 0%, #1a2e3d 50%, #0f1f2a 100%)",
+                textColor: "#E0F6FF",
+            },
             orbitRadius: 30,
             orbitSpeed: 0.007,
         },
@@ -308,6 +372,14 @@ export const solarSystemData: SolarSystemData = {
                 transparent: true,
                 opacity: 0.95,
                 atmosphereColor: "#6A8FEF",
+            },
+            modalTheme: {
+                primary: "#4B70DD",
+                secondary: "#3A59CC",
+                accent: "#6A8FEF",
+                background:
+                    "linear-gradient(135deg, #0e1a2a 0%, #1a2440 50%, #0e1a2a 100%)",
+                textColor: "#E6F0FF",
             },
             orbitRadius: 38,
             orbitSpeed: 0.005,

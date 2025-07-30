@@ -20,9 +20,33 @@
   
   // Get planet-specific styling
   const getPlanetTheme = (body: CelestialBodyData | null) => {
-    if (!body) return { primary: '#60a5fa', secondary: '#3b82f6' };
+    if (!body) return { 
+      primary: '#60a5fa', 
+      secondary: '#3b82f6', 
+      accent: '#ddd6fe',
+      background: undefined,
+      textColor: undefined
+    };
     
-    const themes: Record<string, { primary: string; secondary: string; accent: string }> = {
+    // Use custom theme if defined in the data
+    if (body.modalTheme) {
+      return {
+        primary: body.modalTheme.primary,
+        secondary: body.modalTheme.secondary,
+        accent: body.modalTheme.accent,
+        background: body.modalTheme.background,
+        textColor: body.modalTheme.textColor
+      };
+    }
+    
+    // Fallback to hardcoded themes based on planet ID
+    const defaultThemes: Record<string, { 
+      primary: string; 
+      secondary: string; 
+      accent: string;
+      background?: string;
+      textColor?: string;
+    }> = {
       sun: { primary: '#fbbf24', secondary: '#f59e0b', accent: '#fcd34d' },
       mercury: { primary: '#94a3b8', secondary: '#64748b', accent: '#cbd5e1' },
       venus: { primary: '#fbbf24', secondary: '#d97706', accent: '#fed7aa' },
@@ -34,7 +58,13 @@
       neptune: { primary: '#3b82f6', secondary: '#1e40af', accent: '#93c5fd' }
     };
     
-    return themes[body.id] || { primary: '#60a5fa', secondary: '#3b82f6', accent: '#ddd6fe' };
+    return defaultThemes[body.id] || { 
+      primary: '#60a5fa', 
+      secondary: '#3b82f6', 
+      accent: '#ddd6fe',
+      background: undefined,
+      textColor: undefined
+    };
   };
   
   $: theme = getPlanetTheme(celestialBody);
@@ -52,7 +82,13 @@
     tabindex="-1"
   >
     <div class="modal-container">
-      <div class="modal-content" style="--primary-color: {theme.primary}; --secondary-color: {theme.secondary}; --accent-color: {theme.accent}">
+      <div class="modal-content" style="
+        --primary-color: {theme.primary}; 
+        --secondary-color: {theme.secondary}; 
+        --accent-color: {theme.accent};
+        {theme.background ? `--modal-background: ${theme.background};` : ''}
+        {theme.textColor ? `--modal-text-color: ${theme.textColor};` : ''}
+      ">
         <!-- Star field background -->
         <div class="star-field">
           {#each Array(75) as _, i}
@@ -221,10 +257,11 @@
   
   .modal-content {
     position: relative;
-    background: linear-gradient(135deg, 
+    background: var(--modal-background, linear-gradient(135deg, 
       rgba(15, 23, 42, 0.98) 0%, 
       rgba(30, 41, 59, 0.95) 50%, 
-      rgba(15, 23, 42, 0.98) 100%);
+      rgba(15, 23, 42, 0.98) 100%));
+    color: var(--modal-text-color, white);
     border: 2px solid;
     border-image: linear-gradient(45deg, var(--primary-color), var(--accent-color), var(--secondary-color)) 1;
     border-radius: 20px;
@@ -412,7 +449,7 @@
   .planet-description {
     margin: 0 0 30px 0;
     line-height: 1.7;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--modal-text-color, rgba(255, 255, 255, 0.9));
     font-size: 1.1rem;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }

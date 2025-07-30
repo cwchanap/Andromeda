@@ -2,6 +2,14 @@
 import type { Vector3 } from "three";
 import type { GamePlugin } from "./universe";
 
+export interface ModalTheme {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background?: string;
+    textColor?: string;
+}
+
 export interface CelestialBodyData {
     id: string;
     name: string;
@@ -34,6 +42,7 @@ export interface CelestialBodyData {
         opacity?: number;
         atmosphereColor?: string;
     };
+    modalTheme?: ModalTheme;
     orbitRadius?: number;
     orbitSpeed?: number;
     rings?: {
