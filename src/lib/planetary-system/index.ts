@@ -2,6 +2,7 @@
 export * from "./types";
 export { PlanetarySystemRegistry } from "./PlanetarySystemRegistry";
 export * from "./PlanetarySystemRenderer";
+export * from "./DistanceRenderer";
 
 // Export all systems
 export * from "./SolarSystem";

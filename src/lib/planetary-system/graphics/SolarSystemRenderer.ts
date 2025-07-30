@@ -55,8 +55,8 @@ export class SolarSystemRenderer {
                 density: 1.0,
                 seed: 12345,
                 animationSpeed: 1.0,
-                minRadius: 2000,
-                maxRadius: 5000,
+                minRadius: 5000, // Updated to match system scale
+                maxRadius: 15000, // Updated to match system scale
                 colorVariation: true,
             },
             ...config,
@@ -71,7 +71,7 @@ export class SolarSystemRenderer {
             75,
             container.clientWidth / container.clientHeight,
             0.1,
-            10000,
+            50000, // Increased far clipping plane to handle outer planets
         );
 
         this.renderer = new THREE.WebGLRenderer({
@@ -193,8 +193,8 @@ export class SolarSystemRenderer {
             // Setup interactions
             this.interactionManager.initialize(this.celestialBodyManager);
 
-            // Set initial camera position
-            this.camera.position.set(0, 50, 100);
+            // Set initial camera position - positioned to see the inner solar system well
+            this.camera.position.set(0, 150, 300); // Moved further back to accommodate larger distances
             this.cameraController.setTarget(new THREE.Vector3(0, 0, 0));
 
             this.isInitialized = true;

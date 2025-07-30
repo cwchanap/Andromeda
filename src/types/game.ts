@@ -26,6 +26,13 @@ export interface CelestialBodyData {
     images: string[];
     position: Vector3;
     scale: number;
+    // Real astronomical distance data
+    realDistance?: {
+        kilometers: number; // Actual distance in kilometers
+        astronomicalUnits?: number; // Distance in AU (optional, calculated if not provided)
+        lightYears?: number; // Distance in light-years (for extrasolar systems)
+        formattedString: string; // Human-readable formatted distance
+    };
     material: {
         color: string;
         emissive?: string;
