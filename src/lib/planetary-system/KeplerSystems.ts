@@ -78,6 +78,17 @@ export const kepler442System: PlanetarySystem = {
             constellation: "Lyra",
             spectralClass: "K5V",
         },
+
+        // Background stars configuration for Kepler-442 system
+        backgroundStars: {
+            enabled: true,
+            density: 1.4, // Denser star field for this distant system
+            seed: 442, // System-specific seed based on Kepler number
+            animationSpeed: 1.2, // Slightly faster animation
+            minRadius: 2400,
+            maxRadius: 6000,
+            colorVariation: true,
+        },
     },
 
     async initialize() {
@@ -164,6 +175,17 @@ export const kepler438System: PlanetarySystem = {
             distance: "640 light-years",
             constellation: "Lyra",
             spectralClass: "M0V",
+        },
+
+        // Background stars configuration for Kepler-438 system
+        backgroundStars: {
+            enabled: true,
+            density: 1.3, // Dense star field for this M-dwarf system
+            seed: 438, // System-specific seed based on Kepler number
+            animationSpeed: 0.9, // Slightly slower animation for M-dwarf system
+            minRadius: 2300,
+            maxRadius: 5800,
+            colorVariation: true,
         },
     },
 

@@ -2,12 +2,37 @@ import * as THREE from "three";
 import type { SolarSystemConfig } from "./types";
 
 /**
+ * Simple seeded random number generator for consistent star distribution
+ */
+class SeededRandom {
+    private seed: number;
+
+    constructor(seed: number) {
+        this.seed = seed;
+    }
+
+    // Linear congruential generator for seeded random numbers
+    next(): number {
+        this.seed = (this.seed * 9301 + 49297) % 233280;
+        return this.seed / 233280;
+    }
+
+    // Generate random number between min and max
+    range(min: number, max: number): number {
+        return min + this.next() * (max - min);
+    }
+}
+
+/**
  * Manages the 3D scene setup including lighting, background, and particles
  */
 export class SceneManager {
     private particles: THREE.Points | null = null;
     private ambientLight: THREE.AmbientLight | null = null;
     private directionalLight: THREE.DirectionalLight | null = null;
+    private seededRandom: SeededRandom | null = null;
+    private starAnimationTime: number = 0;
+    private originalStarColors: Float32Array | null = null;
 
     constructor(
         private scene: THREE.Scene,
@@ -64,41 +89,84 @@ export class SceneManager {
     }
 
     /**
-     * Creates animated star field background
+     * Creates animated star field background with seeded random distribution
      */
     private createStarField(): void {
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(this.config.particleCount * 3);
-        const colors = new Float32Array(this.config.particleCount * 3);
+        // Get background star configuration
+        const starConfig = this.config.backgroundStars || {
+            enabled: true,
+            density: 1.0,
+            seed: 12345,
+            animationSpeed: 1.0,
+            minRadius: 2000,
+            maxRadius: 5000,
+            colorVariation: true,
+        };
 
-        for (let i = 0; i < this.config.particleCount; i++) {
+        if (!starConfig.enabled) {
+            return;
+        }
+
+        // Initialize seeded random number generator
+        this.seededRandom = new SeededRandom(starConfig.seed);
+
+        const starCount = Math.floor(
+            this.config.particleCount * starConfig.density,
+        );
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(starCount * 3);
+        const colors = new Float32Array(starCount * 3);
+
+        // Store original colors for animation
+        this.originalStarColors = new Float32Array(starCount * 3);
+
+        for (let i = 0; i < starCount; i++) {
             const i3 = i * 3;
 
-            // Create sphere distribution
-            const radius = 2000 + Math.random() * 3000;
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(2 * Math.random() - 1);
+            // Create sphere distribution using seeded random
+            const radius = this.seededRandom.range(
+                starConfig.minRadius,
+                starConfig.maxRadius,
+            );
+            const theta = this.seededRandom.range(0, Math.PI * 2);
+            const phi = Math.acos(2 * this.seededRandom.next() - 1);
 
             positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
             positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
             positions[i3 + 2] = radius * Math.cos(phi);
 
-            // Vary star colors (white to blue-white to yellow-white)
-            const starTemp = Math.random();
-            if (starTemp < 0.6) {
-                // White stars
-                colors[i3] = colors[i3 + 1] = colors[i3 + 2] = 1;
-            } else if (starTemp < 0.8) {
-                // Blue-white stars
-                colors[i3] = 0.8;
-                colors[i3 + 1] = 0.9;
-                colors[i3 + 2] = 1;
-            } else {
-                // Yellow-white stars
-                colors[i3] = 1;
-                colors[i3 + 1] = 0.9;
-                colors[i3 + 2] = 0.7;
+            // Vary star colors using seeded random (white to blue-white to yellow-white)
+            let r = 1,
+                g = 1,
+                b = 1;
+
+            if (starConfig.colorVariation) {
+                const starTemp = this.seededRandom.next();
+                if (starTemp < 0.6) {
+                    // White stars
+                    r = g = b = 1;
+                } else if (starTemp < 0.8) {
+                    // Blue-white stars
+                    r = 0.8;
+                    g = 0.9;
+                    b = 1;
+                } else {
+                    // Yellow-white stars
+                    r = 1;
+                    g = 0.9;
+                    b = 0.7;
+                }
             }
+
+            // Store original colors
+            this.originalStarColors[i3] = r;
+            this.originalStarColors[i3 + 1] = g;
+            this.originalStarColors[i3 + 2] = b;
+
+            // Set initial colors
+            colors[i3] = r;
+            colors[i3 + 1] = g;
+            colors[i3 + 2] = b;
         }
 
         geometry.setAttribute(
@@ -159,29 +227,45 @@ export class SceneManager {
      * Updates animations (stars twinkling, background effects)
      */
     updateAnimations(deltaTime: number): void {
-        if (this.particles) {
-            // Gentle rotation of starfield
-            this.particles.rotation.y += 0.0001 * deltaTime;
-            this.particles.rotation.x += 0.00005 * deltaTime;
+        if (this.particles && this.originalStarColors) {
+            // Get background star configuration
+            const starConfig = this.config.backgroundStars || {
+                enabled: true,
+                density: 1.0,
+                seed: 12345,
+                animationSpeed: 1.0,
+                minRadius: 2000,
+                maxRadius: 5000,
+                colorVariation: true,
+            };
 
-            // Animate star twinkling
-            const positions = this.particles.geometry.attributes.position;
+            if (!starConfig.enabled) return;
+
+            this.starAnimationTime += deltaTime * starConfig.animationSpeed;
+
+            // Gentle rotation of starfield based on animation speed
+            this.particles.rotation.y +=
+                0.0001 * deltaTime * starConfig.animationSpeed;
+            this.particles.rotation.x +=
+                0.00005 * deltaTime * starConfig.animationSpeed;
+
+            // Animate star twinkling with consistent, seeded patterns
             const colors = this.particles.geometry.attributes.color;
 
-            for (let i = 0; i < positions.count; i++) {
-                // Subtle twinkling effect
-                const twinkle =
-                    0.8 + 0.4 * Math.sin(Date.now() * 0.001 + i * 0.1);
+            for (let i = 0; i < colors.count; i++) {
                 const colorIndex = i * 3;
 
-                // Preserve original color ratios while applying twinkle
-                const baseR = colors.array[colorIndex];
-                const baseG = colors.array[colorIndex + 1];
-                const baseB = colors.array[colorIndex + 2];
+                // Create consistent twinkling pattern based on star index and seed
+                const twinklePhase = this.starAnimationTime * 0.001 + i * 0.1;
+                const twinkle = 0.6 + 0.4 * Math.sin(twinklePhase);
 
-                colors.array[colorIndex] = baseR * twinkle;
-                colors.array[colorIndex + 1] = baseG * twinkle;
-                colors.array[colorIndex + 2] = baseB * twinkle;
+                // Apply twinkling to original star colors
+                colors.array[colorIndex] =
+                    this.originalStarColors[colorIndex] * twinkle;
+                colors.array[colorIndex + 1] =
+                    this.originalStarColors[colorIndex + 1] * twinkle;
+                colors.array[colorIndex + 2] =
+                    this.originalStarColors[colorIndex + 2] * twinkle;
             }
 
             colors.needsUpdate = true;

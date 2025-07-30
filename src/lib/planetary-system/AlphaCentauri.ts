@@ -189,6 +189,17 @@ export const alphaCentauriSystem: PlanetarySystem = {
                 outer: 2.1,
             },
         },
+
+        // Background stars configuration for Alpha Centauri system
+        backgroundStars: {
+            enabled: true,
+            density: 1.2, // Slightly denser star field for distant system
+            seed: 4242, // Alpha Centauri system seed
+            animationSpeed: 0.8, // Slightly slower animation
+            minRadius: 2200,
+            maxRadius: 5500,
+            colorVariation: true,
+        },
     },
 
     async initialize() {

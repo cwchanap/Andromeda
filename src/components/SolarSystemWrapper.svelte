@@ -181,8 +181,8 @@
       console.log(`Found ${celestialBodies.length} celestial bodies`);
       debugInfo = `Initializing ${celestialBodies.length} celestial bodies...`;
       
-      // Initialize the solar system
-      await solarSystemRenderer.initialize(celestialBodies);
+      // Initialize the solar system with background star configuration
+      await solarSystemRenderer.initialize(celestialBodies, solarSystemData);
       
       debugInfo = "Setting up controls...";
       console.log('Setting up controls');

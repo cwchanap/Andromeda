@@ -6,7 +6,7 @@ import type {
     SolarSystemControls,
     RenderStats,
 } from "./types";
-import type { CelestialBodyData } from "../../../types/game";
+import type { CelestialBodyData, SolarSystemData } from "../../../types/game";
 import { CelestialBodyManager } from "./CelestialBodyManager";
 import { SceneManager } from "./SceneManager";
 import { InteractionManager } from "./InteractionManager";
@@ -50,6 +50,15 @@ export class SolarSystemRenderer {
             shadows: false,
             particleCount: 1000,
             performanceMode: "medium",
+            backgroundStars: {
+                enabled: true,
+                density: 1.0,
+                seed: 12345,
+                animationSpeed: 1.0,
+                minRadius: 2000,
+                maxRadius: 5000,
+                colorVariation: true,
+            },
             ...config,
         };
 
@@ -149,10 +158,18 @@ export class SolarSystemRenderer {
     }
 
     /**
-     * Initializes the solar system with celestial bodies
+     * Initializes the solar system with celestial bodies and system configuration
      */
-    async initialize(celestialBodies: CelestialBodyData[]): Promise<void> {
+    async initialize(
+        celestialBodies: CelestialBodyData[],
+        systemData?: SolarSystemData,
+    ): Promise<void> {
         try {
+            // Configure background stars from system data if provided
+            if (systemData?.backgroundStars) {
+                this.configureBackgroundStars(systemData.backgroundStars);
+            }
+
             // Setup scene environment
             await this.sceneManager.initialize();
 
@@ -350,6 +367,23 @@ export class SolarSystemRenderer {
 
         if (bodyId) {
             this.focusOnPlanet(bodyId);
+        }
+    }
+
+    /**
+     * Configure background stars from system data
+     */
+    configureBackgroundStars(backgroundStars?: {
+        enabled: boolean;
+        density: number;
+        seed: number;
+        animationSpeed: number;
+        minRadius: number;
+        maxRadius: number;
+        colorVariation: boolean;
+    }): void {
+        if (backgroundStars) {
+            this.config.backgroundStars = backgroundStars;
         }
     }
 

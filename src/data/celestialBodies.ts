@@ -9,6 +9,17 @@ export const solarSystemData: SolarSystemData = {
     systemScale: 1,
     systemCenter: new THREE.Vector3(0, 0, 0),
 
+    // Background stars configuration for the solar system
+    backgroundStars: {
+        enabled: true,
+        density: 1.0, // Standard density
+        seed: 42, // Solar system seed
+        animationSpeed: 1.0, // Standard animation speed
+        minRadius: 2000,
+        maxRadius: 5000,
+        colorVariation: true,
+    },
+
     sun: {
         id: "sun",
         name: "Sun",

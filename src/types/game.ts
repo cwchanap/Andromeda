@@ -93,6 +93,16 @@ export interface SolarSystemData {
     planets: CelestialBodyData[];
     systemScale: number;
     systemCenter: Vector3;
+    // Background star configuration
+    backgroundStars?: {
+        enabled: boolean;
+        density: number; // Number of background stars (multiplier for base count)
+        seed: number; // Random seed for consistent star distribution
+        animationSpeed: number; // Speed of star twinkling and rotation
+        minRadius: number; // Minimum distance from system center
+        maxRadius: number; // Maximum distance from system center
+        colorVariation: boolean; // Whether to include different star colors
+    };
 }
 
 /**

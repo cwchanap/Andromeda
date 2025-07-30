@@ -9,6 +9,16 @@ export interface SolarSystemConfig {
     shadows?: boolean;
     particleCount?: number;
     performanceMode?: "low" | "medium" | "high";
+    // Background star configuration
+    backgroundStars?: {
+        enabled: boolean;
+        density: number;
+        seed: number;
+        animationSpeed: number;
+        minRadius: number;
+        maxRadius: number;
+        colorVariation: boolean;
+    };
 }
 
 export interface CameraState {

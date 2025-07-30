@@ -25,6 +25,16 @@ export interface PlanetarySystemData {
             outer: number;
         };
     };
+    // Background star configuration
+    backgroundStars?: {
+        enabled: boolean;
+        density: number;
+        seed: number;
+        animationSpeed: number;
+        minRadius: number;
+        maxRadius: number;
+        colorVariation: boolean;
+    };
 }
 
 /**
