@@ -3,6 +3,7 @@
   import ErrorBoundary from './ErrorBoundary.svelte';
   import KeyboardNavigation from './KeyboardNavigation.svelte';
   import AccessibilityManager from './AccessibilityManager.svelte';
+  import CelestialBodyInfoModal from './CelestialBodyInfoModal.svelte';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { PlanetarySystemRenderer, planetarySystemRegistry } from '../lib/planetary-system';
@@ -238,35 +239,11 @@
   {/if}
   
   <!-- Info Modal -->
-  {#if showInfoModal && selectedBody}
-    <div 
-      class="info-modal-overlay" 
-      on:click={handleCloseModal}
-      on:keydown={(e) => e.key === 'Escape' && handleCloseModal()}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-      tabindex="-1"
-    >
-      <div class="info-modal" role="document">
-        <button class="close-button" on:click={handleCloseModal}>×</button>
-        <h2 id="modal-title">{selectedBody.name}</h2>
-        <p>{selectedBody.description}</p>
-        
-        {#if selectedBody.keyFacts}
-          <div class="key-facts">
-            <h3>Key Facts</h3>
-            <ul>
-              <li><strong>Diameter:</strong> {selectedBody.keyFacts.diameter}</li>
-              <li><strong>Distance from Star:</strong> {selectedBody.keyFacts.distanceFromSun}</li>
-              <li><strong>Orbital Period:</strong> {selectedBody.keyFacts.orbitalPeriod}</li>
-              <li><strong>Temperature:</strong> {selectedBody.keyFacts.temperature}</li>
-            </ul>
-          </div>
-        {/if}
-      </div>
-    </div>
-  {/if}
+  <CelestialBodyInfoModal 
+    isOpen={showInfoModal}
+    celestialBody={selectedBody}
+    onClose={handleCloseModal}
+  />
   
   <!-- Accessibility Manager -->
   <AccessibilityManager />
@@ -350,59 +327,5 @@
   
   .zoom-controls button:hover {
     background: rgba(0, 0, 0, 0.9);
-  }
-  
-  .info-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .info-modal {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    max-width: 500px;
-    max-height: 80vh;
-    overflow-y: auto;
-    position: relative;
-  }
-  
-  .close-button {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-  }
-  
-  .close-button:hover {
-    color: #000;
-  }
-  
-  .key-facts h3 {
-    margin-top: 20px;
-    margin-bottom: 10px;
-  }
-  
-  .key-facts ul {
-    list-style: none;
-    padding: 0;
-  }
-  
-  .key-facts li {
-    margin-bottom: 8px;
-    padding: 5px 0;
-    border-bottom: 1px solid #eee;
   }
 </style>

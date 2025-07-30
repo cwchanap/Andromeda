@@ -3,6 +3,7 @@
   import ErrorBoundary from './ErrorBoundary.svelte';
   import KeyboardNavigation from './KeyboardNavigation.svelte';
   import AccessibilityManager from './AccessibilityManager.svelte';
+  import CelestialBodyInfoModal from './CelestialBodyInfoModal.svelte';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { SolarSystemRenderer } from '../lib/planetary-system/graphics/SolarSystemRenderer';
@@ -280,41 +281,11 @@
       </div>
       
       <!-- Planet Info Modal -->
-      {#if showInfoModal && selectedBody}
-        <div 
-          class="modal-overlay" 
-          on:click={handleCloseModal} 
-          on:keydown={(e) => e.key === 'Escape' && handleCloseModal()}
-          role="dialog" 
-          aria-modal="true"
-          aria-labelledby="modal-title"
-          aria-describedby="modal-description"
-          tabindex="-1"
-        >
-          <div 
-            class="modal-content" 
-            role="document"
-          >
-            <button 
-              class="modal-close" 
-              on:click={handleCloseModal}
-              aria-label="Close planet information modal"
-              type="button"
-            >×</button>
-            <h2 id="modal-title">{selectedBody.name}</h2>
-            <p id="modal-description">{selectedBody.description}</p>
-            <div class="planet-facts">
-              <h3>Key Facts:</h3>
-              <ul>
-                <li><strong>Diameter:</strong> {selectedBody.keyFacts.diameter}</li>
-                <li><strong>Distance from Sun:</strong> {selectedBody.keyFacts.distanceFromSun}</li>
-                <li><strong>Orbital Period:</strong> {selectedBody.keyFacts.orbitalPeriod}</li>
-                <li><strong>Temperature:</strong> {selectedBody.keyFacts.temperature}</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      {/if}
+      <CelestialBodyInfoModal 
+        isOpen={showInfoModal}
+        celestialBody={selectedBody}
+        onClose={handleCloseModal}
+      />
     </div>
   {/if}
   
@@ -480,77 +451,6 @@
   
   .hint {
     color: #9ca3af;
-  }
-  
-  .modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: auto;
-  }
-  
-  .modal-content {
-    background: rgba(30, 30, 30, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 500px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-    color: white;
-    position: relative;
-  }
-  
-  .modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 4px;
-    line-height: 1;
-  }
-  
-  .modal-close:hover {
-    color: #f87171;
-  }
-  
-  .modal-content h2 {
-    margin: 0 0 16px 0;
-    color: #60a5fa;
-    font-size: 24px;
-  }
-  
-  .modal-content p {
-    margin: 0 0 20px 0;
-    line-height: 1.6;
-    color: #d1d5db;
-  }
-  
-  .planet-facts h3 {
-    margin: 0 0 12px 0;
-    color: #fbbf24;
-  }
-  
-  .planet-facts ul {
-    margin: 0;
-    padding-left: 20px;
-  }
-  
-  .planet-facts li {
-    margin-bottom: 8px;
-    color: #d1d5db;
   }
   
   .error-state {
