@@ -8,6 +8,7 @@ export interface GameSettings {
     controlSensitivity: number;
     graphicsQuality: "low" | "medium" | "high";
     showControlHints: boolean;
+    orbitSpeedMultiplier: number; // Global multiplier for orbit speeds
     // Accessibility settings
     highContrastMode: boolean;
     reducedMotion: boolean;
@@ -43,6 +44,7 @@ const defaultSettings: GameSettings = {
     controlSensitivity: 1.0,
     graphicsQuality: "medium",
     showControlHints: true,
+    orbitSpeedMultiplier: 1.0, // Default speed multiplier
     // Accessibility defaults
     highContrastMode: false,
     reducedMotion: false,

@@ -61,6 +61,10 @@ export interface CelestialBodyData {
         texture?: string;
         segments?: number; // Number of segments for ring geometry
         thetaSegments?: number; // Number of segments around the ring
+        // Rotation angles for ring orientation (in radians)
+        rotationX?: number; // Rotation around X-axis (tilt up/down)
+        rotationY?: number; // Rotation around Y-axis (rotate left/right)
+        rotationZ?: number; // Rotation around Z-axis (roll)
         // Particle system properties for realistic ring appearance
         particleSystem?: {
             enabled: boolean;

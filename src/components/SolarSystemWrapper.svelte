@@ -4,6 +4,7 @@
   import KeyboardNavigation from './KeyboardNavigation.svelte';
   import AccessibilityManager from './AccessibilityManager.svelte';
   import CelestialBodyInfoModal from './CelestialBodyInfoModal.svelte';
+  import OrbitSpeedControl from './OrbitSpeedControl.svelte';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { SolarSystemRenderer } from '../lib/planetary-system/graphics/SolarSystemRenderer';
@@ -71,6 +72,12 @@
 
   const handleKeyboardResetView = () => {
     if (zoomControls) zoomControls.resetView();
+  };
+  
+  const handleOrbitSpeedChange = (speed: number) => {
+    if (solarSystemRenderer) {
+      solarSystemRenderer.updateConfig({ orbitSpeedMultiplier: speed });
+    }
   };
   
   onMount(() => {
@@ -286,6 +293,9 @@
         celestialBody={selectedBody}
         onClose={handleCloseModal}
       />
+      
+      <!-- Orbit Speed Control -->
+      <OrbitSpeedControl onSpeedChange={handleOrbitSpeedChange} />
     </div>
   {/if}
   

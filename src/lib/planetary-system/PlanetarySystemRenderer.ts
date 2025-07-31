@@ -37,6 +37,7 @@ export class PlanetarySystemRenderer {
             enableAnimations: config.enableAnimations,
             particleCount: config.particleCount,
             shadows: config.shadowsEnabled,
+            orbitSpeedMultiplier: config.orbitSpeedMultiplier,
             enableControls: true,
             enableMobileOptimization: false,
             antialiasing: true,
@@ -125,6 +126,7 @@ export class PlanetarySystemRenderer {
                 enableAnimations: newConfig.enableAnimations,
                 particleCount: newConfig.particleCount,
                 shadows: newConfig.shadowsEnabled,
+                orbitSpeedMultiplier: newConfig.orbitSpeedMultiplier,
             };
 
             this.solarSystemRenderer.updateConfig(adaptedConfig);

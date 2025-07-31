@@ -221,8 +221,13 @@ export class CelestialBodyManager {
             `Created ${particlesCreated} ring particles for ${data.id}`,
         );
 
-        // Rotate rings to be horizontal (Saturn's rings are roughly in the equatorial plane)
-        ringGroup.rotation.x = Math.PI / 2;
+        // Apply custom rotation or default to horizontal (Saturn's rings are roughly in the equatorial plane)
+        ringGroup.rotation.x =
+            ringConfig.rotationX !== undefined
+                ? ringConfig.rotationX
+                : Math.PI / 2;
+        ringGroup.rotation.y = ringConfig.rotationY || 0;
+        ringGroup.rotation.z = ringConfig.rotationZ || 0;
 
         return ringGroup;
     }
@@ -262,8 +267,13 @@ export class CelestialBodyManager {
         ringMesh.castShadow = false;
         ringMesh.receiveShadow = false;
 
-        // Rotate rings to be horizontal (Saturn's rings are roughly in the equatorial plane)
-        ringMesh.rotation.x = Math.PI / 2;
+        // Apply custom rotation or default to horizontal (Saturn's rings are roughly in the equatorial plane)
+        ringMesh.rotation.x =
+            ringConfig.rotationX !== undefined
+                ? ringConfig.rotationX
+                : Math.PI / 2;
+        ringMesh.rotation.y = ringConfig.rotationY || 0;
+        ringMesh.rotation.z = ringConfig.rotationZ || 0;
 
         return ringMesh;
     }
@@ -481,7 +491,10 @@ export class CelestialBodyManager {
     /**
      * Update celestial body animations (rotation, orbit)
      */
-    updateAnimations(deltaTime: number): void {
+    updateAnimations(
+        deltaTime: number,
+        orbitSpeedMultiplier: number = 1.0,
+    ): void {
         const time = Date.now() * 0.001;
 
         this.bodies.forEach((body, id) => {
@@ -498,7 +511,7 @@ export class CelestialBodyManager {
 
             // Apply orbital motion if defined
             if (data.orbitRadius && data.orbitSpeed) {
-                const angle = time * data.orbitSpeed;
+                const angle = time * data.orbitSpeed * orbitSpeedMultiplier;
                 body.position.x = Math.cos(angle) * data.orbitRadius;
                 body.position.z = Math.sin(angle) * data.orbitRadius;
             }

@@ -9,6 +9,7 @@ export interface SolarSystemConfig {
     shadows?: boolean;
     particleCount?: number;
     performanceMode?: "low" | "medium" | "high";
+    orbitSpeedMultiplier?: number; // Global multiplier for orbit speeds
     // Background star configuration
     backgroundStars?: {
         enabled: boolean;

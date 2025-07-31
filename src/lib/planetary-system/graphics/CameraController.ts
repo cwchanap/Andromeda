@@ -43,8 +43,8 @@ export class CameraController {
         this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
         this.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
 
-        // Set limits
-        this.controls.maxDistance = 500;
+        // Set limits - increased max distance by 50x for deeper zoom out
+        this.controls.maxDistance = 25000; // Was 500, now 50x more
         this.controls.minDistance = 5;
         this.controls.maxPolarAngle = Math.PI;
 

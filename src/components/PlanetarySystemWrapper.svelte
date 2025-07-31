@@ -4,6 +4,7 @@
   import KeyboardNavigation from './KeyboardNavigation.svelte';
   import AccessibilityManager from './AccessibilityManager.svelte';
   import CelestialBodyInfoModal from './CelestialBodyInfoModal.svelte';
+  import OrbitSpeedControl from './OrbitSpeedControl.svelte';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { PlanetarySystemRenderer, planetarySystemRegistry } from '../lib/planetary-system';
@@ -49,6 +50,12 @@
   
   const handleZoomChange = (zoom: number) => {
     currentZoom = zoom;
+  };
+  
+  const handleOrbitSpeedChange = (speed: number) => {
+    if (planetarySystemRenderer) {
+      planetarySystemRenderer.updateConfig({ orbitSpeedMultiplier: speed });
+    }
   };
   
   const onKeyboardNavigate = (direction: 'next' | 'previous') => {
@@ -244,6 +251,11 @@
     celestialBody={selectedBody}
     onClose={handleCloseModal}
   />
+  
+  <!-- Orbit Speed Control -->
+  {#if isSceneReady}
+    <OrbitSpeedControl onSpeedChange={handleOrbitSpeedChange} />
+  {/if}
   
   <!-- Accessibility Manager -->
   <AccessibilityManager />

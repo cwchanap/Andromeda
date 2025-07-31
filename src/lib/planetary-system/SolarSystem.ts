@@ -327,6 +327,25 @@ export const solarSystemData: PlanetarySystemData = {
             },
             orbitRadius: 143.4,
             orbitSpeed: 0.0037,
+            rings: {
+                enabled: true,
+                innerRadius: 1.6, // Clear gap from Saturn's surface (about 2.4x Saturn's radius)
+                outerRadius: 2.5, // Extends to about 4x Saturn's radius (more prominent rings)
+                color: "#F2C94C",
+                opacity: 0.8,
+                segments: 64,
+                thetaSegments: 128,
+                rotationX: Math.PI * 0.1, // Slight tilt (18 degrees) for realism
+                rotationY: 0,
+                rotationZ: 0,
+                particleSystem: {
+                    enabled: true,
+                    particleCount: 10000,
+                    particleSize: 0.02, // Larger particles to be visible
+                    particleVariation: 0.3,
+                    densityVariation: 0.2,
+                },
+            },
         },
         {
             id: "uranus",
@@ -368,6 +387,25 @@ export const solarSystemData: PlanetarySystemData = {
             },
             orbitRadius: 287.1,
             orbitSpeed: 0.0022,
+            rings: {
+                enabled: true,
+                innerRadius: 1.5, // Uranus rings are closer to the planet
+                outerRadius: 2.0,
+                color: "#A7C6ED",
+                opacity: 0.3, // Very faint rings
+                segments: 32,
+                thetaSegments: 64,
+                rotationX: Math.PI * 0.45, // Uranus is tilted on its side (98 degrees)
+                rotationY: 0,
+                rotationZ: 0,
+                particleSystem: {
+                    enabled: true,
+                    particleCount: 500, // Fewer particles for fainter rings
+                    particleSize: 0.01,
+                    particleVariation: 0.4,
+                    densityVariation: 0.3,
+                },
+            },
         },
         {
             id: "neptune",

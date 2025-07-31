@@ -236,9 +236,15 @@ export class SolarSystemRenderer {
 
         const deltaTime = this.clock.getDelta();
 
+        // Get orbit speed multiplier from config or default to 1.0
+        const orbitSpeedMultiplier = this.config.orbitSpeedMultiplier || 1.0;
+
         // Update animations
         if (this.config.enableAnimations) {
-            this.celestialBodyManager.updateAnimations(deltaTime);
+            this.celestialBodyManager.updateAnimations(
+                deltaTime,
+                orbitSpeedMultiplier,
+            );
             this.sceneManager.updateAnimations(deltaTime);
         }
 

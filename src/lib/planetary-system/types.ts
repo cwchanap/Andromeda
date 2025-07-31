@@ -65,6 +65,7 @@ export interface PlanetarySystemConfig {
     enableInteractions: boolean;
     particleCount: number;
     shadowsEnabled: boolean;
+    orbitSpeedMultiplier?: number; // Global multiplier for orbit speeds
 }
 
 /**
