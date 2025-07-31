@@ -52,12 +52,6 @@
     currentZoom = zoom;
   };
   
-  const handleOrbitSpeedChange = (speed: number) => {
-    if (planetarySystemRenderer) {
-      planetarySystemRenderer.updateConfig({ orbitSpeedMultiplier: speed });
-    }
-  };
-  
   const onKeyboardNavigate = (direction: 'next' | 'previous') => {
     if (!planetarySystemRenderer) return;
     
@@ -106,6 +100,7 @@
         enableInteractions: true,
         particleCount: 1000, // Default value
         shadowsEnabled: false, // Default value
+        orbitSpeedMultiplier: $settings.orbitSpeedMultiplier,
       };
       
       // Create renderer events
@@ -195,8 +190,12 @@
     // through its private handleResize method
   };
   
-  $: if (planetarySystemRenderer && enableAnimations !== undefined) {
-    planetarySystemRenderer.updateConfig({ enableAnimations });
+  // Synchronize all settings with renderer in a single reactive statement
+  $: if (planetarySystemRenderer) {
+    planetarySystemRenderer.updateConfig({ 
+      enableAnimations,
+      orbitSpeedMultiplier: $settings.orbitSpeedMultiplier 
+    });
   }
 </script>
 
@@ -254,7 +253,7 @@
   
   <!-- Orbit Speed Control -->
   {#if isSceneReady}
-    <OrbitSpeedControl onSpeedChange={handleOrbitSpeedChange} />
+    <OrbitSpeedControl />
   {/if}
   
   <!-- Accessibility Manager -->

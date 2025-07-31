@@ -5,17 +5,34 @@
   
   // Local reactive variable for smooth updates
   let localSpeed = $settings.orbitSpeedMultiplier;
+  let isUserInteracting = false;
+  let sliderElement: HTMLInputElement;
   
-  // Update local speed when store changes
-  $: localSpeed = $settings.orbitSpeedMultiplier;
-  
+  // Update local speed when store changes (but only if user isn't actively using the slider)
+  $: if ($settings.orbitSpeedMultiplier !== localSpeed && !isUserInteracting) {
+    localSpeed = $settings.orbitSpeedMultiplier;
+  }
+
   const handleSpeedChange = () => {
+    // First, get the actual clamped value from the DOM element
+    if (sliderElement) {
+      const clampedValue = parseFloat(sliderElement.value);
+      if (clampedValue !== localSpeed) {
+        localSpeed = clampedValue;
+      }
+    }
+    
+    isUserInteracting = true;
     settings.update(s => ({ ...s, orbitSpeedMultiplier: localSpeed }));
     onSpeedChange(localSpeed);
-  };
-  
-  const resetSpeed = () => {
+    
+    // Reset interaction flag after a short delay
+    setTimeout(() => {
+      isUserInteracting = false;
+    }, 100);
+  };  const resetSpeed = () => {
     localSpeed = 1.0;
+    isUserInteracting = true;
     handleSpeedChange();
   };
 </script>
@@ -36,9 +53,10 @@
     <input
       type="range"
       min="0"
-      max="5"
+      max="100"
       step="0.1"
       bind:value={localSpeed}
+      bind:this={sliderElement}
       on:input={handleSpeedChange}
       class="speed-slider"
       aria-label="Orbit speed multiplier"
@@ -46,7 +64,7 @@
     <div class="speed-labels">
       <span class="label-start">Paused</span>
       <span class="label-center">Normal</span>
-      <span class="label-end">5x</span>
+      <span class="label-end">100x</span>
     </div>
   </div>
   

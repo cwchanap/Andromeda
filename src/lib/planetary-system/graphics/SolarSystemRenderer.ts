@@ -51,6 +51,7 @@ export class SolarSystemRenderer {
             shadows: false,
             particleCount: 1000,
             performanceMode: "medium",
+            orbitSpeedMultiplier: 1.0,
             backgroundStars: {
                 enabled: true,
                 density: 1.0,

@@ -13,6 +13,7 @@ export class CelestialBodyManager {
     private bodies = new Map<string, THREE.Object3D>();
     private orbitLines = new Map<string, Line2>();
     private bodyData = new Map<string, CelestialBodyData>();
+    private orbitAngles = new Map<string, number>(); // Track accumulated orbital angles
     private performanceManager: PerformanceManager;
     private assetLoader: AssetLoader;
 
@@ -84,6 +85,14 @@ export class CelestialBodyManager {
         // Store references
         this.bodies.set(data.id, celestialGroup);
         this.bodyData.set(data.id, data);
+
+        // Initialize orbital angle based on current position if orbiting
+        if (data.orbitRadius && data.orbitSpeed) {
+            // Calculate initial orbital angle from current position
+            const initialAngle = Math.atan2(data.position.z, data.position.x);
+            this.orbitAngles.set(data.id, initialAngle);
+        }
+
         this.scene.add(celestialGroup);
 
         return celestialGroup;
@@ -511,9 +520,29 @@ export class CelestialBodyManager {
 
             // Apply orbital motion if defined
             if (data.orbitRadius && data.orbitSpeed) {
-                const angle = time * data.orbitSpeed * orbitSpeedMultiplier;
-                body.position.x = Math.cos(angle) * data.orbitRadius;
-                body.position.z = Math.sin(angle) * data.orbitRadius;
+                // Get the current accumulated angle for this body
+                let currentAngle = this.orbitAngles.get(id) || 0;
+
+                // Increment the angle based on deltaTime and speed multiplier
+                const angleIncrement =
+                    deltaTime * data.orbitSpeed * orbitSpeedMultiplier;
+                currentAngle += angleIncrement;
+
+                // Store the updated angle
+                this.orbitAngles.set(id, currentAngle);
+
+                // Calculate position from the smooth accumulated angle
+                body.position.x = Math.cos(currentAngle) * data.orbitRadius;
+                body.position.z = Math.sin(currentAngle) * data.orbitRadius;
+
+                // Debug: Log orbital position for Earth occasionally
+                if (
+                    id === "earth" &&
+                    Math.floor(time) % 5 === 0 &&
+                    Math.floor(time * 10) % 50 === 0
+                ) {
+                    // Debug log removed
+                }
             }
 
             // Rotate rings slowly for visual effect (Saturn's rings)
