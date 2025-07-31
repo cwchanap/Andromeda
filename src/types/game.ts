@@ -104,44 +104,6 @@ export interface GameState {
     };
 }
 
-export interface SolarSystemData {
-    sun: CelestialBodyData;
-    planets: CelestialBodyData[];
-    systemScale: number;
-    systemCenter: Vector3;
-    // Background star configuration
-    backgroundStars?: {
-        enabled: boolean;
-        density: number; // Number of background stars (multiplier for base count)
-        seed: number; // Random seed for consistent star distribution
-        animationSpeed: number; // Speed of star twinkling and rotation
-        minRadius: number; // Minimum distance from system center
-        maxRadius: number; // Maximum distance from system center
-        colorVariation: boolean; // Whether to include different star colors
-    };
-}
-
-/**
- * Extended system data interface for backward compatibility and future expansion
- */
-export interface ExtendedSystemData extends SolarSystemData {
-    id: string;
-    name: string;
-    description: string;
-    systemType: "solar" | "binary" | "multiple" | "exotic";
-    metadata?: {
-        discoveredBy?: string;
-        discoveryDate?: string;
-        distance?: string;
-        constellation?: string;
-        spectralClass?: string;
-        habitableZone?: {
-            inner: number;
-            outer: number;
-        };
-    };
-}
-
 /**
  * Plugin management interfaces
  */

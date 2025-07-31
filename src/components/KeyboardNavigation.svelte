@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { settings, gameActions } from '../stores/gameStore';
-  import { solarSystemData } from '../data/celestialBodies';
+  import { solarSystemData } from '../lib/planetary-system/SolarSystem';
   import type { CelestialBodyData } from '../types/game';
 
   interface KeyboardNavigationProps {
@@ -28,7 +28,7 @@
 
   // Build list of celestial bodies for navigation
   onMount(() => {
-    celestialBodies = [solarSystemData.sun, ...solarSystemData.planets];
+    celestialBodies = [solarSystemData.star, ...solarSystemData.celestialBodies];
     selectedIndex = currentSelectedIndex >= 0 ? currentSelectedIndex : -1;
   });
 

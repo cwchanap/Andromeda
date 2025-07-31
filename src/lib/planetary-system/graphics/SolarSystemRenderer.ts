@@ -6,7 +6,8 @@ import type {
     SolarSystemControls,
     RenderStats,
 } from "./types";
-import type { CelestialBodyData, SolarSystemData } from "../../../types/game";
+import type { CelestialBodyData } from "../../../types/game";
+import type { PlanetarySystemData } from "../types";
 import { CelestialBodyManager } from "./CelestialBodyManager";
 import { SceneManager } from "./SceneManager";
 import { InteractionManager } from "./InteractionManager";
@@ -28,7 +29,7 @@ export class SolarSystemRenderer {
     private celestialBodyManager!: CelestialBodyManager;
     private interactionManager!: InteractionManager;
     private cameraController!: CameraController;
-    private performanceMonitor: PerformanceMonitor;
+    private performanceMonitor!: PerformanceMonitor;
 
     // State
     private isInitialized = false;
@@ -162,7 +163,7 @@ export class SolarSystemRenderer {
      */
     async initialize(
         celestialBodies: CelestialBodyData[],
-        systemData?: SolarSystemData,
+        systemData?: PlanetarySystemData,
     ): Promise<void> {
         try {
             // Configure background stars from system data if provided

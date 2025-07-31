@@ -7,7 +7,7 @@
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { SolarSystemRenderer } from '../lib/planetary-system/graphics/SolarSystemRenderer';
-  import { solarSystemData } from '../data/celestialBodies';
+  import { solarSystemData } from '../lib/planetary-system/SolarSystem';
   import type { CelestialBodyData } from '../types/game';
   import type { SolarSystemConfig, SolarSystemEvents } from '../lib/planetary-system/graphics/types';
   
@@ -56,7 +56,7 @@
   // Keyboard navigation handlers
   const handleKeyboardPlanetSelect = (planet: CelestialBodyData) => {
     // Update selected index for keyboard navigation state
-    const allBodies = [solarSystemData.sun, ...solarSystemData.planets];
+    const allBodies = [solarSystemData.star, ...solarSystemData.celestialBodies];
     currentSelectedIndex = allBodies.findIndex(body => body.id === planet.id);
     handlePlanetSelect(planet);
   };
@@ -173,10 +173,10 @@
       debugInfo = "Converting celestial bodies data...";
       console.log('Converting celestial bodies data');
       
-      // Convert SolarSystemData to array of CelestialBodyData
+      // Convert PlanetarySystemData to array of CelestialBodyData
       const celestialBodies: CelestialBodyData[] = [
-        solarSystemData.sun,
-        ...solarSystemData.planets
+        solarSystemData.star,
+        ...solarSystemData.celestialBodies
       ];
       
       console.log(`Found ${celestialBodies.length} celestial bodies`);

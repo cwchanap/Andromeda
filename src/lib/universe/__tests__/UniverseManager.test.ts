@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { UniverseManager } from "../UniverseManager";
 import type { StarSystemData } from "../../../types/universe";
-import type { SolarSystemData } from "../../../types/game";
+import type { PlanetarySystemData } from "../../planetary-system/types";
 import * as THREE from "three";
 
 describe("UniverseManager", () => {
@@ -134,9 +134,13 @@ describe("UniverseManager", () => {
         });
     });
 
-    describe("Solar System Conversion", () => {
-        const mockSolarSystemData: SolarSystemData = {
-            sun: {
+    describe("Planetary System Conversion", () => {
+        const mockPlanetarySystemData: PlanetarySystemData = {
+            id: "solar-system",
+            name: "Solar System",
+            description: "Our home planetary system",
+            systemType: "solar",
+            star: {
                 id: "sun",
                 name: "Sun",
                 type: "star",
@@ -153,26 +157,29 @@ describe("UniverseManager", () => {
                 scale: 2.5,
                 material: { color: "#FDB813" },
             },
-            planets: [],
+            celestialBodies: [],
             systemScale: 1,
             systemCenter: new THREE.Vector3(0, 0, 0),
         };
 
-        it("should convert SolarSystemData to StarSystemData", () => {
-            const converted =
-                UniverseManager.convertSolarSystemData(mockSolarSystemData);
+        it("should convert PlanetarySystemData to StarSystemData", () => {
+            const converted = UniverseManager.convertPlanetarySystemData(
+                mockPlanetarySystemData,
+            );
 
             expect(converted.id).toBe("sol");
             expect(converted.name).toBe("Solar System");
             expect(converted.systemType).toBe("solar");
-            expect(converted.star).toEqual(mockSolarSystemData.sun);
+            expect(converted.star).toEqual(mockPlanetarySystemData.star);
             expect(converted.celestialBodies).toEqual(
-                mockSolarSystemData.planets,
+                mockPlanetarySystemData.celestialBodies,
             );
         });
 
-        it("should initialize with solar system data", () => {
-            universeManager.initializeWithSolarSystem(mockSolarSystemData);
+        it("should initialize with planetary system data", () => {
+            universeManager.initializeWithPlanetarySystem(
+                mockPlanetarySystemData,
+            );
 
             const systems = universeManager.getAllSystems();
             expect(systems).toHaveLength(1);

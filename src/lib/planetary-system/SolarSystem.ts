@@ -1,14 +1,19 @@
 // Solar System - converting existing data to new format
 import * as THREE from "three";
-import type { SolarSystemData, CelestialBodyData } from "../../types/game";
-// Solar system data and utility functions
+import type { CelestialBodyData } from "../../types/game";
+import type { PlanetarySystemData, PlanetarySystem } from "./types";
 
 /**
  * Complete solar system data with accurate astronomical information
  * Real distances are scaled down for 3D visualization while maintaining relative proportions
  * Scale factor: 1 unit = 10 million km (1:10,000,000 scale) for better visualization
  */
-export const solarSystemData: SolarSystemData = {
+export const solarSystemData: PlanetarySystemData = {
+    id: "solar-system",
+    name: "Solar System",
+    description:
+        "Our home planetary system, containing the Sun and eight planets",
+    systemType: "solar",
     systemScale: 0.1, // Scale factor for rendering: 1 unit = 10 million km
     systemCenter: new THREE.Vector3(0, 0, 0),
     backgroundStars: {
@@ -20,7 +25,7 @@ export const solarSystemData: SolarSystemData = {
         maxRadius: 15000, // Much larger to provide proper backdrop
         colorVariation: true,
     },
-    sun: {
+    star: {
         id: "sun",
         name: "Sun",
         type: "star",
@@ -63,7 +68,7 @@ export const solarSystemData: SolarSystemData = {
             textColor: "#FFF8E1",
         },
     },
-    planets: [
+    celestialBodies: [
         {
             id: "mercury",
             name: "Mercury",
@@ -406,6 +411,13 @@ export const solarSystemData: SolarSystemData = {
             orbitSpeed: 0.0015,
         },
     ],
+    metadata: {
+        discoveredBy: "Ancient civilizations",
+        discoveryDate: "Prehistoric",
+        distance: "0 light-years",
+        constellation: "N/A",
+        spectralClass: "G2V",
+    },
 };
 
 // ============================================================================
@@ -415,14 +427,14 @@ export const solarSystemData: SolarSystemData = {
 export const getCelestialBodyById = (
     id: string,
 ): CelestialBodyData | undefined => {
-    if (id === solarSystemData.sun.id) {
-        return solarSystemData.sun;
+    if (id === solarSystemData.star.id) {
+        return solarSystemData.star;
     }
-    return solarSystemData.planets.find((planet) => planet.id === id);
+    return solarSystemData.celestialBodies.find((planet) => planet.id === id);
 };
 
 export const getAllCelestialBodies = (): CelestialBodyData[] => {
-    return [solarSystemData.sun, ...solarSystemData.planets];
+    return [solarSystemData.star, ...solarSystemData.celestialBodies];
 };
 
 export const getCelestialBodiesByType = (
@@ -524,12 +536,12 @@ export const kmToAU = (kilometers: number): number => {
  * Update position based on real distance data and system scale
  */
 export const updatePositionsFromRealDistance = (
-    systemData: SolarSystemData,
-): SolarSystemData => {
+    systemData: PlanetarySystemData,
+): PlanetarySystemData => {
     const updatedData = { ...systemData };
 
-    // Update planet positions based on real distances
-    updatedData.planets = systemData.planets.map((planet) => ({
+    // Update celestial body positions based on real distances
+    updatedData.celestialBodies = systemData.celestialBodies.map((planet) => ({
         ...planet,
         position: getScaledPosition(planet, systemData.systemScale),
         orbitRadius: planet.realDistance
@@ -624,24 +636,33 @@ export const validateCelestialBodyData = (
     return true;
 };
 
-export const validateSolarSystemData = (
+export const validatePlanetarySystemData = (
     data: unknown,
-): data is SolarSystemData => {
+): data is PlanetarySystemData => {
     if (!data || typeof data !== "object") return false;
 
     const obj = data as Record<string, unknown>;
 
-    // Check sun
-    if (!validateCelestialBodyData(obj.sun)) return false;
-    const sun = obj.sun as CelestialBodyData;
-    if (sun.type !== "star") return false;
+    // Check required fields
+    if (typeof obj.id !== "string") return false;
+    if (typeof obj.name !== "string") return false;
+    if (typeof obj.description !== "string") return false;
+    if (
+        !["solar", "binary", "multiple", "exotic"].includes(
+            obj.systemType as string,
+        )
+    )
+        return false;
 
-    // Check planets array
-    if (!Array.isArray(obj.planets)) return false;
-    for (const planet of obj.planets) {
-        if (!validateCelestialBodyData(planet)) return false;
-        const planetData = planet as CelestialBodyData;
-        if (planetData.type !== "planet") return false;
+    // Check star
+    if (!validateCelestialBodyData(obj.star)) return false;
+    const star = obj.star as CelestialBodyData;
+    if (star.type !== "star") return false;
+
+    // Check celestialBodies array
+    if (!Array.isArray(obj.celestialBodies)) return false;
+    for (const body of obj.celestialBodies) {
+        if (!validateCelestialBodyData(body)) return false;
     }
 
     // Check numeric fields
@@ -662,7 +683,7 @@ export const validateSolarSystemData = (
 };
 
 export const validateCurrentSolarSystemData = (): boolean => {
-    return validateSolarSystemData(solarSystemData);
+    return validatePlanetarySystemData(solarSystemData);
 };
 
 // Validate data on module load (development check)
@@ -673,15 +694,6 @@ if (process.env.NODE_ENV === "development") {
         console.log("Solar system data validation passed ✓");
     }
 }
-
-// Solar System - converting existing data to new format
-import type { PlanetarySystem } from "./types";
-
-/**
- * Solar System
- * The primary planetary system - our own solar system
- */
-// Only export solarSystem once (remove duplicate)
 
 /**
  * Solar System
@@ -694,28 +706,7 @@ export const solarSystem: PlanetarySystem = {
     description: "Our home solar system with all planets and the Sun",
     author: "Andromeda Team",
 
-    systemData: {
-        id: "solar",
-        name: "Solar System",
-        description: "Our home solar system with the Sun and eight planets",
-        systemType: "solar",
-        systemScale: solarSystemData.systemScale,
-        systemCenter: solarSystemData.systemCenter,
-
-        // Convert sun data
-        star: solarSystemData.sun,
-
-        // Convert planets data
-        celestialBodies: solarSystemData.planets,
-
-        metadata: {
-            discoveredBy: "Ancient civilizations",
-            discoveryDate: "Prehistoric",
-            distance: "0 light-years",
-            constellation: "N/A",
-            spectralClass: "G2V",
-        },
-    },
+    systemData: solarSystemData,
 
     async initialize() {
         console.log("Solar System plugin initialized");

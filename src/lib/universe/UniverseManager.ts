@@ -11,7 +11,7 @@ import type {
     PluginLogger,
     PluginStorage,
 } from "../../types/universe";
-import type { SolarSystemData } from "../../types/game";
+import type { PlanetarySystemData } from "../planetary-system/types";
 
 /**
  * Main universe manager class
@@ -124,23 +124,22 @@ export class UniverseManager {
     }
 
     /**
-     * Convert legacy SolarSystemData to new StarSystemData format
+     * Convert PlanetarySystemData to new StarSystemData format
      */
-    static convertSolarSystemData(
-        solarSystem: SolarSystemData,
+    static convertPlanetarySystemData(
+        planetarySystem: PlanetarySystemData,
         systemId = "sol",
     ): StarSystemData {
         return {
             id: systemId,
-            name: "Solar System",
-            description:
-                "Our home star system containing the Sun and eight planets",
-            star: solarSystem.sun,
-            celestialBodies: solarSystem.planets,
-            systemScale: solarSystem.systemScale,
-            systemCenter: solarSystem.systemCenter,
-            systemType: "solar",
-            metadata: {
+            name: planetarySystem.name,
+            description: planetarySystem.description,
+            star: planetarySystem.star,
+            celestialBodies: planetarySystem.celestialBodies,
+            systemScale: planetarySystem.systemScale,
+            systemCenter: planetarySystem.systemCenter,
+            systemType: planetarySystem.systemType,
+            metadata: planetarySystem.metadata || {
                 discoveredBy: "Ancient civilizations",
                 discoveryDate: "Prehistoric",
                 distance: "0 light-years",
@@ -151,10 +150,11 @@ export class UniverseManager {
     }
 
     /**
-     * Initialize with legacy solar system data for backward compatibility
+     * Initialize with planetary system data
      */
-    initializeWithSolarSystem(solarSystem: SolarSystemData): void {
-        const starSystem = UniverseManager.convertSolarSystemData(solarSystem);
+    initializeWithPlanetarySystem(planetarySystem: PlanetarySystemData): void {
+        const starSystem =
+            UniverseManager.convertPlanetarySystemData(planetarySystem);
         this.addSystem(starSystem);
         this.universe.currentSystemId = starSystem.id;
     }

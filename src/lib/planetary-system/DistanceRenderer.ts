@@ -1,6 +1,7 @@
 // Distance-based rendering utilities
 import * as THREE from "three";
-import type { CelestialBodyData, SolarSystemData } from "../../types/game";
+import type { CelestialBodyData } from "../../types/game";
+import type { PlanetarySystemData } from "./types";
 
 /**
  * Configuration for distance-based rendering
@@ -101,18 +102,18 @@ export function calculateOrbitRadius(
  * Update system data to use distance-based positioning
  */
 export function updateSystemForDistanceRendering(
-    systemData: SolarSystemData,
+    systemData: PlanetarySystemData,
     config: DistanceRenderingConfig = defaultSolarSystemRenderConfig,
-): SolarSystemData {
+): PlanetarySystemData {
     const updatedData = { ...systemData };
 
-    // Update planet positions and orbit radii
-    updatedData.planets = systemData.planets.map((planet) => {
-        const newPosition = calculateRenderedPosition(planet, config);
-        const newOrbitRadius = calculateOrbitRadius(planet, config);
+    // Update celestial body positions and orbit radii
+    updatedData.celestialBodies = systemData.celestialBodies.map((body) => {
+        const newPosition = calculateRenderedPosition(body, config);
+        const newOrbitRadius = calculateOrbitRadius(body, config);
 
         return {
-            ...planet,
+            ...body,
             position: newPosition,
             orbitRadius: newOrbitRadius,
         };
@@ -125,12 +126,12 @@ export function updateSystemForDistanceRendering(
  * Create adaptive scale configuration based on system size
  */
 export function createAdaptiveScaleConfig(
-    systemData: SolarSystemData,
+    systemData: PlanetarySystemData,
     maxRenderRadius: number = 10,
 ): DistanceRenderingConfig {
     // Find the maximum real distance in the system
-    const maxDistance = systemData.planets.reduce((max, planet) => {
-        const distance = planet.realDistance?.kilometers || 0;
+    const maxDistance = systemData.celestialBodies.reduce((max, body) => {
+        const distance = body.realDistance?.kilometers || 0;
         return Math.max(max, distance);
     }, 0);
 
