@@ -2,7 +2,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Main Menu Navigation", () => {
-    test("should display main menu with correct options", async ({ page }) => {
+    test("should display main menu with correct options @smoke", async ({
+        page,
+    }) => {
         await page.goto("/");
 
         // Check that main menu is visible
@@ -22,7 +24,7 @@ test.describe("Main Menu Navigation", () => {
         ).toBeVisible();
     });
 
-    test("should navigate to solar system view", async ({ page }) => {
+    test("should navigate to solar system view @smoke", async ({ page }) => {
         await page.goto("/");
 
         // Click Start Game button

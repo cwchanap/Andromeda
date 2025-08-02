@@ -10,7 +10,7 @@ export default defineConfig({
         include: ["src/**/*.{test,spec}.{js,ts,svelte}"],
         exclude: ["node_modules", "dist", ".astro"],
         coverage: {
-            reporter: ["text", "json", "html"],
+            reporter: ["text", "json", "html", "json-summary"],
             exclude: [
                 "node_modules/",
                 "src/test/",
@@ -19,6 +19,14 @@ export default defineConfig({
                 "dist/",
                 ".astro/",
             ],
+            thresholds: {
+                global: {
+                    branches: 70,
+                    functions: 70,
+                    lines: 70,
+                    statements: 70,
+                },
+            },
         },
         // Mock Three.js for testing
         deps: {

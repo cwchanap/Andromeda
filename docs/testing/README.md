@@ -9,9 +9,46 @@ The application uses a multi-layered testing approach:
 - **Unit Tests**: Individual component and service testing with Vitest
 - **Integration Tests**: Component interaction and data flow testing
 - **End-to-End Tests**: Complete user journey testing with Playwright
-- **Visual Regression Tests**: UI consistency across devices and browsers
+- **Smoke Tests**: Critical path testing for fast CI feedback
 - **Performance Tests**: 3D rendering and memory usage validation
 - **Accessibility Tests**: WCAG compliance and screen reader compatibility
+
+## Continuous Integration
+
+### GitHub Actions Workflows
+
+The project uses two main workflows:
+
+#### 1. CI Pipeline (`ci.yml`)
+Runs on every push and pull request to main:
+
+- **Lint and Type Check**: ESLint and TypeScript validation
+- **Unit Tests**: Full test suite with coverage reporting
+- **E2E Tests**: Complete end-to-end test suite
+- **Build**: Production build verification
+
+#### 2. PR Quality Check (`pr-quality.yml`)
+Additional quality gates for pull requests:
+
+- **Code Formatting**: Prettier format validation
+- **Coverage Threshold**: Ensures coverage standards
+- **Smoke Tests**: Fast critical path validation
+
+### Test Commands
+
+```bash
+# Development
+npm run test              # Unit tests (watch mode)
+npm run test:ui           # Vitest UI
+npm run test:e2e:ui       # Playwright UI
+
+# CI/Local validation
+npm run test:run          # Unit tests (single run)
+npm run test:coverage     # Unit tests with coverage
+npm run test:e2e          # Full E2E suite
+npm run test:e2e:smoke    # Smoke tests only
+npm run ci:test           # Full CI pipeline locally
+```
 
 ## Test Setup
 

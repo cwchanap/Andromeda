@@ -111,28 +111,48 @@ Switch between different star systems using the system selector:
 ### Running Tests
 
 ```bash
-# Unit tests
+# Unit tests (watch mode)
 npm run test
+
+# Unit tests (single run)
+npm run test:run
 
 # Unit tests with UI
 npm run test:ui
 
-# Test coverage
+# Unit tests with coverage
 npm run test:coverage
 
 # End-to-end tests
 npm run test:e2e
 
-# All tests
+# E2E tests with UI
+npm run test:e2e:ui
+
+# E2E smoke tests only
+npm run test:e2e:smoke
+
+# Run all tests (CI mode)
 npm run test:all
+
+# Full CI pipeline locally
+npm run ci:test
 ```
 
 ### Test Structure
 
 - **Unit Tests**: Component logic, utilities, and data validation
-- **Integration Tests**: Component interactions and store updates
+- **Integration Tests**: Component interactions and store updates  
 - **E2E Tests**: Complete user journeys and accessibility compliance
+- **Smoke Tests**: Critical path testing for fast feedback
 - **Performance Tests**: 3D rendering performance and memory usage
+
+### Continuous Integration
+
+Tests automatically run on:
+- **Push to main**: Full test suite including unit tests, E2E tests, and build verification
+- **Pull Requests**: Quality gate with linting, type checking, coverage reporting, and smoke tests
+- **Scheduled**: Weekly dependency updates via Dependabot
 
 ## 📱 Device Support
 
