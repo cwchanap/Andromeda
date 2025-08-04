@@ -135,3 +135,7 @@ npm run clean        # Remove dist and .astro directories
 - **Radix UI**: Accessible UI primitives for React components
 
 This codebase emphasizes separation of concerns between Astro SSR, Svelte reactivity, and Three.js 3D rendering while maintaining TypeScript safety throughout.
+
+# IMPORTANT!!
+
+Use Playwright MCP to interact with browser for testing. Also don't run `npm run dev` to start the server as it may already started, check if it is running first: http://localhost:4321/
