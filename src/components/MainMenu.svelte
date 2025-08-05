@@ -24,6 +24,11 @@
     showSystemSelector = true;
   };
 
+  const handleGalaxyView = () => {
+    // Navigate to the galaxy page  
+    window.location.href = '/galaxy';
+  };
+
   const handleSelectSystem = (systemId: string) => {
     gameActions.navigateToView("solar-system"); // Use existing type
     showSystemSelector = false;
@@ -50,6 +55,7 @@
   const menuItems = [
     { label: "Solar System", action: handleStartGame },
     { label: "Explore Systems", action: handleSystemSelector },
+    { label: "Galaxy View", action: handleGalaxyView },
     { label: "Settings", action: handleOpenSettings }
   ];
 
@@ -133,6 +139,19 @@
       </Button>
       <div id="systems-desc" class="sr-only">
         Choose from Alpha Centauri, Kepler systems, and other exoplanet systems
+      </div>
+
+      <Button
+        variant="outline"
+        size="lg"
+        on:click={handleGalaxyView}
+        className="menu-button h-12 w-full transform border-2 border-white/30 bg-white/10 text-lg text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-white/50 hover:bg-white/20"
+        aria-describedby="galaxy-desc"
+      >
+        Galaxy View
+      </Button>
+      <div id="galaxy-desc" class="sr-only">
+        View nearby star systems in 3D galactic perspective
       </div>
 
       <Button
