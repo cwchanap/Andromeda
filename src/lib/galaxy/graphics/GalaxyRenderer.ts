@@ -6,6 +6,7 @@ import type {
     GalaxyCameraState,
     GalaxyRenderStats,
     GalaxyData,
+    StarSystemData,
 } from "../types";
 import { GalaxySceneManager } from "./GalaxySceneManager";
 import { StarSystemManager } from "./StarSystemManager";
@@ -32,11 +33,17 @@ export class GalaxyRenderer {
     private config: Required<GalaxyConfig>;
     private events: GalaxyEvents;
     private container: HTMLElement;
+    private galaxyData: GalaxyData | null = null;
 
     // Performance monitoring
     private lastFrameTime = 0;
     private frameCount = 0;
     private fpsUpdateInterval = 1000; // Update FPS every second
+
+    // Interaction handling
+    private raycaster = new THREE.Raycaster();
+    private mouse = new THREE.Vector2();
+    private hoveredSystemId: string | null = null;
 
     constructor(
         container: HTMLElement,
@@ -102,6 +109,9 @@ export class GalaxyRenderer {
         }
 
         try {
+            // Store galaxy data
+            this.galaxyData = galaxyData;
+
             // Initialize managers
             this.sceneManager = new GalaxySceneManager(this.scene, this.config);
             this.starSystemManager = new StarSystemManager(
@@ -146,6 +156,9 @@ export class GalaxyRenderer {
         }
 
         this.container.appendChild(this.renderer.domElement);
+
+        // Setup interaction events after canvas is added to DOM
+        this.setupInteractionEvents();
     }
 
     /**
@@ -182,6 +195,133 @@ export class GalaxyRenderer {
             const zoom = this.camera.position.length();
             this.events.onCameraChange?.(this.camera.position, zoom);
         });
+    }
+
+    /**
+     * Setup mouse and touch interaction events
+     */
+    private setupInteractionEvents(): void {
+        // Mouse events - attach to the canvas element
+        const canvas = this.renderer.domElement;
+        canvas.addEventListener("click", this.handleClick.bind(this));
+        canvas.addEventListener("mousemove", this.handleMouseMove.bind(this));
+
+        // Touch events
+        canvas.addEventListener("touchend", this.handleTouchEnd.bind(this));
+    }
+
+    /**
+     * Handle mouse click events
+     */
+    private handleClick(event: MouseEvent): void {
+        this.updateMousePosition(event);
+        const intersectedSystem = this.findIntersectedStarSystem();
+
+        if (intersectedSystem) {
+            // Find the system data
+            const galaxyData = this.getCurrentGalaxyData();
+            const systemData = galaxyData?.starSystems.find(
+                (s: StarSystemData) => s.id === intersectedSystem.systemId,
+            );
+
+            if (systemData) {
+                this.events.onStarSystemSelect?.(systemData);
+            }
+        }
+    }
+
+    /**
+     * Handle mouse move events for hover effects
+     */
+    private handleMouseMove(event: MouseEvent): void {
+        this.updateMousePosition(event);
+        const intersectedSystem = this.findIntersectedStarSystem();
+
+        const newHoveredSystemId = intersectedSystem?.systemId || null;
+
+        if (newHoveredSystemId !== this.hoveredSystemId) {
+            // Reset previous hover
+            if (this.hoveredSystemId) {
+                this.starSystemManager.highlightStarSystem(
+                    this.hoveredSystemId,
+                    false,
+                );
+            }
+
+            // Set new hover
+            if (newHoveredSystemId) {
+                this.starSystemManager.highlightStarSystem(
+                    newHoveredSystemId,
+                    true,
+                );
+            }
+
+            this.hoveredSystemId = newHoveredSystemId;
+        }
+    }
+
+    /**
+     * Handle touch end events (mobile)
+     */
+    private handleTouchEnd(event: TouchEvent): void {
+        if (event.changedTouches.length > 0) {
+            const touch = event.changedTouches[0];
+            this.updateMousePosition(touch);
+            const intersectedSystem = this.findIntersectedStarSystem();
+
+            if (intersectedSystem) {
+                const galaxyData = this.getCurrentGalaxyData();
+                const systemData = galaxyData?.starSystems.find(
+                    (s: StarSystemData) => s.id === intersectedSystem.systemId,
+                );
+
+                if (systemData) {
+                    this.events.onStarSystemSelect?.(systemData);
+                }
+            }
+        }
+    }
+
+    /**
+     * Update mouse position in normalized device coordinates
+     */
+    private updateMousePosition(event: MouseEvent | Touch): void {
+        const rect = this.renderer.domElement.getBoundingClientRect();
+        this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
+    /**
+     * Find intersected star system using raycasting
+     */
+    private findIntersectedStarSystem(): {
+        systemId: string;
+        mesh: THREE.Mesh;
+    } | null {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        // Get all star meshes from the star system manager
+        const starMeshes = this.starSystemManager.getAllStarMeshes();
+        const intersects = this.raycaster.intersectObjects(starMeshes);
+
+        if (intersects.length > 0) {
+            const intersectedMesh = intersects[0].object as THREE.Mesh;
+            const systemId =
+                this.starSystemManager.getSystemIdFromMesh(intersectedMesh);
+
+            if (systemId) {
+                return { systemId, mesh: intersectedMesh };
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get current galaxy data
+     */
+    private getCurrentGalaxyData(): GalaxyData | null {
+        return this.galaxyData;
     }
 
     /**

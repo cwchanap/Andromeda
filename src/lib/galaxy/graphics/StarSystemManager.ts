@@ -275,6 +275,32 @@ export class StarSystemManager {
     }
 
     /**
+     * Get all star meshes for interaction detection
+     */
+    getAllStarMeshes(): THREE.Mesh[] {
+        return Array.from(this.starMeshes.values());
+    }
+
+    /**
+     * Get system ID from a star mesh
+     */
+    getSystemIdFromMesh(mesh: THREE.Mesh): string | null {
+        // Find which system group contains this mesh
+        for (const [systemId, group] of this.starSystemGroups) {
+            let found = false;
+            group.traverse((child) => {
+                if (child === mesh) {
+                    found = true;
+                }
+            });
+            if (found) {
+                return systemId;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Get rendering statistics
      */
     getStats(): { systemCount: number; starCount: number; glowCount: number } {
