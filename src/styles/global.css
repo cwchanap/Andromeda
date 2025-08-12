@@ -35,6 +35,32 @@
   }
 }
 
+@keyframes cosmic-drift {
+  0%, 100% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(20px) translateY(-15px) rotate(90deg);
+  }
+  50% {
+    transform: translateX(-10px) translateY(25px) rotate(180deg);
+  }
+  75% {
+    transform: translateX(-25px) translateY(-10px) rotate(270deg);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
 .animate-shimmer {
   animation: shimmer 2s infinite linear;
 }
@@ -45,6 +71,14 @@
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-cosmic-drift {
+  animation: cosmic-drift 15s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: twinkle 2s ease-in-out infinite;
 }
 
 /* Enhanced transitions for smooth UX */

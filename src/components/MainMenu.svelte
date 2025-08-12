@@ -105,76 +105,144 @@
   });
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 p-8">
-  <div class="mx-auto max-w-2xl text-center">
-    <h1 class="mb-4 bg-gradient-to-r from-white to-purple-300 bg-clip-text text-5xl font-bold text-transparent drop-shadow-2xl md:text-6xl">
-      Andromeda Space Explorer
-    </h1>
-    <p class="mb-12 text-xl leading-relaxed text-gray-200">
-      Explore multiple planetary systems and discover exoplanets through
-      immersive 3D visualization. Journey from our Solar System to Alpha Centauri and beyond!
-    </p>
+<div class="relative flex min-h-screen items-center justify-center overflow-hidden p-8">
+  <!-- Enhanced cosmic background with multiple gradients and animations -->
+  <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900"></div>
+  <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-violet-900/20 to-cyan-900/30"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-purple-800/10 to-transparent"></div>
+  
+  <!-- Animated stars background -->
+  <div class="stars-container absolute inset-0">
+    <div class="stars"></div>
+    <div class="stars2"></div>
+    <div class="stars3"></div>
+  </div>
+  
+  <!-- Floating cosmic elements -->
+  <div class="floating-elements absolute inset-0 pointer-events-none">
+    <div class="planet planet-1"></div>
+    <div class="planet planet-2"></div>
+    <div class="planet planet-3"></div>
+    <div class="planet planet-4"></div>
+    <div class="nebula nebula-1"></div>
+    <div class="nebula nebula-2"></div>
+  </div>
+  
+  <!-- Content Container with enhanced styling -->
+  <div class="relative z-20 mx-auto max-w-3xl text-center">
+    <!-- Enhanced Title with multiple effects -->
+    <div class="mb-8 relative">
+      <h1 class="mb-4 text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-violet-300 to-pink-300 drop-shadow-2xl animate-pulse-glow">
+        ANDROMEDA
+      </h1>
+      <!-- Subtitle with glow effect -->
+      <div class="relative">
+        <h2 class="text-xl md:text-2xl font-light text-cyan-100/80 tracking-[0.3em] uppercase">
+          Space Explorer
+        </h2>
+        <div class="absolute inset-0 text-xl md:text-2xl font-light text-cyan-400/40 tracking-[0.3em] uppercase blur-sm">
+          Space Explorer
+        </div>
+      </div>
+    </div>
 
-    <div class="mb-12 flex flex-col gap-4">
+    <!-- Enhanced description with cosmic styling -->
+    <div class="mb-16 relative">
+      <p class="text-lg md:text-xl leading-relaxed text-slate-200/90 max-w-2xl mx-auto backdrop-blur-sm bg-white/5 rounded-2xl p-6 border border-white/10 shadow-2xl">
+        Embark on an epic journey through multiple <span class="text-cyan-300 font-semibold">planetary systems</span> and discover 
+        <span class="text-violet-300 font-semibold">exoplanets</span> through immersive 3D visualization. 
+        From our <span class="text-blue-300 font-semibold">Solar System</span> to 
+        <span class="text-pink-300 font-semibold">Alpha Centauri</span> and beyond the stars!
+      </p>
+    </div>
+
+    <!-- Enhanced button grid with cosmic effects -->
+    <div class="mb-16 grid gap-6 max-w-lg mx-auto">
       <Button
         size="lg"
         on:click={handleStartGame}
-        className="menu-button h-14 w-full transform border-none bg-gradient-to-r from-indigo-600 to-purple-600 text-xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl"
+        className="menu-button group relative h-16 w-full transform overflow-hidden rounded-2xl border-2 border-transparent bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-xl font-bold shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 hover:shadow-orange-500/50 hover:shadow-2xl active:scale-95"
         aria-describedby="start-game-desc"
       >
-        Solar System
+        <span class="relative z-10 flex items-center justify-center gap-3">
+          <span class="text-2xl animate-twinkle">☀️</span>
+          Solar System
+        </span>
+        <div class="absolute inset-0 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
       </Button>
-      <div id="start-game-desc" class="sr-only">
-        Explore our home solar system with all planets and the Sun
-      </div>
-
+      
       <Button
         variant="outline"
         size="lg"
         on:click={handleSystemSelector}
-        className="menu-button h-12 w-full transform border-2 border-white/30 bg-white/10 text-lg text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-white/50 hover:bg-white/20"
+        className="menu-button group relative h-14 w-full transform overflow-hidden rounded-xl border-2 border-cyan-400/50 bg-gradient-to-r from-cyan-900/20 to-blue-900/20 backdrop-blur-sm text-lg text-cyan-100 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:border-cyan-300 hover:bg-gradient-to-r hover:from-cyan-800/30 hover:to-blue-800/30 hover:shadow-cyan-400/50 hover:shadow-lg active:scale-95"
         aria-describedby="systems-desc"
       >
-        Explore Other Systems
+        <span class="relative z-10 flex items-center justify-center gap-3">
+          <span class="text-xl animate-cosmic-drift">🌌</span>
+          Explore Exoplanets
+        </span>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
       </Button>
-      <div id="systems-desc" class="sr-only">
-        Choose from Alpha Centauri, Kepler systems, and other exoplanet systems
-      </div>
 
       <Button
         variant="outline"
         size="lg"
         on:click={handleGalaxyView}
-        className="menu-button h-12 w-full transform border-2 border-white/30 bg-white/10 text-lg text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-white/50 hover:bg-white/20"
+        className="menu-button group relative h-14 w-full transform overflow-hidden rounded-xl border-2 border-violet-400/50 bg-gradient-to-r from-violet-900/20 to-purple-900/20 backdrop-blur-sm text-lg text-violet-100 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:border-violet-300 hover:bg-gradient-to-r hover:from-violet-800/30 hover:to-purple-800/30 hover:shadow-violet-400/50 hover:shadow-lg active:scale-95"
         aria-describedby="galaxy-desc"
       >
-        Galaxy View
+        <span class="relative z-10 flex items-center justify-center gap-3">
+          <span class="text-xl animate-float">🌠</span>
+          Galaxy View
+        </span>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-violet-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
       </Button>
-      <div id="galaxy-desc" class="sr-only">
-        View nearby star systems in 3D galactic perspective
-      </div>
 
       <Button
         variant="outline"
         size="lg"
         on:click={handleOpenSettings}
-        className="menu-button h-12 w-full transform border-2 border-white/30 bg-white/10 text-lg text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-white/50 hover:bg-white/20"
+        className="menu-button group relative h-14 w-full transform overflow-hidden rounded-xl border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 backdrop-blur-sm text-lg text-emerald-100 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:border-emerald-300 hover:bg-gradient-to-r hover:from-emerald-800/30 hover:to-teal-800/30 hover:shadow-emerald-400/50 hover:shadow-lg active:scale-95"
         aria-describedby="settings-desc"
       >
-        Settings
+        <span class="relative z-10 flex items-center justify-center gap-3">
+          <span class="text-xl animate-pulse-glow">⚙️</span>
+          Settings
+        </span>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
       </Button>
-      <div id="settings-desc" class="sr-only">
-        Adjust graphics, audio, and accessibility options
-      </div>
     </div>
 
-    <div class="animate-pulse opacity-60">
-      <p class="text-sm text-gray-400">
-        Use mouse to rotate • Scroll to zoom • Click planets to explore
-        {#if $settings.enableKeyboardNavigation}
-          <br />Arrow keys to navigate menu • Enter to select
-        {/if}
-      </p>
+    <!-- Hidden accessibility descriptions -->
+    <div id="start-game-desc" class="sr-only">
+      Explore our home solar system with all planets and the Sun
+    </div>
+    <div id="systems-desc" class="sr-only">
+      Choose from Alpha Centauri, Kepler systems, and other exoplanet systems
+    </div>
+    <div id="galaxy-desc" class="sr-only">
+      View nearby star systems in 3D galactic perspective
+    </div>
+    <div id="settings-desc" class="sr-only">
+      Adjust graphics, audio, and accessibility options
+    </div>
+
+    <!-- Enhanced instructions with cosmic styling -->
+    <div class="relative animate-pulse opacity-70">
+      <div class="backdrop-blur-sm bg-black/20 rounded-xl p-4 border border-white/10">
+        <p class="text-sm text-slate-300">
+          <span class="text-cyan-300">🖱️ Mouse to rotate</span> • 
+          <span class="text-violet-300">📜 Scroll to zoom</span> • 
+          <span class="text-pink-300">🌍 Click planets to explore</span>
+          {#if $settings.enableKeyboardNavigation}
+            <br />
+            <span class="text-emerald-300">⌨️ Arrow keys to navigate</span> • 
+            <span class="text-orange-300">⏎ Enter to select</span>
+          {/if}
+        </p>
+      </div>
     </div>
   </div>
 
@@ -269,5 +337,221 @@
     line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Enhanced Cosmic Background */
+  .stars-container {
+    background: transparent;
+  }
+
+  .stars, .stars2, .stars3 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+  }
+
+  .stars {
+    background-image: 
+      radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+      radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+      radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+      radial-gradient(2px 2px at 160px 30px, #ddd, transparent);
+    background-repeat: repeat;
+    background-size: 200px 100px;
+    animation: stars-move 20s linear infinite;
+  }
+
+  .stars2 {
+    background-image: 
+      radial-gradient(1px 1px at 10px 10px, rgba(147, 51, 234, 0.8), transparent),
+      radial-gradient(1px 1px at 50px 50px, rgba(59, 130, 246, 0.8), transparent),
+      radial-gradient(1px 1px at 80px 20px, rgba(236, 72, 153, 0.8), transparent),
+      radial-gradient(1px 1px at 120px 60px, rgba(139, 92, 246, 0.8), transparent);
+    background-repeat: repeat;
+    background-size: 150px 80px;
+    animation: stars-move 15s linear infinite reverse;
+  }
+
+  .stars3 {
+    background-image: 
+      radial-gradient(1px 1px at 30px 20px, rgba(34, 197, 94, 0.6), transparent),
+      radial-gradient(1px 1px at 70px 70px, rgba(251, 146, 60, 0.6), transparent),
+      radial-gradient(1px 1px at 100px 40px, rgba(229, 62, 62, 0.6), transparent);
+    background-repeat: repeat;
+    background-size: 120px 60px;
+    animation: stars-move 25s linear infinite;
+  }
+
+  @keyframes stars-move {
+    from {
+      transform: translateY(0px);
+    }
+    to {
+      transform: translateY(-100px);
+    }
+  }
+
+  /* Floating Planets */
+  .planet {
+    position: absolute;
+    border-radius: 50%;
+    animation: planet-float 8s ease-in-out infinite;
+    opacity: 0.7;
+    filter: blur(0.5px);
+  }
+
+  .planet-1 {
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle at 30% 30%, #fbbf24, #f59e0b, #d97706);
+    top: 10%;
+    left: 10%;
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+    animation-delay: -1s;
+  }
+
+  .planet-2 {
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle at 30% 30%, #3b82f6, #1d4ed8, #1e40af);
+    top: 20%;
+    right: 15%;
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+    animation-delay: -3s;
+  }
+
+  .planet-3 {
+    width: 45px;
+    height: 45px;
+    background: radial-gradient(circle at 30% 30%, #ef4444, #dc2626, #b91c1c);
+    bottom: 25%;
+    left: 20%;
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.3);
+    animation-delay: -5s;
+  }
+
+  .planet-4 {
+    width: 70px;
+    height: 70px;
+    background: radial-gradient(circle at 30% 30%, #8b5cf6, #7c3aed, #6d28d9);
+    bottom: 15%;
+    right: 25%;
+    box-shadow: 0 0 35px rgba(139, 92, 246, 0.3);
+    animation-delay: -7s;
+  }
+
+  @keyframes planet-float {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    33% {
+      transform: translateY(-20px) rotate(120deg);
+    }
+    66% {
+      transform: translateY(-10px) rotate(240deg);
+    }
+  }
+
+  /* Nebula Effects */
+  .nebula {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.2;
+    animation: nebula-drift 15s ease-in-out infinite;
+  }
+
+  .nebula-1 {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(147, 51, 234, 0.4), rgba(59, 130, 246, 0.3), transparent);
+    top: 5%;
+    left: 5%;
+    animation-delay: -2s;
+  }
+
+  .nebula-2 {
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.4), rgba(139, 92, 246, 0.3), transparent);
+    bottom: 10%;
+    right: 10%;
+    animation-delay: -8s;
+  }
+
+  @keyframes nebula-drift {
+    0%, 100% {
+      transform: translateX(0px) translateY(0px) scale(1);
+    }
+    25% {
+      transform: translateX(30px) translateY(-20px) scale(1.1);
+    }
+    50% {
+      transform: translateX(-20px) translateY(-40px) scale(0.9);
+    }
+    75% {
+      transform: translateX(-40px) translateY(-10px) scale(1.05);
+    }
+  }
+
+  /* Enhanced Button Animations */
+  :global(.menu-button) {
+    position: relative;
+    overflow: hidden;
+  }
+
+  :global(.menu-button::before) {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s;
+  }
+
+  :global(.menu-button:hover::before) {
+    left: 100%;
+  }
+
+  /* Title Glow Animation */
+  @keyframes title-glow {
+    0%, 100% {
+      text-shadow: 
+        0 0 5px rgba(59, 130, 246, 0.3),
+        0 0 10px rgba(139, 92, 246, 0.2),
+        0 0 15px rgba(236, 72, 153, 0.1);
+    }
+    50% {
+      text-shadow: 
+        0 0 10px rgba(59, 130, 246, 0.5),
+        0 0 20px rgba(139, 92, 246, 0.4),
+        0 0 30px rgba(236, 72, 153, 0.3);
+    }
+  }
+
+  h1 {
+    animation: title-glow 3s ease-in-out infinite;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .planet {
+      opacity: 0.5;
+      filter: blur(1px);
+    }
+    
+    .nebula {
+      opacity: 0.1;
+    }
+    
+    .stars, .stars2, .stars3 {
+      animation-duration: 30s;
+    }
   }
 </style>
