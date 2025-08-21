@@ -1,0 +1,44 @@
+---
+import "../../../styles/global.css";
+import PlanetarySystemWrapper from "../../../components/PlanetarySystemWrapper.svelte";
+import GlobalLanguageSelector from "../../../components/GlobalLanguageSelector.svelte";
+import { getLangFromUrl, useTranslations } from "../../../i18n/utils";
+import { ui } from "../../../i18n/ui";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const translations = ui[lang] || ui.en;
+---
+
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Ross 128 - {t('main.title')}</title>
+  </head>
+
+  <body>
+    <!-- Global Language Selector -->
+    <GlobalLanguageSelector client:load />
+    
+    <div id="planetary-system-container">
+      <PlanetarySystemWrapper systemId="ross-128" {lang} {translations} client:only="svelte" />
+    </div>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      #planetary-system-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </body>
+</html>
