@@ -1,7 +1,32 @@
 <script lang="ts">
   import { settings } from '../stores/gameStore';
+  import { getLangFromUrl, useTranslations } from '../i18n/utils';
+  import { onMount } from 'svelte';
   
   export let onSpeedChange: (speed: number) => void = () => {};
+  export let lang: 'en' | 'zh' | 'ja' = 'en';
+  export let translations: Record<string, string> = {};
+  
+  // Translation function
+  let t: (key: string) => string;
+  let currentLang: 'en' | 'zh' | 'ja' = lang;
+  
+  // Initialize translations
+  $: {
+    currentLang = lang;
+    if (Object.keys(translations).length > 0) {
+      t = (key: string) => translations[key] || key;
+    } else {
+      t = useTranslations(currentLang);
+    }
+  }
+  
+  onMount(() => {
+    if (typeof window !== 'undefined' && !lang) {
+      currentLang = getLangFromUrl(new URL(window.location.href));
+      t = useTranslations(currentLang);
+    }
+  });
   
   // Local reactive variable for smooth updates
   let localSpeed = $settings.orbitSpeedMultiplier;
@@ -39,13 +64,13 @@
 
 <div class="orbit-speed-control">
   <div class="control-header">
-    <h3>Orbit Speed</h3>
+    <h3>{t ? t('controls.orbitSpeed') : 'Orbit Speed'}</h3>
     <button 
       on:click={resetSpeed}
       class="reset-button"
-      title="Reset to normal speed"
+      title={t ? t('controls.reset') : 'Reset to normal speed'}
     >
-      Reset
+      {t ? t('controls.reset') : 'Reset'}
     </button>
   </div>
   
@@ -59,17 +84,17 @@
       bind:this={sliderElement}
       on:input={handleSpeedChange}
       class="speed-slider"
-      aria-label="Orbit speed multiplier"
+      aria-label={t ? t('controls.orbitSpeed') : 'Orbit speed multiplier'}
     />
     <div class="speed-labels">
-      <span class="label-start">Paused</span>
-      <span class="label-center">Normal</span>
-      <span class="label-end">100x</span>
+      <span class="label-start">{t ? t('controls.paused') : 'Paused'}</span>
+      <span class="label-center">{t ? t('controls.normal') : 'Normal'}</span>
+      <span class="label-end">{t ? t('controls.speed100x') : '100x'}</span>
     </div>
   </div>
   
   <div class="speed-display">
-    {localSpeed === 0 ? 'Paused' : `${localSpeed.toFixed(1)}x`}
+    {localSpeed === 0 ? (t ? t('controls.paused') : 'Paused') : `${localSpeed.toFixed(1)}x`}
   </div>
 </div>
 

@@ -5,19 +5,50 @@
   import { gameState, settings, gameActions } from "../stores/gameStore";
   import { planetarySystemRegistry } from "../lib/planetary-system";
   import { onMount, onDestroy } from "svelte";
+  import { getLangFromUrl, useTranslations, useTranslatedPath } from "../i18n/utils";
   import type { GameSettings } from "../stores/gameStore";
+
+  // Accept language as prop and pre-computed translations
+  export let lang: 'en' | 'zh' | 'ja' = 'en';
+  export let translations: Record<string, string> = {};
 
   let showSettings = false;
   let showSystemSelector = false;
   let focusedIndex = 0; // Track which button is focused for keyboard navigation
+  let currentLang: 'en' | 'zh' | 'ja' = lang;
+  let t: (key: any, replacements?: Record<string, string>) => string;
+  let translatePath: (path: string, locale?: 'en' | 'zh' | 'ja') => string;
   
   // Get all available planetary systems
   const availableSystems = planetarySystemRegistry.getAllSystems();
 
+  // Initialize translations immediately with props or fallback
+  $: {
+    currentLang = lang;
+    if (Object.keys(translations).length > 0) {
+      // Use pre-computed translations
+      t = (key: string) => translations[key] || key;
+    } else {
+      // Fallback to utility function
+      t = useTranslations(currentLang);
+    }
+    translatePath = useTranslatedPath(currentLang);
+  }
+
+  onMount(() => {
+    // Fallback to URL-based detection if props not provided
+    if (typeof window !== 'undefined' && !lang) {
+      currentLang = getLangFromUrl(new URL(window.location.href));
+      t = useTranslations(currentLang);
+      translatePath = useTranslatedPath(currentLang);
+    }
+  });
+
   const handleStartGame = () => {
     gameActions.navigateToView("solar-system");
     // Navigate to the default solar system
-    window.location.href = '/planetary/solar';
+    const targetUrl = currentLang === 'en' ? '/planetary/solar' : `/${currentLang}/planetary/solar`;
+    window.location.href = targetUrl;
   };
 
   const handleSystemSelector = () => {
@@ -26,14 +57,16 @@
 
   const handleGalaxyView = () => {
     // Navigate to the galaxy page  
-    window.location.href = '/galaxy';
+    const targetUrl = currentLang === 'en' ? '/galaxy' : `/${currentLang}/galaxy`;
+    window.location.href = targetUrl;
   };
 
   const handleSelectSystem = (systemId: string) => {
     gameActions.navigateToView("solar-system"); // Use existing type
     showSystemSelector = false;
     // Navigate to the selected planetary system
-    window.location.href = `/planetary/${systemId}`;
+    const targetUrl = currentLang === 'en' ? `/planetary/${systemId}` : `/${currentLang}/planetary/${systemId}`;
+    window.location.href = targetUrl;
   };
 
   const handleCloseSystemSelector = () => {
@@ -52,11 +85,11 @@
     gameActions.updateSettings(newSettings);
   };
   
-  const menuItems = [
-    { label: "Solar System", action: handleStartGame },
-    { label: "Explore Systems", action: handleSystemSelector },
-    { label: "Galaxy View", action: handleGalaxyView },
-    { label: "Settings", action: handleOpenSettings }
+  $: menuItems = [
+    { label: t ? t('main.solar') : "Solar System", action: handleStartGame },
+    { label: t ? t('main.explore') : "Explore Systems", action: handleSystemSelector },
+    { label: t ? t('main.galaxy') : "Galaxy View", action: handleGalaxyView },
+    { label: t ? t('main.settings') : "Settings", action: handleOpenSettings }
   ];
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -133,15 +166,15 @@
     <!-- Enhanced Title with multiple effects -->
     <div class="mb-8 relative">
       <h1 class="mb-4 text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-violet-300 to-pink-300 drop-shadow-2xl animate-pulse-glow">
-        ANDROMEDA
+        {t ? t('main.title') : 'ANDROMEDA'}
       </h1>
       <!-- Subtitle with glow effect -->
       <div class="relative">
         <h2 class="text-xl md:text-2xl font-light text-cyan-100/80 tracking-[0.3em] uppercase">
-          Space Explorer
+          {t ? t('main.subtitle') : 'Space Explorer'}
         </h2>
         <div class="absolute inset-0 text-xl md:text-2xl font-light text-cyan-400/40 tracking-[0.3em] uppercase blur-sm">
-          Space Explorer
+          {t ? t('main.subtitle') : 'Space Explorer'}
         </div>
       </div>
     </div>
@@ -149,10 +182,7 @@
     <!-- Enhanced description with cosmic styling -->
     <div class="mb-16 relative">
       <p class="text-lg md:text-xl leading-relaxed text-slate-200/90 max-w-2xl mx-auto backdrop-blur-sm bg-white/5 rounded-2xl p-6 border border-white/10 shadow-2xl">
-        Embark on an epic journey through multiple <span class="text-cyan-300 font-semibold">planetary systems</span> and discover 
-        <span class="text-violet-300 font-semibold">exoplanets</span> through immersive 3D visualization. 
-        From our <span class="text-blue-300 font-semibold">Solar System</span> to 
-        <span class="text-pink-300 font-semibold">Alpha Centauri</span> and beyond the stars!
+        {t ? t('main.description') : 'Embark on an epic journey through multiple planetary systems and discover exoplanets through immersive 3D visualization. From our Solar System to Alpha Centauri and beyond the stars!'}
       </p>
     </div>
 
@@ -166,7 +196,7 @@
       >
         <span class="relative z-10 flex items-center justify-center gap-3">
           <span class="text-2xl animate-twinkle">☀️</span>
-          Solar System
+          {t ? t('main.solar') : 'Solar System'}
         </span>
         <div class="absolute inset-0 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
@@ -181,7 +211,7 @@
       >
         <span class="relative z-10 flex items-center justify-center gap-3">
           <span class="text-xl animate-cosmic-drift">🌌</span>
-          Explore Exoplanets
+          {t ? t('main.explore') : 'Explore Exoplanets'}
         </span>
         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
       </Button>
@@ -195,7 +225,7 @@
       >
         <span class="relative z-10 flex items-center justify-center gap-3">
           <span class="text-xl animate-float">🌠</span>
-          Galaxy View
+          {t ? t('main.galaxy') : 'Galaxy View'}
         </span>
         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-violet-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
       </Button>
@@ -209,7 +239,7 @@
       >
         <span class="relative z-10 flex items-center justify-center gap-3">
           <span class="text-xl animate-pulse-glow">⚙️</span>
-          Settings
+          {t ? t('main.settings') : 'Settings'}
         </span>
         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
       </Button>
@@ -217,29 +247,29 @@
 
     <!-- Hidden accessibility descriptions -->
     <div id="start-game-desc" class="sr-only">
-      Explore our home solar system with all planets and the Sun
+      {t ? t('aria.startGame') : 'Explore our home solar system with all planets and the Sun'}
     </div>
     <div id="systems-desc" class="sr-only">
-      Choose from Alpha Centauri, Kepler systems, and other exoplanet systems
+      {t ? t('aria.systems') : 'Choose from Alpha Centauri, Kepler systems, and other exoplanet systems'}
     </div>
     <div id="galaxy-desc" class="sr-only">
-      View nearby star systems in 3D galactic perspective
+      {t ? t('aria.galaxy') : 'View nearby star systems in 3D galactic perspective'}
     </div>
     <div id="settings-desc" class="sr-only">
-      Adjust graphics, audio, and accessibility options
+      {t ? t('aria.settings') : 'Adjust graphics, audio, and accessibility options'}
     </div>
 
     <!-- Enhanced instructions with cosmic styling -->
     <div class="relative animate-pulse opacity-70">
       <div class="backdrop-blur-sm bg-black/20 rounded-xl p-4 border border-white/10">
         <p class="text-sm text-slate-300">
-          <span class="text-cyan-300">🖱️ Mouse to rotate</span> • 
-          <span class="text-violet-300">📜 Scroll to zoom</span> • 
-          <span class="text-pink-300">🌍 Click planets to explore</span>
+          <span class="text-cyan-300">{t ? t('instructions.mouse') : '🖱️ Mouse to rotate'}</span> • 
+          <span class="text-violet-300">{t ? t('instructions.scroll') : '📜 Scroll to zoom'}</span> • 
+          <span class="text-pink-300">{t ? t('instructions.click') : '🌍 Click planets to explore'}</span>
           {#if $settings.enableKeyboardNavigation}
             <br />
-            <span class="text-emerald-300">⌨️ Arrow keys to navigate</span> • 
-            <span class="text-orange-300">⏎ Enter to select</span>
+            <span class="text-emerald-300">{t ? t('instructions.keyboard') : '⌨️ Arrow keys to navigate'}</span> • 
+            <span class="text-orange-300">{t ? t('instructions.enter') : '⏎ Enter to select'}</span>
           {/if}
         </p>
       </div>
@@ -262,11 +292,11 @@
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div class="w-full max-w-2xl rounded-lg bg-gray-900 p-6 shadow-2xl">
         <div class="mb-6 flex items-center justify-between">
-          <h2 class="text-2xl font-bold text-white">Choose a Planetary System</h2>
+          <h2 class="text-2xl font-bold text-white">{t ? t('systems.title') : 'Choose a Planetary System'}</h2>
           <button
             on:click={handleCloseSystemSelector}
             class="text-gray-400 hover:text-white"
-            aria-label="Close system selector"
+            aria-label={t ? t('aria.close') : 'Close system selector'}
           >
             ✕
           </button>
@@ -286,7 +316,7 @@
               </p>
               <div class="mt-3 flex items-center justify-between">
                 <span class="text-xs uppercase tracking-wide text-blue-400">
-                  {system.systemData.systemType} System
+                  {system.systemData.systemType} {t ? t('systems.system') : 'System'}
                 </span>
                 {#if system.systemData.metadata?.distance}
                   <span class="text-xs text-gray-400">
@@ -303,7 +333,7 @@
             on:click={handleCloseSystemSelector}
             class="rounded bg-gray-700 px-4 py-2 text-white hover:bg-gray-600"
           >
-            Cancel
+            {t ? t('action.cancel') : 'Cancel'}
           </button>
         </div>
       </div>
@@ -313,7 +343,7 @@
   <!-- Screen Reader Instructions -->
   {#if $settings.screenReaderMode}
     <div class="sr-only" aria-live="polite">
-      Main menu loaded. Use Tab key to navigate between buttons, or arrow keys for quick navigation.
+      {t ? t('sr.mainMenuLoaded') : 'Main menu loaded. Use Tab key to navigate between buttons, or arrow keys for quick navigation.'}
     </div>
   {/if}
 </div>

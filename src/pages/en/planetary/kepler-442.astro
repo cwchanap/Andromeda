@@ -1,9 +1,9 @@
 ---
-import "src/styles/global.css";
-import PlanetarySystemWrapper from "src/components/PlanetarySystemWrapper.svelte";
-import GlobalLanguageSelector from "src/components/GlobalLanguageSelector.svelte";
-import { getLangFromUrl, useTranslations } from "src/i18n/utils";
-import { ui } from "src/i18n/ui";
+import "../../../styles/global.css";
+import PlanetarySystemWrapper from "../../../components/PlanetarySystemWrapper.svelte";
+import GlobalLanguageSelector from "../../../components/GlobalLanguageSelector.svelte";
+import { getLangFromUrl, useTranslations } from "../../../i18n/utils";
+import { ui } from "../../../i18n/ui";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);

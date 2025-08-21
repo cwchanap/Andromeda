@@ -1,13 +1,11 @@
 ---
-import "src/styles/global.css";
-import PlanetarySystemWrapper from "src/components/PlanetarySystemWrapper.svelte";
-import GlobalLanguageSelector from "src/components/GlobalLanguageSelector.svelte";
-import { getLangFromUrl, useTranslations } from "src/i18n/utils";
-import { ui } from "src/i18n/ui";
+import "../styles/global.css";
+import GalaxyWrapper from "../components/GalaxyWrapper.svelte";
+import GlobalLanguageSelector from "../components/GlobalLanguageSelector.svelte";
+import { getLangFromUrl, useTranslations } from "../i18n/utils";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
-const translations = ui[lang] || ui.en;
 ---
 
 <html lang={lang}>
@@ -16,15 +14,15 @@ const translations = ui[lang] || ui.en;
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>Kepler-442 - {t('main.title')}</title>
+    <title>{t('main.galaxy')} - {t('main.title')}</title>
   </head>
 
   <body>
     <!-- Global Language Selector -->
     <GlobalLanguageSelector client:load />
     
-    <div id="planetary-system-container">
-      <PlanetarySystemWrapper systemId="kepler-442" {lang} {translations} client:only="svelte" />
+    <div id="galaxy-container">
+      <GalaxyWrapper client:only="svelte" />
     </div>
 
     <style>
@@ -33,8 +31,7 @@ const translations = ui[lang] || ui.en;
         padding: 0;
         overflow: hidden;
       }
-
-      #planetary-system-container {
+      #galaxy-container {
         position: relative;
         width: 100vw;
         height: 100vh;

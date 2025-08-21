@@ -8,11 +8,35 @@
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { PlanetarySystemRenderer, planetarySystemRegistry } from '../lib/planetary-system';
+  import { getLangFromUrl, useTranslations, useTranslatedPath } from '../i18n/utils';
   import type { PlanetarySystemConfig, PlanetarySystemEvents } from '../lib/planetary-system/types';
   import type { CelestialBodyData } from '../types/game';
   
   // Props
   export let systemId: string;
+  export let lang: 'en' | 'zh' | 'ja' = 'en';
+  export let translations: Record<string, string> = {};
+  
+  // Translation function
+  let t: (key: string) => string;
+  let currentLang: 'en' | 'zh' | 'ja' = lang;
+  
+  // Initialize translations
+  $: {
+    currentLang = lang;
+    if (Object.keys(translations).length > 0) {
+      t = (key: string) => translations[key] || key;
+    } else {
+      t = useTranslations(currentLang);
+    }
+  }
+  
+  onMount(() => {
+    if (typeof window !== 'undefined' && !lang) {
+      currentLang = getLangFromUrl(new URL(window.location.href));
+      t = useTranslations(currentLang);
+    }
+  });
   
   let planetarySystemRenderer: PlanetarySystemRenderer | null = null;
   let isLoading = true;
@@ -45,7 +69,8 @@
   
   const handleBackToMenu = () => {
     gameActions.navigateToView("menu");
-    window.location.href = '/';
+    const menuUrl = currentLang === 'en' ? '/' : `/${currentLang}/`;
+    window.location.href = menuUrl;
   };
   
   const handleZoomChange = (zoom: number) => {
@@ -215,22 +240,22 @@
     <!-- System Info Panel -->
     <div class="system-info-panel">
       <h2>
-        {planetarySystemRegistry.getSystem(systemId)?.name || 'Unknown System'}
+        {t ? t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown') : 'Unknown System'}
       </h2>
-      <p>{planetarySystemRegistry.getSystem(systemId)?.description || ''}</p>
+      <p>{t ? t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || '' : ''}</p>
     </div>
     
     <!-- Navigation Controls -->
     <div class="controls-panel">
       <button on:click={handleBackToMenu} class="back-button">
-        ← Back to Menu
+        {t ? t('controls.backToMenu') : '← Back to Menu'}
       </button>
       
       {#if zoomControls}
         <div class="zoom-controls">
-          <button on:click={zoomControls.zoomIn}>Zoom In</button>
-          <button on:click={zoomControls.zoomOut}>Zoom Out</button>
-          <button on:click={zoomControls.resetView}>Reset View</button>
+          <button on:click={zoomControls.zoomIn}>{t ? t('controls.zoomIn') : 'Zoom In'}</button>
+          <button on:click={zoomControls.zoomOut}>{t ? t('controls.zoomOut') : 'Zoom Out'}</button>
+          <button on:click={zoomControls.resetView}>{t ? t('controls.resetView') : 'Reset View'}</button>
         </div>
       {/if}
     </div>
@@ -249,11 +274,13 @@
     isOpen={showInfoModal}
     celestialBody={selectedBody}
     onClose={handleCloseModal}
+    {lang}
+    {translations}
   />
   
   <!-- Orbit Speed Control -->
   {#if isSceneReady}
-    <OrbitSpeedControl />
+    <OrbitSpeedControl {lang} {translations} />
   {/if}
   
   <!-- Accessibility Manager -->

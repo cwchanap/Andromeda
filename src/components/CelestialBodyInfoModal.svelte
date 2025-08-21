@@ -4,6 +4,71 @@
   export let isOpen: boolean = false;
   export let celestialBody: CelestialBodyData | null = null;
   export let onClose: () => void;
+  export let lang: string = 'en';
+  export let translations: Record<string, string> = {};
+  
+  // Create translation function with fallback
+  $: t = (key: string) => translations[key] || key;
+  
+  // Reactive statement that uses lang prop to suppress warning
+  $: currentLanguage = lang;
+  
+  // Get translated planet content
+  $: getTranslatedName = (body: CelestialBodyData | null) => {
+    if (!body) return '';
+    const translationKey = `planet.${body.id}.name`;
+    return t(translationKey) !== translationKey ? t(translationKey) : body.name;
+  };
+  
+  $: getTranslatedDescription = (body: CelestialBodyData | null) => {
+    if (!body) return '';
+    const translationKey = `planet.${body.id}.description`;
+    return t(translationKey) !== translationKey ? t(translationKey) : body.description;
+  };
+  
+  $: getTranslatedType = (body: CelestialBodyData | null) => {
+    if (!body) return '';
+    const translationKey = `planet.type.${body.type}`;
+    return t(translationKey) !== translationKey ? t(translationKey).toUpperCase() : body.type.toUpperCase();
+  };
+  
+  // Translate composition elements
+  $: translateComposition = (composition: string) => {
+    // Extract element name and percentage/description
+    const match = composition.match(/^(.+?)\s*\((.+)\)$/);
+    if (match) {
+      const elementName = match[1].trim();
+      const percentage = match[2].trim();
+      
+      // Handle specific cases first
+      if (elementName.toLowerCase() === 'trace metals') {
+        return `${t('element.trace')} ${t('element.metals')} (${percentage})`;
+      }
+      if (elementName.toLowerCase().includes('other elements')) {
+        return `${t('element.other')} ${t('element.elements')} (${percentage})`;
+      }
+      
+      // Try to translate the element name directly
+      const normalizedElement = elementName.toLowerCase().replace(/\s+/g, '');
+      const translationKey = `element.${normalizedElement}`;
+      const translatedElement = t(translationKey);
+      
+      if (translatedElement !== translationKey) {
+        return `${translatedElement} (${percentage})`;
+      }
+      
+      // Try common patterns for fallback
+      if (elementName.toLowerCase().includes('trace')) {
+        return `${t('element.trace')} ${t('element.metals')} (${percentage})`;
+      }
+      if (elementName.toLowerCase().includes('other')) {
+        return `${t('element.other')} ${t('element.elements')} (${percentage})`;
+      }
+    }
+    
+    // Fallback to original text
+    return composition;
+  };
   
   // Handle keyboard and click events
   const handleKeydown = (event: KeyboardEvent) => {
@@ -124,7 +189,7 @@
         <button 
           class="modal-close" 
           on:click={onClose}
-          aria-label="Close {celestialBody.name} information modal"
+          aria-label="{t('modal.close')} {getTranslatedName(celestialBody)}"
           type="button"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -140,14 +205,14 @@
             <div class="orbit-ring"></div>
           </div>
           <div class="header-text">
-            <h2 id="modal-title" class="planet-name">{celestialBody.name}</h2>
-            <span class="planet-type">{celestialBody.type.toUpperCase()}</span>
+            <h2 id="modal-title" class="planet-name">{getTranslatedName(celestialBody)}</h2>
+            <span class="planet-type">{getTranslatedType(celestialBody)}</span>
           </div>
         </div>
         
         <!-- Description section -->
         <div class="modal-body">
-          <p id="modal-description" class="planet-description">{celestialBody.description}</p>
+          <p id="modal-description" class="planet-description">{getTranslatedDescription(celestialBody)}</p>
           
           <!-- Key facts section -->
           <div class="facts-section">
@@ -155,13 +220,13 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="12,2 15.09,8.26 22,9 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9 8.91,8.26"></polygon>
               </svg>
-              Celestial Data
+              {t('modal.celestialData')}
             </h3>
             <div class="facts-grid">
               <div class="fact-item">
                 <div class="fact-icon">🌍</div>
                 <div class="fact-content">
-                  <span class="fact-label">Diameter</span>
+                  <span class="fact-label">{t('modal.diameter')}</span>
                   <span class="fact-value">{celestialBody.keyFacts.diameter}</span>
                 </div>
               </div>
@@ -169,7 +234,7 @@
               <div class="fact-item">
                 <div class="fact-icon">📏</div>
                 <div class="fact-content">
-                  <span class="fact-label">Distance from Sun</span>
+                  <span class="fact-label">{t('modal.distanceFromSun')}</span>
                   <span class="fact-value">{celestialBody.keyFacts.distanceFromSun}</span>
                 </div>
               </div>
@@ -177,7 +242,7 @@
               <div class="fact-item">
                 <div class="fact-icon">🔄</div>
                 <div class="fact-content">
-                  <span class="fact-label">Orbital Period</span>
+                  <span class="fact-label">{t('modal.orbitalPeriod')}</span>
                   <span class="fact-value">{celestialBody.keyFacts.orbitalPeriod}</span>
                 </div>
               </div>
@@ -185,7 +250,7 @@
               <div class="fact-item">
                 <div class="fact-icon">🌡️</div>
                 <div class="fact-content">
-                  <span class="fact-label">Temperature</span>
+                  <span class="fact-label">{t('modal.temperature')}</span>
                   <span class="fact-value">{celestialBody.keyFacts.temperature}</span>
                 </div>
               </div>
@@ -194,7 +259,7 @@
                 <div class="fact-item">
                   <div class="fact-icon">🌙</div>
                   <div class="fact-content">
-                    <span class="fact-label">Moons</span>
+                    <span class="fact-label">{t('modal.moons')}</span>
                     <span class="fact-value">{celestialBody.keyFacts.moons}</span>
                   </div>
                 </div>
@@ -210,11 +275,11 @@
                   <circle cx="12" cy="12" r="3"></circle>
                   <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
                 </svg>
-                Composition
+                {t('modal.composition')}
               </h3>
               <div class="composition-tags">
                 {#each celestialBody.keyFacts.composition as element}
-                  <span class="composition-tag">{element}</span>
+                  <span class="composition-tag">{translateComposition(element)}</span>
                 {/each}
               </div>
             </div>
@@ -224,7 +289,7 @@
         <!-- Footer with cosmic decoration -->
         <div class="modal-footer">
           <div class="cosmic-divider"></div>
-          <p class="footer-text">Explore the cosmos and discover the wonders of our universe</p>
+          <p class="footer-text">{t('modal.footerText')}</p>
         </div>
       </div>
     </div>
