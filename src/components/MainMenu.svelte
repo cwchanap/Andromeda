@@ -46,8 +46,8 @@
 
   const handleStartGame = () => {
     gameActions.navigateToView("solar-system");
-    // Navigate to the default solar system
-    const targetUrl = currentLang === 'en' ? '/planetary/solar' : `/${currentLang}/planetary/solar`;
+    // Navigate to the default solar system - redirect to en version
+    const targetUrl = `/en/planetary/solar`;
     window.location.href = targetUrl;
   };
 
@@ -64,8 +64,8 @@
   const handleSelectSystem = (systemId: string) => {
     gameActions.navigateToView("solar-system"); // Use existing type
     showSystemSelector = false;
-    // Navigate to the selected planetary system
-    const targetUrl = currentLang === 'en' ? `/planetary/${systemId}` : `/${currentLang}/planetary/${systemId}`;
+    // Navigate to the selected planetary system - redirect to en version
+    const targetUrl = `/en/planetary/${systemId}`;
     window.location.href = targetUrl;
   };
 

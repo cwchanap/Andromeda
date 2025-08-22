@@ -144,13 +144,17 @@
     };
     
     const navigateToSystem = (systemId: string) => {
-        // Map system IDs to their routes
+        // Map system IDs to their routes - redirect to en versions
         const systemRoutes: Record<string, string> = {
-            'solar-system': '/planetary/solar',
-            'alpha-centauri': '/planetary/alpha-centauri',
-            'barnards-star': '/planetary/barnards-star', // placeholder
-            'wolf-359': '/planetary/wolf-359', // placeholder
-            'sirius': '/planetary/sirius' // placeholder
+            'solar-system': '/en/planetary/solar',
+            'alpha-centauri': '/en/planetary/alpha-centauri',
+            'barnards-star': '/en/planetary/barnards-star',
+            'wolf-359': '/en/planetary/wolf-359',
+            'trappist-1': '/en/planetary/trappist-1',
+            'ross-128': '/en/planetary/ross-128',
+            'kepler-442': '/en/planetary/kepler-442',
+            'kepler-438': '/en/planetary/kepler-438',
+            'sirius': '/en/planetary/sirius' // placeholder
         };
         
         const route = systemRoutes[systemId];
