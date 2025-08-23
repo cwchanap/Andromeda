@@ -1,7 +1,6 @@
 ---
 import "../../../styles/global.css";
 import PlanetarySystemWrapper from "../../../components/PlanetarySystemWrapper.svelte";
-import GlobalLanguageSelector from "../../../components/GlobalLanguageSelector.svelte";
 import { getLangFromUrl, useTranslations } from "../../../i18n/utils";
 import { ui } from "../../../i18n/ui";
 
@@ -20,8 +19,6 @@ const translations = ui[lang] || ui.en;
   </head>
 
   <body>
-    <!-- Global Language Selector -->
-    <GlobalLanguageSelector client:load />
     
     <div id="planetary-system-container">
       <PlanetarySystemWrapper systemId="solar" {lang} {translations} client:only="svelte" />
