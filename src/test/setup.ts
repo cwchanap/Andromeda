@@ -81,6 +81,12 @@ import * as THREE from "three";
 (THREE as any).SRGBColorSpace = "sRGB";
 (THREE as any).MOUSE = { PAN: 0, ROTATE: 1 };
 (THREE as any).DoubleSide = "DoubleSide";
+(THREE as any).BackSide = "BackSide";
+(THREE as any).FrontSide = "FrontSide";
+(THREE as any).NormalBlending = "NormalBlending";
+(THREE as any).Material = class Material {
+    dispose = vi.fn();
+};
 (THREE as any).Vector2 = vi
     .fn()
     .mockImplementation((x = 0, y = 0) => ({ x, y }));
@@ -88,9 +94,9 @@ import * as THREE from "three";
 // Vector3 enhancements used by camera and animations
 const enhanceVector3 = (v: any) => {
     v.set = vi.fn((x: number, y: number, z: number) => {
-        v.x = x;
-        v.y = y;
-        v.z = z;
+        v.x = x ?? v.x;
+        v.y = y ?? v.y;
+        v.z = z ?? v.z;
         return v;
     });
     v.copy = vi.fn((o: any) => {
@@ -147,6 +153,8 @@ const enhanceVector3 = (v: any) => {
         const dz = v.z - (o.z ?? 0);
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     });
+    // Add length method for camera.position.length()
+    v.length = () => Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
     return v;
 };
 // Patch existing mocked Vector3 factory to include methods when constructed in tests
@@ -156,9 +164,53 @@ const OrigVector3 = (THREE as any).Vector3;
     .mockImplementation((x = 0, y = 0, z = 0) => enhanceVector3({ x, y, z }));
 
 // Color
-(THREE as any).Color = vi.fn().mockImplementation((_c?: any) => ({
-    setHex: vi.fn(),
-    copy: vi.fn(),
+(THREE as any).Color = vi.fn().mockImplementation((color?: any) => {
+    const colorObj = {
+        setHex: vi.fn().mockReturnThis(),
+        copy: vi.fn().mockReturnThis(),
+        clone: vi.fn(() => new (THREE as any).Color(color)),
+        getHexString: vi.fn(() => {
+            if (typeof color === "string" && color.startsWith("#")) {
+                return color.slice(1);
+            }
+            return "000011"; // Default to the expected value for fog
+        }),
+    };
+    return colorObj;
+});
+
+// Fog
+(THREE as any).Fog = vi
+    .fn()
+    .mockImplementation((color?: any, near?: number, far?: number) => ({
+        color: color || new (THREE as any).Color(),
+        near: near || 50,
+        far: far || 500,
+    }));
+
+// ShaderMaterial
+(THREE as any).ShaderMaterial = vi.fn().mockImplementation((_cfg?: any) => {
+    const material = {
+        uniforms: _cfg?.uniforms || {},
+        vertexShader: _cfg?.vertexShader || "",
+        fragmentShader: _cfg?.fragmentShader || "",
+        side: _cfg?.side || "FrontSide",
+        blending: _cfg?.blending || "NormalBlending",
+        transparent: _cfg?.transparent || false,
+        depthWrite: _cfg?.depthWrite !== undefined ? _cfg.depthWrite : true,
+        dispose: vi.fn(),
+    };
+    // Make it an instance of ShaderMaterial for instanceof checks
+    Object.setPrototypeOf(material, (THREE as any).ShaderMaterial.prototype);
+    return material;
+});
+
+// Clock
+(THREE as any).Clock = vi.fn().mockImplementation(() => ({
+    getDelta: vi.fn(() => 0.016), // Mock 60fps delta time
+    start: vi.fn(),
+    stop: vi.fn(),
+    elapsedTime: 0,
 }));
 
 // LoadingManager
@@ -234,16 +286,25 @@ declare global {
             attributes[name] = attr;
         }),
         getAttribute: vi.fn((name: string) => attributes[name]),
+        attributes,
         dispose: vi.fn(),
     };
 });
 
 (THREE as any).SphereGeometry = vi
     .fn()
-    .mockImplementation((_r?: number, _w?: number, _h?: number) => ({
-        dispose: vi.fn(),
-        getAttribute: vi.fn(() => ({ array: new Float32Array(0) })),
-    }));
+    .mockImplementation((_r?: number, _w?: number, _h?: number) => {
+        const geometry = {
+            dispose: vi.fn(),
+            getAttribute: vi.fn(() => ({ array: new Float32Array(0) })),
+        };
+        // Make it an instance of BufferGeometry for instanceof checks
+        Object.setPrototypeOf(
+            geometry,
+            (THREE as any).BufferGeometry.prototype,
+        );
+        return geometry;
+    });
 
 (THREE as any).RingGeometry = vi
     .fn()
@@ -258,92 +319,137 @@ const makeStdMaterial = () => ({
     dispose: vi.fn(),
     userData: {},
     emissive: new (THREE as any).Color(),
+    emissiveIntensity: 0.3, // Default value
     opacity: 1,
 });
+
 (THREE as any).MeshStandardMaterial = vi
     .fn()
-    .mockImplementation((_cfg?: any) => ({
+    .mockImplementation((_cfg?: any) => {
+        const material = {
+            ...makeStdMaterial(),
+            ...(_cfg ?? {}),
+        };
+        // Make it an instance of MeshStandardMaterial for instanceof checks
+        Object.setPrototypeOf(
+            material,
+            (THREE as any).MeshStandardMaterial.prototype,
+        );
+        return material;
+    });
+
+(THREE as any).MeshBasicMaterial = vi.fn().mockImplementation((_cfg?: any) => {
+    const material = {
         ...makeStdMaterial(),
         ...(_cfg ?? {}),
-    }));
-(THREE as any).MeshBasicMaterial = vi
-    .fn()
-    .mockImplementation((_cfg?: any) => ({
+    };
+    // Make it an instance of MeshBasicMaterial for instanceof checks
+    Object.setPrototypeOf(material, (THREE as any).MeshBasicMaterial.prototype);
+    return material;
+});
+
+(THREE as any).MeshPhongMaterial = vi.fn().mockImplementation((_cfg?: any) => {
+    const material = {
         ...makeStdMaterial(),
         ...(_cfg ?? {}),
-    }));
-(THREE as any).MeshPhongMaterial = vi
-    .fn()
-    .mockImplementation((_cfg?: any) => ({
-        ...makeStdMaterial(),
-        ...(_cfg ?? {}),
-    }));
+    };
+    // Make it an instance of MeshPhongMaterial for instanceof checks
+    Object.setPrototypeOf(material, (THREE as any).MeshPhongMaterial.prototype);
+    return material;
+});
 
 // Objects
+class MockMesh extends (THREE as any).Mesh {
+    constructor(geometry?: any, material?: any) {
+        super(geometry, material);
+        this.geometry = geometry;
+        this.material = material;
+        this.position = enhanceVector3({ x: 0, y: 0, z: 0 });
+        this.scale = { setScalar: vi.fn() };
+        this.rotation = { x: 0, y: 0, z: 0 };
+        this.userData = {};
+        this.name = "";
+        this.castShadow = false;
+        this.receiveShadow = false;
+        this.children = [];
+        this.add = vi.fn((c: any) => {
+            this.children.push(c);
+            return this;
+        });
+        this.getObjectByName = vi.fn(
+            (n: string) => this.children.find((c: any) => c.name === n) || null,
+        );
+        // Ensure instanceof THREE.Mesh works
+        Object.setPrototypeOf(this, (THREE as any).Mesh.prototype);
+    }
+}
+
 (THREE as any).Mesh = vi
     .fn()
     .mockImplementation((geometry?: any, material?: any) => {
-        const children: any[] = [];
-        const obj: any = {
-            geometry,
-            material,
-            position: enhanceVector3({ x: 0, y: 0, z: 0 }),
-            scale: { setScalar: vi.fn() },
-            rotation: { x: 0, y: 0, z: 0 },
-            userData: {},
-            name: "",
-            castShadow: false,
-            receiveShadow: false,
-            add: vi.fn((c: any) => children.push(c)),
-            getObjectByName: vi.fn(
-                (n: string) => children.find((c) => c.name === n) || null,
-            ),
-            children,
-        };
-        return obj;
+        return new MockMesh(geometry, material);
     });
 
+class MockGroup extends (THREE as any).Group {
+    constructor() {
+        super();
+        this.position = enhanceVector3({ x: 0, y: 0, z: 0 });
+        this.scale = { setScalar: vi.fn() };
+        this.rotation = { x: 0, y: 0, z: 0 };
+        this.userData = {};
+        this.name = "";
+        this.castShadow = false;
+        this.receiveShadow = false;
+        this.add = vi.fn((c: any) => {
+            this.children.push(c);
+            return this;
+        });
+        this.remove = vi.fn((c: any) => {
+            const i = this.children.indexOf(c);
+            if (i >= 0) this.children.splice(i, 1);
+            return this;
+        });
+        this.getObjectByName = vi.fn(
+            (n: string) => this.children.find((c: any) => c.name === n) || null,
+        );
+        this.traverse = vi.fn((callback: (child: any) => void) => {
+            callback(this); // Call on self
+            this.children.forEach(callback); // Call on children
+        });
+        // Make sure the traverse method actually calls the callback on children
+        this.traverse.mockImplementation((callback: (child: any) => void) => {
+            callback(this); // Call on self
+            this.children.forEach(callback); // Call on children
+        });
+        // Ensure instanceof THREE.Group works
+        Object.setPrototypeOf(this, (THREE as any).Group.prototype);
+    }
+}
+
 (THREE as any).Group = vi.fn().mockImplementation(() => {
-    const children: any[] = [];
-    const group: any = {
-        add: vi.fn((c: any) => children.push(c)),
-        remove: vi.fn((c: any) => {
-            const i = children.indexOf(c);
-            if (i >= 0) children.splice(i, 1);
-        }),
-        position: enhanceVector3({ x: 0, y: 0, z: 0 }),
-        scale: { setScalar: vi.fn() },
-        rotation: { x: 0, y: 0, z: 0 },
-        userData: {},
-        name: "",
-        castShadow: false,
-        receiveShadow: false,
-        children,
-        getObjectByName: vi.fn(
-            (n: string) => children.find((c) => c.name === n) || null,
-        ),
-    };
-    return group;
+    return new MockGroup();
 });
 
 // Lights
 (THREE as any).PointLight = vi
     .fn()
     .mockImplementation((_c?: any, _i?: number, _d?: number) => ({
-        position: { set: vi.fn() },
+        position: enhanceVector3({ x: 0, y: 0, z: 0 }),
         castShadow: false,
     }));
 (THREE as any).DirectionalLight = vi
     .fn()
     .mockImplementation((_c?: any, _i?: number) => ({
-        position: { set: vi.fn() },
+        position: enhanceVector3({ x: 0, y: 0, z: 0 }),
         castShadow: false,
         intensity: _i ?? 1,
+        dispose: vi.fn(),
     }));
 (THREE as any).AmbientLight = vi
     .fn()
     .mockImplementation((_c?: any, i?: number) => ({
         intensity: i ?? 1,
+        dispose: vi.fn(),
     }));
 
 // Scene with userData and background support
@@ -362,25 +468,36 @@ const makeStdMaterial = () => ({
         (_fov?: number, aspect?: number, _near?: number, _far?: number) => ({
             position: enhanceVector3({ x: 0, y: 0, z: 0 }),
             aspect: aspect ?? 1,
+            fov: _fov ?? 75,
+            near: _near ?? 0.1,
+            far: _far ?? 1000,
             updateProjectionMatrix: vi.fn(),
+            lookAt: vi.fn(),
         }),
     );
 
 // Renderer with capabilities and info
-(THREE as any).WebGLRenderer = vi.fn().mockImplementation((_opts?: any) => ({
-    setSize: vi.fn(),
-    render: vi.fn(),
-    dispose: vi.fn(),
-    setPixelRatio: vi.fn(),
-    setClearColor: vi.fn(),
-    domElement: document.createElement("canvas"),
-    shadowMap: { enabled: false, type: (THREE as any).PCFShadowMap },
-    capabilities: { getMaxAnisotropy: vi.fn(() => 4) },
-    info: {
-        render: { triangles: 0 },
-        memory: { geometries: 0, textures: 0 },
-    },
-}));
+(THREE as any).WebGLRenderer = vi.fn().mockImplementation((_opts?: any) => {
+    const renderer = {
+        setSize: vi.fn(),
+        render: vi.fn(),
+        dispose: vi.fn(),
+        setPixelRatio: vi.fn(),
+        setClearColor: vi.fn(),
+        domElement: document.createElement("canvas"),
+        shadowMap: { enabled: false, type: (THREE as any).PCFShadowMap },
+        capabilities: { getMaxAnisotropy: vi.fn(() => 4) },
+        info: {
+            render: { triangles: 0 },
+            memory: { geometries: 0, textures: 0 },
+        },
+    };
+
+    // Don't automatically add domElement to any container
+    // Let the tests control when the canvas is added
+
+    return renderer;
+});
 
 // LOD
 (THREE as any).LOD = vi.fn().mockImplementation(() => {
@@ -399,6 +516,12 @@ const makeStdMaterial = () => ({
 
 // Points and materials
 (THREE as any).PointsMaterial = vi.fn().mockImplementation((_cfg?: any) => ({
+    size: _cfg?.size ?? 1,
+    sizeAttenuation: _cfg?.sizeAttenuation ?? true,
+    vertexColors: _cfg?.vertexColors ?? false,
+    transparent: _cfg?.transparent ?? false,
+    opacity: _cfg?.opacity ?? 1,
+    blending: _cfg?.blending ?? "NormalBlending",
     dispose: vi.fn(),
 }));
 (THREE as any).Points = vi
@@ -555,6 +678,21 @@ Object.defineProperty(window, "localStorage", {
 });
 
 // Mock canvas methods
+
+// Mock requestAnimationFrame for animation loop testing
+Object.defineProperty(global, "requestAnimationFrame", {
+    writable: true,
+    value: vi.fn((cb: FrameRequestCallback) => {
+        // Return a frame ID but don't actually execute the callback
+        // This prevents infinite loops and timing issues in tests
+        return 1;
+    }),
+});
+
+Object.defineProperty(global, "cancelAnimationFrame", {
+    writable: true,
+    value: vi.fn(),
+});
 
 // Clean up after each test
 afterEach(() => {

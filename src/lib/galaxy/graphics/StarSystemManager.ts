@@ -19,6 +19,9 @@ export class StarSystemManager {
     private starMaterials = new Map<string, THREE.MeshStandardMaterial>();
     private glowMaterials = new Map<string, THREE.ShaderMaterial>();
 
+    // Mapping from star ID to system ID for efficient lookups
+    private starToSystemMap = new Map<string, string>();
+
     constructor(scene: THREE.Scene, config: Required<GalaxyConfig>) {
         this.scene = scene;
         this.config = config;
@@ -45,6 +48,8 @@ export class StarSystemManager {
         for (const starData of systemData.stars) {
             const starGroup = await this.createStar(starData);
             systemGroup.add(starGroup);
+            // Map star ID to system ID for efficient lookups
+            this.starToSystemMap.set(starData.id, systemData.id);
         }
 
         this.starSystemGroups.set(systemData.id, systemGroup);
@@ -216,20 +221,19 @@ export class StarSystemManager {
      * Highlight a star system
      */
     highlightStarSystem(systemId: string, highlight: boolean): void {
-        const systemGroup = this.starSystemGroups.get(systemId);
-        if (!systemGroup) return;
+        // Find all star names that belong to this system using the mapping
+        const systemStarNames: string[] = [];
+        this.starToSystemMap.forEach((starSystemId, starId) => {
+            if (starSystemId === systemId) {
+                systemStarNames.push(starId);
+            }
+        });
 
-        systemGroup.traverse((child) => {
-            if (
-                child instanceof THREE.Mesh &&
-                this.starMeshes.has(child.name)
-            ) {
-                const material = child.material as THREE.MeshStandardMaterial;
-                if (highlight) {
-                    material.emissiveIntensity = 0.6;
-                } else {
-                    material.emissiveIntensity = 0.3;
-                }
+        // Update materials for stars in this system
+        systemStarNames.forEach((starName) => {
+            const material = this.starMaterials.get(starName);
+            if (material) {
+                material.emissiveIntensity = highlight ? 0.6 : 0.3;
             }
         });
     }
@@ -251,7 +255,7 @@ export class StarSystemManager {
      * Dispose of all resources
      */
     dispose(): void {
-        // Dispose geometries and materials
+        // Dispose geometries and materials from meshes
         this.starMeshes.forEach((mesh) => {
             mesh.geometry.dispose();
             if (mesh.material instanceof THREE.Material) {
@@ -266,12 +270,22 @@ export class StarSystemManager {
             }
         });
 
+        // Also dispose materials from the maps to ensure all are disposed
+        this.starMaterials.forEach((material) => {
+            material.dispose();
+        });
+
+        this.glowMaterials.forEach((material) => {
+            material.dispose();
+        });
+
         // Clear maps
         this.starSystemGroups.clear();
         this.starMeshes.clear();
         this.glowMeshes.clear();
         this.starMaterials.clear();
         this.glowMaterials.clear();
+        this.starToSystemMap.clear();
     }
 
     /**
@@ -285,17 +299,9 @@ export class StarSystemManager {
      * Get system ID from a star mesh
      */
     getSystemIdFromMesh(mesh: THREE.Mesh): string | null {
-        // Find which system group contains this mesh
-        for (const [systemId, group] of this.starSystemGroups) {
-            let found = false;
-            group.traverse((child) => {
-                if (child === mesh) {
-                    found = true;
-                }
-            });
-            if (found) {
-                return systemId;
-            }
+        // Check if this is a known star mesh and return its system ID
+        if (mesh.name && this.starToSystemMap.has(mesh.name)) {
+            return this.starToSystemMap.get(mesh.name)!;
         }
         return null;
     }
