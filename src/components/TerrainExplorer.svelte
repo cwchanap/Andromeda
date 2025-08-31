@@ -148,6 +148,13 @@
       controls.maxDistance = 20;
       controls.target.set(0, 0, 0);
       
+      // Reverse the mouse buttons: left drag for pan, right drag for rotate
+      controls.mouseButtons = {
+        LEFT: THREE.MOUSE.PAN,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.ROTATE
+      };
+      
       loadingProgress = 100;
       loadingMessage = "Ready!";
       
@@ -383,13 +390,13 @@
       <h4>Navigation Controls</h4>
       <div class="instruction-list">
         <div class="instruction-item">
-          <strong>Rotate:</strong> Left click + drag
+          <strong>Pan:</strong> Left click + drag
         </div>
         <div class="instruction-item">
           <strong>Zoom:</strong> Mouse wheel
         </div>
         <div class="instruction-item">
-          <strong>Pan:</strong> Right click + drag
+          <strong>Rotate:</strong> Right click + drag
         </div>
       </div>
     </div>
