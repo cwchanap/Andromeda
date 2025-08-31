@@ -129,6 +129,8 @@ export const en = {
     "aria.systems":
         "Choose from Alpha Centauri, Kepler systems, and other exoplanet systems",
     "aria.galaxy": "View nearby star systems in 3D galactic perspective",
+    "aria.constellation":
+        "View constellations from your current location and time",
     "aria.settings": "Adjust graphics, audio, and accessibility options",
     "aria.close": "Close",
     "aria.languageSelector": "Language selector",
@@ -142,6 +144,21 @@ export const en = {
     // Language selector
     "language.select": "Select Language",
     "language.current": "Current: {language}",
+
+    // Constellation view
+    "constellation.title": "Constellation View",
+    "constellation.description":
+        "Explore constellations from your current location and time",
+    "constellation.loading": "Loading constellation data...",
+    "constellation.error": "Unable to load constellation view",
+    "constellation.locationPermission":
+        "Location permission needed to show accurate sky view",
+    "constellation.currentLocation": "Current Location",
+    "constellation.currentTime": "Current Time",
+    "constellation.visibility": "Visible Constellations",
+    "constellation.magnitude": "Magnitude",
+    "constellation.coordinates": "Coordinates",
+    "constellation.backToMenu": "← Back to Menu",
 
     // Common actions
     "action.start": "Start",

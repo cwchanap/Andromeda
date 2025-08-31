@@ -121,6 +121,7 @@ export const ja = {
     "aria.systems":
         "ケンタウルス座アルファ星、ケプラー系、その他の系外惑星系から選択",
     "aria.galaxy": "3D銀河視点で近くの星系を表示",
+    "aria.constellation": "現在の位置と時刻から星座を表示",
     "aria.settings":
         "グラフィック、オーディオ、アクセシビリティオプションを調整",
     "aria.close": "閉じる",
@@ -135,6 +136,19 @@ export const ja = {
     // Language selector
     "language.select": "言語を選択",
     "language.current": "現在：{language}",
+
+    // Constellation view
+    "constellation.title": "星座ビュー",
+    "constellation.description": "現在の位置と時刻から星座を探索",
+    "constellation.loading": "星座データを読み込み中...",
+    "constellation.error": "星座ビューを読み込めません",
+    "constellation.locationPermission": "正確な空の表示には位置情報が必要です",
+    "constellation.currentLocation": "現在の位置",
+    "constellation.currentTime": "現在の時刻",
+    "constellation.visibility": "見える星座",
+    "constellation.magnitude": "等級",
+    "constellation.coordinates": "座標",
+    "constellation.backToMenu": "← メニューに戻る",
 
     // Common actions
     "action.start": "開始",

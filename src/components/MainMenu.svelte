@@ -61,6 +61,12 @@
     window.location.href = targetUrl;
   };
 
+  const handleConstellationView = () => {
+    // Navigate to the constellation page
+    const targetUrl = currentLang === 'en' ? '/constellation' : `/${currentLang}/constellation`;
+    window.location.href = targetUrl;
+  };
+
   const handleSelectSystem = (systemId: string) => {
     gameActions.navigateToView("solar-system"); // Use existing type
     showSystemSelector = false;
@@ -89,6 +95,7 @@
     { label: t ? t('main.solar') : "Solar System", action: handleStartGame },
     { label: t ? t('main.explore') : "Explore Systems", action: handleSystemSelector },
     { label: t ? t('main.galaxy') : "Galaxy View", action: handleGalaxyView },
+    { label: t ? t('constellation.title') : "Constellation View", action: handleConstellationView },
     { label: t ? t('main.settings') : "Settings", action: handleOpenSettings }
   ];
 
@@ -233,6 +240,20 @@
       <Button
         variant="outline"
         size="lg"
+        on:click={handleConstellationView}
+        className="menu-button group relative h-14 w-full transform overflow-hidden rounded-xl border-2 border-indigo-400/50 bg-gradient-to-r from-indigo-900/20 to-blue-900/20 backdrop-blur-sm text-lg text-indigo-100 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-800/30 hover:to-blue-800/30 hover:shadow-indigo-400/50 hover:shadow-lg active:scale-95"
+        aria-describedby="constellation-desc"
+      >
+        <span class="relative z-10 flex items-center justify-center gap-3">
+          <span class="text-xl animate-pulse">✨</span>
+          {t ? t('constellation.title') : 'Constellation View'}
+        </span>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+      </Button>
+
+      <Button
+        variant="outline"
+        size="lg"
         on:click={handleOpenSettings}
         className="menu-button group relative h-14 w-full transform overflow-hidden rounded-xl border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 backdrop-blur-sm text-lg text-emerald-100 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:border-emerald-300 hover:bg-gradient-to-r hover:from-emerald-800/30 hover:to-teal-800/30 hover:shadow-emerald-400/50 hover:shadow-lg active:scale-95"
         aria-describedby="settings-desc"
@@ -254,6 +275,9 @@
     </div>
     <div id="galaxy-desc" class="sr-only">
       {t ? t('aria.galaxy') : 'View nearby star systems in 3D galactic perspective'}
+    </div>
+    <div id="constellation-desc" class="sr-only">
+      {t ? t('aria.constellation') : 'View constellations from your current location and time'}
     </div>
     <div id="settings-desc" class="sr-only">
       {t ? t('aria.settings') : 'Adjust graphics, audio, and accessibility options'}

@@ -117,6 +117,7 @@ export const zh = {
     "aria.startGame": "探索我们的太阳系，包含所有行星和太阳",
     "aria.systems": "从半人马座阿尔法星、开普勒系统和其他系外行星系统中选择",
     "aria.galaxy": "以3D银河视角查看附近星系",
+    "aria.constellation": "根据您的当前位置和时间查看星座",
     "aria.settings": "调整图形、音频和辅助功能选项",
     "aria.close": "关闭",
     "aria.languageSelector": "语言选择器",
@@ -130,6 +131,19 @@ export const zh = {
     // Language selector
     "language.select": "选择语言",
     "language.current": "当前：{language}",
+
+    // Constellation view
+    "constellation.title": "星座视图",
+    "constellation.description": "根据您的当前位置和时间探索星座",
+    "constellation.loading": "正在加载星座数据...",
+    "constellation.error": "无法加载星座视图",
+    "constellation.locationPermission": "需要位置权限以显示准确的天空视图",
+    "constellation.currentLocation": "当前位置",
+    "constellation.currentTime": "当前时间",
+    "constellation.visibility": "可见星座",
+    "constellation.magnitude": "星等",
+    "constellation.coordinates": "坐标",
+    "constellation.backToMenu": "← 返回菜单",
 
     // Common actions
     "action.start": "开始",
