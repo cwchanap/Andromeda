@@ -5,7 +5,6 @@ import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import type { CelestialBodyData } from "../../../types/game";
 import { PerformanceManager } from "./PerformanceManager";
 import { AssetLoader } from "./AssetLoader";
-import { TerrainRenderer } from "./TerrainRenderer";
 
 /**
  * Manages celestial body 3D objects and their properties with performance optimizations
@@ -102,12 +101,7 @@ export class CelestialBodyManager {
     private createFallbackGeometry(
         data: CelestialBodyData,
     ): THREE.BufferGeometry {
-        // Use terrain renderer for planets with terrain configuration
-        if (data.type === "planet" && data.terrain) {
-            return TerrainRenderer.createTerrainGeometry(data.terrain, 1);
-        }
-
-        // Default sphere geometry for other cases
+        // Always use perfect sphere geometry for all celestial bodies
         switch (data.type) {
             case "star":
                 return new THREE.SphereGeometry(1, 32, 32);
@@ -127,15 +121,7 @@ export class CelestialBodyManager {
                 transparent: false,
             });
         } else {
-            // Use terrain material for planets with terrain configuration
-            if (data.type === "planet" && data.terrain) {
-                return TerrainRenderer.createTerrainMaterial(
-                    data.terrain,
-                    data.material.color,
-                );
-            }
-
-            // Default material for other cases
+            // Always use standard material for all non-star celestial bodies
             return new THREE.MeshStandardMaterial({
                 color: data.material.color,
                 metalness: data.material.metalness || 0.1,
