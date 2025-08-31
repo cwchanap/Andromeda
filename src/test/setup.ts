@@ -16,6 +16,11 @@ vi.mock("three", () => ({
         setScalar: vi.fn(),
         clone: vi.fn(() => ({ x, y, z })),
     })),
+    MathUtils: {
+        lerp: vi.fn((start, end, alpha) => start + (end - start) * alpha),
+        randFloat: vi.fn((low, high) => low + Math.random() * (high - low)),
+        randFloatSpread: vi.fn((range) => range * (0.5 - Math.random())),
+    },
     Scene: vi.fn().mockImplementation(() => ({
         add: vi.fn(),
         remove: vi.fn(),
@@ -87,6 +92,22 @@ import * as THREE from "three";
 (THREE as any).Material = class Material {
     dispose = vi.fn();
 };
+// Create a proper base Material class that can be extended
+const MaterialBase = class {
+    dispose = vi.fn();
+    userData = {};
+    emissive = {
+        getHex: vi.fn(() => 0),
+        r: 0,
+        g: 0,
+        b: 0,
+    };
+    emissiveIntensity = 0.3;
+    opacity = 1;
+    roughness = 0.5;
+    metalness = 0.1;
+};
+(THREE as any).Material = MaterialBase;
 (THREE as any).Vector2 = vi
     .fn()
     .mockImplementation((x = 0, y = 0) => ({ x, y }));
@@ -166,12 +187,21 @@ const OrigVector3 = (THREE as any).Vector3;
 // Color
 (THREE as any).Color = vi.fn().mockImplementation((color?: any) => {
     const colorObj = {
+        r: 0,
+        g: 0,
+        b: 0,
         setHex: vi.fn().mockReturnThis(),
         copy: vi.fn().mockReturnThis(),
         clone: vi.fn(() => new (THREE as any).Color(color)),
+        getHex: vi.fn(() => {
+            if (typeof color === "string" && color.startsWith("#")) {
+                return parseInt(color.slice(1), 16);
+            }
+            return 0x000011; // Default to the expected value for fog
+        }),
         getHexString: vi.fn(() => {
             if (typeof color === "string" && color.startsWith("#")) {
-                return color.slice(1);
+                return color.slice(1).toLowerCase();
             }
             return "000011"; // Default to the expected value for fog
         }),
@@ -200,8 +230,12 @@ const OrigVector3 = (THREE as any).Vector3;
         depthWrite: _cfg?.depthWrite !== undefined ? _cfg.depthWrite : true,
         dispose: vi.fn(),
     };
-    // Make it an instance of ShaderMaterial for instanceof checks
+    // Make it an instance of both Material and ShaderMaterial for instanceof checks
     Object.setPrototypeOf(material, (THREE as any).ShaderMaterial.prototype);
+    Object.setPrototypeOf(
+        Object.getPrototypeOf(material),
+        (THREE as any).Material.prototype,
+    );
     return material;
 });
 
@@ -285,9 +319,16 @@ declare global {
         setAttribute: vi.fn((name: string, attr: any) => {
             attributes[name] = attr;
         }),
-        getAttribute: vi.fn((name: string) => attributes[name]),
+        getAttribute: vi.fn((name: string) => {
+            if (attributes[name]) {
+                return attributes[name];
+            }
+            // Return a default attribute with count > 0
+            return { array: new Float32Array(9), count: 3 };
+        }),
         attributes,
         dispose: vi.fn(),
+        computeVertexNormals: vi.fn(),
     };
 });
 
@@ -296,12 +337,25 @@ declare global {
     .mockImplementation((_r?: number, _w?: number, _h?: number) => {
         const geometry = {
             dispose: vi.fn(),
-            getAttribute: vi.fn(() => ({ array: new Float32Array(0) })),
+            getAttribute: vi.fn((name: string) => {
+                if (name === "position") {
+                    return {
+                        array: new Float32Array(100), // Mock some vertex data
+                        count: 33, // 100 / 3 = 33.33, rounded down
+                    };
+                }
+                return { array: new Float32Array(0), count: 0 };
+            }),
+            computeVertexNormals: vi.fn(),
         };
-        // Make it an instance of BufferGeometry for instanceof checks
+        // Create proper prototype chain: SphereGeometry -> BufferGeometry
+        const sphereProto = Object.create(
+            (THREE as any).BufferGeometry.prototype,
+        );
+        (THREE as any).SphereGeometry.prototype = sphereProto;
         Object.setPrototypeOf(
             geometry,
-            (THREE as any).BufferGeometry.prototype,
+            (THREE as any).SphereGeometry.prototype,
         );
         return geometry;
     });
@@ -318,9 +372,18 @@ declare global {
 const makeStdMaterial = () => ({
     dispose: vi.fn(),
     userData: {},
-    emissive: new (THREE as any).Color(),
+    emissive: {
+        getHex: vi.fn(() => 0),
+        clone: vi.fn(() => new (THREE as any).Color()),
+        setHex: vi.fn(),
+        r: 0,
+        g: 0,
+        b: 0,
+    },
     emissiveIntensity: 0.3, // Default value
     opacity: 1,
+    roughness: 0.5,
+    metalness: 0.1,
 });
 
 (THREE as any).MeshStandardMaterial = vi
@@ -330,10 +393,18 @@ const makeStdMaterial = () => ({
             ...makeStdMaterial(),
             ...(_cfg ?? {}),
         };
-        // Make it an instance of MeshStandardMaterial for instanceof checks
+        // If emissive is provided in config, use a proper Color mock
+        if (_cfg?.emissive) {
+            material.emissive = new (THREE as any).Color(_cfg.emissive);
+        }
+        // Make it an instance of both Material and MeshStandardMaterial for instanceof checks
         Object.setPrototypeOf(
             material,
             (THREE as any).MeshStandardMaterial.prototype,
+        );
+        Object.setPrototypeOf(
+            Object.getPrototypeOf(material),
+            (THREE as any).Material.prototype,
         );
         return material;
     });
@@ -343,8 +414,12 @@ const makeStdMaterial = () => ({
         ...makeStdMaterial(),
         ...(_cfg ?? {}),
     };
-    // Make it an instance of MeshBasicMaterial for instanceof checks
+    // Make it an instance of both Material and MeshBasicMaterial for instanceof checks
     Object.setPrototypeOf(material, (THREE as any).MeshBasicMaterial.prototype);
+    Object.setPrototypeOf(
+        Object.getPrototypeOf(material),
+        (THREE as any).Material.prototype,
+    );
     return material;
 });
 
@@ -353,8 +428,12 @@ const makeStdMaterial = () => ({
         ...makeStdMaterial(),
         ...(_cfg ?? {}),
     };
-    // Make it an instance of MeshPhongMaterial for instanceof checks
+    // Make it an instance of both Material and MeshPhongMaterial for instanceof checks
     Object.setPrototypeOf(material, (THREE as any).MeshPhongMaterial.prototype);
+    Object.setPrototypeOf(
+        Object.getPrototypeOf(material),
+        (THREE as any).Material.prototype,
+    );
     return material;
 });
 

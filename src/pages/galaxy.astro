@@ -1,0 +1,41 @@
+---
+import "../styles/global.css";
+import GalaxyWrapper from "../components/GalaxyWrapper.svelte";
+import GlobalLanguageSelector from "../components/GlobalLanguageSelector.svelte";
+import { getLangFromUrl, useTranslations } from "../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{t('main.galaxy')} - {t('main.title')}</title>
+  </head>
+
+  <body>
+    <!-- Global Language Selector -->
+    <GlobalLanguageSelector client:load />
+    
+    <div id="galaxy-container">
+      <GalaxyWrapper client:only="svelte" />
+    </div>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      #galaxy-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </body>
+</html>
