@@ -205,6 +205,7 @@ describe("Game Store", () => {
                     enableKeyboardNavigation: false,
                     announceSceneChanges: false,
                     screenReaderMode: true,
+                    orbitSpeedMultiplier: 1.0,
                 };
 
                 gameActions.updateSettings(newSettings);

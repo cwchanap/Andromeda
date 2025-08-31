@@ -6,7 +6,6 @@
   import type { CelestialBodyData } from '../types/game';
   import { planetarySystemRegistry } from '../lib/planetary-system';
   import * as THREE from 'three';
-  import { TerrainRenderer } from '../lib/planetary-system/graphics/TerrainRenderer';
   
   // Props
   export let planetId: string;
