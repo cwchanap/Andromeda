@@ -40,6 +40,7 @@ export const zh = {
     "modal.orbitalPeriod": "轨道周期",
     "modal.temperature": "温度",
     "modal.moons": "卫星",
+    "modal.viewTerrain": "探索地形",
     "modal.footerText": "探索宇宙，发现宇宙的奇迹",
     "modal.close": "关闭模态框",
 

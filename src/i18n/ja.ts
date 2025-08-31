@@ -40,6 +40,7 @@ export const ja = {
     "modal.orbitalPeriod": "軌道周期",
     "modal.temperature": "温度",
     "modal.moons": "衛星",
+    "modal.viewTerrain": "地形を探索",
     "modal.footerText": "宇宙を探索し、宇宙の驚異を発見する",
     "modal.close": "モーダルを閉じる",
 

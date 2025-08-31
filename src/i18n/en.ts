@@ -41,6 +41,7 @@ export const en = {
     "modal.orbitalPeriod": "Orbital Period",
     "modal.temperature": "Temperature",
     "modal.moons": "Moons",
+    "modal.viewTerrain": "Explore Terrain",
     "modal.footerText":
         "Explore the cosmos and discover the wonders of our universe",
     "modal.close": "Close modal",

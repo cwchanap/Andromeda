@@ -1,0 +1,63 @@
+---
+import "../../../styles/global.css";
+import TerrainExplorer from "../../../components/TerrainExplorer.svelte";
+import { getLangFromUrl, useTranslations } from "../../../i18n/utils";
+import { ui } from "../../../i18n/ui";
+
+export async function getStaticPaths() {
+  // Define the planets that have terrain rendering
+  const planetsWithTerrain = [
+    { planetId: 'mercury' },
+    { planetId: 'venus' },
+    { planetId: 'earth' },
+    { planetId: 'mars' }
+  ];
+  
+  return planetsWithTerrain.map(({ planetId }) => ({
+    params: { planetId }
+  }));
+}
+
+const { planetId } = Astro.params;
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const translations = ui[lang] || ui.en;
+
+// Validate planet ID
+const validPlanets = ['mercury', 'venus', 'earth', 'mars'];
+if (!validPlanets.includes(planetId as string)) {
+  return Astro.redirect('/planetary/solar');
+}
+---
+
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{t(`planet.${planetId}.name`)} Terrain - {t('main.title')}</title>
+    <meta name="description" content={`Explore the 3D terrain of ${t(`planet.${planetId}.name`)} in detail.`} />
+  </head>
+
+  <body>
+    <div id="terrain-explorer-container">
+      <TerrainExplorer planetId={planetId} {lang} {translations} client:only="svelte" />
+    </div>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000011;
+      }
+
+      #terrain-explorer-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </body>
+</html>

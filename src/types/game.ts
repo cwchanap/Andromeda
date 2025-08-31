@@ -1,6 +1,7 @@
 // Core type definitions for the space exploration game
 import type { Vector3 } from "three";
 import type { GamePlugin } from "./universe";
+import type { TerrainConfig } from "../lib/planetary-system/graphics/TerrainRenderer";
 
 export interface ModalTheme {
     primary: string;
@@ -52,6 +53,8 @@ export interface CelestialBodyData {
     modalTheme?: ModalTheme;
     orbitRadius?: number;
     orbitSpeed?: number;
+    // 3D terrain configuration for planets
+    terrain?: TerrainConfig;
     rings?: {
         enabled: boolean;
         innerRadius: number;

@@ -84,8 +84,8 @@ export const solarSystemData: PlanetarySystemData = {
                 moons: 0,
             },
             images: [
-                "https://images.unsplash.com/photo-1614728894747-a83421048a1c?w=800&h=600&fit=crop",
-                "https://images.unsplash.com/photo-1614732414444-096040ec8c6d?w=800&h=600&fit=crop",
+                "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
+                "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
             ],
             position: new THREE.Vector3(5.79, 0, 0), // 57.9 million km with new scale
             scale: 0.38,
@@ -97,12 +97,58 @@ export const solarSystemData: PlanetarySystemData = {
             material: {
                 color: "#8C7853",
                 roughness: 0.9,
-                metalness: 0.3,
+                metalness: 0.1,
+            },
+            terrain: {
+                enabled: true,
+                type: "rocky",
+                heightScale: 0.02,
+                resolution: "medium",
+                features: {
+                    craters: {
+                        enabled: true,
+                        count: 12,
+                        minRadius: 0.05,
+                        maxRadius: 0.2,
+                        depth: 0.03,
+                    },
+                    mountains: {
+                        enabled: false,
+                        count: 0,
+                        minHeight: 0,
+                        maxHeight: 0,
+                        smoothness: 2,
+                    },
+                    valleys: {
+                        enabled: false,
+                        count: 0,
+                        depth: 0,
+                        width: 0,
+                    },
+                    continents: {
+                        enabled: false,
+                        count: 0,
+                        seaLevel: 0,
+                    },
+                },
+                colors: {
+                    low: "#6B5B3D",
+                    mid: "#8C7853",
+                    high: "#A89068",
+                },
+                noise: {
+                    seed: 42,
+                    octaves: 3,
+                    frequency: 4,
+                    amplitude: 0.01,
+                    persistence: 0.5,
+                    lacunarity: 2,
+                },
             },
             modalTheme: {
                 primary: "#8C7853",
-                secondary: "#A68B5B",
-                accent: "#D4B896",
+                secondary: "#A89068",
+                accent: "#D4AF37",
                 background:
                     "linear-gradient(135deg, #1a1612 0%, #2d1810 50%, #1a1612 100%)",
                 textColor: "#E5D5B8",
@@ -139,6 +185,53 @@ export const solarSystemData: PlanetarySystemData = {
                 color: "#D6CDAF",
                 roughness: 0.7,
                 metalness: 0.2,
+            },
+            terrain: {
+                enabled: true,
+                type: "volcanic",
+                heightScale: 0.04,
+                resolution: "medium",
+                features: {
+                    craters: {
+                        enabled: true,
+                        count: 8,
+                        minRadius: 0.04,
+                        maxRadius: 0.15,
+                        depth: 0.02,
+                    },
+                    mountains: {
+                        enabled: true,
+                        count: 12,
+                        minHeight: 0.03,
+                        maxHeight: 0.08,
+                        smoothness: 1.8,
+                    },
+                    valleys: {
+                        enabled: true,
+                        count: 5,
+                        depth: 0.03,
+                        width: 0.08,
+                    },
+                    continents: {
+                        enabled: false,
+                        count: 0,
+                        seaLevel: 0,
+                    },
+                },
+                colors: {
+                    low: "#B8860B", // Dark yellow-brown
+                    mid: "#D6CDAF", // Venus beige
+                    high: "#DAA520", // Golden rod
+                    peak: "#FF6347", // Volcanic red peaks
+                },
+                noise: {
+                    seed: 54321,
+                    octaves: 4,
+                    frequency: 3.5,
+                    amplitude: 0.015,
+                    persistence: 0.5,
+                    lacunarity: 1.8,
+                },
             },
             modalTheme: {
                 primary: "#D6CDAF",
@@ -186,6 +279,53 @@ export const solarSystemData: PlanetarySystemData = {
                 roughness: 0.5,
                 metalness: 0.1,
             },
+            terrain: {
+                enabled: true,
+                type: "earth-like",
+                heightScale: 0.03,
+                resolution: "high",
+                features: {
+                    craters: {
+                        enabled: true,
+                        count: 3,
+                        minRadius: 0.02,
+                        maxRadius: 0.08,
+                        depth: 0.01,
+                    },
+                    mountains: {
+                        enabled: true,
+                        count: 8,
+                        minHeight: 0.02,
+                        maxHeight: 0.05,
+                        smoothness: 1.5,
+                    },
+                    valleys: {
+                        enabled: true,
+                        count: 6,
+                        depth: 0.02,
+                        width: 0.1,
+                    },
+                    continents: {
+                        enabled: true,
+                        count: 7,
+                        seaLevel: 0.0,
+                    },
+                },
+                colors: {
+                    low: "#1B4D72", // Deep ocean blue
+                    mid: "#228B22", // Forest green
+                    high: "#8B4513", // Brown mountains
+                    peak: "#FFFFFF", // Snow caps
+                },
+                noise: {
+                    seed: 12345,
+                    octaves: 5,
+                    frequency: 3,
+                    amplitude: 0.015,
+                    persistence: 0.6,
+                    lacunarity: 2.2,
+                },
+            },
             modalTheme: {
                 primary: "#3E8EDE",
                 secondary: "#4DA3E0",
@@ -226,6 +366,53 @@ export const solarSystemData: PlanetarySystemData = {
                 color: "#C1440E",
                 roughness: 0.8,
                 metalness: 0.3,
+            },
+            terrain: {
+                enabled: true,
+                type: "desert",
+                heightScale: 0.06,
+                resolution: "high",
+                features: {
+                    craters: {
+                        enabled: true,
+                        count: 15,
+                        minRadius: 0.03,
+                        maxRadius: 0.25,
+                        depth: 0.04,
+                    },
+                    mountains: {
+                        enabled: true,
+                        count: 6,
+                        minHeight: 0.05,
+                        maxHeight: 0.15, // Olympus Mons is huge!
+                        smoothness: 1.2,
+                    },
+                    valleys: {
+                        enabled: true,
+                        count: 8,
+                        depth: 0.04,
+                        width: 0.15,
+                    },
+                    continents: {
+                        enabled: false,
+                        count: 0,
+                        seaLevel: 0,
+                    },
+                },
+                colors: {
+                    low: "#8B4513", // Dark brown
+                    mid: "#C1440E", // Rust red
+                    high: "#D2691E", // Sandy brown
+                    peak: "#F4A460", // Sandy peaks
+                },
+                noise: {
+                    seed: 67890,
+                    octaves: 4,
+                    frequency: 2.5,
+                    amplitude: 0.02,
+                    persistence: 0.7,
+                    lacunarity: 2.0,
+                },
             },
             modalTheme: {
                 primary: "#C1440E",

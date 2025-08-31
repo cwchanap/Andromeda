@@ -286,6 +286,28 @@
           {/if}
         </div>
         
+        <!-- Action buttons section for terrain exploration -->
+        {#if celestialBody.terrain && ['mercury', 'venus', 'earth', 'mars'].includes(celestialBody.id)}
+          <div class="action-section">
+            <button 
+              class="terrain-button"
+              on:click={() => {
+                const terrainUrl = lang === 'en' 
+                  ? `/en/planetary/terrain/${celestialBody.id}` 
+                  : `/${lang}/planetary/terrain/${celestialBody.id}`;
+                window.location.href = terrainUrl;
+              }}
+              type="button"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              {t('modal.viewTerrain')}
+            </button>
+          </div>
+        {/if}
+        
         <!-- Footer with cosmic decoration -->
         <div class="modal-footer">
           <div class="cosmic-divider"></div>
@@ -636,6 +658,46 @@
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.875rem;
     font-style: italic;
+  }
+  
+  /* Action section styles */
+  .action-section {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .terrain-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+  }
+  
+  .terrain-button:hover {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
+  }
+  
+  .terrain-button:active {
+    transform: translateY(0);
+  }
+  
+  .terrain-button svg {
+    width: 20px;
+    height: 20px;
   }
   
   @keyframes fadeIn {
