@@ -172,15 +172,15 @@
   <div class="relative z-20 mx-auto max-w-3xl text-center">
     <!-- Enhanced Title with multiple effects -->
     <div class="mb-8 relative">
-      <h1 class="mb-4 text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-violet-300 to-pink-300 drop-shadow-2xl animate-pulse-glow">
+      <h1 class="mb-4 text-5xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-violet-300 to-pink-300 drop-shadow-2xl animate-pulse-glow menu-title">
         {t ? t('main.title') : 'ANDROMEDA'}
       </h1>
       <!-- Subtitle with glow effect -->
       <div class="relative">
-        <h2 class="text-xl md:text-2xl font-light text-cyan-100/80 tracking-[0.3em] uppercase">
+        <h2 class="text-xl md:text-2xl font-light text-cyan-100/80 uppercase menu-subtitle">
           {t ? t('main.subtitle') : 'Space Explorer'}
         </h2>
-        <div class="absolute inset-0 text-xl md:text-2xl font-light text-cyan-400/40 tracking-[0.3em] uppercase blur-sm">
+        <div class="absolute inset-0 text-xl md:text-2xl font-light text-cyan-400/40 uppercase blur-sm menu-subtitle">
           {t ? t('main.subtitle') : 'Space Explorer'}
         </div>
       </div>
@@ -188,7 +188,7 @@
 
     <!-- Enhanced description with cosmic styling -->
     <div class="mb-16 relative">
-      <p class="text-lg md:text-xl leading-relaxed text-slate-200/90 max-w-2xl mx-auto backdrop-blur-sm bg-white/5 rounded-2xl p-6 border border-white/10 shadow-2xl">
+      <p class="text-lg md:text-xl leading-relaxed text-slate-200/90 max-w-2xl mx-auto backdrop-blur-sm bg-white/5 rounded-2xl border border-white/10 shadow-2xl menu-description">
         {t ? t('main.description') : 'Embark on an epic journey through multiple planetary systems and discover exoplanets through immersive 3D visualization. From our Solar System to Alpha Centauri and beyond the stars!'}
       </p>
     </div>
@@ -607,5 +607,23 @@
     .stars, .stars2, .stars3 {
       animation-duration: 30s;
     }
+  }
+  
+  /* Language-specific adjustments for CJK */
+  :global(:root[lang="zh"] .menu-title),
+  :global(:root[lang="ja"] .menu-title) {
+    line-height: 1.2;
+  }
+  
+  :global(:root[lang="zh"] .menu-subtitle),
+  :global(:root[lang="ja"] .menu-subtitle) {
+    line-height: 1.4;
+    letter-spacing: normal !important;
+  }
+  
+  :global(:root[lang="zh"] .menu-description),
+  :global(:root[lang="ja"] .menu-description) {
+    line-height: 1.6;
+    padding: 1.5rem;
   }
 </style>

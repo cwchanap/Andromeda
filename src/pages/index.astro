@@ -1,9 +1,9 @@
 ---
-import "../styles/global.css";
-import MainMenu from "src/components/MainMenu.svelte";
-import GlobalLanguageSelector from "src/components/GlobalLanguageSelector.svelte";
-import ErrorBoundary from "src/components/ErrorBoundary.svelte";
-import { getLangFromUrl, useTranslations } from "src/i18n/utils";
+import MainLayout from "@/layouts/main.astro";
+import MainMenu from "@/components/MainMenu.svelte";
+import GlobalLanguageSelector from "@/components/GlobalLanguageSelector.svelte";
+import ErrorBoundary from "@/components/ErrorBoundary.svelte";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -34,24 +34,18 @@ const translations = {
   'aria.close': t('aria.close'),
   'sr.mainMenuLoaded': t('sr.mainMenuLoaded')
 };
+
+const content = {
+  title: t('page.title'),
+  description: t('page.description')
+};
 ---
 
-<html lang={lang}>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="generator" content={Astro.generator} />
-    <title>{t('page.title')}</title>
-    <meta name="description" content={t('page.description')} />
-  </head>
-
-  <body>
-    <!-- Global Language Selector -->
-    <GlobalLanguageSelector client:only="svelte" />
-    
-    <ErrorBoundary client:idle>
-      <MainMenu lang={lang} translations={translations} client:idle />
-    </ErrorBoundary>
-  </body>
-</html>
+<MainLayout {content} lang={lang}>
+  <!-- Global Language Selector -->
+  <GlobalLanguageSelector client:only="svelte" />
+  
+  <ErrorBoundary client:idle>
+    <MainMenu lang={lang} translations={translations} client:idle />
+  </ErrorBoundary>
+</MainLayout>
