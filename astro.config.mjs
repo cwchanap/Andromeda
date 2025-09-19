@@ -6,7 +6,7 @@ import vercel from "@astrojs/vercel";
 
 // https://astro.build/config
 export default defineConfig({
-  trailingSlash: "always",
+  trailingSlash: "ignore",
   output: "server",
   adapter: vercel(),
   integrations: [svelte()],

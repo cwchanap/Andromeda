@@ -40,8 +40,14 @@
         // For English, use the clean path without locale prefix
         newPath = cleanPath || '/';
       } else {
-        // For other languages, add the locale prefix
-        newPath = `/${newLang}${cleanPath || ''}`;
+        // For other languages, add the locale prefix with trailing slash
+        const basePath = cleanPath || '/';
+        newPath = `/${newLang}${basePath}`;
+      }
+
+      // Ensure trailing slash for consistency with Astro config
+      if (!newPath.endsWith('/')) {
+        newPath += '/';
       }
       
       // Navigate to the new URL
