@@ -1,7 +1,64 @@
 import type { LocationData } from "../types/constellation";
 
 /**
- * Converts Right Ascension and Declination to screen coordinates
+ * Converts Right Ascension and Declination to 3D sphere coordinates for 360-degree sky viewing
+ * @param ra Right Ascension in hours (0-24)
+ * @param dec Declination in degrees (-90 to +90)
+ * @param location Observer's location
+ * @param dateTime Current date and time
+ * @param radius Sphere radius for 3D positioning
+ * @returns {x, y, z, visible} 3D coordinates and visibility
+ */
+export function celestialToSphere(
+    ra: number,
+    dec: number,
+    location: LocationData,
+    dateTime: Date,
+    radius: number = 100,
+): { x: number; y: number; z: number; visible: boolean } {
+    // Convert to radians
+    const raRad = (ra / 24) * 2 * Math.PI;
+    const decRad = (dec * Math.PI) / 180;
+    const latRad = (location.latitude * Math.PI) / 180;
+
+    // Calculate Local Sidereal Time for accurate star positioning
+    const jd = julianDate(dateTime);
+    const gst = greenwichSiderealTime(jd);
+    const lst = gst + location.longitude / 15;
+    const lstRad = ((lst % 24) / 24) * 2 * Math.PI;
+
+    // Calculate Hour Angle (how far the star is from the observer's meridian)
+    const ha = lstRad - raRad;
+
+    // Convert to horizontal coordinates (altitude and azimuth)
+    const alt = Math.asin(
+        Math.sin(decRad) * Math.sin(latRad) +
+            Math.cos(decRad) * Math.cos(latRad) * Math.cos(ha),
+    );
+
+    const azimuth = Math.atan2(
+        -Math.sin(ha) * Math.cos(decRad),
+        Math.tan(decRad) * Math.cos(latRad) - Math.sin(latRad) * Math.cos(ha),
+    );
+
+    // All stars are considered "visible" for 360-degree viewing
+    // The observer can look in any direction to see the entire celestial sphere
+    const visible = true;
+
+    // Convert horizontal coordinates to 3D Cartesian coordinates
+    // Using standard astronomy coordinate system where:
+    // - Y is up (zenith)
+    // - X and Z form the horizontal plane
+    // - Azimuth: 0° = North, 90° = East, 180° = South, 270° = West
+    const x = radius * Math.cos(alt) * Math.sin(azimuth);
+    const y = radius * Math.sin(alt); // Altitude: 0 = horizon, π/2 = zenith, -π/2 = nadir
+    const z = radius * Math.cos(alt) * Math.cos(azimuth);
+
+    return { x, y, z, visible };
+}
+
+/**
+ * Converts Right Ascension and Declination to screen coordinates (legacy)
  * @param ra Right Ascension in hours (0-24)
  * @param dec Declination in degrees (-90 to +90)
  * @param location Observer's location
@@ -18,51 +75,14 @@ export function celestialToScreen(
     screenWidth: number,
     screenHeight: number,
 ): { x: number; y: number; visible: boolean } {
-    // Convert to radians
-    const raRad = (ra / 24) * 2 * Math.PI;
-    const decRad = (dec * Math.PI) / 180;
-    const latRad = (location.latitude * Math.PI) / 180;
+    // Get 3D coordinates first
+    const sphere = celestialToSphere(ra, dec, location, dateTime, 50);
 
-    // Calculate Local Sidereal Time (simplified)
-    const jd = julianDate(dateTime);
-    const gst = greenwichSiderealTime(jd);
-    const lst = gst + location.longitude / 15;
-    const lstRad = ((lst % 24) / 24) * 2 * Math.PI;
+    // Project to screen (simplified stereographic projection)
+    const x = screenWidth / 2 + (sphere.x / sphere.z) * screenWidth * 0.3;
+    const y = screenHeight / 2 - (sphere.y / sphere.z) * screenHeight * 0.3;
 
-    // Calculate Hour Angle
-    const ha = lstRad - raRad;
-
-    // Convert to horizontal coordinates (altitude and azimuth)
-    const alt = Math.asin(
-        Math.sin(decRad) * Math.sin(latRad) +
-            Math.cos(decRad) * Math.cos(latRad) * Math.cos(ha),
-    );
-
-    const azimuth = Math.atan2(
-        -Math.sin(ha) * Math.cos(decRad),
-        Math.tan(decRad) * Math.cos(latRad) - Math.sin(latRad) * Math.cos(ha),
-    );
-
-    // Check if star is above horizon
-    const visible = alt > 0;
-
-    if (!visible) {
-        return { x: -1000, y: -1000, visible: false };
-    }
-
-    // Project to screen coordinates
-    // Simple stereographic projection centered on zenith
-    const zenithAngle = Math.PI / 2 - alt;
-    const radius =
-        (Math.tan(zenithAngle / 2) * Math.min(screenWidth, screenHeight)) / 2;
-
-    const x = screenWidth / 2 + radius * Math.sin(azimuth);
-    const y = screenHeight / 2 + radius * Math.cos(azimuth);
-
-    // Check if within screen bounds
-    const inBounds = x >= 0 && x <= screenWidth && y >= 0 && y <= screenHeight;
-
-    return { x, y, visible: inBounds };
+    return { x, y, visible: sphere.visible };
 }
 
 /**

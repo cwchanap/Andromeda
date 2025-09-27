@@ -6,15 +6,18 @@
   import { ConstellationRenderer } from "../lib/constellation/ConstellationRenderer";
   import { constellations, getVisibleConstellations } from "../data/constellations";
   import { getCurrentLocation, isConstellationVisible, formatCoordinates } from "../utils/astronomy";
-  import type { ConstellationViewState, SkyConfiguration } from "../types/constellation";
+  import type { ConstellationViewState, SkyConfiguration, LocationData } from "../types/constellation";
 
   let container: HTMLElement;
   let renderer: ConstellationRenderer | null = null;
+  let canvas2D: HTMLCanvasElement;
+  let ctx2D: CanvasRenderingContext2D | null = null;
   let loading = true;
   let error: string | null = null;
   let debugInfo = "";
   let attemptCount = 0;
   let retryTimeout: NodeJS.Timeout | null = null;
+  let webglSupported = true;
   
   // Current language and translations
   let currentLang: 'en' | 'zh' | 'ja' = 'en';
@@ -33,6 +36,7 @@
   // UI state
   let showControls = true;
   let showLocationInfo = true;
+  let showDragInstructions = true;
 
   // Initialize translations
   if (typeof window !== 'undefined') {
@@ -42,6 +46,14 @@
 
   onMount(async () => {
     try {
+      // Check WebGL support first
+      webglSupported = checkWebGLSupport();
+      console.log('WebGL supported:', webglSupported);
+      if (!webglSupported) {
+        console.log('WebGL not supported, showing fallback');
+        throw new Error("WebGL is not supported by your browser or graphics card");
+      }
+
       // Wait for container to be available
       const maxAttempts = 10;
       while (!container && attemptCount < maxAttempts) {
@@ -57,14 +69,14 @@
       debugInfo = "Getting user location...";
       
       // Get user's current location
-      let location;
+      let location: LocationData;
       try {
         // For testing/demo purposes, use a shorter timeout and fallback quickly
         const locationPromise = getCurrentLocation();
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("Location timeout")), 3000)
         );
-        
+
         location = await Promise.race([locationPromise, timeoutPromise]);
         viewState.locationPermissionGranted = true;
         debugInfo = `Location obtained: ${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`;
@@ -105,16 +117,50 @@
       debugInfo = "Initializing 3D renderer...";
 
       // Initialize constellation renderer
-      renderer = new ConstellationRenderer(container);
-      
-      // Get all stars from visible constellations
-      const allStars = visibleConstellations.flatMap(constellation => constellation.stars);
-      
-      await renderer.initialize(allStars, visibleConstellations, skyConfig);
+      try {
+        renderer = new ConstellationRenderer(container);
+
+        // Get all stars from visible constellations
+        const allStars = visibleConstellations.flatMap(constellation => constellation.stars);
+
+        await renderer.initialize(allStars, visibleConstellations, skyConfig);
+      } catch (rendererError) {
+        console.warn('WebGL renderer failed, falling back to text display:', rendererError);
+        webglSupported = false;
+        // Don't re-throw, just continue with text display
+      }
+
+      // Only create 2D canvas if WebGL failed
+      if (!webglSupported) {
+        try {
+          canvas2D = document.createElement('canvas');
+          canvas2D.width = container.clientWidth;
+          canvas2D.height = container.clientHeight;
+          canvas2D.style.position = 'absolute';
+          canvas2D.style.top = '0';
+          canvas2D.style.left = '0';
+          canvas2D.style.width = '100%';
+          canvas2D.style.height = '100%';
+          canvas2D.style.zIndex = '2';
+
+          ctx2D = canvas2D.getContext('2d');
+          if (ctx2D) {
+            container.appendChild(canvas2D);
+            drawConstellationsOnCanvas();
+          }
+        } catch (canvasError) {
+          console.warn('Failed to create 2D canvas:', canvasError);
+        }
+      }
 
       loading = false;
       viewState.loading = false;
       debugInfo = "Constellation view ready";
+
+      // Hide drag instructions after 5 seconds
+      setTimeout(() => {
+        showDragInstructions = false;
+      }, 5000);
 
     } catch (err) {
       console.error("Failed to initialize constellation view:", err);
@@ -169,7 +215,7 @@
   };
 
   // Format current time for display
-  $: currentTimeString = viewState.skyConfig?.dateTime 
+  $: currentTimeString = viewState.skyConfig?.dateTime
     ? viewState.skyConfig.dateTime.toLocaleString(currentLang, {
         weekday: 'long',
         year: 'numeric',
@@ -184,6 +230,132 @@
   $: locationString = viewState.skyConfig?.location
     ? `${viewState.skyConfig.location.latitude.toFixed(4)}°, ${viewState.skyConfig.location.longitude.toFixed(4)}°`
     : '';
+
+  // Check WebGL support
+  function checkWebGLSupport(): boolean {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) return false;
+
+      // Cast to WebGL context to access WebGL-specific methods
+      const webgl = gl as WebGLRenderingContext;
+
+      // Try to create a simple WebGL shader to ensure it actually works
+      const vertexShader = webgl.createShader(webgl.VERTEX_SHADER);
+      const fragmentShader = webgl.createShader(webgl.FRAGMENT_SHADER);
+      if (!vertexShader || !fragmentShader) return false;
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Draw constellations on 2D canvas
+  function drawConstellationsOnCanvas() {
+    if (!ctx2D || !canvas2D) return;
+
+    const width = canvas2D.width;
+    const height = canvas2D.height;
+
+    // Ensure ctx2D is not null for the rest of the function
+    const context = ctx2D;
+
+    // Clear canvas with dark background
+    context.fillStyle = '#000011';
+    context.fillRect(0, 0, width, height);
+
+    // Draw star field background
+    context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    for (let i = 0; i < 200; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      const size = Math.random() * 1.5;
+      context.beginPath();
+      context.arc(x, y, size, 0, Math.PI * 2);
+      context.fill();
+    }
+
+    // Draw all constellations, not just visible ones
+    constellations.forEach((constellation, constellationIndex) => {
+
+      // Calculate constellation position (arrange them in a grid)
+      const totalConstellations = constellations.length;
+      const constellationsPerRow = Math.ceil(Math.sqrt(totalConstellations));
+      const constellationWidth = width / constellationsPerRow;
+      const constellationHeight = height / Math.ceil(totalConstellations / constellationsPerRow);
+
+      const row = Math.floor(constellationIndex / constellationsPerRow);
+      const col = constellationIndex % constellationsPerRow;
+
+      const centerX = col * constellationWidth + constellationWidth / 2;
+      const centerY = row * constellationHeight + constellationHeight / 2;
+      const scale = Math.min(constellationWidth, constellationHeight) * 0.3;
+
+      // Draw constellation lines with different colors
+      const colors = ['#4FC3F7', '#81C784', '#FFB74D', '#F48FB1', '#CE93D8', '#90CAF9', '#A5D6A7', '#FFE082', '#F8BBD9', '#B39DDB'];
+      context.strokeStyle = colors[constellationIndex % colors.length];
+      context.lineWidth = 2;
+      context.beginPath();
+
+      constellation.lines.forEach(([startIndex, endIndex]) => {
+        const startStar = constellation.stars[startIndex];
+        const endStar = constellation.stars[endIndex];
+
+        if (startStar && endStar) {
+          // Convert RA/Dec to canvas coordinates (simplified projection)
+          const startX = centerX + (startStar.rightAscension - 12) * scale * 0.5;
+          const startY = centerY + (startStar.declination - 30) * scale * 0.3;
+          const endX = centerX + (endStar.rightAscension - 12) * scale * 0.5;
+          const endY = centerY + (endStar.declination - 30) * scale * 0.3;
+
+          context.moveTo(startX, startY);
+          context.lineTo(endX, endY);
+        }
+      });
+      context.stroke();
+
+      // Draw stars
+      constellation.stars.forEach((star, starIndex) => {
+        const starX = centerX + (star.rightAscension - 12) * scale * 0.5;
+        const starY = centerY + (star.declination - 30) * scale * 0.3;
+
+        // Star size based on magnitude (brighter = larger)
+        const starSize = Math.max(2, (6 - star.magnitude) * 2);
+
+        // Draw star
+        context.fillStyle = star.color;
+        context.beginPath();
+        context.arc(starX, starY, starSize, 0, Math.PI * 2);
+        context.fill();
+
+        // Add glow effect for brighter stars
+        if (star.magnitude < 2) {
+          context.shadowColor = star.color;
+          context.shadowBlur = starSize * 2;
+          context.beginPath();
+          context.arc(starX, starY, starSize, 0, Math.PI * 2);
+          context.fill();
+          context.shadowBlur = 0;
+        }
+
+        // Draw star name for brightest stars
+        if (star.magnitude < 1.5) {
+          context.fillStyle = '#FFFFFF';
+          context.font = '12px Arial';
+          context.textAlign = 'center';
+          context.fillText(star.name, starX, starY - starSize - 8);
+        }
+      });
+
+      // Draw constellation name
+      context.fillStyle = colors[constellationIndex % colors.length];
+      context.font = 'bold 16px Arial';
+      context.textAlign = 'center';
+      context.fillText(constellation.name, centerX, centerY - constellationHeight * 0.35);
+    });
+  }
 </script>
 
 <div class="constellation-view">
@@ -210,10 +382,34 @@
   </div>
 
   <!-- Loading/Error overlay -->
-  {#if loading || error}
+  {#if loading || error || !webglSupported}
     <div class="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
-      <div class="text-center text-white">
-        {#if loading}
+      <div class="text-center text-white max-w-md mx-auto px-4">
+        {#if !webglSupported}
+          <div class="mb-4">
+            <div class="text-amber-400 text-4xl">⚠️</div>
+          </div>
+          <h2 class="text-xl font-semibold mb-2 text-amber-400">3D Graphics Not Available</h2>
+          <p class="text-sm text-gray-300 mb-4">
+            Your browser doesn't support WebGL, which is required for the constellation view.
+          </p>
+          <div class="text-xs text-gray-400 mb-4">
+            <p class="mb-2">Try these solutions:</p>
+            <ul class="text-left list-disc list-inside space-y-1">
+              <li>Update to the latest browser version</li>
+              <li>Enable hardware acceleration in settings</li>
+              <li>Try a different browser (Chrome, Firefox, Edge)</li>
+            </ul>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            on:click={handleBackToMenu}
+            className="text-white border-white/30 hover:bg-white/10"
+          >
+            Back to Menu
+          </Button>
+        {:else if loading}
           <div class="mb-4">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto"></div>
           </div>
@@ -237,6 +433,22 @@
             Retry
           </Button>
         {/if}
+      </div>
+    </div>
+  {/if}
+
+  <!-- Drag Instructions Overlay -->
+  {#if !loading && !error && webglSupported && showDragInstructions}
+    <div class="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
+      <div class="bg-black/70 backdrop-blur-sm rounded-lg border border-cyan-400/30 p-4 text-white text-center">
+        <div class="flex items-center justify-center space-x-2 mb-2">
+          <span class="text-cyan-400">🖱️</span>
+          <span class="text-sm font-medium">Drag to explore the 360° sky</span>
+          <span class="text-cyan-400">🖱️</span>
+        </div>
+        <div class="text-xs text-gray-300">
+          Click and drag to look around • Scroll to zoom
+        </div>
       </div>
     </div>
   {/if}
@@ -321,8 +533,58 @@
     </div>
   {/if}
 
-  <!-- 3D Container -->
-  <div bind:this={container} class="constellation-container"></div>
+  <!-- Main Content Area -->
+  <div class="constellation-main-content">
+    <!-- 3D Container (background) -->
+    <div bind:this={container} class="constellation-container"></div>
+
+    <!-- Text-based constellation display (always visible) -->
+    <!-- <div class="text-constellation-display">
+      <h3 class="text-xl font-bold text-white mb-4">All Constellations</h3>
+      <div class="grid gap-4 md:grid-cols-3 max-w-6xl mx-auto">
+        {#each constellations as constellation}
+          <div class="bg-black/30 rounded-lg p-4 border border-white/20 hover:border-cyan-400/50 transition-colors">
+            <h4 class="text-lg font-semibold text-cyan-300 mb-2">{constellation.name}</h4>
+            <p class="text-sm text-gray-300 mb-2">{constellation.abbreviation}</p>
+            <p class="text-xs text-gray-400 mb-3">{constellation.description}</p>
+            <div class="text-xs">
+              <span class="text-gray-400">Stars:</span>
+              <span class="text-cyan-200 ml-1">{constellation.stars.length}</span>
+            </div>
+            <div class="text-xs mt-1">
+              <span class="text-gray-400">Best viewing:</span>
+              <span class="text-cyan-200 ml-1">
+                {constellation.visibility.bestMonths.map(m =>
+                  new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'short' })
+                ).join(', ')}
+              </span>
+            </div>
+            {#if constellation.mythology}
+              <div class="text-xs mt-2 italic text-gray-400">
+                "{constellation.mythology}"
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+      {#if !webglSupported}
+        <div class="mt-6 text-center">
+          <p class="text-sm text-amber-400">
+            ⚠️ WebGL not available - constellation information shown above
+          </p>
+          <p class="text-xs text-gray-400 mt-2">
+            Enable WebGL in your browser to see the interactive 3D star field
+          </p>
+        </div>
+      {:else}
+        <div class="mt-6 text-center">
+          <p class="text-sm text-cyan-400">
+            ✨ 3D star field active - use mouse to explore the sky
+          </p>
+        </div>
+      {/if}
+    </div> -->
+  </div>
 </div>
 
 <style>
@@ -331,13 +593,53 @@
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+    background: #000; /* Pure black background for space */
   }
 
-  .constellation-container {
+  .constellation-main-content {
+    position: relative;
     width: 100%;
     height: 100%;
   }
+
+  .constellation-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    cursor: grab;
+  }
+
+  .constellation-container:active {
+    cursor: grabbing;
+  }
+
+  /* .text-constellation-display {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 320px;
+    max-height: 60vh;
+    overflow-y: auto;
+    z-index: 10;
+    background: rgba(0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  } */
+
+  /* Responsive adjustments */
+  /* @media (max-width: 1024px) {
+    .text-constellation-display {
+      right: 20px;
+      left: 20px;
+      bottom: 20px;
+      max-height: 40vh;
+    }
+  } */
 
   /* Custom scrollbar for constellation list */
   .space-y-1.max-h-40.overflow-y-auto::-webkit-scrollbar {
