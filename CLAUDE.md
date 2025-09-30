@@ -5,18 +5,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 **Build and Development:**
+
 - `npm run dev` or `npm start` - Start development server (port 4321)
 - `npm run build` - Build for production (configured for Vercel deployment)
 - `npm run preview` - Preview production build
 - `npm run clean` - Clean build artifacts
 
 **Code Quality:**
+
 - `npm run type-check` or `npm run astro check` - Run TypeScript type checking
 - `npm run lint` - Run ESLint
 - `npm run format` - Format code with Prettier
 - `npm run ci:test` - Full CI pipeline (lint, type-check, test coverage, build)
 
 **Testing:**
+
 - `npm run test` - Run unit tests with Vitest in watch mode
 - `npm run test:run` - Run unit tests once
 - `npm run test:ui` - Run tests with UI interface
@@ -41,12 +44,14 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 ### Key Architectural Components
 
 **Universe System Architecture:**
+
 - `UniverseManager` - Manages multiple star systems with plugin extensibility
 - `SolarSystemRenderer` - Framework-agnostic 3D renderer with performance optimization
 - Plugin system via `PluginManager` for extending game functionality
 - Validation system for star system data integrity
 
 **Rendering Pipeline:**
+
 - `SolarSystemRenderer` (main renderer) coordinates:
   - `SceneManager` - lighting, environment, particles
   - `CelestialBodyManager` - celestial body creation/management
@@ -55,6 +60,7 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
   - `PerformanceMonitor` - FPS monitoring and optimization
 
 **State Management:**
+
 - `gameStore.ts` - Central Svelte store with actions for state updates
 - Supports multi-system navigation with transition states
 - Accessibility settings (high contrast, reduced motion, keyboard nav)
@@ -62,6 +68,7 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 ### Code Organization
 
 **File Structure Patterns:**
+
 - `/src/lib/` - Core game systems and utilities
   - `/src/lib/planetary-system/` - Solar system specific logic
   - `/src/lib/planetary-system/graphics/` - Framework-agnostic 3D rendering
@@ -79,6 +86,7 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 - `/src/i18n/` - Internationalization (en, zh, ja)
 
 **Key Type Systems:**
+
 - `CelestialBodyData` - Defines planets, stars, moons with material properties
 - `GameState` - Central game state interface with UI and camera state
 - `StarSystemData` - Multi-system universe structure
@@ -87,28 +95,33 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 ### Development Patterns
 
 **Component Architecture:**
+
 - Astro pages (.astro) for routing with SSR/SSG capability
 - Svelte components (.svelte) for interactive UI with `client:only="svelte"`
 - TypeScript throughout with strict type checking
 - Vercel adapter configured for server-side rendering and deployment
 
 **Framework Integration:**
+
 - Astro pages use `client:only="svelte"` for hydrating Svelte components
 - Framework-agnostic 3D renderer accepts DOM containers and event callbacks
 - Event flow: Three.js → callbacks → Svelte stores → reactive UI updates
 
 **3D Rendering Approach:**
+
 - Modular manager classes for different 3D concerns
 - Performance monitoring and LOD (Level of Detail) systems
 - Framework-agnostic renderer design for potential framework migration
 - **Shadow System**: Explicitly disabled throughout for performance (`castShadow: false`)
 
 **State Management Pattern:**
+
 - Svelte stores with action creators (`gameActions`)
 - Components subscribe with `$gameState` syntax
 - No prop drilling - communication via stores
 
 **Accessibility Integration:**
+
 - Built-in high contrast mode, reduced motion, keyboard navigation
 - Screen reader support with scene change announcements
 - WCAG compliance with aria-live regions
@@ -116,6 +129,7 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 ### Critical Loading Sequence
 
 The `SolarSystemWrapper.svelte` follows a specific initialization pattern:
+
 1. DOM mounting with container waiting (`getElementById('solar-system-renderer')`)
 2. Progress simulation before 3D initialization
 3. Async renderer creation with error handling
@@ -136,12 +150,14 @@ Uses `@/*` path mapping to `./src/*` for cleaner imports.
 ### Testing Configuration
 
 **Unit Testing (Vitest):**
+
 - Uses jsdom environment with Svelte plugin
 - Coverage thresholds: 70% across all metrics
 - Mocks Three.js for testing
 - Setup file: `src/test/setup.ts`
 
 **E2E Testing (Playwright):**
+
 - Tests across Chrome, Firefox, Safari, Mobile Chrome/Safari
 - Dev server automatically started on localhost:4321
 - Smoke tests tagged with `@smoke`

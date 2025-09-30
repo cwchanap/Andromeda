@@ -16,15 +16,20 @@ const translations = ui[lang] || ui.en;
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>Ross 128 - {t('main.title')}</title>
+    <title>Ross 128 - {t("main.title")}</title>
   </head>
 
   <body>
     <!-- Global Language Selector -->
     <GlobalLanguageSelector client:load />
-    
+
     <div id="planetary-system-container">
-      <PlanetarySystemWrapper systemId="ross-128" {lang} {translations} client:only="svelte" />
+      <PlanetarySystemWrapper
+        systemId="ross-128"
+        {lang}
+        {translations}
+        client:only="svelte"
+      />
     </div>
 
     <style>

@@ -10,41 +10,41 @@ const t = useTranslations(lang);
 
 // Pre-compute all translations needed by MainMenu
 const translations = {
-  'main.title': t('main.title'),
-  'main.subtitle': t('main.subtitle'),
-  'main.description': t('main.description'),
-  'main.solar': t('main.solar'),
-  'main.explore': t('main.explore'),
-  'main.galaxy': t('main.galaxy'),
-  'main.settings': t('main.settings'),
-  'constellation.title': t('constellation.title'),
-  'aria.startGame': t('aria.startGame'),
-  'aria.systems': t('aria.systems'),
-  'aria.galaxy': t('aria.galaxy'),
-  'aria.constellation': t('aria.constellation'),
-  'aria.settings': t('aria.settings'),
-  'instructions.mouse': t('instructions.mouse'),
-  'instructions.scroll': t('instructions.scroll'),
-  'instructions.click': t('instructions.click'),
-  'instructions.keyboard': t('instructions.keyboard'),
-  'instructions.enter': t('instructions.enter'),
-  'systems.title': t('systems.title'),
-  'systems.system': t('systems.system'),
-  'action.cancel': t('action.cancel'),
-  'aria.close': t('aria.close'),
-  'sr.mainMenuLoaded': t('sr.mainMenuLoaded')
+  "main.title": t("main.title"),
+  "main.subtitle": t("main.subtitle"),
+  "main.description": t("main.description"),
+  "main.solar": t("main.solar"),
+  "main.explore": t("main.explore"),
+  "main.galaxy": t("main.galaxy"),
+  "main.settings": t("main.settings"),
+  "constellation.title": t("constellation.title"),
+  "aria.startGame": t("aria.startGame"),
+  "aria.systems": t("aria.systems"),
+  "aria.galaxy": t("aria.galaxy"),
+  "aria.constellation": t("aria.constellation"),
+  "aria.settings": t("aria.settings"),
+  "instructions.mouse": t("instructions.mouse"),
+  "instructions.scroll": t("instructions.scroll"),
+  "instructions.click": t("instructions.click"),
+  "instructions.keyboard": t("instructions.keyboard"),
+  "instructions.enter": t("instructions.enter"),
+  "systems.title": t("systems.title"),
+  "systems.system": t("systems.system"),
+  "action.cancel": t("action.cancel"),
+  "aria.close": t("aria.close"),
+  "sr.mainMenuLoaded": t("sr.mainMenuLoaded"),
 };
 
 const content = {
-  title: t('page.title'),
-  description: t('page.description')
+  title: t("page.title"),
+  description: t("page.description"),
 };
 ---
 
 <MainLayout {content} lang={lang}>
   <!-- Global Language Selector -->
   <GlobalLanguageSelector client:only="svelte" />
-  
+
   <ErrorBoundary client:idle>
     <MainMenu lang={lang} translations={translations} client:idle />
   </ErrorBoundary>

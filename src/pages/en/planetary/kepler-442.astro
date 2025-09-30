@@ -16,15 +16,20 @@ const translations = ui[lang] || ui.en;
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>Kepler-442 - {t('main.title')}</title>
+    <title>Kepler-442 - {t("main.title")}</title>
   </head>
 
   <body>
     <!-- Global Language Selector -->
     <GlobalLanguageSelector client:load />
-    
+
     <div id="planetary-system-container">
-      <PlanetarySystemWrapper systemId="kepler-442" {lang} {translations} client:only="svelte" />
+      <PlanetarySystemWrapper
+        systemId="kepler-442"
+        {lang}
+        {translations}
+        client:only="svelte"
+      />
     </div>
 
     <style>

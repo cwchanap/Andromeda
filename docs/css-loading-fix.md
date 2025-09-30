@@ -37,6 +37,7 @@ Was working for `/en/` but failing for `/zh/` and `/ja/` routes due to different
 Wrap the Tailwind entrypoint in a zero-markup component so the build always tracks the stylesheet:
 
 **Before (Broken in Production):**
+
 ```astro
 ---
 import { ViewTransitions } from "astro:transitions";
@@ -58,6 +59,7 @@ const { content, lang = "en" } = Astro.props;
 ```
 
 **After (Works Everywhere):**
+
 ```astro
 ---
 import { ViewTransitions } from "astro:transitions";
@@ -92,6 +94,7 @@ Astro registers styles that are imported by rendered components. By rendering `<
 ## Verification
 
 ### Testing Method
+
 Used Playwright to test all three language routes:
 
 1. **Network Request Verification**: Confirmed `src/styles/main.css` loads with `[200] OK` or `[304] Not Modified`
@@ -99,6 +102,7 @@ Used Playwright to test all three language routes:
 3. **Console Monitoring**: No CSS loading errors in browser console
 
 ### Results
+
 ✅ **English page** (`/en/`): Working
 ✅ **Chinese page** (`/zh/`): **FIXED** - Now loads cosmic styling
 ✅ **Japanese page** (`/ja/`): **FIXED** - Now loads cosmic styling
@@ -113,13 +117,16 @@ Used Playwright to test all three language routes:
 ## Prevention
 
 ### Best Practices
+
 1. Use HTML `<link>` tags for critical CSS that must work across all routes
 2. Test CSS loading on all language routes during development
 3. Monitor network requests in browser dev tools when debugging CSS issues
 4. Render lightweight wrapper components when linking critical CSS so the resolved path stays valid in production
 
 ### Testing Checklist
+
 When implementing multi-language routes:
+
 - [ ] Test CSS loading on all language routes
 - [ ] Verify network requests include all expected CSS files
 - [ ] Check browser console for loading errors

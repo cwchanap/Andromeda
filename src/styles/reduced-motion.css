@@ -19,8 +19,8 @@
 
 /* Disable transform animations */
 :root[data-reduced-motion="true"] .transform,
-:root[data-reduced-motion="true"] .hover\:scale-\[\d+\],
-:root[data-reduced-motion="true"] .hover\:-translate-y-\[\d+\] {
+:root[data-reduced-motion="true"] .hover\:scale-\[\d + \],
+:root[data-reduced-motion="true"] .hover\:-translate-y-\[\d + \] {
   transform: none !important;
 }
 
@@ -31,7 +31,8 @@
 
 /* Reduce opacity transitions but keep them for usability */
 :root[data-reduced-motion="true"] * {
-  transition-property: opacity, background-color, border-color, color, fill, stroke !important;
+  transition-property:
+    opacity, background-color, border-color, color, fill, stroke !important;
   transition-duration: 0.1s !important;
 }
 
@@ -49,7 +50,10 @@
 /* Provide static alternatives for animated backgrounds */
 :root[data-reduced-motion="true"] .bg-gradient-to-br,
 :root[data-reduced-motion="true"] .bg-gradient-to-r {
-  background: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  background: linear-gradient(
+    to bottom right,
+    var(--tw-gradient-stops)
+  ) !important;
   animation: none !important;
 }
 

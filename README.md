@@ -142,7 +142,7 @@ npm run ci:test
 ### Test Structure
 
 - **Unit Tests**: Component logic, utilities, and data validation
-- **Integration Tests**: Component interactions and store updates  
+- **Integration Tests**: Component interactions and store updates
 - **E2E Tests**: Complete user journeys and accessibility compliance
 - **Smoke Tests**: Critical path testing for fast feedback
 - **Performance Tests**: 3D rendering performance and memory usage
@@ -150,6 +150,7 @@ npm run ci:test
 ### Continuous Integration
 
 Tests automatically run on:
+
 - **Push to main**: Full test suite including unit tests, E2E tests, and build verification
 - **Pull Requests**: Quality gate with linting, type checking, coverage reporting, and smoke tests
 - **Scheduled**: Weekly dependency updates via Dependabot
@@ -157,16 +158,19 @@ Tests automatically run on:
 ## 📱 Device Support
 
 ### Desktop
+
 - Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
 - Minimum: 4GB RAM, dedicated graphics recommended
 - Optimal: 8GB+ RAM, modern GPU
 
 ### Mobile
+
 - iOS Safari 14+, Chrome Mobile 90+
 - Minimum: 3GB RAM, OpenGL ES 3.0
 - Adaptive quality settings for optimal performance
 
 ### Accessibility
+
 - Full keyboard navigation support
 - Screen reader compatibility (NVDA, JAWS, VoiceOver)
 - High contrast mode available
@@ -179,16 +183,16 @@ Extend Andromeda with custom star systems and features:
 ```typescript
 // Example plugin structure
 export default class MyStarSystemPlugin implements GamePlugin {
-  id = 'my-star-system'
-  name = 'Custom Star System'
-  version = '1.0.0'
-  
+  id = "my-star-system";
+  name = "Custom Star System";
+  version = "1.0.0";
+
   async initialize(context: PluginContext) {
     // Initialize your custom system
   }
-  
+
   provideSystems(): StarSystemData[] {
-    return [myCustomSystem]
+    return [myCustomSystem];
   }
 }
 ```
@@ -326,6 +330,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🗺️ Roadmap
 
 ### Current Version (1.0.0)
+
 - ✅ Complete solar system exploration
 - ✅ AI-powered educational assistant
 - ✅ Multi-system universe architecture
@@ -334,14 +339,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ Plugin system foundation
 
 ### Upcoming Features (1.1.0)
+
 - 🔄 VR/AR support for immersive exploration
-- 🔄 Multiplayer collaboration features  
+- 🔄 Multiplayer collaboration features
 - 🔄 Advanced physics simulations
 - 🔄 Educational quiz system
 - 🔄 Custom system builder
 - 🔄 Mobile app versions
 
 ### Future Vision (2.0.0)
+
 - 🔮 Real-time astronomical data integration
 - 🔮 Machine learning for personalized education
 - 🔮 Advanced visualization techniques
