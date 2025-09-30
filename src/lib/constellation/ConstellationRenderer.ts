@@ -14,6 +14,7 @@ export class ConstellationRenderer {
     private starPoints: THREE.Points | null = null;
     private constellationLines: THREE.Group | null = null;
     private labelSprites: THREE.Group | null = null;
+    private constellationLabels: THREE.Group | null = null;
     private isMouseDown: boolean = false;
     private mouseX: number = 0;
     private mouseY: number = 0;
@@ -416,6 +417,9 @@ export class ConstellationRenderer {
             this.createConstellationLines(constellations, skyConfig);
         }
 
+        // Create constellation name labels
+        this.createConstellationLabels(constellations, skyConfig);
+
         // Create star labels
         if (skyConfig.showStarNames) {
             this.createStarLabels(stars, skyConfig);
@@ -617,6 +621,91 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Create constellation name labels in 3D space
+     */
+    private createConstellationLabels(
+        constellations: Constellation[],
+        skyConfig: SkyConfiguration,
+    ): void {
+        this.constellationLabels = new THREE.Group();
+        this.constellationLabels.name = "constellation-labels";
+
+        constellations.forEach((constellation) => {
+            if (constellation.stars.length === 0) return;
+
+            // Calculate the center position of the constellation
+            let avgRA = 0;
+            let avgDec = 0;
+
+            constellation.stars.forEach((star) => {
+                avgRA += star.rightAscension;
+                avgDec += star.declination;
+            });
+
+            avgRA /= constellation.stars.length;
+            avgDec /= constellation.stars.length;
+
+            // Convert to 3D position
+            const labelPos = celestialToSphere(
+                avgRA,
+                avgDec,
+                skyConfig.location,
+                skyConfig.dateTime,
+                110, // Position labels farther out than stars for visibility
+            );
+
+            // Create text sprite for constellation name
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d")!;
+            canvas.width = 512;
+            canvas.height = 128;
+
+            // Clear with transparent background
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw constellation name with larger, bold text
+            context.fillStyle = "#4FC3F7"; // Cyan color for prominence
+            context.font = "bold 48px Arial, sans-serif";
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+
+            // Add glow effect for better visibility
+            context.shadowColor = "#4FC3F7";
+            context.shadowBlur = 12;
+            context.fillText(constellation.name, 256, 48);
+
+            // Add constellation abbreviation below
+            context.font = "32px Arial, sans-serif";
+            context.fillStyle = "#81C784"; // Light green for abbreviation
+            context.shadowBlur = 8;
+            context.fillText(`(${constellation.abbreviation})`, 256, 90);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            const spriteMaterial = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 0.85,
+                depthWrite: false,
+            });
+
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.position.set(labelPos.x, labelPos.y, labelPos.z);
+            sprite.scale.set(20, 5, 1); // Large scale for visibility
+            sprite.renderOrder = 4; // Render above star labels
+            sprite.name = `label-${constellation.id}`;
+
+            this.constellationLabels!.add(sprite);
+        });
+
+        this.scene.add(this.constellationLabels);
+        console.log(
+            `Added constellation name labels for ${constellations.length} constellations`,
+        );
+    }
+
+    /**
      * Create star name labels in 3D space
      */
     private createStarLabels(stars: Star[], skyConfig: SkyConfiguration): void {
@@ -767,6 +856,19 @@ export class ConstellationRenderer {
                 }
             });
             this.labelSprites = null;
+        }
+
+        if (this.constellationLabels) {
+            this.scene.remove(this.constellationLabels);
+            this.constellationLabels.children.forEach((child) => {
+                if (child instanceof THREE.Sprite) {
+                    if (child.material.map) {
+                        child.material.map.dispose();
+                    }
+                    child.material.dispose();
+                }
+            });
+            this.constellationLabels = null;
         }
     }
 
