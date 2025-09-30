@@ -1,5 +1,6 @@
 ---
 import { ViewTransitions } from "astro:transitions";
+import GlobalStyles from "@/components/GlobalStyles.astro";
 
 const { content, lang = "en" } = Astro.props;
 ---
@@ -10,7 +11,7 @@ const { content, lang = "en" } = Astro.props;
     <ViewTransitions />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="stylesheet" href="/src/styles/main.css" />
+    <GlobalStyles />
     <title>{content.title}</title>
   </head>
   <body>

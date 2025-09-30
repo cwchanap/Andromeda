@@ -34,30 +34,9 @@ Was working for `/en/` but failing for `/zh/` and `/ja/` routes due to different
 
 ### Fix Applied
 
-Changed from frontmatter CSS import to HTML `<link>` tag in `src/layouts/main.astro`:
+Wrap the Tailwind entrypoint in a zero-markup component so the build always tracks the stylesheet:
 
-**Before (Broken):**
-```astro
----
-import { ViewTransitions } from "astro:transitions";
-import "@/styles/main.css";
-
-const { content, lang = "en" } = Astro.props;
----
-
-<html lang={lang}>
-  <head>
-    <meta charset="utf-8" />
-    <ViewTransitions />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{content.title}</title>
-  </head>
-  <!-- ... -->
-</html>
-```
-
-**After (Fixed):**
+**Before (Broken in Production):**
 ```astro
 ---
 import { ViewTransitions } from "astro:transitions";
@@ -78,9 +57,37 @@ const { content, lang = "en" } = Astro.props;
 </html>
 ```
 
+**After (Works Everywhere):**
+```astro
+---
+import { ViewTransitions } from "astro:transitions";
+import GlobalStyles from "@/components/GlobalStyles.astro";
+---
+
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <ViewTransitions />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <GlobalStyles />
+    <title>{content.title}</title>
+  </head>
+  <!-- ... -->
+</html>
+```
+
+`GlobalStyles.astro` simply imports the Tailwind entry point, which triggers Astro to include the bundled CSS in the manifest for every build:
+
+```astro
+---
+import "@/styles/main.css";
+---
+```
+
 ### Why This Works
 
-The HTML `<link>` tag with `href="/src/styles/main.css"` uses an absolute path that Astro's development server can resolve consistently across all routes, regardless of the URL structure.
+Astro registers styles that are imported by rendered components. By rendering `<GlobalStyles />` in the layout head, the global CSS is fingerprinted automatically, so each locale fetches the same hashed asset in production.
 
 ## Verification
 
@@ -98,8 +105,8 @@ Used Playwright to test all three language routes:
 
 ## Key Learnings
 
-1. **Astro CSS Import Behavior**: Frontmatter CSS imports can have route-dependent resolution issues
-2. **HTML Link Tags**: More reliable for critical CSS that must load across all routes
+1. **Astro CSS Import Behavior**: Bare layout imports can behave differently across localized routes
+2. **Bundler Awareness**: Importing CSS via a rendered component keeps the manifest aligned with hashed assets for every locale
 3. **Language Route Testing**: Always test multi-language applications across all language routes
 4. **Network Debugging**: Check actual network requests, not just visual appearance
 
@@ -109,7 +116,7 @@ Used Playwright to test all three language routes:
 1. Use HTML `<link>` tags for critical CSS that must work across all routes
 2. Test CSS loading on all language routes during development
 3. Monitor network requests in browser dev tools when debugging CSS issues
-4. Consider using absolute paths (`/src/...`) rather than relative paths for CSS
+4. Render lightweight wrapper components when linking critical CSS so the resolved path stays valid in production
 
 ### Testing Checklist
 When implementing multi-language routes:
