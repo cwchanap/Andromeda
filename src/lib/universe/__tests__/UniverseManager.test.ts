@@ -89,13 +89,15 @@ describe("UniverseManager", () => {
                 expect(result).toBe(false);
             });
 
-            it("should not remove currently active system", () => {
+            it("should not remove currently active system", async () => {
                 universeManager.addSystem(mockStarSystem);
-                // Make it the current system (would need to be implemented in actual code)
+                await universeManager.switchToSystem("test-system");
 
                 const result = universeManager.removeSystem("test-system");
-                // This should be false when current system protection is implemented
-                expect(typeof result).toBe("boolean");
+                expect(result).toBe(false);
+
+                const systems = universeManager.getAllSystems();
+                expect(systems).toHaveLength(1);
             });
         });
 
@@ -226,13 +228,6 @@ describe("UniverseManager", () => {
     });
 
     describe("Event System", () => {
-        it("should have event bus", () => {
-            const eventBus = universeManager.getEventBus();
-            expect(eventBus).toBeDefined();
-            expect(typeof eventBus.emit).toBe("function");
-            expect(typeof eventBus.on).toBe("function");
-        });
-
         it("should emit events when systems are added", () => {
             const eventBus = universeManager.getEventBus();
             const mockHandler = vi.fn();

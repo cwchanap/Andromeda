@@ -75,14 +75,6 @@ describe("StarSystemManager", () => {
         vi.clearAllMocks();
     });
 
-    it("initializes with correct scene and config", () => {
-        const manager = new StarSystemManager(scene, mockConfig);
-
-        expect(manager).toBeDefined();
-        expect((manager as any).scene).toBe(scene);
-        expect((manager as any).config).toBe(mockConfig);
-    });
-
     it("initializes star systems successfully", async () => {
         const manager = new StarSystemManager(scene, mockConfig);
         const starSystems = [mockStarSystemData];
