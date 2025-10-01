@@ -28,6 +28,11 @@ const validPlanets = ["mercury", "venus", "earth", "mars"];
 if (!validPlanets.includes(planetId as string)) {
   return Astro.redirect("/planetary/solar");
 }
+
+// Get planet name safely
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const planetNameKey = `planet.${planetId}.name` as any;
+const planetName = t(planetNameKey);
 ---
 
 <html lang={lang}>
@@ -36,10 +41,10 @@ if (!validPlanets.includes(planetId as string)) {
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>{t(`planet.${planetId}.name`)} Terrain - {t("main.title")}</title>
+    <title>{planetName} Terrain - {t("main.title")}</title>
     <meta
       name="description"
-      content={`Explore the 3D terrain of ${t(`planet.${planetId}.name`)} in detail.`}
+      content={`Explore the 3D terrain of ${planetName} in detail.`}
     />
   </head>
 

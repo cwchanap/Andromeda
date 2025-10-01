@@ -10,7 +10,11 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...pluginAstro.configs.recommended,
-  jsxA11y.flatConfigs.recommended,
+  // Apply jsx-a11y only to non-Astro files due to parser incompatibility
+  {
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    ...jsxA11y.flatConfigs.recommended,
+  },
   {
     rules: {
       // override/add rules settings here, such as:
