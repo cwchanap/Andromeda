@@ -133,9 +133,9 @@ test.describe("Constellation View Loading and Location", () => {
         // Should show default location (New York City)
         await expect(page.getByText("40.7128°, -74.0060°")).toBeVisible();
 
-        // Should indicate permission issue
+        // Should indicate permission issue (wrapped in parentheses)
         await expect(
-            page.getByText("Location permission needed"),
+            page.getByText(/Location permission needed/),
         ).toBeVisible();
     });
 
