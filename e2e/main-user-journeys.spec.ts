@@ -8,16 +8,14 @@ test.describe("Main Menu Navigation", () => {
         await page.goto("/");
 
         // Check that main menu is visible
-        await expect(page.locator("h1")).toContainText(
-            "Space Exploration Game",
-        );
+        await expect(page.locator("h1")).toContainText("ANDROMEDA");
 
         // Check navigation buttons
         await expect(
-            page.getByRole("button", { name: "Start Game" }),
+            page.getByRole("button", { name: "Solar System" }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", { name: "System Selector" }),
+            page.getByRole("button", { name: "Explore Exoplanets" }),
         ).toBeVisible();
         await expect(
             page.getByRole("button", { name: "Settings" }),
@@ -27,11 +25,11 @@ test.describe("Main Menu Navigation", () => {
     test("should navigate to solar system view @smoke", async ({ page }) => {
         await page.goto("/");
 
-        // Click Start Game button
-        await page.getByRole("button", { name: "Start Game" }).click();
+        // Click Solar System button
+        await page.getByRole("button", { name: "Solar System" }).click();
 
         // Should navigate to solar system page
-        await expect(page).toHaveURL("/solar-system");
+        await expect(page).toHaveURL("/en/planetary/solar");
     });
 
     test("should open settings modal", async ({ page }) => {
@@ -48,7 +46,7 @@ test.describe("Main Menu Navigation", () => {
 
 test.describe("Solar System View", () => {
     test("should load 3D solar system scene", async ({ page }) => {
-        await page.goto("/solar-system");
+        await page.goto("/en/planetary/solar");
 
         // Wait for the scene to load
         await page.waitForSelector("#solar-system-renderer", {
@@ -70,7 +68,7 @@ test.describe("Solar System View", () => {
     });
 
     test("should display navigation controls", async ({ page }) => {
-        await page.goto("/solar-system");
+        await page.goto("/en/planetary/solar");
 
         // Wait for controls to load
         await page.waitForSelector(".navigation-controls", { timeout: 10000 });
@@ -83,7 +81,7 @@ test.describe("Solar System View", () => {
     });
 
     test("should handle planet selection", async ({ page }) => {
-        await page.goto("/solar-system");
+        await page.goto("/en/planetary/solar");
 
         // Wait for scene to load
         await page.waitForSelector("canvas", { timeout: 10000 });
@@ -110,26 +108,24 @@ test.describe("System Selector", () => {
     test("should open system selector", async ({ page }) => {
         await page.goto("/");
 
-        // Click System Selector button
-        await page.getByRole("button", { name: "System Selector" }).click();
+        // Click Explore Exoplanets button
+        await page.getByRole("button", { name: "Explore Exoplanets" }).click();
 
         // System selector modal should be visible
-        await expect(
-            page.getByRole("dialog", { name: /select star system/i }),
-        ).toBeVisible();
+        await expect(page.getByText("Choose a Planetary System")).toBeVisible();
     });
 
     test("should display available systems", async ({ page }) => {
         await page.goto("/");
 
         // Open system selector
-        await page.getByRole("button", { name: "System Selector" }).click();
+        await page.getByRole("button", { name: "Explore Exoplanets" }).click();
 
         // Check for solar system card
         await expect(page.getByText("Solar System")).toBeVisible();
 
         // Close modal
-        await page.getByRole("button", { name: /close/i }).click();
+        await page.getByRole("button", { name: /cancel|close/i }).click();
     });
 });
 
@@ -181,17 +177,17 @@ test.describe("Accessibility", () => {
         // Tab through main menu buttons
         await page.keyboard.press("Tab");
         await expect(
-            page.getByRole("button", { name: "Start Game" }),
+            page.getByRole("button", { name: "Solar System" }),
         ).toBeFocused();
 
         await page.keyboard.press("Tab");
         await expect(
-            page.getByRole("button", { name: "System Selector" }),
+            page.getByRole("button", { name: "Explore Exoplanets" }),
         ).toBeFocused();
 
         await page.keyboard.press("Tab");
         await expect(
-            page.getByRole("button", { name: "Settings" }),
+            page.getByRole("button", { name: "Galaxy View" }),
         ).toBeFocused();
     });
 
@@ -211,7 +207,7 @@ test.describe("Accessibility", () => {
 
         // Check for proper labeling
         await expect(
-            page.getByRole("button", { name: "Start Game" }),
+            page.getByRole("button", { name: "Solar System" }),
         ).toHaveAttribute("type", "button");
         await expect(
             page.getByRole("button", { name: "Settings" }),
@@ -226,7 +222,7 @@ test.describe("Responsive Design", () => {
 
         // Main menu should be visible and functional
         await expect(
-            page.getByRole("button", { name: "Start Game" }),
+            page.getByRole("button", { name: "Solar System" }),
         ).toBeVisible();
         await expect(
             page.getByRole("button", { name: "Settings" }),
@@ -239,10 +235,10 @@ test.describe("Responsive Design", () => {
 
         // All elements should be visible
         await expect(
-            page.getByRole("button", { name: "Start Game" }),
+            page.getByRole("button", { name: "Solar System" }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", { name: "System Selector" }),
+            page.getByRole("button", { name: "Explore Exoplanets" }),
         ).toBeVisible();
         await expect(
             page.getByRole("button", { name: "Settings" }),
@@ -257,7 +253,7 @@ test.describe("Performance", () => {
 
         // Wait for main content to be visible
         await expect(
-            page.getByRole("button", { name: "Start Game" }),
+            page.getByRole("button", { name: "Solar System" }),
         ).toBeVisible();
 
         const loadTime = Date.now() - startTime;
@@ -265,7 +261,7 @@ test.describe("Performance", () => {
     });
 
     test("should handle 3D scene loading gracefully", async ({ page }) => {
-        await page.goto("/solar-system");
+        await page.goto("/en/planetary/solar");
 
         // Check for loading states or fallbacks
         const hasCanvas = await page
