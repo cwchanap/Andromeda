@@ -181,7 +181,7 @@ export class AssetLoader {
         }
 
         if (this.loadingPromises.has(url)) {
-            return this.loadingPromises.get(url)!;
+            return this.loadingPromises.get(url)! as Promise<THREE.Texture>;
         }
 
         // Create loading promise

@@ -75,19 +75,9 @@ export class PlanetarySystemRenderer {
         const adaptedData = this.adaptSystemData(systemData);
 
         try {
-            // Convert PlanetarySystemData to SolarSystemData format for background stars
-            const adaptedSystemData = {
-                sun: systemData.star,
-                planets: systemData.celestialBodies,
-                systemScale: systemData.systemScale,
-                systemCenter: systemData.systemCenter,
-                backgroundStars: systemData.backgroundStars,
-            };
-
-            await this.solarSystemRenderer.initialize(
-                adaptedData,
-                adaptedSystemData,
-            );
+            // Pass the full systemData to the renderer
+            // The SolarSystemRenderer expects the complete PlanetarySystemData
+            await this.solarSystemRenderer.initialize(adaptedData, systemData);
             // Don't call onSystemLoad here - it's called by onReady event
         } catch (error) {
             const err =
