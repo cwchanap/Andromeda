@@ -53,6 +53,7 @@ export interface CelestialBodyData {
     modalTheme?: ModalTheme;
     orbitRadius?: number;
     orbitSpeed?: number;
+    parentId?: string; // ID of the parent body to orbit around (if not specified, orbits system center)
     // 3D terrain configuration for planets
     terrain?: TerrainConfig;
     rings?: {

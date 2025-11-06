@@ -533,9 +533,32 @@ export class CelestialBodyManager {
                 // Store the updated angle
                 this.orbitAngles.set(id, currentAngle);
 
-                // Calculate position from the smooth accumulated angle
-                body.position.x = Math.cos(currentAngle) * data.orbitRadius;
-                body.position.z = Math.sin(currentAngle) * data.orbitRadius;
+                // Determine orbit center (parent body position or system center)
+                let orbitCenterX = 0;
+                let orbitCenterZ = 0;
+
+                if (data.parentId) {
+                    const parentBody = this.bodies.get(data.parentId);
+                    if (parentBody) {
+                        orbitCenterX = parentBody.position.x;
+                        orbitCenterZ = parentBody.position.z;
+                    }
+                }
+
+                // Calculate position from the smooth accumulated angle relative to orbit center
+                body.position.x =
+                    orbitCenterX + Math.cos(currentAngle) * data.orbitRadius;
+                body.position.z =
+                    orbitCenterZ + Math.sin(currentAngle) * data.orbitRadius;
+
+                // Update orbit line position if this body has a parent
+                if (data.parentId) {
+                    const orbitLine = this.orbitLines.get(id);
+                    if (orbitLine) {
+                        orbitLine.position.x = orbitCenterX;
+                        orbitLine.position.z = orbitCenterZ;
+                    }
+                }
 
                 // Debug: Log orbital position for Earth occasionally
                 if (
