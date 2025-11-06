@@ -1,6 +1,5 @@
 // Solar System - converting existing data to new format
-import * as THREE from "three";
-import type { CelestialBodyData } from "../../types/game";
+import type { CelestialBodyData, Vector3Like } from "../../types/game";
 import type { PlanetarySystemData, PlanetarySystem } from "./types";
 
 /**
@@ -15,7 +14,7 @@ export const solarSystemData: PlanetarySystemData = {
         "Our home planetary system, containing the Sun and eight planets",
     systemType: "solar",
     systemScale: 0.1, // Scale factor for rendering: 1 unit = 10 million km
-    systemCenter: new THREE.Vector3(0, 0, 0),
+    systemCenter: { x: 0, y: 0, z: 0 },
     backgroundStars: {
         enabled: true,
         density: 1.0,
@@ -46,7 +45,7 @@ export const solarSystemData: PlanetarySystemData = {
             "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=800&h=600&fit=crop",
         ],
-        position: new THREE.Vector3(0, 0, 0),
+        position: { x: 0, y: 0, z: 0 },
         scale: 2.5,
         realDistance: {
             kilometers: 0,
@@ -87,7 +86,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(5.79, 0, 0), // 57.9 million km with new scale
+            position: { x: 5.79, y: 0, z: 0 }, // 57.9 million km with new scale
             scale: 0.38,
             realDistance: {
                 kilometers: 57900000,
@@ -174,7 +173,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(10.82, 0, 0), // 108.2 million km with new scale
+            position: { x: 10.82, y: 0, z: 0 }, // 108.2 million km with new scale
             scale: 0.95,
             realDistance: {
                 kilometers: 108200000,
@@ -267,7 +266,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(14.96, 0, 0), // 149.6 million km with new scale
+            position: { x: 14.96, y: 0, z: 0 }, // 149.6 million km with new scale
             scale: 1,
             realDistance: {
                 kilometers: 149600000,
@@ -355,7 +354,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(22.79, 0, 0), // 227.9 million km with new scale
+            position: { x: 22.79, y: 0, z: 0 }, // 227.9 million km with new scale
             scale: 0.53,
             realDistance: {
                 kilometers: 227900000,
@@ -447,7 +446,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(77.85, 0, 0), // 778.5 million km with new scale
+            position: { x: 77.85, y: 0, z: 0 }, // 778.5 million km with new scale
             scale: 11.2,
             realDistance: {
                 kilometers: 778500000,
@@ -492,7 +491,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(143.4, 0, 0), // 1434 million km with new scale
+            position: { x: 143.4, y: 0, z: 0 }, // 1434 million km with new scale
             scale: 9.45,
             realDistance: {
                 kilometers: 1434000000,
@@ -552,7 +551,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(287.1, 0, 0), // 2871 million km with new scale
+            position: { x: 287.1, y: 0, z: 0 }, // 2871 million km with new scale
             scale: 4.01,
             realDistance: {
                 kilometers: 2871000000,
@@ -612,7 +611,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(449.5, 0, 0), // 4495 million km with new scale
+            position: { x: 449.5, y: 0, z: 0 }, // 4495 million km with new scale
             scale: 3.88,
             realDistance: {
                 kilometers: 4495000000,
@@ -685,11 +684,11 @@ export const calculateOrbitPosition = (
     orbitRadius: number,
     angle: number,
     systemScale: number = solarSystemData.systemScale,
-): THREE.Vector3 => {
+): Vector3Like => {
     const scaledRadius = orbitRadius * systemScale;
     const x = Math.cos(angle) * scaledRadius;
     const z = Math.sin(angle) * scaledRadius;
-    return new THREE.Vector3(x, 0, z);
+    return { x: x, y: 0, z: z };
 };
 
 export const getRelativeScale = (
@@ -731,15 +730,15 @@ export const getRealDistanceKm = (body: CelestialBodyData): number => {
 export const getScaledPosition = (
     body: CelestialBodyData,
     systemScale: number = solarSystemData.systemScale,
-): THREE.Vector3 => {
+): Vector3Like => {
     const realDistance = getRealDistanceKm(body);
     if (realDistance === 0) {
-        return new THREE.Vector3(0, 0, 0);
+        return { x: 0, y: 0, z: 0 };
     }
 
     // Convert km to 10 millions of km, then apply system scale
     const scaledDistance = (realDistance / 10000000) * systemScale;
-    return new THREE.Vector3(scaledDistance, 0, 0);
+    return { x: scaledDistance, y: 0, z: 0 };
 };
 
 /**

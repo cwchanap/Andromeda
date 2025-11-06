@@ -1,6 +1,5 @@
 // Alpha Centauri System - adapted from ExamplePlugins
 import type { PlanetarySystem } from "./types";
-import * as THREE from "three";
 
 /**
  * Alpha Centauri System
@@ -21,7 +20,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
             "The closest star system to Earth, featuring a triple star system with potentially habitable exoplanets",
         systemType: "multiple",
         systemScale: 1.2,
-        systemCenter: new THREE.Vector3(0, 0, 0),
+        systemCenter: { x: 0, y: 0, z: 0 },
 
         // Primary star (Alpha Centauri A)
         star: {
@@ -44,7 +43,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 2.8,
             material: {
                 color: "#FDB813",
@@ -73,7 +72,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     temperature: "5,260 K (surface)",
                 },
                 images: [],
-                position: new THREE.Vector3(25, 0, 0),
+                position: { x: 25, y: 0, z: 0 },
                 scale: 2.2,
                 material: {
                     color: "#FFA500",
@@ -102,7 +101,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     temperature: "3,042 K (surface)",
                 },
                 images: [],
-                position: new THREE.Vector3(150, 0, 0),
+                position: { x: 150, y: 0, z: 0 },
                 scale: 1.2,
                 material: {
                     color: "#FF6B47",
@@ -132,7 +131,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(152, 0, 0),
+                position: { x: 152, y: 0, z: 0 },
                 scale: 1.1,
                 material: {
                     color: "#8B7355",
@@ -164,7 +163,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(155, 0, 0),
+                position: { x: 155, y: 0, z: 0 },
                 scale: 1.4,
                 material: {
                     color: "#4A5D7A",

@@ -32,7 +32,11 @@ export function calculateRenderedPosition(
     config: DistanceRenderingConfig = defaultSolarSystemRenderConfig,
 ): THREE.Vector3 {
     if (!body.realDistance) {
-        return body.position.clone();
+        return new THREE.Vector3(
+            body.position.x,
+            body.position.y,
+            body.position.z,
+        );
     }
 
     const realDistanceKm = body.realDistance.kilometers;

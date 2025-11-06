@@ -1,6 +1,5 @@
 // Extensible type definitions for multi-system universe architecture
-import type { Vector3 } from "three";
-import type { CelestialBodyData } from "./game";
+import type { CelestialBodyData, Vector3Like } from "./game";
 
 /**
  * Generic star system interface that can represent any planetary system
@@ -12,7 +11,7 @@ export interface StarSystemData {
     star: CelestialBodyData;
     celestialBodies: CelestialBodyData[]; // planets, moons, asteroids, etc.
     systemScale: number;
-    systemCenter: Vector3;
+    systemCenter: Vector3Like;
     systemType: "solar" | "binary" | "multiple" | "exotic";
     metadata?: {
         discoveredBy?: string;
@@ -159,8 +158,8 @@ export interface SystemConfiguration {
         };
     };
     cameraConfig: {
-        defaultPosition: Vector3;
-        defaultTarget: Vector3;
+        defaultPosition: Vector3Like;
+        defaultTarget: Vector3Like;
         minDistance: number;
         maxDistance: number;
         enableAutoRotate?: boolean;

@@ -1,6 +1,5 @@
 // Nearby exoplanet systems - additional interesting nearby planetary systems
 import type { PlanetarySystem } from "./types";
-import * as THREE from "three";
 
 /**
  * TRAPPIST-1 System
@@ -21,7 +20,7 @@ export const trappist1System: PlanetarySystem = {
             "A remarkable system of seven Earth-sized planets orbiting an ultra-cool dwarf star, with several in the habitable zone",
         systemType: "solar",
         systemScale: 0.8,
-        systemCenter: new THREE.Vector3(0, 0, 0),
+        systemCenter: { x: 0, y: 0, z: 0 },
 
         star: {
             id: "trappist-1",
@@ -43,7 +42,7 @@ export const trappist1System: PlanetarySystem = {
             images: [
                 "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 1.5,
             material: {
                 color: "#CC4125",
@@ -67,7 +66,7 @@ export const trappist1System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(2, 0, 0),
+                position: { x: 2, y: 0, z: 0 },
                 scale: 1.05,
                 material: {
                     color: "#8B3A3A",
@@ -92,7 +91,7 @@ export const trappist1System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(2.8, 0, 0),
+                position: { x: 2.8, y: 0, z: 0 },
                 scale: 1.04,
                 material: {
                     color: "#A0522D",
@@ -117,7 +116,7 @@ export const trappist1System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(3.8, 0, 0),
+                position: { x: 3.8, y: 0, z: 0 },
                 scale: 0.78,
                 material: {
                     color: "#CD853F",
@@ -142,7 +141,7 @@ export const trappist1System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(4.8, 0, 0),
+                position: { x: 4.8, y: 0, z: 0 },
                 scale: 0.92,
                 material: {
                     color: "#4682B4",
@@ -168,7 +167,7 @@ export const trappist1System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(5.9, 0, 0),
+                position: { x: 5.9, y: 0, z: 0 },
                 scale: 1.02,
                 material: {
                     color: "#6495ED",
@@ -194,7 +193,7 @@ export const trappist1System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(7.2, 0, 0),
+                position: { x: 7.2, y: 0, z: 0 },
                 scale: 1.11,
                 material: {
                     color: "#708090",
@@ -219,7 +218,7 @@ export const trappist1System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(8.8, 0, 0),
+                position: { x: 8.8, y: 0, z: 0 },
                 scale: 0.75,
                 material: {
                     color: "#B0C4DE",
@@ -284,7 +283,7 @@ export const wolf359System: PlanetarySystem = {
             "One of the nearest star systems to Earth, a red dwarf with recently discovered planetary companions",
         systemType: "solar",
         systemScale: 0.9,
-        systemCenter: new THREE.Vector3(0, 0, 0),
+        systemCenter: { x: 0, y: 0, z: 0 },
 
         star: {
             id: "wolf-359",
@@ -304,7 +303,7 @@ export const wolf359System: PlanetarySystem = {
                 temperature: "2,800 K (surface)",
             },
             images: [],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 1.3,
             material: {
                 color: "#CD5C5C",
@@ -328,7 +327,7 @@ export const wolf359System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(3.5, 0, 0),
+                position: { x: 3.5, y: 0, z: 0 },
                 scale: 1.4,
                 material: {
                     color: "#8B4513",
@@ -353,7 +352,7 @@ export const wolf359System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(6.2, 0, 0),
+                position: { x: 6.2, y: 0, z: 0 },
                 scale: 1.1,
                 material: {
                     color: "#A0522D",
@@ -412,7 +411,7 @@ export const barnardsStarSystem: PlanetarySystem = {
             "The closest single star to the Sun, hosting a super-Earth exoplanet in its cold outer regions",
         systemType: "solar",
         systemScale: 1.1,
-        systemCenter: new THREE.Vector3(0, 0, 0),
+        systemCenter: { x: 0, y: 0, z: 0 },
 
         star: {
             id: "barnards-star",
@@ -432,7 +431,7 @@ export const barnardsStarSystem: PlanetarySystem = {
                 temperature: "3,134 K (surface)",
             },
             images: [],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 1.4,
             material: {
                 color: "#DC143C",
@@ -456,7 +455,7 @@ export const barnardsStarSystem: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(12, 0, 0),
+                position: { x: 12, y: 0, z: 0 },
                 scale: 1.5,
                 material: {
                     color: "#4682B4",
@@ -517,7 +516,7 @@ export const ross128System: PlanetarySystem = {
             "A quiet red dwarf star system with a potentially habitable Earth-sized exoplanet",
         systemType: "solar",
         systemScale: 0.95,
-        systemCenter: new THREE.Vector3(0, 0, 0),
+        systemCenter: { x: 0, y: 0, z: 0 },
 
         star: {
             id: "ross-128",
@@ -536,7 +535,7 @@ export const ross128System: PlanetarySystem = {
                 temperature: "3,192 K (surface)",
             },
             images: [],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 1.5,
             material: {
                 color: "#FF6347",
@@ -560,7 +559,7 @@ export const ross128System: PlanetarySystem = {
                     moons: 0,
                 },
                 images: [],
-                position: new THREE.Vector3(7, 0, 0),
+                position: { x: 7, y: 0, z: 0 },
                 scale: 1.12,
                 material: {
                     color: "#228B22",

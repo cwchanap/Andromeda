@@ -1,6 +1,5 @@
 // Kepler exoplanet systems - adapted from ExamplePlugins
 import type { PlanetarySystem } from "./types";
-import * as THREE from "three";
 
 /**
  * Kepler-442 System
@@ -20,7 +19,7 @@ export const kepler442System: PlanetarySystem = {
             "A star system containing potentially habitable super-Earth exoplanets",
         systemType: "solar",
         systemScale: 1.0,
-        systemCenter: new THREE.Vector3(0, 0, 0),
+        systemCenter: { x: 0, y: 0, z: 0 },
 
         star: {
             id: "kepler-442",
@@ -36,7 +35,7 @@ export const kepler442System: PlanetarySystem = {
                 temperature: "4,402 K (surface)",
             },
             images: [],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 2.0,
             material: {
                 color: "#FFB347",
@@ -59,7 +58,7 @@ export const kepler442System: PlanetarySystem = {
                     temperature: "-2°C to +15°C (estimated)",
                 },
                 images: [],
-                position: new THREE.Vector3(8, 0, 0),
+                position: { x: 8, y: 0, z: 0 },
                 scale: 1.3,
                 material: {
                     color: "#6B8E5A",
@@ -118,7 +117,7 @@ export const kepler438System: PlanetarySystem = {
             "Another potentially habitable exoplanet system discovered by Kepler",
         systemType: "solar",
         systemScale: 1.0,
-        systemCenter: new THREE.Vector3(0, 0, 0),
+        systemCenter: { x: 0, y: 0, z: 0 },
 
         star: {
             id: "kepler-438",
@@ -134,7 +133,7 @@ export const kepler438System: PlanetarySystem = {
                 temperature: "3,970 K (surface)",
             },
             images: [],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 1.8,
             material: {
                 color: "#FF6B47",
@@ -157,7 +156,7 @@ export const kepler438System: PlanetarySystem = {
                     temperature: "-12°C to +8°C (estimated)",
                 },
                 images: [],
-                position: new THREE.Vector3(6, 0, 0),
+                position: { x: 6, y: 0, z: 0 },
                 scale: 1.2,
                 material: {
                     color: "#8B4513",
