@@ -1,42 +1,66 @@
 // End-to-end tests for main user journeys
 import { test, expect } from "@playwright/test";
 
+// Test constants for maintainability
+const BUTTON_LABELS = {
+    SOLAR_SYSTEM: "Solar System",
+    EXPLORE_EXOPLANETS: "Explore Exoplanets",
+    GALAXY_VIEW: "Galaxy View",
+    CONSTELLATION_VIEW: "Constellation View",
+    SETTINGS: "Settings",
+} as const;
+
+const ROUTES = {
+    HOME: "/",
+    SOLAR_SYSTEM: "/en/planetary/solar",
+} as const;
+
+const PAGE_TITLES = {
+    MAIN: "ANDROMEDA",
+} as const;
+
 test.describe("Main Menu Navigation", () => {
     test("should display main menu with correct options @smoke", async ({
         page,
     }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Check that main menu is visible
-        await expect(page.locator("h1")).toContainText("ANDROMEDA");
+        await expect(page.locator("h1")).toContainText(PAGE_TITLES.MAIN);
 
         // Check navigation buttons
         await expect(
-            page.getByRole("button", { name: "Solar System" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SOLAR_SYSTEM }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", { name: "Explore Exoplanets" }),
+            page.getByRole("button", {
+                name: BUTTON_LABELS.EXPLORE_EXOPLANETS,
+            }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", { name: "Settings" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SETTINGS }),
         ).toBeVisible();
     });
 
     test("should navigate to solar system view @smoke", async ({ page }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Click Solar System button
-        await page.getByRole("button", { name: "Solar System" }).click();
+        await page
+            .getByRole("button", { name: BUTTON_LABELS.SOLAR_SYSTEM })
+            .click();
 
         // Should navigate to solar system page
-        await expect(page).toHaveURL("/en/planetary/solar");
+        await expect(page).toHaveURL(ROUTES.SOLAR_SYSTEM);
     });
 
     test("should open settings modal", async ({ page }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Click Settings button
-        await page.getByRole("button", { name: "Settings" }).click();
+        await page
+            .getByRole("button", { name: BUTTON_LABELS.SETTINGS })
+            .click();
 
         // Settings modal should be visible
         await expect(page.getByRole("dialog")).toBeVisible();
@@ -46,7 +70,7 @@ test.describe("Main Menu Navigation", () => {
 
 test.describe("Solar System View", () => {
     test("should load 3D solar system scene", async ({ page }) => {
-        await page.goto("/en/planetary/solar");
+        await page.goto(ROUTES.SOLAR_SYSTEM);
 
         // Wait for the scene to load
         await page.waitForSelector("#solar-system-renderer", {
@@ -68,7 +92,7 @@ test.describe("Solar System View", () => {
     });
 
     test("should display navigation controls", async ({ page }) => {
-        await page.goto("/en/planetary/solar");
+        await page.goto(ROUTES.SOLAR_SYSTEM);
 
         // Wait for controls to load
         await page.waitForSelector(".navigation-controls", { timeout: 10000 });
@@ -81,7 +105,7 @@ test.describe("Solar System View", () => {
     });
 
     test("should handle planet selection", async ({ page }) => {
-        await page.goto("/en/planetary/solar");
+        await page.goto(ROUTES.SOLAR_SYSTEM);
 
         // Wait for scene to load
         await page.waitForSelector("canvas", { timeout: 10000 });
@@ -106,35 +130,41 @@ test.describe("Solar System View", () => {
 
 test.describe("System Selector", () => {
     test("should open system selector", async ({ page }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Click Explore Exoplanets button
-        await page.getByRole("button", { name: "Explore Exoplanets" }).click();
+        await page
+            .getByRole("button", { name: BUTTON_LABELS.EXPLORE_EXOPLANETS })
+            .click();
 
         // System selector modal should be visible
         await expect(page.getByText("Choose a Planetary System")).toBeVisible();
     });
 
     test("should display available systems", async ({ page }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Open system selector
-        await page.getByRole("button", { name: "Explore Exoplanets" }).click();
+        await page
+            .getByRole("button", { name: BUTTON_LABELS.EXPLORE_EXOPLANETS })
+            .click();
 
         // Check for solar system card
-        await expect(page.getByText("Solar System")).toBeVisible();
+        await expect(page.getByText(BUTTON_LABELS.SOLAR_SYSTEM)).toBeVisible();
 
         // Close modal
-        await page.getByRole("button", { name: /cancel|close/i }).click();
+        await page.getByRole("button", { name: /\b(cancel|close)\b/i }).click();
     });
 });
 
 test.describe("Settings Management", () => {
     test("should open and close settings modal", async ({ page }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Open settings
-        await page.getByRole("button", { name: "Settings" }).click();
+        await page
+            .getByRole("button", { name: BUTTON_LABELS.SETTINGS })
+            .click();
         await expect(page.getByRole("dialog")).toBeVisible();
 
         // Close settings
@@ -143,10 +173,12 @@ test.describe("Settings Management", () => {
     });
 
     test("should persist settings changes", async ({ page }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Open settings
-        await page.getByRole("button", { name: "Settings" }).click();
+        await page
+            .getByRole("button", { name: BUTTON_LABELS.SETTINGS })
+            .click();
 
         // Toggle a setting (e.g., animations)
         const animationToggle = page.getByRole("checkbox", {
@@ -162,7 +194,9 @@ test.describe("Settings Management", () => {
         await page.getByRole("button", { name: /save/i }).click();
 
         // Reopen settings and verify change persisted
-        await page.getByRole("button", { name: "Settings" }).click();
+        await page
+            .getByRole("button", { name: BUTTON_LABELS.SETTINGS })
+            .click();
 
         // Setting should maintain its state
         const savedState = await animationToggle.isChecked();
@@ -172,30 +206,49 @@ test.describe("Settings Management", () => {
 
 test.describe("Accessibility", () => {
     test("should be keyboard navigable", async ({ page }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
-        // Tab through main menu buttons
+        // Tab through main menu buttons (accounting for Language Selector being first)
+        await page.keyboard.press("Tab");
+        // Language selector is first in tab order
+
         await page.keyboard.press("Tab");
         await expect(
-            page.getByRole("button", { name: "Solar System" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SOLAR_SYSTEM }),
         ).toBeFocused();
 
         await page.keyboard.press("Tab");
         await expect(
-            page.getByRole("button", { name: "Explore Exoplanets" }),
+            page.getByRole("button", {
+                name: BUTTON_LABELS.EXPLORE_EXOPLANETS,
+            }),
         ).toBeFocused();
 
         await page.keyboard.press("Tab");
         await expect(
-            page.getByRole("button", { name: "Galaxy View" }),
+            page.getByRole("button", { name: BUTTON_LABELS.GALAXY_VIEW }),
+        ).toBeFocused();
+
+        await page.keyboard.press("Tab");
+        await expect(
+            page.getByRole("button", {
+                name: BUTTON_LABELS.CONSTELLATION_VIEW,
+            }),
+        ).toBeFocused();
+
+        await page.keyboard.press("Tab");
+        await expect(
+            page.getByRole("button", { name: BUTTON_LABELS.SETTINGS }),
         ).toBeFocused();
     });
 
     test("should support Enter key for button activation", async ({ page }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Focus on Settings button and press Enter
-        await page.getByRole("button", { name: "Settings" }).focus();
+        await page
+            .getByRole("button", { name: BUTTON_LABELS.SETTINGS })
+            .focus();
         await page.keyboard.press("Enter");
 
         // Settings modal should open
@@ -203,14 +256,14 @@ test.describe("Accessibility", () => {
     });
 
     test("should have proper ARIA labels", async ({ page }) => {
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Check for proper labeling
         await expect(
-            page.getByRole("button", { name: "Solar System" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SOLAR_SYSTEM }),
         ).toHaveAttribute("type", "button");
         await expect(
-            page.getByRole("button", { name: "Settings" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SETTINGS }),
         ).toHaveAttribute("type", "button");
     });
 });
@@ -218,30 +271,32 @@ test.describe("Accessibility", () => {
 test.describe("Responsive Design", () => {
     test("should work on mobile viewport", async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Main menu should be visible and functional
         await expect(
-            page.getByRole("button", { name: "Solar System" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SOLAR_SYSTEM }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", { name: "Settings" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SETTINGS }),
         ).toBeVisible();
     });
 
     test("should work on tablet viewport", async ({ page }) => {
         await page.setViewportSize({ width: 768, height: 1024 }); // iPad
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // All elements should be visible
         await expect(
-            page.getByRole("button", { name: "Solar System" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SOLAR_SYSTEM }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", { name: "Explore Exoplanets" }),
+            page.getByRole("button", {
+                name: BUTTON_LABELS.EXPLORE_EXOPLANETS,
+            }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", { name: "Settings" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SETTINGS }),
         ).toBeVisible();
     });
 });
@@ -249,11 +304,11 @@ test.describe("Responsive Design", () => {
 test.describe("Performance", () => {
     test("should load main page quickly", async ({ page }) => {
         const startTime = Date.now();
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Wait for main content to be visible
         await expect(
-            page.getByRole("button", { name: "Solar System" }),
+            page.getByRole("button", { name: BUTTON_LABELS.SOLAR_SYSTEM }),
         ).toBeVisible();
 
         const loadTime = Date.now() - startTime;
@@ -279,7 +334,7 @@ test.describe("Error Handling", () => {
     test("should display error boundary when needed", async ({ page }) => {
         // This would test error boundaries, but requires triggering an actual error
         // For now, we can check that error handling components exist
-        await page.goto("/");
+        await page.goto(ROUTES.HOME);
 
         // Check that the page loads without throwing uncaught errors
         const errors: string[] = [];
