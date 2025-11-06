@@ -1,6 +1,5 @@
 import { writable } from "svelte/store";
 import type { GameState, CelestialBodyData } from "../types/game";
-import * as THREE from "three";
 
 export interface GameSettings {
     enableAnimations: boolean;
@@ -21,8 +20,8 @@ const defaultGameState: GameState = {
     currentView: "menu",
     selectedBody: null,
     camera: {
-        position: new THREE.Vector3(0, 0, 50),
-        target: new THREE.Vector3(0, 0, 0),
+        position: { x: 0, y: 0, z: 50 },
+        target: { x: 0, y: 0, z: 0 },
         zoom: 1,
     },
     ui: {

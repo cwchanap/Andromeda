@@ -1,6 +1,5 @@
 // Simplified types for planetary system routing architecture
-import type { Vector3 } from "three";
-import type { CelestialBodyData } from "../../types/game";
+import type { CelestialBodyData, Vector3Like } from "../../types/game";
 
 /**
  * Simplified planetary system interface for router-based rendering
@@ -12,7 +11,7 @@ export interface PlanetarySystemData {
     star: CelestialBodyData;
     celestialBodies: CelestialBodyData[];
     systemScale: number;
-    systemCenter: Vector3;
+    systemCenter: Vector3Like;
     systemType: "solar" | "binary" | "multiple" | "exotic";
     metadata?: {
         discoveredBy?: string;

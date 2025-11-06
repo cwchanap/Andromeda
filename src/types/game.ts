@@ -1,7 +1,13 @@
 // Core type definitions for the space exploration game
-import type { Vector3 } from "three";
 import type { GamePlugin } from "./universe";
 import type { TerrainConfig } from "../lib/planetary-system/graphics/TerrainRenderer";
+
+// Plain object representation of a 3D vector (safe for SSR and serialization)
+export interface Vector3Like {
+    x: number;
+    y: number;
+    z: number;
+}
 
 export interface ModalTheme {
     primary: string;
@@ -25,7 +31,7 @@ export interface CelestialBodyData {
         moons?: number;
     };
     images: string[];
-    position: Vector3;
+    position: Vector3Like;
     scale: number;
     // Real astronomical distance data
     realDistance?: {
@@ -83,8 +89,8 @@ export interface GameState {
     currentView: "menu" | "solar-system" | "system-selector";
     selectedBody: CelestialBodyData | null;
     camera: {
-        position: Vector3;
-        target: Vector3;
+        position: Vector3Like;
+        target: Vector3Like;
         zoom: number;
     };
     ui: {
