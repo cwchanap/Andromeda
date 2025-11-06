@@ -1,5 +1,4 @@
-import type { Vector3 } from "three";
-import type { CelestialBodyData } from "../../types/game";
+import type { CelestialBodyData, Vector3Like } from "../../types/game";
 
 /**
  * Represents a star system in the galaxy view
@@ -12,7 +11,7 @@ export interface StarSystemData {
     systemType: "solar" | "binary" | "trinary" | "multiple";
 
     // Position in galaxy (light-years from origin)
-    position: Vector3;
+    position: Vector3Like;
 
     // Distance from Earth in light-years
     distanceFromEarth: number;
@@ -69,7 +68,7 @@ export interface GalaxyConfig {
  */
 export interface GalaxyEvents {
     onStarSystemSelect?: (system: StarSystemData) => void;
-    onCameraChange?: (position: Vector3, zoom: number) => void;
+    onCameraChange?: (position: Vector3Like, zoom: number) => void;
     onSystemLoad?: () => void;
     onError?: (error: Error) => void;
 }
@@ -78,8 +77,8 @@ export interface GalaxyEvents {
  * Camera state in galaxy view
  */
 export interface GalaxyCameraState {
-    position: Vector3;
-    target: Vector3;
+    position: Vector3Like;
+    target: Vector3Like;
     zoom: number;
     fov: number;
 }
@@ -118,7 +117,7 @@ export interface GalaxyData {
     name: string;
     description: string;
     starSystems: StarSystemData[];
-    center: Vector3;
+    center: Vector3Like;
     scale: number; // Scale factor for rendering (1 unit = X light-years)
     boundingRadius: number; // Radius in light-years
 }

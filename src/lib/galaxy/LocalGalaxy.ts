@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import type { StarSystemData, GalaxyData } from "./types";
 
 /**
@@ -13,7 +12,7 @@ const solarSystem: StarSystemData = {
     name: "Solar System",
     description: "Our home star system containing the Sun and eight planets",
     systemType: "solar",
-    position: new THREE.Vector3(0, 0, 0), // Origin point
+    position: { x: 0, y: 0, z: 0 }, // Origin point
     distanceFromEarth: 0,
     stars: [
         {
@@ -35,7 +34,7 @@ const solarSystem: StarSystemData = {
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 3.0,
             material: {
                 color: "#FDB813",
@@ -68,7 +67,7 @@ const alphaCentauriSystem: StarSystemData = {
     name: "Alpha Centauri",
     description: "The closest star system to Earth, a triple star system",
     systemType: "trinary",
-    position: new THREE.Vector3(4.37, -1.2, 0.8), // 4.37 ly from Earth
+    position: { x: 4.37, y: -1.2, z: 0.8 }, // 4.37 ly from Earth
     distanceFromEarth: 4.37,
     stars: [
         {
@@ -90,7 +89,7 @@ const alphaCentauriSystem: StarSystemData = {
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(-0.5, 0, 0),
+            position: { x: -0.5, y: 0, z: 0 },
             scale: 3.1,
             material: {
                 color: "#FDB813",
@@ -121,7 +120,7 @@ const alphaCentauriSystem: StarSystemData = {
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(0.5, 0, 0),
+            position: { x: 0.5, y: 0, z: 0 },
             scale: 2.4,
             material: {
                 color: "#FFB84D",
@@ -151,7 +150,7 @@ const alphaCentauriSystem: StarSystemData = {
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(2.5, -1.5, 0.3),
+            position: { x: 2.5, y: -1.5, z: 0.3 },
             scale: 1.2,
             material: {
                 color: "#FF6B6B",
@@ -186,7 +185,7 @@ const barnardsStarSystem: StarSystemData = {
     name: "Barnard's Star",
     description: "A red dwarf star with the highest known proper motion",
     systemType: "solar",
-    position: new THREE.Vector3(-2.1, 5.8, -1.2), // 5.96 ly from Earth
+    position: { x: -2.1, y: 5.8, z: -1.2 }, // 5.96 ly from Earth
     distanceFromEarth: 5.96,
     stars: [
         {
@@ -208,7 +207,7 @@ const barnardsStarSystem: StarSystemData = {
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 1.3,
             material: {
                 color: "#FF5555",
@@ -244,7 +243,7 @@ const wolf359System: StarSystemData = {
     description:
         "A red dwarf star known for its high proper motion and flare activity",
     systemType: "solar",
-    position: new THREE.Vector3(6.2, 2.8, -3.1), // 7.86 ly from Earth
+    position: { x: 6.2, y: 2.8, z: -3.1 }, // 7.86 ly from Earth
     distanceFromEarth: 7.86,
     stars: [
         {
@@ -266,7 +265,7 @@ const wolf359System: StarSystemData = {
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(0, 0, 0),
+            position: { x: 0, y: 0, z: 0 },
             scale: 1.4,
             material: {
                 color: "#FF4444",
@@ -302,7 +301,7 @@ const siriusSystem: StarSystemData = {
     description:
         "The brightest star in Earth's night sky, a binary star system",
     systemType: "binary",
-    position: new THREE.Vector3(-7.8, -3.2, 2.1), // 8.66 ly from Earth
+    position: { x: -7.8, y: -3.2, z: 2.1 }, // 8.66 ly from Earth
     distanceFromEarth: 8.66,
     stars: [
         {
@@ -325,7 +324,7 @@ const siriusSystem: StarSystemData = {
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(-0.3, 0, 0),
+            position: { x: -0.3, y: 0, z: 0 },
             scale: 4.2,
             material: {
                 color: "#9BB0FF",
@@ -351,7 +350,7 @@ const siriusSystem: StarSystemData = {
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
             ],
-            position: new THREE.Vector3(0.8, 0, 0),
+            position: { x: 0.8, y: 0, z: 0 },
             scale: 0.8,
             material: {
                 color: "#FFFFFF",
@@ -392,7 +391,7 @@ export const localGalaxyData: GalaxyData = {
         wolf359System,
         siriusSystem,
     ],
-    center: new THREE.Vector3(0, 0, 0), // Centered on Solar System
+    center: { x: 0, y: 0, z: 0 }, // Centered on Solar System
     scale: 1.0, // 1 unit = 1 light-year
     boundingRadius: 10, // 10 light-year radius
 };
