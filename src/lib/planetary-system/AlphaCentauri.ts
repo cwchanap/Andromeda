@@ -140,6 +140,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     metalness: 0.2,
                     atmosphereColor: "#87CEEB",
                 },
+                parentId: "proxima-centauri", // Orbits Proxima Centauri
                 orbitRadius: 2,
                 orbitSpeed: 0.2,
             },
@@ -173,6 +174,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     transparent: true,
                     opacity: 0.9,
                 },
+                parentId: "proxima-centauri", // Orbits Proxima Centauri
                 orbitRadius: 5,
                 orbitSpeed: 0.05,
             },
