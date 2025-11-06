@@ -11,8 +11,8 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     /* Retry on CI only */
     retries: process.env.CI ? 2 : 0,
-    /* Opt out of parallel tests on CI. */
-    workers: process.env.CI ? 1 : undefined,
+    /* Opt out of parallel tests on CI. Limit workers to reduce resource usage */
+    workers: process.env.CI ? 1 : 4,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter: process.env.CI
         ? [
@@ -38,7 +38,21 @@ export default defineConfig({
     projects: [
         {
             name: "chromium",
-            use: { ...devices["Desktop Chrome"] },
+            use: {
+                ...devices["Desktop Chrome"],
+                // Add browser args for better WebGL support in headless mode
+                launchOptions: {
+                    args: [
+                        "--use-gl=swiftshader", // Software-based GL rendering
+                        "--disable-dev-shm-usage", // Avoid /dev/shm issues
+                        "--disable-web-security", // Allow local resources
+                        "--disable-features=IsolateOrigins,site-per-process", // Reduce isolation for local dev
+                        "--no-sandbox", // Required for some CI environments
+                        "--disable-setuid-sandbox",
+                        "--disable-gpu", // Disable hardware GPU
+                    ],
+                },
+            },
         },
 
         // Commented out to speed up test runs - only testing on Chromium
