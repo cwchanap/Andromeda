@@ -25,7 +25,7 @@ export interface CelestialBodyData {
         moons?: number;
     };
     images: string[];
-    position: Vector3;
+    position: Vector3; // Initial absolute position in 3D space; used to calculate starting orbital angle if orbiting
     scale: number;
     // Real astronomical distance data
     realDistance?: {
@@ -53,7 +53,13 @@ export interface CelestialBodyData {
     modalTheme?: ModalTheme;
     orbitRadius?: number;
     orbitSpeed?: number;
-    parentId?: string; // ID of the parent body to orbit around (if not specified, orbits system center)
+    /**
+     * ID of the parent body to orbit around.
+     * - If specified: body orbits relative to parent's position (parent moves, orbit follows)
+     * - If not specified: body orbits around system center at (0, 0, 0)
+     * - The 'position' field is used to calculate initial orbital angle relative to parent
+     */
+    parentId?: string;
     // 3D terrain configuration for planets
     terrain?: TerrainConfig;
     rings?: {

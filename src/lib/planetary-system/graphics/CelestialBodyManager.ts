@@ -89,7 +89,24 @@ export class CelestialBodyManager {
         // Initialize orbital angle based on current position if orbiting
         if (data.orbitRadius && data.orbitSpeed) {
             // Calculate initial orbital angle from current position
-            const initialAngle = Math.atan2(data.position.z, data.position.x);
+            let relativeX = data.position.x;
+            let relativeZ = data.position.z;
+
+            // If orbiting a parent body, calculate angle relative to parent position
+            if (data.parentId) {
+                const parentBody = this.bodies.get(data.parentId);
+                if (parentBody) {
+                    relativeX = data.position.x - parentBody.position.x;
+                    relativeZ = data.position.z - parentBody.position.z;
+                } else {
+                    console.warn(
+                        `Parent body '${data.parentId}' not found for '${data.id}'. ` +
+                            `Ensure parent bodies are created before their children.`,
+                    );
+                }
+            }
+
+            const initialAngle = Math.atan2(relativeZ, relativeX);
             this.orbitAngles.set(data.id, initialAngle);
         }
 
@@ -322,6 +339,16 @@ export class CelestialBodyManager {
         const orbitLine = new Line2(orbitGeometry, orbitMaterial);
         orbitLine.name = `${data.id}_orbit`;
 
+        // Initialize orbit line position based on parent body if specified
+        if (data.parentId) {
+            const parentBody = this.bodies.get(data.parentId);
+            if (parentBody) {
+                orbitLine.position.x = parentBody.position.x;
+                orbitLine.position.y = parentBody.position.y;
+                orbitLine.position.z = parentBody.position.z;
+            }
+        }
+
         // Store and add to scene
         this.orbitLines.set(data.id, orbitLine);
         this.scene.add(orbitLine);
@@ -535,13 +562,27 @@ export class CelestialBodyManager {
 
                 // Determine orbit center (parent body position or system center)
                 let orbitCenterX = 0;
+                let orbitCenterY = 0;
                 let orbitCenterZ = 0;
 
                 if (data.parentId) {
                     const parentBody = this.bodies.get(data.parentId);
                     if (parentBody) {
                         orbitCenterX = parentBody.position.x;
+                        orbitCenterY = parentBody.position.y;
                         orbitCenterZ = parentBody.position.z;
+
+                        // Update orbit line position to follow parent body
+                        const orbitLine = this.orbitLines.get(id);
+                        if (orbitLine) {
+                            orbitLine.position.x = orbitCenterX;
+                            orbitLine.position.y = orbitCenterY;
+                            orbitLine.position.z = orbitCenterZ;
+                        }
+                    } else {
+                        console.warn(
+                            `Parent body '${data.parentId}' not found for '${data.id}' during orbit update.`,
+                        );
                     }
                 }
 
@@ -550,15 +591,6 @@ export class CelestialBodyManager {
                     orbitCenterX + Math.cos(currentAngle) * data.orbitRadius;
                 body.position.z =
                     orbitCenterZ + Math.sin(currentAngle) * data.orbitRadius;
-
-                // Update orbit line position if this body has a parent
-                if (data.parentId) {
-                    const orbitLine = this.orbitLines.get(id);
-                    if (orbitLine) {
-                        orbitLine.position.x = orbitCenterX;
-                        orbitLine.position.z = orbitCenterZ;
-                    }
-                }
 
                 // Debug: Log orbital position for Earth occasionally
                 if (
