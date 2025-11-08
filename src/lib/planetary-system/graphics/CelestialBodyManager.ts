@@ -346,6 +346,11 @@ export class CelestialBodyManager {
                 orbitLine.position.x = parentBody.position.x;
                 orbitLine.position.y = parentBody.position.y;
                 orbitLine.position.z = parentBody.position.z;
+            } else {
+                console.warn(
+                    `Parent body '${data.parentId}' not found for '${data.id}' during orbit line creation. ` +
+                        `Orbit line will be positioned at origin.`,
+                );
             }
         }
 
