@@ -101,7 +101,7 @@
 <style>
   .orbit-speed-control {
     position: absolute;
-    top: 20px;
+    top: 180px;
     right: 20px;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
@@ -200,7 +200,7 @@
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     .orbit-speed-control {
-      top: 10px;
+      top: 160px;
       right: 10px;
       min-width: 160px;
       padding: 12px;
