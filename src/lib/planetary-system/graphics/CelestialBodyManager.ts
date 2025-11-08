@@ -594,6 +594,7 @@ export class CelestialBodyManager {
                 // Calculate position from the smooth accumulated angle relative to orbit center
                 body.position.x =
                     orbitCenterX + Math.cos(currentAngle) * data.orbitRadius;
+                body.position.y = orbitCenterY; // Inherit parent's Y offset
                 body.position.z =
                     orbitCenterZ + Math.sin(currentAngle) * data.orbitRadius;
 
