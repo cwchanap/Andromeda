@@ -45,8 +45,6 @@ export default defineConfig({
                     args: [
                         "--use-gl=swiftshader", // Software-based GL rendering
                         "--disable-dev-shm-usage", // Avoid /dev/shm issues
-                        "--disable-web-security", // Allow local resources
-                        "--disable-features=IsolateOrigins,site-per-process", // Reduce isolation for local dev
                         "--no-sandbox", // Required for some CI environments
                         "--disable-setuid-sandbox",
                         "--disable-gpu", // Disable hardware GPU
