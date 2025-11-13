@@ -2,7 +2,9 @@ import { defineConfig } from "vitest/config";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 export default defineConfig({
-    plugins: [svelte({ hot: !process.env.VITEST })],
+    plugins: [
+        svelte({ hot: !process.env.VITEST, compilerOptions: { dev: true } }),
+    ],
     test: {
         globals: true,
         environment: "jsdom",
@@ -37,5 +39,6 @@ export default defineConfig({
         alias: {
             "@": "/src",
         },
+        conditions: ["browser"],
     },
 });
