@@ -398,17 +398,49 @@ describe("SettingsModal", () => {
             // Wait for reactive updates
             await new Promise((resolve) => setTimeout(resolve, 50));
 
-            // Check that graphics quality is reset to medium
+            // Verify all settings are reset to their default values
             const select = container.querySelector(
                 "select",
             ) as HTMLSelectElement;
             expect(select.value).toBe("medium");
 
-            // Check that control sensitivity is reset to 1.0
             const slider = container.querySelector(
                 'input[type="range"]',
             ) as HTMLInputElement;
             expect(parseFloat(slider.value)).toBe(1.0);
+
+            // Verify all checkboxes are reset properly
+            const checkboxes = container.querySelectorAll(
+                'input[type="checkbox"]',
+            );
+
+            // Expected default states for checkboxes (in order of appearance):
+            // enableAnimations: true
+            // showControlHints: true
+            // audioEnabled: true
+            // highContrastMode: false
+            // reducedMotion: false
+            // enableKeyboardNavigation: true
+            // announceSceneChanges: true
+            // screenReaderMode: false
+            const expectedStates = [
+                true,
+                true,
+                true,
+                false,
+                false,
+                true,
+                true,
+                false,
+            ];
+
+            checkboxes.forEach((checkbox, index) => {
+                if (index < expectedStates.length) {
+                    expect((checkbox as HTMLInputElement).checked).toBe(
+                        expectedStates[index],
+                    );
+                }
+            });
         });
 
         it("should have reset button that is clickable", async () => {
