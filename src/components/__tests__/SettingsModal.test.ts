@@ -538,20 +538,24 @@ describe("SettingsModal", () => {
                 .closest(".space-y-6")
                 ?.querySelector('[class*="space-y-4"]');
 
-            if (accessibilitySection) {
-                const checkboxes = accessibilitySection.querySelectorAll(
-                    'input[type="checkbox"]',
-                );
-                expect(checkboxes.length).toBeGreaterThan(0);
+            // Assert the accessibility section exists - fail loudly if missing
+            expect(accessibilitySection).not.toBeNull();
+            expect(accessibilitySection).toBeDefined();
 
-                // Each should be independently toggleable
-                for (const checkbox of Array.from(checkboxes)) {
-                    const initialState = (checkbox as HTMLInputElement).checked;
-                    await fireEvent.click(checkbox);
-                    expect((checkbox as HTMLInputElement).checked).toBe(
-                        !initialState,
-                    );
-                }
+            const checkboxes = accessibilitySection!.querySelectorAll(
+                'input[type="checkbox"]',
+            );
+
+            // Assert we have checkboxes to test
+            expect(checkboxes.length).toBeGreaterThan(0);
+
+            // Each should be independently toggleable
+            for (const checkbox of Array.from(checkboxes)) {
+                const initialState = (checkbox as HTMLInputElement).checked;
+                await fireEvent.click(checkbox);
+                expect((checkbox as HTMLInputElement).checked).toBe(
+                    !initialState,
+                );
             }
         });
     });
