@@ -244,7 +244,7 @@ describe("OrbitSpeedControl", () => {
     });
 
     describe("Reset Button Functionality", () => {
-        it("should call onSpeedChange when reset button is clicked", async () => {
+        it("should call onSpeedChange with 1.0 when reset button is clicked", async () => {
             const { getByText } = render(OrbitSpeedControl, {
                 props: {
                     onSpeedChange: mockOnSpeedChange,
@@ -255,11 +255,11 @@ describe("OrbitSpeedControl", () => {
             const resetButton = getByText("Reset");
             await fireEvent.click(resetButton);
 
-            // The callback should be called (reset attempts to set speed to 1.0)
-            expect(mockOnSpeedChange).toHaveBeenCalled();
+            // The callback should be called with exactly 1.0 (the default speed)
+            expect(mockOnSpeedChange).toHaveBeenCalledWith(1.0);
         });
 
-        it("should trigger store update when reset button is clicked", async () => {
+        it("should reset speed from custom value to 1.0", async () => {
             settings.update((s) => ({ ...s, orbitSpeedMultiplier: 5.0 }));
 
             const { getByText } = render(OrbitSpeedControl, {
@@ -270,16 +270,16 @@ describe("OrbitSpeedControl", () => {
             });
 
             const resetButton = getByText("Reset");
-
-            // Store should update (through settings.update in handleSpeedChange)
             await fireEvent.click(resetButton);
 
-            // Verify the callback was called, which means store update was triggered
-            expect(mockOnSpeedChange).toHaveBeenCalled();
+            // Verify the callback was called with the default value 1.0
+            expect(mockOnSpeedChange).toHaveBeenCalledWith(1.0);
         });
 
-        it("should be clickable and trigger reset action", async () => {
-            const { getByText } = render(OrbitSpeedControl, {
+        it("should update slider value to 1.0 when reset is clicked", async () => {
+            settings.update((s) => ({ ...s, orbitSpeedMultiplier: 10.0 }));
+
+            const { getByText, container } = render(OrbitSpeedControl, {
                 props: {
                     onSpeedChange: mockOnSpeedChange,
                     lang: "en",
@@ -287,13 +287,16 @@ describe("OrbitSpeedControl", () => {
             });
 
             const resetButton = getByText("Reset");
-            expect(resetButton).toBeTruthy();
-
-            // Button should be clickable
             await fireEvent.click(resetButton);
 
-            // Should have called the callback
-            expect(mockOnSpeedChange).toHaveBeenCalled();
+            // Wait for reactive updates
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            // Verify the slider reflects the reset value
+            const slider = container.querySelector(
+                'input[type="range"]',
+            ) as HTMLInputElement;
+            expect(parseFloat(slider.value)).toBe(1.0);
         });
     });
 
