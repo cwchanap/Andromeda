@@ -272,7 +272,14 @@ describe("OrbitSpeedControl", () => {
             const resetButton = getByText("Reset");
             await fireEvent.click(resetButton);
 
-            // Verify the callback was called with the default value 1.0
+            // Wait for store update
+            await new Promise((resolve) => setTimeout(resolve, 150));
+
+            // Verify the store was updated to the default value
+            const currentSettings = get(settings);
+            expect(currentSettings.orbitSpeedMultiplier).toBe(1.0);
+
+            // Also verify the callback was called with the correct value
             expect(mockOnSpeedChange).toHaveBeenCalledWith(1.0);
         });
 
