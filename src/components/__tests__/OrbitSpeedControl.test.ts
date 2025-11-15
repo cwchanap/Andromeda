@@ -172,6 +172,8 @@ describe("OrbitSpeedControl", () => {
 
     describe("Speed Change Interaction", () => {
         it("should update store when slider value changes", async () => {
+            vi.useFakeTimers();
+
             const { container } = render(OrbitSpeedControl, {
                 props: {
                     onSpeedChange: mockOnSpeedChange,
@@ -184,11 +186,13 @@ describe("OrbitSpeedControl", () => {
 
             await fireEvent.input(slider, { target: { value: "2.5" } });
 
-            // Wait for the store update and timeout
-            await new Promise((resolve) => setTimeout(resolve, 150));
+            // Advance timers to trigger the timeout in handleSpeedChange
+            await vi.advanceTimersByTimeAsync(150);
 
             const currentSettings = get(settings);
             expect(currentSettings.orbitSpeedMultiplier).toBe(2.5);
+
+            vi.useRealTimers();
         });
 
         it("should call onSpeedChange callback when slider value changes", async () => {
@@ -260,6 +264,8 @@ describe("OrbitSpeedControl", () => {
         });
 
         it("should reset speed from custom value to 1.0", async () => {
+            vi.useFakeTimers();
+
             settings.update((s) => ({ ...s, orbitSpeedMultiplier: 5.0 }));
 
             const { getByText } = render(OrbitSpeedControl, {
@@ -272,8 +278,8 @@ describe("OrbitSpeedControl", () => {
             const resetButton = getByText("Reset");
             await fireEvent.click(resetButton);
 
-            // Wait for store update
-            await new Promise((resolve) => setTimeout(resolve, 150));
+            // Advance timers to trigger the timeout in resetSpeed
+            await vi.advanceTimersByTimeAsync(150);
 
             // Verify the store was updated to the default value
             const currentSettings = get(settings);
@@ -281,9 +287,13 @@ describe("OrbitSpeedControl", () => {
 
             // Also verify the callback was called with the correct value
             expect(mockOnSpeedChange).toHaveBeenCalledWith(1.0);
+
+            vi.useRealTimers();
         });
 
         it("should update slider value to 1.0 when reset is clicked", async () => {
+            vi.useFakeTimers();
+
             settings.update((s) => ({ ...s, orbitSpeedMultiplier: 10.0 }));
 
             const { getByText, container } = render(OrbitSpeedControl, {
@@ -296,19 +306,23 @@ describe("OrbitSpeedControl", () => {
             const resetButton = getByText("Reset");
             await fireEvent.click(resetButton);
 
-            // Wait for reactive updates
-            await new Promise((resolve) => setTimeout(resolve, 50));
+            // Advance timers to allow reactive updates
+            await vi.advanceTimersByTimeAsync(50);
 
             // Verify the slider reflects the reset value
             const slider = container.querySelector(
                 'input[type="range"]',
             ) as HTMLInputElement;
             expect(parseFloat(slider.value)).toBe(1.0);
+
+            vi.useRealTimers();
         });
     });
 
     describe("Store Integration", () => {
         it("should sync with store changes when not interacting", async () => {
+            vi.useFakeTimers();
+
             const { container } = render(OrbitSpeedControl, {
                 props: {
                     onSpeedChange: mockOnSpeedChange,
@@ -319,16 +333,20 @@ describe("OrbitSpeedControl", () => {
             // Update store externally
             settings.update((s) => ({ ...s, orbitSpeedMultiplier: 4.2 }));
 
-            // Wait for reactive updates
-            await new Promise((resolve) => setTimeout(resolve, 50));
+            // Advance timers for reactive updates
+            await vi.advanceTimersByTimeAsync(50);
 
             const slider = container.querySelector(
                 'input[type="range"]',
             ) as HTMLInputElement;
             expect(parseFloat(slider.value)).toBe(4.2);
+
+            vi.useRealTimers();
         });
 
         it("should not sync with store during user interaction", async () => {
+            vi.useFakeTimers();
+
             const { container } = render(OrbitSpeedControl, {
                 props: {
                     onSpeedChange: mockOnSpeedChange,
@@ -346,17 +364,19 @@ describe("OrbitSpeedControl", () => {
             // Immediately try to update store (should be blocked during interaction)
             settings.update((s) => ({ ...s, orbitSpeedMultiplier: 7.0 }));
 
-            // Wait for interaction timeout (100ms)
-            await new Promise((resolve) => setTimeout(resolve, 50));
+            // Advance timers partway (50ms out of 100ms interaction timeout)
+            await vi.advanceTimersByTimeAsync(50);
 
             // Slider should still show user's value
             expect(parseFloat(slider.value)).toBe(3.0);
 
-            // After timeout, it should sync
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            // Advance past the interaction timeout (total 150ms)
+            await vi.advanceTimersByTimeAsync(100);
 
             // Now it should update from the store
             expect(parseFloat(slider.value)).toBe(7.0);
+
+            vi.useRealTimers();
         });
     });
 
