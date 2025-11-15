@@ -534,9 +534,10 @@ describe("SettingsModal", () => {
             });
 
             // Get all checkboxes in the accessibility section
+            // Navigate to the Card component containing "Accessibility Settings"
             const accessibilitySection = getByText("Accessibility Settings")
-                .closest(".space-y-6")
-                ?.querySelector('[class*="space-y-4"]');
+                .closest('div[class*="bg-card"]') // Find the parent Card component
+                ?.querySelector('[class*="space-y-4"]'); // Find CardContent within this card
 
             // Assert the accessibility section exists - fail loudly if missing
             expect(accessibilitySection).not.toBeNull();
@@ -546,8 +547,9 @@ describe("SettingsModal", () => {
                 'input[type="checkbox"]',
             );
 
-            // Assert we have checkboxes to test
-            expect(checkboxes.length).toBeGreaterThan(0);
+            // Assert we have exactly 5 accessibility checkboxes
+            // (High Contrast, Reduced Motion, Keyboard Nav, Announce Changes, Screen Reader)
+            expect(checkboxes.length).toBe(5);
 
             // Each should be independently toggleable
             for (const checkbox of Array.from(checkboxes)) {
