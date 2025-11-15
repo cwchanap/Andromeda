@@ -184,16 +184,17 @@ describe("ParticleSystem", () => {
         it("should render scene in animation loop", () => {
             // Mock requestAnimationFrame to capture callback without executing it
             let animationCallback: FrameRequestCallback | null = null;
-            const originalRAF = global.requestAnimationFrame;
-            global.requestAnimationFrame = vi.fn((callback) => {
-                animationCallback = callback;
-                return 1;
-            }) as typeof global.requestAnimationFrame;
+            const rafSpy = vi
+                .spyOn(global, "requestAnimationFrame")
+                .mockImplementation((callback) => {
+                    animationCallback = callback;
+                    return 1;
+                });
 
             render(ParticleSystem);
 
             // Verify requestAnimationFrame was called
-            expect(global.requestAnimationFrame).toHaveBeenCalled();
+            expect(rafSpy).toHaveBeenCalled();
 
             // Manually execute the animation callback once
             if (animationCallback) {
@@ -204,8 +205,8 @@ describe("ParticleSystem", () => {
                 .results[0]?.value;
             expect(rendererInstance.render).toHaveBeenCalled();
 
-            // Restore original
-            global.requestAnimationFrame = originalRAF;
+            // Restore original (cleanup happens automatically in afterEach via vi.clearAllMocks)
+            rafSpy.mockRestore();
         });
     });
 
