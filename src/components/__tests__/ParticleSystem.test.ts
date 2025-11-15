@@ -245,13 +245,16 @@ describe("ParticleSystem", () => {
             const cameraInstance = vi.mocked(THREE.OrthographicCamera).mock
                 .results[0]?.value;
 
-            // Clear previous calls
-            vi.clearAllMocks();
+            // Clear the call history for this specific mock
+            cameraInstance.updateProjectionMatrix.mockClear();
 
             // Trigger resize
             window.dispatchEvent(new Event("resize"));
 
-            expect(cameraInstance.updateProjectionMatrix).toHaveBeenCalled();
+            // Verify it was called exactly once in response to the resize event
+            expect(cameraInstance.updateProjectionMatrix).toHaveBeenCalledTimes(
+                1,
+            );
 
             unmount();
         });
