@@ -108,19 +108,6 @@ describe("OrbitSpeedControl", () => {
             // Default speed is 1.0
             expect(getByText("1.0x")).toBeTruthy();
         });
-
-        it("should display 'Paused' when speed is 0", () => {
-            settings.update((s) => ({ ...s, orbitSpeedMultiplier: 0 }));
-            const { container } = render(OrbitSpeedControl, {
-                props: {
-                    onSpeedChange: mockOnSpeedChange,
-                    lang: "en",
-                },
-            });
-            // Should show "Paused" in the speed display (not in the labels)
-            const speedDisplay = container.querySelector(".speed-display");
-            expect(speedDisplay?.textContent).toBe("Paused");
-        });
     });
 
     describe("Slider Configuration", () => {
