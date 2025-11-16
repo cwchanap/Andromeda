@@ -87,6 +87,7 @@
               type="checkbox"
               bind:checked={settings.enableAnimations}
               class="h-4 w-4"
+              aria-label="Enable Animations"
             />
           </div>
 
@@ -122,6 +123,7 @@
               type="checkbox"
               bind:checked={settings.showControlHints}
               class="h-4 w-4"
+              aria-label="Show Control Hints"
             />
           </div>
         </CardContent>
@@ -144,6 +146,7 @@
               type="checkbox"
               bind:checked={settings.audioEnabled}
               class="h-4 w-4"
+              aria-label="Enable Audio"
             />
           </div>
         </CardContent>
@@ -195,6 +198,7 @@
               type="checkbox"
               bind:checked={settings.highContrastMode}
               class="h-4 w-4"
+              aria-label="High Contrast Mode"
               aria-describedby="high-contrast-desc"
             />
           </div>
@@ -212,6 +216,7 @@
               type="checkbox"
               bind:checked={settings.reducedMotion}
               class="h-4 w-4"
+              aria-label="Reduced Motion"
               aria-describedby="reduced-motion-desc"
             />
           </div>
@@ -229,6 +234,7 @@
               type="checkbox"
               bind:checked={settings.enableKeyboardNavigation}
               class="h-4 w-4"
+              aria-label="Keyboard Navigation"
               aria-describedby="keyboard-nav-desc"
             />
           </div>
@@ -246,6 +252,7 @@
               type="checkbox"
               bind:checked={settings.announceSceneChanges}
               class="h-4 w-4"
+              aria-label="Announce Scene Changes"
               aria-describedby="announce-changes-desc"
             />
           </div>
@@ -263,6 +270,7 @@
               type="checkbox"
               bind:checked={settings.screenReaderMode}
               class="h-4 w-4"
+              aria-label="Screen Reader Mode"
               aria-describedby="screen-reader-desc"
             />
           </div>
