@@ -179,6 +179,9 @@ describe("ParticleSystem", () => {
             );
             render(ParticleSystem);
             expect(requestAnimationFrameSpy).toHaveBeenCalled();
+
+            // Restore the spy to avoid leaking mock state to other tests
+            requestAnimationFrameSpy.mockRestore();
         });
 
         it("should render scene in animation loop", () => {
