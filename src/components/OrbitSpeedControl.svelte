@@ -102,7 +102,7 @@
     </div>
   </div>
   
-  <div class="speed-display">
+  <div class="speed-display" data-testid="speed-display">
     {localSpeed === 0 ? (t ? t('controls.paused') : 'Paused') : `${localSpeed.toFixed(1)}x`}
   </div>
 </div>
