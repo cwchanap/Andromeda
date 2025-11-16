@@ -229,10 +229,10 @@ describe("ParticleSystem", () => {
             const rendererInstance = vi.mocked(THREE.WebGLRenderer).mock
                 .results[0]?.value;
 
-            // Clear the call history for this specific mock
+            // Clear initialization calls to isolate resize handler behavior
             rendererInstance.setSize.mockClear();
 
-            // Trigger resize
+            // Trigger resize event
             window.dispatchEvent(new Event("resize"));
 
             // Verify it was called exactly once with the correct window dimensions
