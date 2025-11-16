@@ -226,12 +226,14 @@ describe("ParticleSystem", () => {
             const rendererInstance = vi.mocked(THREE.WebGLRenderer).mock
                 .results[0]?.value;
 
-            // Clear previous calls
-            vi.clearAllMocks();
+            // Clear the call history for this specific mock
+            rendererInstance.setSize.mockClear();
 
             // Trigger resize
             window.dispatchEvent(new Event("resize"));
 
+            // Verify it was called exactly once with the correct window dimensions
+            expect(rendererInstance.setSize).toHaveBeenCalledTimes(1);
             expect(rendererInstance.setSize).toHaveBeenCalledWith(
                 window.innerWidth,
                 window.innerHeight,
