@@ -398,7 +398,8 @@ describe("SettingsModal", () => {
             // Wait for reactive updates
             await new Promise((resolve) => setTimeout(resolve, 50));
 
-            // Verify all settings are reset to their default values
+            // Verify settings are reset by checking the component's internal state through the DOM
+            // Select is unique, so we can verify it directly
             const select = container.querySelector(
                 "select",
             ) as HTMLSelectElement;
@@ -409,38 +410,40 @@ describe("SettingsModal", () => {
             ) as HTMLInputElement;
             expect(parseFloat(slider.value)).toBe(1.0);
 
-            // Verify all checkboxes are reset properly
-            const checkboxes = container.querySelectorAll(
-                'input[type="checkbox"]',
+            // Verify checkbox settings by selecting them through their associated labels
+            // This is more robust than relying on DOM order
+            const getCheckboxByLabel = (
+                labelText: string,
+            ): HTMLInputElement => {
+                const heading = Array.from(
+                    container.querySelectorAll("h4.text-sm"),
+                ).find((h4) => h4.textContent === labelText);
+                expect(heading).toBeDefined();
+                const checkbox =
+                    heading?.parentElement?.parentElement?.querySelector(
+                        'input[type="checkbox"]',
+                    ) as HTMLInputElement;
+                expect(checkbox).toBeDefined();
+                return checkbox;
+            };
+
+            // Verify each checkbox is reset to its default value
+            expect(getCheckboxByLabel("Enable Animations").checked).toBe(true);
+            expect(getCheckboxByLabel("Show Control Hints").checked).toBe(true);
+            expect(getCheckboxByLabel("Enable Audio").checked).toBe(true);
+            expect(getCheckboxByLabel("High Contrast Mode").checked).toBe(
+                false,
             );
-
-            // Expected default states for checkboxes (in order of appearance):
-            // enableAnimations: true
-            // showControlHints: true
-            // audioEnabled: true
-            // highContrastMode: false
-            // reducedMotion: false
-            // enableKeyboardNavigation: true
-            // announceSceneChanges: true
-            // screenReaderMode: false
-            const expectedStates = [
+            expect(getCheckboxByLabel("Reduced Motion").checked).toBe(false);
+            expect(getCheckboxByLabel("Keyboard Navigation").checked).toBe(
                 true,
+            );
+            expect(getCheckboxByLabel("Announce Scene Changes").checked).toBe(
                 true,
-                true,
+            );
+            expect(getCheckboxByLabel("Screen Reader Mode").checked).toBe(
                 false,
-                false,
-                true,
-                true,
-                false,
-            ];
-
-            checkboxes.forEach((checkbox, index) => {
-                if (index < expectedStates.length) {
-                    expect((checkbox as HTMLInputElement).checked).toBe(
-                        expectedStates[index],
-                    );
-                }
-            });
+            );
         });
 
         it("should have reset button that is clickable", async () => {
