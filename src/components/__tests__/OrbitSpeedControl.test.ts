@@ -216,7 +216,7 @@ describe("OrbitSpeedControl", () => {
         });
 
         it("should show 'Paused' when speed is set to 0", async () => {
-            const { container } = render(OrbitSpeedControl, {
+            const { container, getByTestId } = render(OrbitSpeedControl, {
                 props: {
                     onSpeedChange: mockOnSpeedChange,
                     lang: "en",
@@ -228,9 +228,8 @@ describe("OrbitSpeedControl", () => {
 
             await fireEvent.input(slider, { target: { value: "0" } });
 
-            // Should show "Paused" in the speed display (not in the labels)
-            const speedDisplay = container.querySelector(".speed-display");
-            expect(speedDisplay?.textContent).toBe("Paused");
+            // Verify "Paused" text is displayed using data-testid
+            expect(getByTestId("speed-display").textContent).toBe("Paused");
         });
     });
 
