@@ -46,19 +46,28 @@
         localSpeed = clampedValue;
       }
     }
-    
+
     isUserInteracting = true;
     settings.update(s => ({ ...s, orbitSpeedMultiplier: localSpeed }));
     onSpeedChange(localSpeed);
-    
+
     // Reset interaction flag after a short delay
     setTimeout(() => {
       isUserInteracting = false;
     }, 100);
-  };  const resetSpeed = () => {
+  };
+
+  const resetSpeed = () => {
     localSpeed = 1.0;
     isUserInteracting = true;
-    handleSpeedChange();
+    // Update the store and call callback with the reset value
+    settings.update(s => ({ ...s, orbitSpeedMultiplier: 1.0 }));
+    onSpeedChange(1.0);
+
+    // Reset interaction flag after a short delay
+    setTimeout(() => {
+      isUserInteracting = false;
+    }, 100);
   };
 </script>
 
@@ -94,7 +103,7 @@
   </div>
   
   <div class="speed-display">
-    {localSpeed === 0 ? (t ? t('controls.paused') : 'Paused') : `${localSpeed.toFixed(1)}x`}
+    {localSpeed === 0 ? (t ? t('controls.paused') : 'Paused') : `${Number(localSpeed).toFixed(1)}x`}
   </div>
 </div>
 

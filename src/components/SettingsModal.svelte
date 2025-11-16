@@ -34,6 +34,7 @@
       controlSensitivity: 1.0,
       graphicsQuality: "medium",
       showControlHints: true,
+      orbitSpeedMultiplier: 1.0,
       // Accessibility defaults
       highContrastMode: false,
       reducedMotion: false,

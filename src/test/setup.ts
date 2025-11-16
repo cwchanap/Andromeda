@@ -555,6 +555,29 @@ class MockGroup extends (THREE as any).Group {
         }),
     );
 
+(THREE as any).OrthographicCamera = vi
+    .fn()
+    .mockImplementation(
+        (
+            left?: number,
+            right?: number,
+            top?: number,
+            bottom?: number,
+            near?: number,
+            far?: number,
+        ) => ({
+            position: enhanceVector3({ x: 0, y: 0, z: 0 }),
+            left: left ?? -1,
+            right: right ?? 1,
+            top: top ?? 1,
+            bottom: bottom ?? -1,
+            near: near ?? 0.1,
+            far: far ?? 1000,
+            updateProjectionMatrix: vi.fn(),
+            lookAt: vi.fn(),
+        }),
+    );
+
 // Renderer with capabilities and info
 (THREE as any).WebGLRenderer = vi.fn().mockImplementation((_opts?: any) => {
     const renderer = {
