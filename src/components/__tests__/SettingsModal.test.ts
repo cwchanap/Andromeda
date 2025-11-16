@@ -385,7 +385,7 @@ describe("SettingsModal", () => {
                 screenReaderMode: true,
             };
 
-            const { getByText, container } = render(SettingsModal, {
+            const { getByText, container, getByRole } = render(SettingsModal, {
                 props: {
                     isOpen: true,
                     currentSettings: customSettings,
@@ -410,40 +410,64 @@ describe("SettingsModal", () => {
             ) as HTMLInputElement;
             expect(parseFloat(slider.value)).toBe(1.0);
 
-            // Verify checkbox settings by selecting them through their associated labels
-            // This is more robust than relying on DOM order
-            const getCheckboxByLabel = (
-                labelText: string,
-            ): HTMLInputElement => {
-                const heading = Array.from(
-                    container.querySelectorAll("h4.text-sm"),
-                ).find((h4) => h4.textContent === labelText);
-                expect(heading).toBeDefined();
-                const checkbox =
-                    heading?.parentElement?.parentElement?.querySelector(
-                        'input[type="checkbox"]',
-                    ) as HTMLInputElement;
-                expect(checkbox).toBeDefined();
-                return checkbox;
-            };
-
-            // Verify each checkbox is reset to its default value
-            expect(getCheckboxByLabel("Enable Animations").checked).toBe(true);
-            expect(getCheckboxByLabel("Show Control Hints").checked).toBe(true);
-            expect(getCheckboxByLabel("Enable Audio").checked).toBe(true);
-            expect(getCheckboxByLabel("High Contrast Mode").checked).toBe(
-                false,
-            );
-            expect(getCheckboxByLabel("Reduced Motion").checked).toBe(false);
-            expect(getCheckboxByLabel("Keyboard Navigation").checked).toBe(
-                true,
-            );
-            expect(getCheckboxByLabel("Announce Scene Changes").checked).toBe(
-                true,
-            );
-            expect(getCheckboxByLabel("Screen Reader Mode").checked).toBe(
-                false,
-            );
+            // Verify checkbox settings using Testing Library's getByRole with accessible names
+            // This uses aria-label attributes and is robust to DOM structure changes
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Enable Animations",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(true);
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Show Control Hints",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(true);
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Enable Audio",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(true);
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "High Contrast Mode",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(false);
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Reduced Motion",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(false);
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Keyboard Navigation",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(true);
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Announce Scene Changes",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(true);
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Screen Reader Mode",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(false);
         });
 
         it("should have reset button that is clickable", async () => {
