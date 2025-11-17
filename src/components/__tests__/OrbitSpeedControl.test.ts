@@ -11,6 +11,7 @@ vi.mock("../../i18n/utils", () => ({
         const translations: Record<string, string> = {
             "controls.orbitSpeed": "Orbit Speed",
             "controls.reset": "Reset",
+            "controls.resetTitle": "Reset to normal speed",
             "controls.paused": "Paused",
             "controls.normal": "Normal",
             "controls.speed100x": "100x",
@@ -440,7 +441,7 @@ describe("OrbitSpeedControl", () => {
                 },
             });
 
-            expect(getByTitle("Reset")).toBeTruthy();
+            expect(getByTitle("Reset to normal speed")).toBeTruthy();
         });
 
         it("should be keyboard accessible", async () => {
