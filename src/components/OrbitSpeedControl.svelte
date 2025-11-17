@@ -74,10 +74,10 @@
 <div class="orbit-speed-control">
   <div class="control-header">
     <h3>{t ? t('controls.orbitSpeed') : 'Orbit Speed'}</h3>
-    <button 
+    <button
       on:click={resetSpeed}
       class="reset-button"
-      title={t ? t('controls.reset') : 'Reset to normal speed'}
+      title={t ? t('controls.resetTitle') : 'Reset to normal speed'}
     >
       {t ? t('controls.reset') : 'Reset'}
     </button>
