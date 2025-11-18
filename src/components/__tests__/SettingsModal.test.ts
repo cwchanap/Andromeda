@@ -188,7 +188,7 @@ describe("SettingsModal", () => {
         });
 
         it("should reflect current audio enabled setting", () => {
-            const { container } = render(SettingsModal, {
+            const { getByRole } = render(SettingsModal, {
                 props: {
                     isOpen: true,
                     currentSettings: {
@@ -198,13 +198,9 @@ describe("SettingsModal", () => {
                 },
             });
 
-            const checkboxes = container.querySelectorAll(
-                'input[type="checkbox"]',
-            );
-            // Find the audio checkbox (second one in the list)
-            const audioCheckbox = Array.from(checkboxes).find((cb) => {
-                const parent = cb.closest(".flex");
-                return parent?.textContent?.includes("Enable Audio");
+            // Use accessible query to find checkbox by aria-label
+            const audioCheckbox = getByRole("checkbox", {
+                name: "Enable Audio",
             }) as HTMLInputElement;
 
             expect(audioCheckbox).toBeTruthy();
