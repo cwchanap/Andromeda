@@ -29,6 +29,7 @@ export const en = {
     "controls.resetView": "Reset View",
     "controls.orbitSpeed": "Orbit Speed",
     "controls.reset": "Reset",
+    "controls.resetTitle": "Reset to normal speed",
     "controls.paused": "Paused",
     "controls.normal": "Normal",
     "controls.speed100x": "100x",

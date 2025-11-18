@@ -28,6 +28,7 @@ export const zh = {
     "controls.resetView": "重置视图",
     "controls.orbitSpeed": "轨道速度",
     "controls.reset": "重置",
+    "controls.resetTitle": "重置到正常速度",
     "controls.paused": "暂停",
     "controls.normal": "正常",
     "controls.speed100x": "100倍",

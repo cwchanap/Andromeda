@@ -28,6 +28,7 @@ export const ja = {
     "controls.resetView": "ビューをリセット",
     "controls.orbitSpeed": "軌道速度",
     "controls.reset": "リセット",
+    "controls.resetTitle": "通常速度にリセット",
     "controls.paused": "一時停止",
     "controls.normal": "通常",
     "controls.speed100x": "100倍",
