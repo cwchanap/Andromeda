@@ -222,6 +222,9 @@ describe("ParticleSystem", () => {
                 "resize",
                 expect.any(Function),
             );
+
+            // Restore the spy to prevent test interference
+            addEventListenerSpy.mockRestore();
         });
 
         it("should update renderer size on window resize", () => {
@@ -277,6 +280,9 @@ describe("ParticleSystem", () => {
                 "resize",
                 expect.any(Function),
             );
+
+            // Restore the spy to prevent test interference
+            removeEventListenerSpy.mockRestore();
         });
     });
 
