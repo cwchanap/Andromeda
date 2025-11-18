@@ -303,18 +303,53 @@ describe("SettingsModal", () => {
                 screenReaderMode: true,
             };
 
-            const { container } = render(SettingsModal, {
+            const { getByRole } = render(SettingsModal, {
                 props: {
                     isOpen: true,
                     currentSettings: customSettings,
                 },
             });
 
-            const checkboxes = container.querySelectorAll(
-                'input[type="checkbox"]',
-            );
-            // Verify that checkboxes are checked/unchecked according to settings
-            expect(checkboxes.length).toBeGreaterThan(0);
+            // Verify each accessibility checkbox reflects the custom settings
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "High Contrast Mode",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(true);
+
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Reduced Motion",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(true);
+
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Keyboard Navigation",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(false);
+
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Announce Scene Changes",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(false);
+
+            expect(
+                (
+                    getByRole("checkbox", {
+                        name: "Screen Reader Mode",
+                    }) as HTMLInputElement
+                ).checked,
+            ).toBe(true);
         });
     });
 
