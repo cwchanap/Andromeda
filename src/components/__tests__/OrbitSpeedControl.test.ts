@@ -352,16 +352,16 @@ describe("OrbitSpeedControl", () => {
             // Immediately try to update store (should be blocked during interaction)
             settings.update((s) => ({ ...s, orbitSpeedMultiplier: 7.0 }));
 
-            // Advance timers partway (50ms out of 100ms interaction timeout)
+            // Advance timers partway through the 100ms interaction timeout
             await vi.advanceTimersByTimeAsync(50);
 
-            // Slider should still show user's value
+            // Slider should still show user's value (interaction timeout not yet expired)
             expect(parseFloat(slider.value)).toBe(3.0);
 
-            // Advance past the interaction timeout (total 150ms)
+            // Advance past the 100ms interaction timeout (50ms + 100ms = 150ms total)
             await vi.advanceTimersByTimeAsync(100);
 
-            // Now it should update from the store
+            // Now the interaction timeout has expired, should sync with store
             expect(parseFloat(slider.value)).toBe(7.0);
 
             vi.useRealTimers();
