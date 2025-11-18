@@ -371,6 +371,8 @@ describe("SettingsModal", () => {
 
     describe("Reset to Defaults Functionality", () => {
         it("should reset all settings to defaults when Reset button is clicked", async () => {
+            vi.useFakeTimers();
+
             const customSettings: GameSettings = {
                 enableAnimations: false,
                 audioEnabled: false,
@@ -395,8 +397,8 @@ describe("SettingsModal", () => {
             const resetButton = getByText("Reset to Defaults");
             await fireEvent.click(resetButton);
 
-            // Wait for reactive updates
-            await new Promise((resolve) => setTimeout(resolve, 50));
+            // Wait for reactive updates using fake timers
+            await vi.advanceTimersByTimeAsync(50);
 
             // Verify settings are reset by checking the component's internal state through the DOM
             // Select is unique, so we can verify it directly
@@ -468,6 +470,8 @@ describe("SettingsModal", () => {
                     }) as HTMLInputElement
                 ).checked,
             ).toBe(false);
+
+            vi.useRealTimers();
         });
 
         it("should have reset button that is clickable", async () => {

@@ -43,6 +43,7 @@ describe("OrbitSpeedControl", () => {
 
     afterEach(() => {
         cleanup();
+        vi.useRealTimers(); // Restore real timers if any test used fake timers
     });
 
     describe("Component Rendering", () => {
