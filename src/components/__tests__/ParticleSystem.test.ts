@@ -208,7 +208,7 @@ describe("ParticleSystem", () => {
                 .results[0]?.value;
             expect(rendererInstance.render).toHaveBeenCalled();
 
-            // Restore original (cleanup happens automatically in afterEach via vi.clearAllMocks)
+            // Restore the spy to avoid leaking mock state to other tests
             rafSpy.mockRestore();
         });
     });

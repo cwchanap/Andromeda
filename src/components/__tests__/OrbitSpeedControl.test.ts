@@ -180,8 +180,6 @@ describe("OrbitSpeedControl", () => {
 
             const currentSettings = get(settings);
             expect(currentSettings.orbitSpeedMultiplier).toBe(2.5);
-
-            vi.useRealTimers();
         });
 
         it("should call onSpeedChange callback when slider value changes", async () => {
@@ -275,8 +273,6 @@ describe("OrbitSpeedControl", () => {
 
             // Also verify the callback was called with the correct value
             expect(mockOnSpeedChange).toHaveBeenCalledWith(1.0);
-
-            vi.useRealTimers();
         });
 
         it("should update slider value to 1.0 when reset is clicked", async () => {
@@ -302,8 +298,6 @@ describe("OrbitSpeedControl", () => {
                 'input[type="range"]',
             ) as HTMLInputElement;
             expect(parseFloat(slider.value)).toBe(1.0);
-
-            vi.useRealTimers();
         });
     });
 
@@ -328,8 +322,6 @@ describe("OrbitSpeedControl", () => {
                 'input[type="range"]',
             ) as HTMLInputElement;
             expect(parseFloat(slider.value)).toBe(4.2);
-
-            vi.useRealTimers();
         });
 
         it("should not sync with store during user interaction", async () => {
@@ -363,8 +355,6 @@ describe("OrbitSpeedControl", () => {
 
             // Now the interaction timeout has expired, should sync with store
             expect(parseFloat(slider.value)).toBe(7.0);
-
-            vi.useRealTimers();
         });
     });
 

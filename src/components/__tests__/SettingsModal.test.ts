@@ -24,6 +24,7 @@ describe("SettingsModal", () => {
 
     afterEach(() => {
         cleanup();
+        vi.useRealTimers(); // Restore real timers if any test used fake timers
     });
 
     describe("Component Rendering", () => {
@@ -501,8 +502,6 @@ describe("SettingsModal", () => {
                     }) as HTMLInputElement
                 ).checked,
             ).toBe(false);
-
-            vi.useRealTimers();
         });
 
         it("should have reset button that is clickable", async () => {
