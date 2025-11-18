@@ -32,11 +32,23 @@
   let localSpeed = $settings.orbitSpeedMultiplier;
   let isUserInteracting = false;
   let sliderElement: HTMLInputElement;
-  
+
   // Update local speed when store changes (but only if user isn't actively using the slider)
   $: if ($settings.orbitSpeedMultiplier !== localSpeed && !isUserInteracting) {
     localSpeed = $settings.orbitSpeedMultiplier;
   }
+
+  // Helper function to update speed in store and notify callback
+  const updateSpeed = (value: number) => {
+    isUserInteracting = true;
+    settings.update(s => ({ ...s, orbitSpeedMultiplier: value }));
+    onSpeedChange(value);
+
+    // Reset interaction flag after a short delay
+    setTimeout(() => {
+      isUserInteracting = false;
+    }, 100);
+  };
 
   const handleSpeedChange = () => {
     // First, get the actual clamped value from the DOM element
@@ -47,27 +59,12 @@
       }
     }
 
-    isUserInteracting = true;
-    settings.update(s => ({ ...s, orbitSpeedMultiplier: localSpeed }));
-    onSpeedChange(localSpeed);
-
-    // Reset interaction flag after a short delay
-    setTimeout(() => {
-      isUserInteracting = false;
-    }, 100);
+    updateSpeed(localSpeed);
   };
 
   const resetSpeed = () => {
     localSpeed = 1.0;
-    isUserInteracting = true;
-    // Update the store and call callback with the reset value
-    settings.update(s => ({ ...s, orbitSpeedMultiplier: 1.0 }));
-    onSpeedChange(1.0);
-
-    // Reset interaction flag after a short delay
-    setTimeout(() => {
-      isUserInteracting = false;
-    }, 100);
+    updateSpeed(1.0);
   };
 </script>
 
