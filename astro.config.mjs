@@ -6,6 +6,9 @@ import vercel from "@astrojs/vercel";
 
 // https://astro.build/config
 export default defineConfig({
+  server: {
+    port: 3600,
+  },
   trailingSlash: "ignore",
   output: "server",
   adapter: vercel(),
