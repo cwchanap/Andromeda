@@ -441,9 +441,20 @@ test.describe("Constellation View Error Handling", () => {
             ).toBeVisible({
                 timeout: 30000,
             });
-        } catch {
-            // Check for error message
-            await expect(page.getByText(/Unable to load|error/i)).toBeVisible();
+        } catch (headingError) {
+            // If heading is not visible, check for the specific data-loading error
+            const errorHeading = page.getByRole("heading", {
+                name: "Unable to load constellation view",
+            });
+            const isErrorVisible = await errorHeading.isVisible();
+
+            if (!isErrorVisible) {
+                // If the specific error is not visible, this is an unexpected failure
+                throw headingError;
+            }
+
+            // Assert the specific error is displayed
+            await expect(errorHeading).toBeVisible();
         }
     });
 });
