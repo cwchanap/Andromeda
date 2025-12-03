@@ -256,7 +256,7 @@ test.describe("Constellation View UI Controls", () => {
         await expect(toggleButton).toContainText(/Hide/i);
     });
 
-    test("should have controls toggle button", async ({ page }) => {
+    test("should show Back button", async ({ page }) => {
         await page.goto("/constellation");
 
         // Wait for page to load
@@ -419,14 +419,34 @@ test.describe("Constellation View Error Handling", () => {
     });
 
     test("should display loading state properly", async ({ page }) => {
-        await page.goto("/constellation");
+        // Slow down network requests to keep loading state visible longer
+        await page.route("**/*", async (route) => {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            await route.continue();
+        });
 
-        // Page should eventually load
+        // Navigate to page
+        const navigationPromise = page.goto("/constellation");
+
+        // Assert loading spinner is visible while page is loading
+        const spinner = page.locator(".animate-spin");
+        await expect(spinner).toBeVisible({ timeout: 5000 });
+
+        // Wait for navigation to complete
+        await navigationPromise;
+
+        // Clean up route interception
+        await page.unroute("**/*");
+
+        // Page should eventually load and show the final heading
         await expect(
             page.getByRole("heading", { name: "Constellation View" }),
         ).toBeVisible({
             timeout: 30000,
         });
+
+        // Loading spinner should no longer be visible
+        await expect(spinner).toHaveCount(0);
     });
 
     test("should handle constellation data loading errors", async ({
