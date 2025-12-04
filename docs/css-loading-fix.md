@@ -147,4 +147,4 @@ When implementing multi-language routes:
 - **Issue Date**: September 2024
 - **Node Version**: v22.14.0
 - **System**: macOS (arm64)
-- **Package Manager**: npm
+- **Package Manager**: Bun

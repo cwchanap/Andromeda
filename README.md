@@ -21,7 +21,7 @@ An immersive educational platform for exploring our solar system in stunning 3D,
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Bun 1.0+
 - Modern browser with WebGL support
 
 ### Installation
@@ -32,10 +32,10 @@ git clone https://github.com/username/andromeda.git
 cd andromeda
 
 # Install dependencies
-npm install
+bun install
 
 # Start development server
-npm run dev
+bun run dev
 ```
 
 Open [http://localhost:4321](http://localhost:4321) to view the application.
@@ -112,31 +112,31 @@ Switch between different star systems using the system selector:
 
 ```bash
 # Unit tests (watch mode)
-npm run test
+bun run test
 
 # Unit tests (single run)
-npm run test:run
+bun run test:run
 
 # Unit tests with UI
-npm run test:ui
+bun run test:ui
 
 # Unit tests with coverage
-npm run test:coverage
+bun run test:coverage
 
 # End-to-end tests
-npm run test:e2e
+bun run test:e2e
 
 # E2E tests with UI
-npm run test:e2e:ui
+bun run test:e2e:ui
 
 # E2E smoke tests only
-npm run test:e2e:smoke
+bun run test:e2e:smoke
 
 # Run all tests (CI mode)
-npm run test:all
+bun run test:all
 
 # Full CI pipeline locally
-npm run ci:test
+bun run ci:test
 ```
 
 ### Test Structure
@@ -239,10 +239,10 @@ See the [Extension Development Guide](./docs/extensions/README.md) for detailed 
 
 ```bash
 # Create optimized production build
-npm run build
+bun run build
 
 # Preview production build locally
-npm run preview
+bun run preview
 ```
 
 ### Deployment Options
@@ -281,7 +281,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes with tests
-4. Ensure all tests pass (`npm run test:all`)
+4. Ensure all tests pass (`bun run test:all`)
 5. Commit your changes (`git commit -m 'Add amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
