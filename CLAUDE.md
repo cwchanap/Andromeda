@@ -6,28 +6,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Build and Development:**
 
-- `npm run dev` or `npm start` - Start development server (port 4321)
-- `npm run build` - Build for production (configured for Vercel deployment)
-- `npm run preview` - Preview production build
-- `npm run clean` - Clean build artifacts
+- `bun run dev` or `bun start` - Start development server (port 4321)
+- `bun run build` - Build for production (configured for Vercel deployment)
+- `bun run preview` - Preview production build
+- `bun run clean` - Clean build artifacts
 
 **Code Quality:**
 
-- `npm run type-check` or `npm run astro check` - Run TypeScript type checking
-- `npm run lint` - Run ESLint
-- `npm run format` - Format code with Prettier
-- `npm run ci:test` - Full CI pipeline (lint, type-check, test coverage, build)
+- `bun run type-check` or `bun run astro check` - Run TypeScript type checking
+- `bun run lint` - Run ESLint
+- `bun run format` - Format code with Prettier
+- `bun run ci:test` - Full CI pipeline (lint, type-check, test coverage, build)
 
 **Testing:**
 
-- `npm run test` - Run unit tests with Vitest in watch mode
-- `npm run test:run` - Run unit tests once
-- `npm run test:ui` - Run tests with UI interface
-- `npm run test:coverage` - Run tests with coverage report (70% threshold)
-- `npm run test:e2e` - Run Playwright end-to-end tests
-- `npm run test:e2e:ui` - Run e2e tests with UI
-- `npm run test:e2e:smoke` - Run only smoke tests (@smoke tag)
-- `npm run test:all` - Run both unit and e2e tests
+- `bun run test` - Run unit tests with Vitest in watch mode
+- `bun run test:run` - Run unit tests once
+- `bun run test:ui` - Run tests with UI interface
+- `bun run test:coverage` - Run tests with coverage report (70% threshold)
+- `bun run test:e2e` - Run Playwright end-to-end tests
+- `bun run test:e2e:ui` - Run e2e tests with UI
+- `bun run test:e2e:smoke` - Run only smoke tests (@smoke tag)
+- `bun run test:all` - Run both unit and e2e tests
 
 ## Project Architecture
 

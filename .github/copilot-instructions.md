@@ -129,27 +129,27 @@ mesh.receiveShadow = false; // On all meshes
 ### Essential Commands
 
 ```bash
-npm run dev           # Dev server on :4321 (Astro + Vite HMR)
-npm run build         # Production build (Vercel optimized)
-npm run preview       # Test production build locally
+bun run dev           # Dev server on :4321 (Astro + Vite HMR)
+bun run build         # Production build (Vercel optimized)
+bun run preview       # Test production build locally
 
-npm run type-check    # TypeScript + Astro template validation
-npm run lint          # ESLint (Astro/Svelte/a11y plugins)
-npm run format        # Prettier + Tailwind class sorting
+bun run type-check    # TypeScript + Astro template validation
+bun run lint          # ESLint (Astro/Svelte/a11y plugins)
+bun run format        # Prettier + Tailwind class sorting
 
-npm run test          # Vitest watch mode
-npm run test:run      # Vitest single run
-npm run test:coverage # Coverage report (70% threshold)
-npm run test:ui       # Vitest UI interface
+bun run test          # Vitest watch mode
+bun run test:run      # Vitest single run
+bun run test:coverage # Coverage report (70% threshold)
+bun run test:ui       # Vitest UI interface
 
-npm run test:e2e      # Playwright all browsers
-npm run test:e2e:ui   # Playwright with UI
-npm run test:e2e:smoke # Only @smoke tagged tests
+bun run test:e2e      # Playwright all browsers
+bun run test:e2e:ui   # Playwright with UI
+bun run test:e2e:smoke # Only @smoke tagged tests
 
-npm run test:all      # Unit + E2E (CI simulation)
-npm run ci:test       # Full CI: lint + type + coverage + build
+bun run test:all      # Unit + E2E (CI simulation)
+bun run ci:test       # Full CI: lint + type + coverage + build
 
-npm run clean         # Remove dist/ and .astro/
+bun run clean         # Remove dist/ and .astro/
 ```
 
 **Pre-commit Hook**: Husky runs `lint-staged` → ESLint + Prettier on staged files
@@ -176,7 +176,7 @@ npm run clean         # Remove dist/ and .astro/
 
 1. Write unit test for logic (managers, stores, utils)
 2. Add E2E test for user journeys (navigation, interactions)
-3. Run `npm run ci:test` before pushing
+3. Run `bun run ci:test` before pushing
 
 ### Adding New Celestial Bodies
 
@@ -209,11 +209,11 @@ npm run clean         # Remove dist/ and .astro/
 
 ### Browser Testing with MCP
 
-**IMPORTANT**: Use Playwright MCP for browser interactions. **DO NOT** run `npm run dev` blindly:
+**IMPORTANT**: Use Playwright MCP for browser interactions. **DO NOT** run `bun run dev` blindly:
 
 1. First check if server already running: `curl http://localhost:4321/`
 2. If running, use existing server
-3. If not, start with `npm run dev` in background session
+3. If not, start with `bun run dev` in background session
 
 ## Project-Specific Conventions
 
