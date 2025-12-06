@@ -129,7 +129,7 @@ mesh.receiveShadow = false; // On all meshes
 ### Essential Commands
 
 ```bash
-bun run dev           # Dev server on :4321 (Astro + Vite HMR)
+bun run dev           # Dev server on :3600 (Astro + Vite HMR)
 bun run build         # Production build (Vercel optimized)
 bun run preview       # Test production build locally
 
@@ -168,7 +168,7 @@ bun run clean         # Remove dist/ and .astro/
 
 - Playwright across Chrome/Firefox/Safari/Mobile Chrome/Mobile Safari
 - Tag smoke tests with `@smoke` for fast feedback (see `e2e/main-user-journeys.spec.ts`)
-- Dev server auto-starts on `:4321` via `webServer` config
+- Dev server auto-starts on `:3600` via `webServer` config
 - Uses `page.waitForSelector('#solar-system-renderer')` for 3D scene readiness
 - Reports: HTML + JUnit XML (CI) or just HTML (local)
 
@@ -211,7 +211,7 @@ bun run clean         # Remove dist/ and .astro/
 
 **IMPORTANT**: Use Playwright MCP for browser interactions. **DO NOT** run `bun run dev` blindly:
 
-1. First check if server already running: `curl http://localhost:4321/`
+1. First check if server already running: `curl http://localhost:3600/`
 2. If running, use existing server
 3. If not, start with `bun run dev` in background session
 

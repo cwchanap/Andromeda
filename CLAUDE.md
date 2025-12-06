@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Build and Development:**
 
-- `bun run dev` or `bun start` - Start development server (port 4321)
+- `bun run dev` or `bun start` - Start development server (port 3600)
 - `bun run build` - Build for production (configured for Vercel deployment)
 - `bun run preview` - Preview production build
 - `bun run clean` - Clean build artifacts
@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `bun run test` - Run unit tests with Vitest in watch mode
 - `bun run test:run` - Run unit tests once
-- `bun run test:ui` - Run tests with UI interface
+- `bun run test:ui` - Run tests with the Vitest UI
 - `bun run test:coverage` - Run tests with coverage report (70% threshold)
 - `bun run test:e2e` - Run Playwright end-to-end tests
 - `bun run test:e2e:ui` - Run e2e tests with UI
@@ -159,7 +159,7 @@ Uses `@/*` path mapping to `./src/*` for cleaner imports.
 **E2E Testing (Playwright):**
 
 - Tests across Chrome, Firefox, Safari, Mobile Chrome/Safari
-- Dev server automatically started on localhost:4321
+- Dev server automatically started on localhost:3600
 - Smoke tests tagged with `@smoke`
 - Reports in HTML format, JUnit XML for CI
 
@@ -177,4 +177,4 @@ Supports English (en), Chinese (zh), and Japanese (ja) with fallback routing.
 
 ### Browser Testing
 
-Use Playwright MCP to interact with browser for testing. Check if dev server is already running at http://localhost:4321/ before starting it.
+Use Playwright MCP to interact with browser for testing. Check if dev server is already running at http://localhost:3600/ before starting it.
