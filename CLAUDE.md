@@ -6,28 +6,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Build and Development:**
 
-- `bun run dev` or `bun start` - Start development server (port 3600)
-- `bun run build` - Build for production (configured for Vercel deployment)
+- `bun run dev` - Start development server (port 3600)
+- `bun run build` - Build for production (Vercel deployment)
 - `bun run preview` - Preview production build
-- `bun run clean` - Clean build artifacts
+- `bun run clean` - Remove dist/ and .astro/
 
 **Code Quality:**
 
-- `bun run type-check` or `bun run astro check` - Run TypeScript type checking
-- `bun run lint` - Run ESLint
-- `bun run format` - Format code with Prettier
-- `bun run ci:test` - Full CI pipeline (lint, type-check, test coverage, build)
+- `bun run type-check` - TypeScript + Astro template validation
+- `bun run lint` - ESLint (Astro/Svelte/a11y plugins)
+- `bun run format` - Prettier + Tailwind class sorting
+- `bun run ci:test` - Full CI pipeline (lint, type-check, coverage, build)
 
 **Testing:**
 
-- `bun run test` - Run unit tests with Vitest in watch mode
-- `bun run test:run` - Run unit tests once
-- `bun run test:ui` - Run tests with the Vitest UI
-- `bun run test:coverage` - Run tests with coverage report (70% threshold)
-- `bun run test:e2e` - Run Playwright end-to-end tests
-- `bun run test:e2e:ui` - Run e2e tests with UI
-- `bun run test:e2e:smoke` - Run only smoke tests (@smoke tag)
-- `bun run test:all` - Run both unit and e2e tests
+- `bun run test` - Unit tests in watch mode
+- `bun run test:run` - Unit tests once
+- `bun run test:coverage` - Coverage report (70% threshold)
+- `bun run test:e2e` - Playwright E2E tests (Chromium)
+- `bun run test:e2e:smoke` - Smoke tests only (@smoke tag)
+- `bun run test:all` - Unit + E2E tests
+
+**Running Specific Tests:**
+
+- `bunx vitest src/stores/gameStore.test.ts` - Run single test file
+- `bunx vitest -t "test name"` - Run tests matching name pattern
+- `bunx playwright test e2e/main-user-journeys.spec.ts` - Run single E2E file
+- `bunx playwright test --grep="@smoke"` - Run tagged E2E tests
 
 ## Project Architecture
 
@@ -112,7 +117,16 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 - Modular manager classes for different 3D concerns
 - Performance monitoring and LOD (Level of Detail) systems
 - Framework-agnostic renderer design for potential framework migration
-- **Shadow System**: Explicitly disabled throughout for performance (`castShadow: false`)
+
+**CRITICAL - Shadow System (NEVER ENABLE):**
+
+All shadow rendering is permanently disabled project-wide for performance on mobile and to avoid artifacts with space backgrounds:
+```typescript
+renderer.shadowMap.enabled = false;
+light.castShadow = false;
+mesh.castShadow = false;
+mesh.receiveShadow = false;
+```
 
 **State Management Pattern:**
 
@@ -128,12 +142,16 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 
 ### Critical Loading Sequence
 
-The `SolarSystemWrapper.svelte` follows a specific initialization pattern:
+The `SolarSystemWrapper.svelte` follows a specific 6-step initialization pattern:
 
-1. DOM mounting with container waiting (`getElementById('solar-system-renderer')`)
-2. Progress simulation before 3D initialization
-3. Async renderer creation with error handling
-4. Event binding for planet selection and camera changes
+1. **DOM Mounting**: Polls for `#solar-system-renderer` container (max 10 attempts)
+2. **WebGL Check**: Validates support via `webglStore` before renderer creation
+3. **Progress Simulation**: Shows loading animation while awaiting resources
+4. **Renderer Creation**: Async instantiation with error boundaries
+5. **Event Binding**: Connects `onPlanetSelect`, `onCameraChange` to stores
+6. **Cleanup**: Disposes Three.js resources on component destroy
+
+**Why this order matters**: Skipping container check causes race conditions, missing WebGL check crashes on unsupported devices.
 
 ### Import Path Configuration
 
@@ -178,3 +196,13 @@ Supports English (en), Chinese (zh), and Japanese (ja) with fallback routing.
 ### Browser Testing
 
 Use Playwright MCP to interact with browser for testing. Check if dev server is already running at http://localhost:3600/ before starting it.
+
+## Common Gotchas
+
+1. **Svelte 5 stores**: Use `$` prefix only in `.svelte` files, use `get()` in `.ts` files
+2. **Three.js memory**: Always call `.dispose()` on geometries/materials/textures
+3. **Astro hydration**: Use `client:only="svelte"` for stores, not `client:load`
+4. **Tailwind 4**: No `@tailwind` directives needed with Vite plugin
+5. **Test isolation**: Three.js is mocked via `deps.inline: ["three"]` in vitest.config.ts
+6. **E2E timing**: Wait for `#solar-system-renderer` before interacting with 3D scene
+7. **Type safety**: `CelestialBodyData` requires `keyFacts` for info modal
