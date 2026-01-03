@@ -635,6 +635,516 @@ export const solarSystemData: PlanetarySystemData = {
             orbitRadius: 449.5,
             orbitSpeed: 0.0015,
         },
+        // ============================================================================
+        // MOONS - Added after planets to ensure parent bodies exist during creation
+        // ============================================================================
+        // Earth's Moon
+        {
+            id: "luna",
+            name: "Moon",
+            type: "moon",
+            description:
+                "Earth's only natural satellite, the fifth largest moon in the Solar System and the largest relative to its parent planet",
+            keyFacts: {
+                diameter: "3,474 km",
+                distanceFromSun: "384,400 km from Earth",
+                orbitalPeriod: "27.3 days",
+                composition: [
+                    "Silicate rocks",
+                    "Iron core",
+                    "Regolith surface",
+                ],
+                temperature: "-173°C to 127°C",
+            },
+            images: [],
+            position: new THREE.Vector3(14.96 + 0.4, 0, 0), // Earth position + orbit radius
+            scale: 0.27,
+            realDistance: {
+                kilometers: 384400,
+                formattedString: "384,400 km from Earth",
+            },
+            material: {
+                color: "#C0C0C0",
+                roughness: 0.9,
+                metalness: 0.1,
+            },
+            terrain: {
+                enabled: true,
+                type: "rocky",
+                heightScale: 0.025,
+                resolution: "medium",
+                features: {
+                    craters: {
+                        enabled: true,
+                        count: 20,
+                        minRadius: 0.03,
+                        maxRadius: 0.15,
+                        depth: 0.04,
+                    },
+                    mountains: {
+                        enabled: true,
+                        count: 8,
+                        minHeight: 0.02,
+                        maxHeight: 0.06,
+                        smoothness: 1.5,
+                    },
+                    valleys: {
+                        enabled: false,
+                        count: 0,
+                        depth: 0,
+                        width: 0,
+                    },
+                    continents: {
+                        enabled: false,
+                        count: 0,
+                        seaLevel: 0,
+                    },
+                },
+                colors: {
+                    low: "#808080",
+                    mid: "#A0A0A0",
+                    high: "#C0C0C0",
+                    peak: "#E0E0E0",
+                },
+                noise: {
+                    seed: 11111,
+                    octaves: 4,
+                    frequency: 5,
+                    amplitude: 0.012,
+                    persistence: 0.5,
+                    lacunarity: 2,
+                },
+            },
+            modalTheme: {
+                primary: "#C0C0C0",
+                secondary: "#A0A0A0",
+                accent: "#E0E0E0",
+                background:
+                    "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)",
+                textColor: "#FFFFFF",
+            },
+            parentId: "earth",
+            orbitRadius: 0.4,
+            orbitSpeed: 0.08,
+        },
+        // Mars' Moons
+        {
+            id: "phobos",
+            name: "Phobos",
+            type: "moon",
+            description:
+                "The larger and closer of Mars' two moons, an irregularly shaped body covered in craters",
+            keyFacts: {
+                diameter: "22.2 km",
+                distanceFromSun: "9,377 km from Mars",
+                orbitalPeriod: "7.7 hours",
+                composition: ["Carbon-rich rock", "Ice", "Regolith"],
+                temperature: "-40°C (average)",
+            },
+            images: [],
+            position: new THREE.Vector3(22.79 + 0.25, 0, 0),
+            scale: 0.08,
+            realDistance: {
+                kilometers: 9377,
+                formattedString: "9,377 km from Mars",
+            },
+            material: {
+                color: "#5C4033",
+                roughness: 0.95,
+                metalness: 0.05,
+            },
+            modalTheme: {
+                primary: "#5C4033",
+                secondary: "#8B7355",
+                accent: "#A0522D",
+                background:
+                    "linear-gradient(135deg, #1a1510 0%, #2d251a 50%, #1a1510 100%)",
+                textColor: "#E5D5C0",
+            },
+            parentId: "mars",
+            orbitRadius: 0.25,
+            orbitSpeed: 0.15,
+        },
+        {
+            id: "deimos",
+            name: "Deimos",
+            type: "moon",
+            description:
+                "The smaller and more distant of Mars' two moons, with a smoother surface than Phobos",
+            keyFacts: {
+                diameter: "12.4 km",
+                distanceFromSun: "23,460 km from Mars",
+                orbitalPeriod: "30.3 hours",
+                composition: ["Carbon-rich rock", "Ice", "Regolith"],
+                temperature: "-40°C (average)",
+            },
+            images: [],
+            position: new THREE.Vector3(22.79 + 0.4, 0, 0),
+            scale: 0.05,
+            realDistance: {
+                kilometers: 23460,
+                formattedString: "23,460 km from Mars",
+            },
+            material: {
+                color: "#6B5B4F",
+                roughness: 0.9,
+                metalness: 0.05,
+            },
+            modalTheme: {
+                primary: "#6B5B4F",
+                secondary: "#8B7B6F",
+                accent: "#A09080",
+                background:
+                    "linear-gradient(135deg, #1a1815 0%, #2d2820 50%, #1a1815 100%)",
+                textColor: "#E5DDD5",
+            },
+            parentId: "mars",
+            orbitRadius: 0.4,
+            orbitSpeed: 0.1,
+        },
+        // Jupiter's Galilean Moons
+        {
+            id: "io",
+            name: "Io",
+            type: "moon",
+            description:
+                "The most volcanically active body in the Solar System, with over 400 active volcanoes",
+            keyFacts: {
+                diameter: "3,643 km",
+                distanceFromSun: "421,700 km from Jupiter",
+                orbitalPeriod: "1.77 days",
+                composition: ["Silicate rock", "Iron core", "Sulfur compounds"],
+                temperature: "-143°C to 1,700°C (volcanoes)",
+            },
+            images: [],
+            position: new THREE.Vector3(77.85 + 0.35, 0, 0),
+            scale: 0.29,
+            realDistance: {
+                kilometers: 421700,
+                formattedString: "421,700 km from Jupiter",
+            },
+            material: {
+                color: "#E6C35C",
+                roughness: 0.7,
+                metalness: 0.2,
+            },
+            terrain: {
+                enabled: true,
+                type: "volcanic",
+                heightScale: 0.05,
+                resolution: "medium",
+                features: {
+                    craters: {
+                        enabled: true,
+                        count: 15,
+                        minRadius: 0.02,
+                        maxRadius: 0.1,
+                        depth: 0.03,
+                    },
+                    mountains: {
+                        enabled: true,
+                        count: 20,
+                        minHeight: 0.04,
+                        maxHeight: 0.12,
+                        smoothness: 1.2,
+                    },
+                    valleys: {
+                        enabled: false,
+                        count: 0,
+                        depth: 0,
+                        width: 0,
+                    },
+                    continents: {
+                        enabled: false,
+                        count: 0,
+                        seaLevel: 0,
+                    },
+                },
+                colors: {
+                    low: "#8B4513",
+                    mid: "#E6C35C",
+                    high: "#FF4500",
+                    peak: "#FF6347",
+                },
+                noise: {
+                    seed: 22222,
+                    octaves: 4,
+                    frequency: 6,
+                    amplitude: 0.02,
+                    persistence: 0.6,
+                    lacunarity: 2.2,
+                },
+            },
+            modalTheme: {
+                primary: "#E6C35C",
+                secondary: "#FF8C00",
+                accent: "#FFD700",
+                background:
+                    "linear-gradient(135deg, #2a1a0a 0%, #3d2810 50%, #2a1a0a 100%)",
+                textColor: "#FFF8E1",
+            },
+            parentId: "jupiter",
+            orbitRadius: 0.35,
+            orbitSpeed: 0.12,
+        },
+        {
+            id: "europa",
+            name: "Europa",
+            type: "moon",
+            description:
+                "An ice-covered moon with a subsurface ocean, considered one of the most likely places for extraterrestrial life",
+            keyFacts: {
+                diameter: "3,122 km",
+                distanceFromSun: "670,900 km from Jupiter",
+                orbitalPeriod: "3.55 days",
+                composition: [
+                    "Water ice shell",
+                    "Silicate rock",
+                    "Iron core",
+                    "Subsurface ocean",
+                ],
+                temperature: "-160°C (surface)",
+            },
+            images: [],
+            position: new THREE.Vector3(77.85 + 0.5, 0, 0),
+            scale: 0.25,
+            realDistance: {
+                kilometers: 670900,
+                formattedString: "670,900 km from Jupiter",
+            },
+            material: {
+                color: "#E8E4D9",
+                roughness: 0.3,
+                metalness: 0.1,
+            },
+            terrain: {
+                enabled: true,
+                type: "ice",
+                heightScale: 0.015,
+                resolution: "medium",
+                features: {
+                    craters: {
+                        enabled: true,
+                        count: 5,
+                        minRadius: 0.02,
+                        maxRadius: 0.08,
+                        depth: 0.01,
+                    },
+                    mountains: {
+                        enabled: false,
+                        count: 0,
+                        minHeight: 0,
+                        maxHeight: 0,
+                        smoothness: 2,
+                    },
+                    valleys: {
+                        enabled: true,
+                        count: 15,
+                        depth: 0.01,
+                        width: 0.02,
+                    },
+                    continents: {
+                        enabled: false,
+                        count: 0,
+                        seaLevel: 0,
+                    },
+                },
+                colors: {
+                    low: "#B8C4D0",
+                    mid: "#E8E4D9",
+                    high: "#F5F5F5",
+                    peak: "#FFFFFF",
+                },
+                noise: {
+                    seed: 33333,
+                    octaves: 3,
+                    frequency: 8,
+                    amplitude: 0.008,
+                    persistence: 0.4,
+                    lacunarity: 2,
+                },
+            },
+            modalTheme: {
+                primary: "#E8E4D9",
+                secondary: "#A4B8C4",
+                accent: "#87CEEB",
+                background:
+                    "linear-gradient(135deg, #0a1520 0%, #152535 50%, #0a1520 100%)",
+                textColor: "#FFFFFF",
+            },
+            parentId: "jupiter",
+            orbitRadius: 0.5,
+            orbitSpeed: 0.09,
+        },
+        {
+            id: "ganymede",
+            name: "Ganymede",
+            type: "moon",
+            description:
+                "The largest moon in the Solar System, even larger than Mercury, with its own magnetic field",
+            keyFacts: {
+                diameter: "5,268 km",
+                distanceFromSun: "1,070,400 km from Jupiter",
+                orbitalPeriod: "7.15 days",
+                composition: ["Water ice", "Silicate rock", "Iron core"],
+                temperature: "-163°C (average)",
+            },
+            images: [],
+            position: new THREE.Vector3(77.85 + 0.7, 0, 0),
+            scale: 0.41,
+            realDistance: {
+                kilometers: 1070400,
+                formattedString: "1,070,400 km from Jupiter",
+            },
+            material: {
+                color: "#9B8B7A",
+                roughness: 0.7,
+                metalness: 0.15,
+            },
+            modalTheme: {
+                primary: "#9B8B7A",
+                secondary: "#B0A090",
+                accent: "#C8B8A8",
+                background:
+                    "linear-gradient(135deg, #1a1815 0%, #2d2820 50%, #1a1815 100%)",
+                textColor: "#FFFFFF",
+            },
+            parentId: "jupiter",
+            orbitRadius: 0.7,
+            orbitSpeed: 0.06,
+        },
+        {
+            id: "callisto",
+            name: "Callisto",
+            type: "moon",
+            description:
+                "The most heavily cratered object in the Solar System, with an ancient, unchanged surface",
+            keyFacts: {
+                diameter: "4,821 km",
+                distanceFromSun: "1,882,700 km from Jupiter",
+                orbitalPeriod: "16.69 days",
+                composition: [
+                    "Water ice",
+                    "Silicate rock",
+                    "Carbon dioxide ice",
+                ],
+                temperature: "-139°C (average)",
+            },
+            images: [],
+            position: new THREE.Vector3(77.85 + 0.9, 0, 0),
+            scale: 0.38,
+            realDistance: {
+                kilometers: 1882700,
+                formattedString: "1,882,700 km from Jupiter",
+            },
+            material: {
+                color: "#5C5346",
+                roughness: 0.85,
+                metalness: 0.1,
+            },
+            modalTheme: {
+                primary: "#5C5346",
+                secondary: "#7A6F60",
+                accent: "#968B7A",
+                background:
+                    "linear-gradient(135deg, #151310 0%, #252018 50%, #151310 100%)",
+                textColor: "#E5E0D8",
+            },
+            parentId: "jupiter",
+            orbitRadius: 0.9,
+            orbitSpeed: 0.04,
+        },
+        // Saturn's Moon
+        {
+            id: "titan",
+            name: "Titan",
+            type: "moon",
+            description:
+                "Saturn's largest moon, the only moon with a dense atmosphere and liquid lakes on its surface",
+            keyFacts: {
+                diameter: "5,150 km",
+                distanceFromSun: "1,221,870 km from Saturn",
+                orbitalPeriod: "15.95 days",
+                composition: [
+                    "Water ice",
+                    "Rocky core",
+                    "Nitrogen atmosphere",
+                    "Methane lakes",
+                ],
+                temperature: "-179°C (surface)",
+            },
+            images: [],
+            position: new THREE.Vector3(143.4 + 0.6, 0, 0),
+            scale: 0.4,
+            realDistance: {
+                kilometers: 1221870,
+                formattedString: "1,221,870 km from Saturn",
+            },
+            material: {
+                color: "#D4A574",
+                roughness: 0.5,
+                metalness: 0.1,
+                atmosphereColor: "#E8C496",
+            },
+            terrain: {
+                enabled: true,
+                type: "earth-like",
+                heightScale: 0.02,
+                resolution: "medium",
+                features: {
+                    craters: {
+                        enabled: true,
+                        count: 3,
+                        minRadius: 0.03,
+                        maxRadius: 0.1,
+                        depth: 0.01,
+                    },
+                    mountains: {
+                        enabled: true,
+                        count: 5,
+                        minHeight: 0.01,
+                        maxHeight: 0.04,
+                        smoothness: 2,
+                    },
+                    valleys: {
+                        enabled: true,
+                        count: 8,
+                        depth: 0.015,
+                        width: 0.1,
+                    },
+                    continents: {
+                        enabled: true,
+                        count: 4,
+                        seaLevel: -0.01,
+                    },
+                },
+                colors: {
+                    low: "#8B6914", // Methane lakes
+                    mid: "#D4A574", // Orange surface
+                    high: "#C4956A",
+                    peak: "#E8C496",
+                },
+                noise: {
+                    seed: 44444,
+                    octaves: 4,
+                    frequency: 3,
+                    amplitude: 0.01,
+                    persistence: 0.5,
+                    lacunarity: 2,
+                },
+            },
+            modalTheme: {
+                primary: "#D4A574",
+                secondary: "#E8C496",
+                accent: "#F0D8B0",
+                background:
+                    "linear-gradient(135deg, #1a1510 0%, #2d2518 50%, #1a1510 100%)",
+                textColor: "#FFF8E8",
+            },
+            parentId: "saturn",
+            orbitRadius: 0.6,
+            orbitSpeed: 0.05,
+        },
     ],
     metadata: {
         discoveredBy: "Ancient civilizations",
