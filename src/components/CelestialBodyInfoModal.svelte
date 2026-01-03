@@ -234,7 +234,7 @@
               <div class="fact-item">
                 <div class="fact-icon">📏</div>
                 <div class="fact-content">
-                  <span class="fact-label">{t('modal.distanceFromSun')}</span>
+                  <span class="fact-label">{celestialBody.type === 'moon' ? t('modal.distanceFromParent') : t('modal.distanceFromSun')}</span>
                   <span class="fact-value">{celestialBody.keyFacts.distanceFromSun}</span>
                 </div>
               </div>

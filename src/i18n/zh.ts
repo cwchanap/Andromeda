@@ -38,6 +38,7 @@ export const zh = {
     "modal.composition": "组成成分",
     "modal.diameter": "直径",
     "modal.distanceFromSun": "距离太阳",
+    "modal.distanceFromParent": "距离母星",
     "modal.orbitalPeriod": "轨道周期",
     "modal.temperature": "温度",
     "modal.moons": "卫星",
@@ -71,6 +72,24 @@ export const zh = {
         "距离太阳第七近的行星，是一个具有独特侧向自转的冰巨星",
     "planet.neptune.name": "海王星",
     "planet.neptune.description": "距离太阳最远的第八颗行星，以其深蓝色而闻名",
+
+    // Moon names and descriptions
+    "planet.luna.name": "月球",
+    "planet.luna.description": "地球唯一的天然卫星，太阳系第五大卫星",
+    "planet.phobos.name": "火卫一",
+    "planet.phobos.description": "火星两颗卫星中较大且较近的一颗，形状不规则",
+    "planet.deimos.name": "火卫二",
+    "planet.deimos.description": "火星两颗卫星中较小且较远的一颗",
+    "planet.io.name": "木卫一",
+    "planet.io.description": "太阳系中火山活动最活跃的天体",
+    "planet.europa.name": "木卫二",
+    "planet.europa.description": "冰覆盖的卫星，拥有地下海洋，可能存在外星生命",
+    "planet.ganymede.name": "木卫三",
+    "planet.ganymede.description": "太阳系最大的卫星，甚至比水星还大",
+    "planet.callisto.name": "木卫四",
+    "planet.callisto.description": "太阳系中陨石坑最多的天体",
+    "planet.titan.name": "土卫六",
+    "planet.titan.description": "土星最大的卫星，唯一拥有浓密大气层的卫星",
 
     // Chemical elements and composition
     "element.hydrogen": "氢",

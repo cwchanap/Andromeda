@@ -38,6 +38,7 @@ export const ja = {
     "modal.composition": "組成",
     "modal.diameter": "直径",
     "modal.distanceFromSun": "太陽からの距離",
+    "modal.distanceFromParent": "母天体からの距離",
     "modal.orbitalPeriod": "軌道周期",
     "modal.temperature": "温度",
     "modal.moons": "衛星",
@@ -73,6 +74,26 @@ export const ja = {
     "planet.neptune.name": "海王星",
     "planet.neptune.description":
         "太陽から最も遠い8番目の惑星で、深い青色で知られている",
+
+    // Moon names and descriptions
+    "planet.luna.name": "月",
+    "planet.luna.description": "地球唯一の天然衛星、太陽系で5番目に大きい衛星",
+    "planet.phobos.name": "フォボス",
+    "planet.phobos.description":
+        "火星の2つの衛星のうち大きくて近い方、不規則な形状",
+    "planet.deimos.name": "ダイモス",
+    "planet.deimos.description": "火星の2つの衛星のうち小さくて遠い方",
+    "planet.io.name": "イオ",
+    "planet.io.description": "太陽系で最も火山活動が活発な天体",
+    "planet.europa.name": "エウロパ",
+    "planet.europa.description":
+        "氷で覆われた衛星、地下海洋を持ち地球外生命の候補",
+    "planet.ganymede.name": "ガニメデ",
+    "planet.ganymede.description": "太陽系最大の衛星、水星よりも大きい",
+    "planet.callisto.name": "カリスト",
+    "planet.callisto.description": "太陽系で最もクレーターが多い天体",
+    "planet.titan.name": "タイタン",
+    "planet.titan.description": "土星最大の衛星、濃い大気を持つ唯一の衛星",
 
     // Chemical elements and composition
     "element.hydrogen": "水素",

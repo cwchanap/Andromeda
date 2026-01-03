@@ -7,7 +7,9 @@
       "mcp__playwright__browser_click",
       "Bash(bun install)",
       "Bash(bun run build)",
-      "Bash(bun run lint:*)"
+      "Bash(bun run lint:*)",
+      "Bash(bun run type-check:*)",
+      "Bash(bun run test:run:*)"
     ],
     "deny": [],
     "ask": []

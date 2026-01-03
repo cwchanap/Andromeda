@@ -104,6 +104,36 @@ describe("Game Store", () => {
                 const state = get(gameState);
                 expect(state.selectedBody).toBeNull();
             });
+
+            it("should select moon body with parentId", () => {
+                const mockMoon = {
+                    id: "luna",
+                    name: "Moon",
+                    type: "moon" as const,
+                    description: "Earth's only natural satellite",
+                    keyFacts: {
+                        diameter: "3,474 km",
+                        distanceFromSun: "384,400 km from Earth",
+                        orbitalPeriod: "27.3 days",
+                        composition: ["Silicate rocks", "Iron core"],
+                        temperature: "-173°C to 127°C",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(8.4, 0, 0),
+                    scale: 0.27,
+                    material: { color: "#C0C0C0" },
+                    parentId: "earth",
+                    orbitRadius: 0.4,
+                    orbitSpeed: 0.08,
+                };
+
+                gameActions.selectCelestialBody(mockMoon);
+
+                const state = get(gameState);
+                expect(state.selectedBody).toEqual(mockMoon);
+                expect(state.selectedBody?.type).toBe("moon");
+                expect(state.selectedBody?.parentId).toBe("earth");
+            });
         });
 
         describe("UI State Management", () => {

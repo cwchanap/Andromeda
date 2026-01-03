@@ -39,6 +39,7 @@ export const en = {
     "modal.composition": "Composition",
     "modal.diameter": "Diameter",
     "modal.distanceFromSun": "Distance from Sun",
+    "modal.distanceFromParent": "Distance from Parent",
     "modal.orbitalPeriod": "Orbital Period",
     "modal.temperature": "Temperature",
     "modal.moons": "Moons",
@@ -78,6 +79,32 @@ export const en = {
     "planet.neptune.name": "Neptune",
     "planet.neptune.description":
         "The eighth and farthest planet from the Sun, known for its deep blue color",
+
+    // Moon names and descriptions
+    "planet.luna.name": "Moon",
+    "planet.luna.description":
+        "Earth's only natural satellite, the fifth largest moon in the Solar System",
+    "planet.phobos.name": "Phobos",
+    "planet.phobos.description":
+        "The larger and closer of Mars' two moons, an irregularly shaped body",
+    "planet.deimos.name": "Deimos",
+    "planet.deimos.description":
+        "The smaller and more distant of Mars' two moons",
+    "planet.io.name": "Io",
+    "planet.io.description":
+        "The most volcanically active body in the Solar System",
+    "planet.europa.name": "Europa",
+    "planet.europa.description":
+        "An ice-covered moon with a subsurface ocean, a candidate for extraterrestrial life",
+    "planet.ganymede.name": "Ganymede",
+    "planet.ganymede.description":
+        "The largest moon in the Solar System, even larger than Mercury",
+    "planet.callisto.name": "Callisto",
+    "planet.callisto.description":
+        "The most heavily cratered object in the Solar System",
+    "planet.titan.name": "Titan",
+    "planet.titan.description":
+        "Saturn's largest moon, the only moon with a dense atmosphere",
 
     // Chemical elements and composition
     "element.hydrogen": "Hydrogen",

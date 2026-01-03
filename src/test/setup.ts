@@ -691,6 +691,7 @@ vi.mock("three/examples/jsm/lines/Line2.js", () => {
         material: any;
         name = "";
         visible = true;
+        position = { x: 0, y: 0, z: 0 };
         constructor(geometry: any, material: any) {
             this.geometry = geometry;
             this.material = material;
