@@ -68,6 +68,33 @@ describe("CelestialBodyManager", () => {
         expect(moonGroup.userData.celestialBodyData).toBeTruthy();
         expect(moonGroup.userData.celestialBodyData.type).toBe("moon");
         expect(moonGroup.userData.celestialBodyData.parentId).toBe("earth");
+
+        // Verify the orbit line exists by searching the scene children
+        const orbitLine = scene.children.find(
+            (child: any) => child.name === "luna_orbit",
+        );
+        expect(orbitLine).toBeTruthy();
+
+        // Get the parent planet group
+        const parentGroup = manager.getCelestialBody("earth");
+        expect(parentGroup).toBeTruthy();
+
+        // Verify the orbit line's world position matches the parent planet's world position
+        const orbitWorldPosition = new THREE.Vector3();
+        const parentWorldPosition = new THREE.Vector3();
+
+        if (orbitLine && parentGroup) {
+            orbitLine.getWorldPosition(orbitWorldPosition);
+            parentGroup.getWorldPosition(parentWorldPosition);
+
+            expect(orbitWorldPosition.x).toBeCloseTo(parentWorldPosition.x, 5);
+            expect(orbitWorldPosition.y).toBeCloseTo(parentWorldPosition.y, 5);
+            expect(orbitWorldPosition.z).toBeCloseTo(parentWorldPosition.z, 5);
+        }
+
+        expect(orbitWorldPosition.x).toBeCloseTo(parentWorldPosition.x, 5);
+        expect(orbitWorldPosition.y).toBeCloseTo(parentWorldPosition.y, 5);
+        expect(orbitWorldPosition.z).toBeCloseTo(parentWorldPosition.z, 5);
     });
 
     it("moon orbits around parent body position, not system center", async () => {

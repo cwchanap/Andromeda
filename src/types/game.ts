@@ -19,6 +19,7 @@ export interface CelestialBodyData {
     keyFacts: {
         diameter: string;
         distanceFromSun: string;
+        distanceFromParent?: string;
         orbitalPeriod: string;
         composition: string[];
         temperature: string;

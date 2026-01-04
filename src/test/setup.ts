@@ -501,6 +501,12 @@ class MockGroup extends (THREE as any).Group {
             this.children.forEach(callback); // Call on children
         });
         // Ensure instanceof THREE.Group works
+        this.getWorldPosition = vi.fn((target: any) => {
+            target.x = this.position.x;
+            target.y = this.position.y;
+            target.z = this.position.z;
+            return target;
+        });
         Object.setPrototypeOf(this, (THREE as any).Group.prototype);
     }
 }
@@ -532,13 +538,23 @@ class MockGroup extends (THREE as any).Group {
     }));
 
 // Scene with userData and background support
-(THREE as any).Scene = vi.fn().mockImplementation(() => ({
-    add: vi.fn(),
-    remove: vi.fn(),
-    children: [],
-    userData: {},
-    background: undefined,
-}));
+(THREE as any).Scene = vi.fn().mockImplementation(() => {
+    const scene: any = {
+        add: vi.fn((obj: any) => {
+            scene.children.push(obj);
+        }),
+        remove: vi.fn((obj: any) => {
+            const index = scene.children.indexOf(obj);
+            if (index > -1) {
+                scene.children.splice(index, 1);
+            }
+        }),
+        children: [] as any[],
+        userData: {},
+        background: undefined,
+    };
+    return scene;
+});
 
 // Camera
 (THREE as any).PerspectiveCamera = vi
@@ -691,10 +707,17 @@ vi.mock("three/examples/jsm/lines/Line2.js", () => {
         material: any;
         name = "";
         visible = true;
-        position = { x: 0, y: 0, z: 0 };
+        position: any;
         constructor(geometry: any, material: any) {
             this.geometry = geometry;
             this.material = material;
+            this.position = enhanceVector3({ x: 0, y: 0, z: 0 });
+        }
+        getWorldPosition(target: any) {
+            target.x = this.position.x;
+            target.y = this.position.y;
+            target.z = this.position.z;
+            return target;
         }
     }
     return { Line2 };

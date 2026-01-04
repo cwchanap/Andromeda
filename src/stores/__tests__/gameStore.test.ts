@@ -113,7 +113,8 @@ describe("Game Store", () => {
                     description: "Earth's only natural satellite",
                     keyFacts: {
                         diameter: "3,474 km",
-                        distanceFromSun: "384,400 km from Earth",
+                        distanceFromSun: "149.6 million km",
+                        distanceFromParent: "384,400 km from Earth",
                         orbitalPeriod: "27.3 days",
                         composition: ["Silicate rocks", "Iron core"],
                         temperature: "-173°C to 127°C",
