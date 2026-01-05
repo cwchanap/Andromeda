@@ -91,10 +91,6 @@ describe("CelestialBodyManager", () => {
             expect(orbitWorldPosition.y).toBeCloseTo(parentWorldPosition.y, 5);
             expect(orbitWorldPosition.z).toBeCloseTo(parentWorldPosition.z, 5);
         }
-
-        expect(orbitWorldPosition.x).toBeCloseTo(parentWorldPosition.x, 5);
-        expect(orbitWorldPosition.y).toBeCloseTo(parentWorldPosition.y, 5);
-        expect(orbitWorldPosition.z).toBeCloseTo(parentWorldPosition.z, 5);
     });
 
     it("moon orbits around parent body position, not system center", async () => {

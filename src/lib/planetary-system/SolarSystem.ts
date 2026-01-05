@@ -647,7 +647,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "Earth's only natural satellite, the fifth largest moon in the Solar System and the largest relative to its parent planet",
             keyFacts: {
                 diameter: "3,474 km",
-                distanceFromSun: "384,400 km from Earth",
+                distanceFromSun: "149.6 million km",
                 orbitalPeriod: "27.3 days",
                 composition: [
                     "Silicate rocks",
@@ -660,6 +660,10 @@ export const solarSystemData: PlanetarySystemData = {
             position: new THREE.Vector3(14.96 + 0.4, 0, 0), // Earth position + orbit radius
             scale: 0.27,
             realDistance: {
+                kilometers: 149600000,
+                formattedString: "149.6 million km",
+            },
+            distanceFromParent: {
                 kilometers: 384400,
                 formattedString: "384,400 km from Earth",
             },
@@ -736,7 +740,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "The larger and closer of Mars' two moons, an irregularly shaped body covered in craters",
             keyFacts: {
                 diameter: "22.2 km",
-                distanceFromSun: "9,377 km from Mars",
+                distanceFromSun: "227.9 million km",
                 orbitalPeriod: "7.7 hours",
                 composition: ["Carbon-rich rock", "Ice", "Regolith"],
                 temperature: "-40°C (average)",
@@ -745,6 +749,10 @@ export const solarSystemData: PlanetarySystemData = {
             position: new THREE.Vector3(22.79 + 0.25, 0, 0),
             scale: 0.08,
             realDistance: {
+                kilometers: 227900000,
+                formattedString: "227.9 million km",
+            },
+            distanceFromParent: {
                 kilometers: 9377,
                 formattedString: "9,377 km from Mars",
             },
@@ -773,7 +781,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "The smaller and more distant of Mars' two moons, with a smoother surface than Phobos",
             keyFacts: {
                 diameter: "12.4 km",
-                distanceFromSun: "23,460 km from Mars",
+                distanceFromSun: "227.9 million km",
                 orbitalPeriod: "30.3 hours",
                 composition: ["Carbon-rich rock", "Ice", "Regolith"],
                 temperature: "-40°C (average)",
@@ -782,6 +790,10 @@ export const solarSystemData: PlanetarySystemData = {
             position: new THREE.Vector3(22.79 + 0.4, 0, 0),
             scale: 0.05,
             realDistance: {
+                kilometers: 227900000,
+                formattedString: "227.9 million km",
+            },
+            distanceFromParent: {
                 kilometers: 23460,
                 formattedString: "23,460 km from Mars",
             },
@@ -811,7 +823,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "The most volcanically active body in the Solar System, with over 400 active volcanoes",
             keyFacts: {
                 diameter: "3,643 km",
-                distanceFromSun: "421,700 km from Jupiter",
+                distanceFromSun: "778.5 million km",
                 orbitalPeriod: "1.77 days",
                 composition: ["Silicate rock", "Iron core", "Sulfur compounds"],
                 temperature: "-143°C to 1,700°C (volcanoes)",
@@ -820,6 +832,10 @@ export const solarSystemData: PlanetarySystemData = {
             position: new THREE.Vector3(77.85 + 0.35, 0, 0),
             scale: 0.29,
             realDistance: {
+                kilometers: 778500000,
+                formattedString: "778.5 million km",
+            },
+            distanceFromParent: {
                 kilometers: 421700,
                 formattedString: "421,700 km from Jupiter",
             },
@@ -895,7 +911,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "An ice-covered moon with a subsurface ocean, considered one of the most likely places for extraterrestrial life",
             keyFacts: {
                 diameter: "3,122 km",
-                distanceFromSun: "670,900 km from Jupiter",
+                distanceFromSun: "778.5 million km",
                 orbitalPeriod: "3.55 days",
                 composition: [
                     "Water ice shell",
@@ -909,6 +925,10 @@ export const solarSystemData: PlanetarySystemData = {
             position: new THREE.Vector3(77.85 + 0.5, 0, 0),
             scale: 0.25,
             realDistance: {
+                kilometers: 778500000,
+                formattedString: "778.5 million km",
+            },
+            distanceFromParent: {
                 kilometers: 670900,
                 formattedString: "670,900 km from Jupiter",
             },
@@ -984,7 +1004,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "The largest moon in the Solar System, even larger than Mercury, with its own magnetic field",
             keyFacts: {
                 diameter: "5,268 km",
-                distanceFromSun: "1,070,400 km from Jupiter",
+                distanceFromSun: "778.5 million km",
                 orbitalPeriod: "7.15 days",
                 composition: ["Water ice", "Silicate rock", "Iron core"],
                 temperature: "-163°C (average)",
@@ -993,6 +1013,10 @@ export const solarSystemData: PlanetarySystemData = {
             position: new THREE.Vector3(77.85 + 0.7, 0, 0),
             scale: 0.41,
             realDistance: {
+                kilometers: 778500000,
+                formattedString: "778.5 million km",
+            },
+            distanceFromParent: {
                 kilometers: 1070400,
                 formattedString: "1,070,400 km from Jupiter",
             },
@@ -1021,7 +1045,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "The most heavily cratered object in the Solar System, with an ancient, unchanged surface",
             keyFacts: {
                 diameter: "4,821 km",
-                distanceFromSun: "1,882,700 km from Jupiter",
+                distanceFromSun: "778.5 million km",
                 orbitalPeriod: "16.69 days",
                 composition: [
                     "Water ice",
@@ -1034,6 +1058,10 @@ export const solarSystemData: PlanetarySystemData = {
             position: new THREE.Vector3(77.85 + 0.9, 0, 0),
             scale: 0.38,
             realDistance: {
+                kilometers: 778500000,
+                formattedString: "778.5 million km",
+            },
+            distanceFromParent: {
                 kilometers: 1882700,
                 formattedString: "1,882,700 km from Jupiter",
             },
@@ -1063,7 +1091,7 @@ export const solarSystemData: PlanetarySystemData = {
                 "Saturn's largest moon, the only moon with a dense atmosphere and liquid lakes on its surface",
             keyFacts: {
                 diameter: "5,150 km",
-                distanceFromSun: "1,221,870 km from Saturn",
+                distanceFromSun: "1.434 billion km",
                 orbitalPeriod: "15.95 days",
                 composition: [
                     "Water ice",
@@ -1077,6 +1105,10 @@ export const solarSystemData: PlanetarySystemData = {
             position: new THREE.Vector3(143.4 + 0.6, 0, 0),
             scale: 0.4,
             realDistance: {
+                kilometers: 1434000000,
+                formattedString: "1.434 billion km",
+            },
+            distanceFromParent: {
                 kilometers: 1221870,
                 formattedString: "1,221,870 km from Saturn",
             },
