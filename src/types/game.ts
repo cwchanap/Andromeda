@@ -35,6 +35,11 @@ export interface CelestialBodyData {
         lightYears?: number; // Distance in light-years (for extrasolar systems)
         formattedString: string; // Human-readable formatted distance
     };
+    // Distance from parent body (for moons)
+    distanceFromParent?: {
+        kilometers: number; // Distance from parent body in kilometers
+        formattedString: string; // Human-readable formatted distance (e.g., "384,400 km from Earth")
+    };
     material: {
         color: string;
         emissive?: string;
