@@ -432,16 +432,14 @@ export const solarSystemData: PlanetarySystemData = {
             description:
                 "The fifth planet from the Sun, and the largest in our solar system",
             keyFacts: {
-                diameter: "139,822 km",
-                distanceFromSun: "778.5 million km",
-                orbitalPeriod: "11.86 years",
+                diameter: "4,821 km",
+                orbitalPeriod: "16.69 days",
                 composition: [
-                    "Hydrogen (90%)",
-                    "Helium (10%)",
-                    "Trace metals (<0.1%)",
+                    "Water ice",
+                    "Silicate rock",
+                    "Carbon dioxide ice",
                 ],
-                temperature: "-110°C",
-                moons: 79,
+                temperature: "-139°C (average)",
             },
             images: [
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
@@ -647,7 +645,6 @@ export const solarSystemData: PlanetarySystemData = {
                 "Earth's only natural satellite, the fifth largest moon in the Solar System and the largest relative to its parent planet",
             keyFacts: {
                 diameter: "3,474 km",
-                distanceFromSun: "149.6 million km",
                 orbitalPeriod: "27.3 days",
                 composition: [
                     "Silicate rocks",
@@ -740,7 +737,6 @@ export const solarSystemData: PlanetarySystemData = {
                 "The larger and closer of Mars' two moons, an irregularly shaped body covered in craters",
             keyFacts: {
                 diameter: "22.2 km",
-                distanceFromSun: "227.9 million km",
                 orbitalPeriod: "7.7 hours",
                 composition: ["Carbon-rich rock", "Ice", "Regolith"],
                 temperature: "-40°C (average)",
@@ -781,7 +777,6 @@ export const solarSystemData: PlanetarySystemData = {
                 "The smaller and more distant of Mars' two moons, with a smoother surface than Phobos",
             keyFacts: {
                 diameter: "12.4 km",
-                distanceFromSun: "227.9 million km",
                 orbitalPeriod: "30.3 hours",
                 composition: ["Carbon-rich rock", "Ice", "Regolith"],
                 temperature: "-40°C (average)",
@@ -823,7 +818,6 @@ export const solarSystemData: PlanetarySystemData = {
                 "The most volcanically active body in the Solar System, with over 400 active volcanoes",
             keyFacts: {
                 diameter: "3,643 km",
-                distanceFromSun: "778.5 million km",
                 orbitalPeriod: "1.77 days",
                 composition: ["Silicate rock", "Iron core", "Sulfur compounds"],
                 temperature: "-143°C to 1,700°C (volcanoes)",
@@ -911,7 +905,6 @@ export const solarSystemData: PlanetarySystemData = {
                 "An ice-covered moon with a subsurface ocean, considered one of the most likely places for extraterrestrial life",
             keyFacts: {
                 diameter: "3,122 km",
-                distanceFromSun: "778.5 million km",
                 orbitalPeriod: "3.55 days",
                 composition: [
                     "Water ice shell",
@@ -1004,7 +997,6 @@ export const solarSystemData: PlanetarySystemData = {
                 "The largest moon in the Solar System, even larger than Mercury, with its own magnetic field",
             keyFacts: {
                 diameter: "5,268 km",
-                distanceFromSun: "778.5 million km",
                 orbitalPeriod: "7.15 days",
                 composition: ["Water ice", "Silicate rock", "Iron core"],
                 temperature: "-163°C (average)",
@@ -1044,15 +1036,14 @@ export const solarSystemData: PlanetarySystemData = {
             description:
                 "The most heavily cratered object in the Solar System, with an ancient, unchanged surface",
             keyFacts: {
-                diameter: "4,821 km",
-                distanceFromSun: "778.5 million km",
-                orbitalPeriod: "16.69 days",
+                diameter: "3,474 km",
+                orbitalPeriod: "27.3 days",
                 composition: [
-                    "Water ice",
-                    "Silicate rock",
-                    "Carbon dioxide ice",
+                    "Silicate rocks",
+                    "Iron core",
+                    "Regolith surface",
                 ],
-                temperature: "-139°C (average)",
+                temperature: "-173°C to 127°C",
             },
             images: [],
             position: new THREE.Vector3(77.85 + 0.9, 0, 0),
@@ -1091,7 +1082,6 @@ export const solarSystemData: PlanetarySystemData = {
                 "Saturn's largest moon, the only moon with a dense atmosphere and liquid lakes on its surface",
             keyFacts: {
                 diameter: "5,150 km",
-                distanceFromSun: "1.434 billion km",
                 orbitalPeriod: "15.95 days",
                 composition: [
                     "Water ice",
@@ -1341,7 +1331,14 @@ export const validateCelestialBodyData = (
     if (!obj.keyFacts || typeof obj.keyFacts !== "object") return false;
     const keyFacts = obj.keyFacts as Record<string, unknown>;
     if (typeof keyFacts.diameter !== "string") return false;
-    if (typeof keyFacts.distanceFromSun !== "string") return false;
+    // distanceFromSun is optional for moons
+    if (obj.type !== "moon" && typeof keyFacts.distanceFromSun !== "string")
+        return false;
+    if (typeof keyFacts.orbitalPeriod !== "string") return false;
+    if (!Array.isArray(keyFacts.composition)) return false;
+    if (typeof keyFacts.temperature !== "string") return false;
+    if (keyFacts.moons !== undefined && typeof keyFacts.moons !== "number")
+        return false;
     if (typeof keyFacts.orbitalPeriod !== "string") return false;
     if (!Array.isArray(keyFacts.composition)) return false;
     if (typeof keyFacts.temperature !== "string") return false;
