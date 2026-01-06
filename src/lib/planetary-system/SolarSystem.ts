@@ -1038,14 +1038,14 @@ export const solarSystemData: PlanetarySystemData = {
             description:
                 "The most heavily cratered object in the Solar System, with an ancient, unchanged surface",
             keyFacts: {
-                diameter: "3,474 km",
-                orbitalPeriod: "27.3 days",
+                diameter: "4,821 km",
+                orbitalPeriod: "16.69 days",
                 composition: [
-                    "Silicate rocks",
-                    "Iron core",
-                    "Regolith surface",
+                    "Water ice",
+                    "Silicate rock",
+                    "Carbon dioxide ice",
                 ],
-                temperature: "-173°C to 127°C",
+                temperature: "-139°C (average)",
             },
             images: [],
             position: new THREE.Vector3(77.85 + 0.9, 0, 0),
