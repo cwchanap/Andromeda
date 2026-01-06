@@ -18,7 +18,7 @@ export interface CelestialBodyData {
     description: string;
     keyFacts: {
         diameter: string;
-        distanceFromSun: string;
+        distanceFromSun?: string; // Optional - not used for moons
         distanceFromParent?: string;
         orbitalPeriod: string;
         composition: string[];
