@@ -432,14 +432,16 @@ export const solarSystemData: PlanetarySystemData = {
             description:
                 "The fifth planet from the Sun, and the largest in our solar system",
             keyFacts: {
-                diameter: "4,821 km",
-                orbitalPeriod: "16.69 days",
+                diameter: "139,820 km",
+                distanceFromSun: "778.5 million km",
+                orbitalPeriod: "11.86 years",
                 composition: [
-                    "Water ice",
-                    "Silicate rock",
-                    "Carbon dioxide ice",
+                    "Hydrogen (90%)",
+                    "Helium (10%)",
+                    "Trace metals (<0.1%)",
                 ],
-                temperature: "-139°C (average)",
+                temperature: "-110°C",
+                moons: 79,
             },
             images: [
                 "https://images.unsplash.com/photo-1516882577034-7f6f3a7f3f3f?w=800&h=600&fit=crop",
