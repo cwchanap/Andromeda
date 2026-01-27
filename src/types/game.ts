@@ -105,6 +105,11 @@ export interface GameState {
         showChatbot: boolean;
         showControls: boolean;
         showSystemSelector: boolean;
+        showComparisonModal: boolean;
+    };
+    // Comparison mode state
+    comparison?: {
+        selectedBodies: CelestialBodyData[];
     };
     settings: {
         enableAnimations: boolean;

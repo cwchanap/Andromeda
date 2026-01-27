@@ -46,6 +46,25 @@ export const zh = {
     "modal.footerText": "探索宇宙，发现宇宙的奇迹",
     "modal.close": "关闭模态框",
 
+    // Comparison mode
+    "comparison.title": "比较行星学",
+    "comparison.addToCompare": "添加到比较",
+    "comparison.inComparison": "已添加到比较",
+    "comparison.viewComparison": "查看比较",
+    "comparison.maxReached": "最多可比较4个天体",
+    "comparison.sizeComparison": "视觉尺寸比较",
+    "comparison.attributes": "属性比较",
+    "comparison.attribute": "属性",
+    "comparison.type": "天体类型",
+    "comparison.sizeRatio": "相对大小",
+    "comparison.export": "导出为PNG",
+    "comparison.addBody": "添加天体",
+    "comparison.searchPlaceholder": "搜索天体...",
+    "comparison.noResults": "未找到天体",
+    "comparison.selectAtLeast2": "请选择至少2个天体进行比较",
+    "comparison.hint": "从信息模态框添加天体或使用上方搜索",
+    "comparison.footerText": "比较宇宙中的天体",
+
     // Planet names and types
     "planet.type.star": "恒星",
     "planet.type.planet": "行星",

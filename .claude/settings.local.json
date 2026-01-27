@@ -9,7 +9,8 @@
       "Bash(bun run build)",
       "Bash(bun run lint:*)",
       "Bash(bun run type-check:*)",
-      "Bash(bun run test:run:*)"
+      "Bash(bun run test:run:*)",
+      "Bash(bunx vitest run:*)"
     ],
     "deny": [],
     "ask": []

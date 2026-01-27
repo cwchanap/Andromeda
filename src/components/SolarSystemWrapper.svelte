@@ -4,6 +4,7 @@
   import KeyboardNavigation from "./KeyboardNavigation.svelte";
   import AccessibilityManager from "./AccessibilityManager.svelte";
   import CelestialBodyInfoModal from "./CelestialBodyInfoModal.svelte";
+  import ComparisonModal from "./ComparisonModal.svelte";
   import OrbitSpeedControl from "./OrbitSpeedControl.svelte";
   import { gameState, gameActions, settings } from "../stores/gameStore";
   import { onMount, onDestroy } from "svelte";
@@ -32,6 +33,8 @@
   // Reactive state from stores
   $: selectedBody = $gameState.selectedBody;
   $: showInfoModal = $gameState.ui.showInfoModal;
+  $: showComparisonModal = $gameState.ui.showComparisonModal;
+  $: comparisonBodies = $gameState.comparison?.selectedBodies || [];
   $: enableAnimations = $settings.enableAnimations;
   $: enableKeyboardNav = $settings.enableKeyboardNavigation;
 
@@ -42,6 +45,19 @@
 
   const handleCloseModal = () => {
     gameActions.showInfoModal(false);
+  };
+
+  // Comparison modal handlers
+  const handleCloseComparison = () => {
+    gameActions.showComparisonModal(false);
+  };
+
+  const handleRemoveFromComparison = (bodyId: string) => {
+    gameActions.removeFromComparison(bodyId);
+  };
+
+  const handleAddToComparison = (body: import("../types/game").CelestialBodyData) => {
+    gameActions.addToComparison(body);
   };
 
   const handleBackToMenu = () => {
@@ -299,6 +315,15 @@
         isOpen={showInfoModal}
         celestialBody={selectedBody}
         onClose={handleCloseModal}
+      />
+
+      <!-- Comparison Modal -->
+      <ComparisonModal
+        isOpen={showComparisonModal}
+        bodies={comparisonBodies}
+        onClose={handleCloseComparison}
+        onRemoveBody={handleRemoveFromComparison}
+        onAddBody={handleAddToComparison}
       />
 
       <!-- Orbit Speed Control -->

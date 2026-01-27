@@ -48,6 +48,26 @@ export const en = {
         "Explore the cosmos and discover the wonders of our universe",
     "modal.close": "Close modal",
 
+    // Comparison mode
+    "comparison.title": "Comparative Planetology",
+    "comparison.addToCompare": "Add to Comparison",
+    "comparison.inComparison": "In Comparison",
+    "comparison.viewComparison": "View Comparison",
+    "comparison.maxReached": "Maximum 4 bodies reached",
+    "comparison.sizeComparison": "Visual Size Comparison",
+    "comparison.attributes": "Attribute Comparison",
+    "comparison.attribute": "Attribute",
+    "comparison.type": "Celestial Type",
+    "comparison.sizeRatio": "Relative Size",
+    "comparison.export": "Export as PNG",
+    "comparison.addBody": "Add Body",
+    "comparison.searchPlaceholder": "Search celestial bodies...",
+    "comparison.noResults": "No bodies found",
+    "comparison.selectAtLeast2": "Select at least 2 bodies to compare",
+    "comparison.hint":
+        "Add bodies from their info modals or use the search above",
+    "comparison.footerText": "Compare celestial bodies across the universe",
+
     // Planet names and types
     "planet.type.star": "STAR",
     "planet.type.planet": "PLANET",

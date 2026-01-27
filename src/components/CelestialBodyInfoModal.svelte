@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CelestialBodyData } from '../types/game';
-  
+  import { gameState, gameActions } from '../stores/gameStore';
+
   export let isOpen: boolean = false;
   export let celestialBody: CelestialBodyData | null = null;
   export let onClose: () => void;
@@ -133,6 +134,20 @@
   };
   
   $: theme = getPlanetTheme(celestialBody);
+
+  // Comparison mode state
+  $: isInComparison = $gameState.comparison?.selectedBodies.some(b => b.id === celestialBody?.id) || false;
+  $: comparisonCount = $gameState.comparison?.selectedBodies.length || 0;
+
+  const handleAddToComparison = () => {
+    if (celestialBody && comparisonCount < 4) {
+      gameActions.addToComparison(celestialBody);
+    }
+  };
+
+  const handleOpenComparison = () => {
+    gameActions.showComparisonModal(true);
+  };
 </script>
 
 {#if isOpen && celestialBody}
@@ -286,6 +301,39 @@
           {/if}
         </div>
         
+        <!-- Comparison button section -->
+        <div class="action-section">
+          {#if !isInComparison && comparisonCount < 4}
+            <button
+              class="compare-button"
+              on:click={handleAddToComparison}
+              type="button"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              {t('comparison.addToCompare')}
+            </button>
+          {:else if isInComparison}
+            <div class="in-comparison-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>{t('comparison.inComparison')}</span>
+              <button class="view-comparison-btn" on:click={handleOpenComparison} type="button">
+                {t('comparison.viewComparison')} ({comparisonCount})
+              </button>
+            </div>
+          {:else}
+            <div class="comparison-full">
+              {t('comparison.maxReached')}
+            </div>
+          {/if}
+        </div>
+
         <!-- Action buttons section for terrain exploration -->
         {#if celestialBody.terrain && ['mercury', 'venus', 'earth', 'mars'].includes(celestialBody.id)}
           <div class="action-section">
@@ -699,7 +747,75 @@
     width: 20px;
     height: 20px;
   }
-  
+
+  /* Compare button styles */
+  .compare-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  }
+
+  .compare-button:hover {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+  }
+
+  .compare-button:active {
+    transform: translateY(0);
+  }
+
+  .in-comparison-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px solid #10b981;
+    border-radius: 12px;
+    color: #34d399;
+  }
+
+  .in-comparison-badge span {
+    font-weight: 500;
+  }
+
+  .view-comparison-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .view-comparison-btn:hover {
+    background: #059669;
+  }
+
+  .comparison-full {
+    padding: 12px 20px;
+    background: rgba(251, 191, 36, 0.1);
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    color: #fcd34d;
+    text-align: center;
+    font-weight: 500;
+  }
+
   @keyframes fadeIn {
     from {
       opacity: 0;

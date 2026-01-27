@@ -652,6 +652,19 @@ class MockGroup extends (THREE as any).Group {
         receiveShadow: false,
     }));
 
+// SpriteMaterial and Sprite for labels
+(THREE as any).SpriteMaterial = vi.fn().mockImplementation((_cfg?: any) => ({
+    map: _cfg?.map ?? null,
+    transparent: _cfg?.transparent ?? false,
+    dispose: vi.fn(),
+}));
+
+(THREE as any).Sprite = vi.fn().mockImplementation((material?: any) => ({
+    material,
+    position: enhanceVector3({ x: 0, y: 0, z: 0 }),
+    scale: { set: vi.fn() },
+}));
+
 // Raycaster with overridable intersects
 declare global {
     var __threeRaycasterIntersects: any[] | undefined;
