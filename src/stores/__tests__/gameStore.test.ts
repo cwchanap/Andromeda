@@ -225,6 +225,114 @@ describe("Game Store", () => {
             });
         });
 
+        describe("Comparison Mode", () => {
+            const mockBody1 = {
+                id: "earth",
+                name: "Earth",
+                type: "planet" as const,
+                description: "Our home planet",
+                keyFacts: {
+                    diameter: "12,742 km",
+                    distanceFromSun: "150 million km",
+                    orbitalPeriod: "365.25 days",
+                    composition: ["Rock", "Iron"],
+                    temperature: "15°C",
+                    moons: 1,
+                },
+                images: [],
+                position: new THREE.Vector3(5, 0, 0),
+                scale: 1,
+                material: { color: "#6B93D6" },
+            };
+
+            const mockBody2 = {
+                id: "mars",
+                name: "Mars",
+                type: "planet" as const,
+                description: "The red planet",
+                keyFacts: {
+                    diameter: "6,779 km",
+                    distanceFromSun: "228 million km",
+                    orbitalPeriod: "687 days",
+                    composition: ["Rock", "Iron oxide"],
+                    temperature: "-65°C",
+                    moons: 2,
+                },
+                images: [],
+                position: new THREE.Vector3(8, 0, 0),
+                scale: 0.53,
+                material: { color: "#CD5C5C" },
+            };
+
+            it("should add body to comparison", () => {
+                gameActions.addToComparison(mockBody1);
+
+                const state = get(gameState);
+                expect(state.comparison?.selectedBodies).toHaveLength(1);
+                expect(state.comparison?.selectedBodies[0].id).toBe("earth");
+            });
+
+            it("should add multiple bodies to comparison", () => {
+                gameActions.addToComparison(mockBody1);
+                gameActions.addToComparison(mockBody2);
+
+                const state = get(gameState);
+                expect(state.comparison?.selectedBodies).toHaveLength(2);
+            });
+
+            it("should not add duplicate body to comparison", () => {
+                gameActions.addToComparison(mockBody1);
+                gameActions.addToComparison(mockBody1);
+
+                const state = get(gameState);
+                expect(state.comparison?.selectedBodies).toHaveLength(1);
+            });
+
+            it("should not exceed 4 bodies in comparison", () => {
+                const bodies = [
+                    mockBody1,
+                    mockBody2,
+                    { ...mockBody1, id: "venus", name: "Venus" },
+                    { ...mockBody1, id: "jupiter", name: "Jupiter" },
+                    { ...mockBody1, id: "saturn", name: "Saturn" },
+                ];
+
+                bodies.forEach((body) => gameActions.addToComparison(body));
+
+                const state = get(gameState);
+                expect(state.comparison?.selectedBodies).toHaveLength(4);
+            });
+
+            it("should remove body from comparison", () => {
+                gameActions.addToComparison(mockBody1);
+                gameActions.addToComparison(mockBody2);
+                gameActions.removeFromComparison("earth");
+
+                const state = get(gameState);
+                expect(state.comparison?.selectedBodies).toHaveLength(1);
+                expect(state.comparison?.selectedBodies[0].id).toBe("mars");
+            });
+
+            it("should clear all bodies from comparison", () => {
+                gameActions.addToComparison(mockBody1);
+                gameActions.addToComparison(mockBody2);
+                gameActions.clearComparison();
+
+                const state = get(gameState);
+                expect(state.comparison?.selectedBodies).toHaveLength(0);
+            });
+
+            it("should toggle comparison modal visibility", () => {
+                gameActions.showComparisonModal(true);
+                let state = get(gameState);
+                expect(state.ui.showComparisonModal).toBe(true);
+
+                gameActions.showComparisonModal(false);
+                state = get(gameState);
+                expect(state.ui.showComparisonModal).toBe(false);
+            });
+        });
+
         describe("Settings Management", () => {
             it("should update settings", () => {
                 const newSettings: GameSettings = {

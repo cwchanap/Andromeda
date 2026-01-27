@@ -46,6 +46,27 @@ export const ja = {
     "modal.footerText": "宇宙を探索し、宇宙の驚異を発見する",
     "modal.close": "モーダルを閉じる",
 
+    // Comparison mode
+    "comparison.title": "比較惑星学",
+    "comparison.addToCompare": "比較に追加",
+    "comparison.inComparison": "比較に追加済み",
+    "comparison.viewComparison": "比較を表示",
+    "comparison.maxReached": "最大4つの天体まで",
+    "comparison.sizeComparison": "視覚的サイズ比較",
+    "comparison.attributes": "属性比較",
+    "comparison.attribute": "属性",
+    "comparison.type": "天体タイプ",
+    "comparison.sizeRatio": "相対サイズ",
+    "comparison.export": "PNGとして保存",
+    "comparison.addBody": "天体を追加",
+    "comparison.searchPlaceholder": "天体を検索...",
+    "comparison.noResults": "天体が見つかりません",
+    "comparison.selectAtLeast2":
+        "比較するには少なくとも2つの天体を選択してください",
+    "comparison.hint":
+        "情報モーダルから天体を追加するか、上の検索を使用してください",
+    "comparison.footerText": "宇宙の天体を比較する",
+
     // Planet names and types
     "planet.type.star": "恒星",
     "planet.type.planet": "惑星",

@@ -30,6 +30,10 @@ const defaultGameState: GameState = {
         showChatbot: false,
         showControls: false,
         showSystemSelector: false,
+        showComparisonModal: false,
+    },
+    comparison: {
+        selectedBodies: [],
     },
     settings: {
         enableAnimations: true,
@@ -164,5 +168,44 @@ export const gameActions = {
 
     resetGameState: () => {
         gameState.set(defaultGameState);
+    },
+
+    // Comparison mode actions
+    showComparisonModal: (show: boolean) => {
+        gameState.update((state) => ({
+            ...state,
+            ui: { ...state.ui, showComparisonModal: show },
+        }));
+    },
+
+    addToComparison: (body: CelestialBodyData) => {
+        gameState.update((state) => {
+            const current = state.comparison?.selectedBodies || [];
+            if (current.length >= 4) return state; // Max 4 bodies
+            if (current.find((b) => b.id === body.id)) return state; // Already added
+            return {
+                ...state,
+                comparison: { selectedBodies: [...current, body] },
+            };
+        });
+    },
+
+    removeFromComparison: (bodyId: string) => {
+        gameState.update((state) => ({
+            ...state,
+            comparison: {
+                selectedBodies:
+                    state.comparison?.selectedBodies.filter(
+                        (b) => b.id !== bodyId,
+                    ) || [],
+            },
+        }));
+    },
+
+    clearComparison: () => {
+        gameState.update((state) => ({
+            ...state,
+            comparison: { selectedBodies: [] },
+        }));
     },
 };
