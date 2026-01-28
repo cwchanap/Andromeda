@@ -45,7 +45,8 @@ export class ComparisonSphereRenderer {
     }
 
     private createCamera(): THREE.OrthographicCamera {
-        const aspect = this.container.clientWidth / this.container.clientHeight;
+        const safeHeight = Math.max(1, this.container.clientHeight);
+        const aspect = this.container.clientWidth / safeHeight;
         const frustumSize = 10;
         const camera = new THREE.OrthographicCamera(
             (-frustumSize * aspect) / 2,
@@ -259,7 +260,8 @@ export class ComparisonSphereRenderer {
     private handleResize = (): void => {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
-        const aspect = width / height;
+        const safeHeight = Math.max(1, height);
+        const aspect = width / safeHeight;
         const frustumSize = 10;
 
         this.camera.left = (-frustumSize * aspect) / 2;
@@ -268,7 +270,7 @@ export class ComparisonSphereRenderer {
         this.camera.bottom = -frustumSize / 2;
         this.camera.updateProjectionMatrix();
 
-        this.renderer.setSize(width, height);
+        this.renderer.setSize(width, safeHeight);
     };
 
     /**

@@ -31,9 +31,17 @@
     // State
     let sphereContainer: HTMLDivElement;
     let sphereRenderer: ComparisonSphereRenderer | null = null;
+    let initTimer: ReturnType<typeof setTimeout> | null = null;
     let searchQuery = "";
     let showBodySelector = false;
     let isExporting = false;
+
+    const stars = Array.from({ length: 75 }, () => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        delay: Math.random() * 4,
+        opacity: 0.2 + Math.random() * 0.8,
+    }));
 
     // All available bodies
     let allBodies: SelectableBody[] = [];
@@ -102,20 +110,29 @@
     }
 
     // Initialize/destroy renderer based on open state
-    $: if (isOpen && sphereContainer && !sphereRenderer) {
+    $: if (isOpen && sphereContainer && !sphereRenderer && !initTimer) {
         // Small delay to ensure container is rendered
-        setTimeout(() => {
-            if (sphereContainer) {
-                sphereRenderer = new ComparisonSphereRenderer(sphereContainer);
-                if (bodies.length > 0) {
-                    sphereRenderer.updateBodies(bodies);
-                }
-                sphereRenderer.startAnimation();
+        initTimer = setTimeout(() => {
+            if (!isOpen || !sphereContainer || sphereRenderer) return;
+            sphereRenderer = new ComparisonSphereRenderer(sphereContainer);
+            if (bodies.length > 0) {
+                sphereRenderer.updateBodies(bodies);
             }
+            sphereRenderer.startAnimation();
+            initTimer = null;
         }, 100);
     }
 
+    $: if (!isOpen && initTimer) {
+        clearTimeout(initTimer);
+        initTimer = null;
+    }
+
     onDestroy(() => {
+        if (initTimer) {
+            clearTimeout(initTimer);
+            initTimer = null;
+        }
         if (sphereRenderer) {
             sphereRenderer.dispose();
             sphereRenderer = null;
@@ -143,14 +160,14 @@
             <div class="modal-content">
                 <!-- Star field background -->
                 <div class="star-field">
-                    {#each Array(75) as _, i}
+                    {#each stars as star, i}
                         <div
                             class="star"
                             style="
-                                left: {Math.random() * 100}%;
-                                top: {Math.random() * 100}%;
-                                animation-delay: {Math.random() * 4}s;
-                                opacity: {0.2 + Math.random() * 0.8};
+                                left: {star.left}%;
+                                top: {star.top}%;
+                                animation-delay: {star.delay}s;
+                                opacity: {star.opacity};
                             "
                         ></div>
                     {/each}
@@ -198,7 +215,7 @@
                     <button
                         class="export-btn"
                         on:click={handleExport}
-                        disabled={isExporting || bodies.length === 0}
+                        disabled={isExporting || bodies.length < 2}
                         type="button"
                     >
                         {#if isExporting}
@@ -253,7 +270,7 @@
                             <button
                                 class="remove-btn"
                                 on:click={() => onRemoveBody(body.id)}
-                                aria-label="Remove {body.name} from comparison"
+                                aria-label={`Remove ${getTranslatedName(body)} from comparison`}
                                 type="button"
                             >
                                 <svg
@@ -303,11 +320,11 @@
                             bind:value={searchQuery}
                         />
                         <div class="body-list">
-                            {#each filteredBodies.slice(0, 20) as { body, systemName }}
+                            {#each filteredBodies.slice(0, 20) as { body, systemName, systemId }}
                                 <button
                                     class="body-option"
                                     on:click={() =>
-                                        handleSelectBody({ body, systemName, systemId: "" })}
+                                        handleSelectBody({ body, systemName, systemId })}
                                     type="button"
                                 >
                                     <div

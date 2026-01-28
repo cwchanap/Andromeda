@@ -45,12 +45,12 @@ export function parseTemperature(
 
     // Handle range format - take average
     const rangeMatch = tempStr.match(
-        /([-\d,]+)°?[CK]?\s*(?:to|-)\s*([-\d,]+)°?([CK])?/i,
+        /([-\d,]+)\s*°?\s*([CK])?\s*(?:to|-)\s*([-\d,]+)\s*°?\s*([CK])?/i,
     );
     if (rangeMatch) {
         const low = parseFloat(rangeMatch[1].replace(/,/g, ""));
-        const high = parseFloat(rangeMatch[2].replace(/,/g, ""));
-        const unit = rangeMatch[3] || "C";
+        const high = parseFloat(rangeMatch[3].replace(/,/g, ""));
+        const unit = (rangeMatch[4] || rangeMatch[2] || "C").toUpperCase();
         return { value: (low + high) / 2, unit };
     }
 
@@ -133,11 +133,13 @@ export function getComparisonValue(
         case "orbitalPeriod":
             return body.keyFacts.orbitalPeriod;
         case "moons":
-            return body.keyFacts.moons?.toString() || "0";
+            return body.keyFacts.moons?.toString() || "-";
         case "type":
             return body.type;
         case "composition":
-            return body.keyFacts.composition.slice(0, 3).join(", ");
+            return Array.isArray(body.keyFacts?.composition)
+                ? body.keyFacts.composition.slice(0, 3).join(", ")
+                : "";
         default:
             return "-";
     }
@@ -265,6 +267,9 @@ export const COMPARISON_ATTRIBUTES: ComparisonAttribute[] = [
     {
         key: "composition",
         labelKey: "modal.composition",
-        getValue: (body) => body.keyFacts.composition.slice(0, 3).join(", "),
+        getValue: (body) =>
+            Array.isArray(body.keyFacts?.composition)
+                ? body.keyFacts.composition.slice(0, 3).join(", ")
+                : "",
     },
 ];
