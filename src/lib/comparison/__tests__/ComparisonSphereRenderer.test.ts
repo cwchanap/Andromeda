@@ -80,6 +80,24 @@ describe("ComparisonSphereRenderer", () => {
 
             expect(renderer).toBeDefined();
         });
+
+        it("should handle zero-height container", () => {
+            const zeroHeightContainer = document.createElement("div");
+            Object.defineProperty(zeroHeightContainer, "clientWidth", {
+                value: 800,
+            });
+            Object.defineProperty(zeroHeightContainer, "clientHeight", {
+                value: 0,
+            });
+            document.body.appendChild(zeroHeightContainer);
+
+            expect(() => {
+                renderer = new ComparisonSphereRenderer(zeroHeightContainer);
+            }).not.toThrow();
+
+            renderer.dispose();
+            zeroHeightContainer.parentNode?.removeChild(zeroHeightContainer);
+        });
     });
 
     describe("updateBodies", () => {

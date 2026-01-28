@@ -176,6 +176,11 @@ describe("Comparison Utilities", () => {
             expect(result).toEqual({ value: -23, unit: "C" });
         });
 
+        it("should infer unit from first value in range", () => {
+            const result = parseTemperature("-173K to 427");
+            expect(result).toEqual({ value: 127, unit: "K" });
+        });
+
         it("should handle negative temperatures", () => {
             const result = parseTemperature("-65°C");
             expect(result).toEqual({ value: -65, unit: "C" });
@@ -391,9 +396,22 @@ describe("Comparison Utilities", () => {
             expect(getComparisonValue(mockPlanet, "unknown")).toBe("-");
         });
 
-        it("should return 0 for moons when not defined", () => {
+        it("should return dash for moons when not defined", () => {
             const bodyWithoutMoons = { ...mockMoon };
-            expect(getComparisonValue(bodyWithoutMoons, "moons")).toBe("0");
+            expect(getComparisonValue(bodyWithoutMoons, "moons")).toBe("-");
+        });
+
+        it("should handle missing composition safely", () => {
+            const bodyWithoutComposition = {
+                ...mockPlanet,
+                keyFacts: {
+                    ...mockPlanet.keyFacts,
+                    composition: undefined as unknown as string[],
+                },
+            };
+            expect(
+                getComparisonValue(bodyWithoutComposition, "composition"),
+            ).toBe("");
         });
     });
 
@@ -573,6 +591,30 @@ describe("Comparison Utilities", () => {
             };
 
             expect(typeAttr?.getValue(mockBody)).toBe("PLANET");
+        });
+
+        it("should handle missing composition in getValue", () => {
+            const compositionAttr = COMPARISON_ATTRIBUTES.find(
+                (a) => a.key === "composition",
+            );
+            const mockBody: CelestialBodyData = {
+                id: "test",
+                name: "Test",
+                type: "planet",
+                description: "Test",
+                keyFacts: {
+                    diameter: "1000 km",
+                    orbitalPeriod: "1 day",
+                    composition: undefined as unknown as string[],
+                    temperature: "0°C",
+                },
+                images: [],
+                position: new THREE.Vector3(0, 0, 0),
+                scale: 1,
+                material: { color: "#FFFFFF" },
+            };
+
+            expect(compositionAttr?.getValue(mockBody)).toBe("");
         });
     });
 });
