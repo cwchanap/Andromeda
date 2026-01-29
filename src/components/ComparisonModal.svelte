@@ -11,6 +11,14 @@
         type SelectableBody,
     } from "../utils/comparisonUtils";
 
+    // Generate star field once (not per render)
+    const BACKGROUND_STARS = Array.from({ length: 75 }, () => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        delay: Math.random() * 4,
+        opacity: 0.2 + Math.random() * 0.8,
+    }));
+
     export let isOpen: boolean = false;
     export let bodies: CelestialBodyData[] = [];
     export let onClose: () => void;
@@ -35,13 +43,7 @@
     let searchQuery = "";
     let showBodySelector = false;
     let isExporting = false;
-
-    const stars = Array.from({ length: 75 }, () => ({
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        delay: Math.random() * 4,
-        opacity: 0.2 + Math.random() * 0.8,
-    }));
+    let exportError: string | null = null;
 
     // All available bodies
     let allBodies: SelectableBody[] = [];
@@ -81,6 +83,7 @@
         if (!sphereRenderer || bodies.length === 0) return;
 
         isExporting = true;
+        exportError = null;
 
         try {
             // Get canvas data URL
@@ -94,6 +97,11 @@
             link.click();
         } catch (error) {
             console.error("Failed to export comparison:", error);
+            exportError = error instanceof Error ? error.message : "Failed to export image. Please try again.";
+            // Clear error after 5 seconds
+            setTimeout(() => {
+                exportError = null;
+            }, 5000);
         } finally {
             isExporting = false;
         }
@@ -160,7 +168,7 @@
             <div class="modal-content">
                 <!-- Star field background -->
                 <div class="star-field">
-                    {#each stars as star, i}
+                    {#each BACKGROUND_STARS as star, i}
                         <div
                             class="star"
                             style="
@@ -254,6 +262,25 @@
                         {t("comparison.export")}
                     </button>
                 </div>
+
+                <!-- Export error message -->
+                {#if exportError}
+                    <div class="export-error" role="alert">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span>{exportError}</span>
+                    </div>
+                {/if}
 
                 <!-- Body selection badges -->
                 <div class="body-badges">
@@ -619,6 +646,38 @@
 
     .spinner {
         animation: spin 1s linear infinite;
+    }
+
+    .export-error {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.5);
+        border-radius: 8px;
+        color: #fca5a5;
+        font-size: 0.9rem;
+        position: relative;
+        z-index: 1;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .export-error svg {
+        flex-shrink: 0;
+        color: #ef4444;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .body-badges {
