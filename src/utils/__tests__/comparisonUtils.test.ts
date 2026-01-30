@@ -18,7 +18,7 @@ import type { CelestialBodyData } from "../../types/game";
 import * as THREE from "three";
 
 // Mock the planetary system registry
-vi.mock("../../lib/planetary-system/PlanetarySystemRegistry", () => ({
+vi.mock("../../lib/planetary-system", () => ({
     planetarySystemRegistry: {
         getAllSystems: vi.fn(() => [
             {

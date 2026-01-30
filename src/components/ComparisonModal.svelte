@@ -112,13 +112,28 @@
         allBodies = getAllBodiesFromAllSystems();
     });
 
+    const disposeSphereRenderer = () => {
+        if (sphereRenderer) {
+            sphereRenderer.dispose();
+            sphereRenderer = null;
+        }
+    };
+
     // Update renderer when bodies change
     $: if (sphereRenderer && bodies.length > 0) {
         sphereRenderer.updateBodies(bodies);
     }
 
+    $: if ((!sphereContainer || bodies.length < 2) && sphereRenderer) {
+        disposeSphereRenderer();
+    }
+
     // Initialize/destroy renderer based on open state
     $: if (isOpen && sphereContainer && !sphereRenderer && !initTimer) {
+        if (bodies.length < 2) {
+            initTimer = null;
+            return;
+        }
         // Small delay to ensure container is rendered
         initTimer = setTimeout(() => {
             if (!isOpen || !sphereContainer || sphereRenderer) return;
@@ -141,16 +156,12 @@
             clearTimeout(initTimer);
             initTimer = null;
         }
-        if (sphereRenderer) {
-            sphereRenderer.dispose();
-            sphereRenderer = null;
-        }
+        disposeSphereRenderer();
     });
 
     // Cleanup renderer when modal closes
     $: if (!isOpen && sphereRenderer) {
-        sphereRenderer.dispose();
-        sphereRenderer = null;
+        disposeSphereRenderer();
     }
 </script>
 
