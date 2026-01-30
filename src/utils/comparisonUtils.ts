@@ -1,6 +1,6 @@
 // Utility functions for comparing celestial bodies
 import type { CelestialBodyData } from "../types/game";
-import { planetarySystemRegistry } from "../lib/planetary-system/PlanetarySystemRegistry";
+import { planetarySystemRegistry } from "../lib/planetary-system";
 
 /**
  * Parse diameter string to numeric kilometers
