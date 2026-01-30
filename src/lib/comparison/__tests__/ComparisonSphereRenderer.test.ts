@@ -370,9 +370,41 @@ describe("ComparisonSphereRenderer", () => {
             const bodies = [createMockBody("earth", "Earth", "12,742 km")];
             renderer.updateBodies(bodies);
 
-            // The renderer should not enable shadow mapping
-            // This is verified by checking that shadowMap.enabled stays false
-            expect(true).toBe(true);
+            // Verify WebGLRenderer shadowMap.enabled is false
+            const rendererMock = THREE.WebGLRenderer as unknown as ReturnType<
+                typeof vi.fn
+            >;
+            const createdRenderer = rendererMock.mock.results[0]?.value;
+            expect(createdRenderer?.shadowMap?.enabled).toBe(false);
+
+            // Verify DirectionalLight castShadow is false on all created lights
+            const dirLightMock =
+                THREE.DirectionalLight as unknown as ReturnType<typeof vi.fn>;
+            interface LightMock {
+                castShadow: boolean;
+            }
+            const createdDirLights: LightMock[] = dirLightMock.mock.results
+                .filter((r) => r.type === "return")
+                .map((r) => r.value as LightMock);
+            expect(createdDirLights.length).toBeGreaterThan(0);
+            createdDirLights.forEach((light) => {
+                expect(light.castShadow).toBe(false);
+            });
+
+            // Verify Mesh castShadow and receiveShadow are false on all created meshes
+            const meshMock = THREE.Mesh as unknown as ReturnType<typeof vi.fn>;
+            interface MeshMock {
+                castShadow: boolean;
+                receiveShadow: boolean;
+            }
+            const createdMeshes: MeshMock[] = meshMock.mock.results
+                .filter((r) => r.type === "return")
+                .map((r) => r.value as MeshMock);
+            expect(createdMeshes.length).toBeGreaterThan(0);
+            createdMeshes.forEach((mesh) => {
+                expect(mesh.castShadow).toBe(false);
+                expect(mesh.receiveShadow).toBe(false);
+            });
         });
     });
 });
