@@ -129,11 +129,7 @@
     }
 
     // Initialize/destroy renderer based on open state
-    $: if (isOpen && sphereContainer && !sphereRenderer && !initTimer) {
-        if (bodies.length < 2) {
-            initTimer = null;
-            return;
-        }
+    $: if (isOpen && sphereContainer && !sphereRenderer && !initTimer && bodies.length >= 2) {
         // Small delay to ensure container is rendered
         initTimer = setTimeout(() => {
             if (!isOpen || !sphereContainer || sphereRenderer) return;
