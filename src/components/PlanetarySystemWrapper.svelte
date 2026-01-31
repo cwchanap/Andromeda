@@ -4,6 +4,7 @@
   import KeyboardNavigation from './KeyboardNavigation.svelte';
   import AccessibilityManager from './AccessibilityManager.svelte';
   import CelestialBodyInfoModal from './CelestialBodyInfoModal.svelte';
+  import ComparisonModal from './ComparisonModal.svelte';
   import OrbitSpeedControl from './OrbitSpeedControl.svelte';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
@@ -55,6 +56,8 @@
   // Reactive state from stores
   $: selectedBody = $gameState.selectedBody;
   $: showInfoModal = $gameState.ui.showInfoModal;
+  $: showComparisonModal = $gameState.ui.showComparisonModal;
+  $: comparisonBodies = $gameState.comparison?.selectedBodies || [];
   $: enableAnimations = $settings.enableAnimations;
   $: enableKeyboardNav = $settings.enableKeyboardNavigation;
   
@@ -66,7 +69,20 @@
   const handleCloseModal = () => {
     gameActions.showInfoModal(false);
   };
-  
+
+  // Comparison modal handlers
+  const handleCloseComparison = () => {
+    gameActions.showComparisonModal(false);
+  };
+
+  const handleRemoveFromComparison = (bodyId: string) => {
+    gameActions.removeFromComparison(bodyId);
+  };
+
+  const handleAddToComparison = (body: CelestialBodyData) => {
+    gameActions.addToComparison(body);
+  };
+
   const handleBackToMenu = () => {
     gameActions.navigateToView("menu");
     const menuUrl = currentLang === 'en' ? '/' : `/${currentLang}/`;
@@ -270,14 +286,25 @@
   {/if}
   
   <!-- Info Modal -->
-  <CelestialBodyInfoModal 
+  <CelestialBodyInfoModal
     isOpen={showInfoModal}
     celestialBody={selectedBody}
     onClose={handleCloseModal}
     {lang}
     {translations}
   />
-  
+
+  <!-- Comparison Modal -->
+  <ComparisonModal
+    isOpen={showComparisonModal}
+    bodies={comparisonBodies}
+    onClose={handleCloseComparison}
+    onRemoveBody={handleRemoveFromComparison}
+    onAddBody={handleAddToComparison}
+    {lang}
+    {translations}
+  />
+
   <!-- Orbit Speed Control -->
   {#if isSceneReady}
     <OrbitSpeedControl {lang} {translations} />
