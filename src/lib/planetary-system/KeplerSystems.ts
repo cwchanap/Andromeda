@@ -91,13 +91,9 @@ export const kepler442System: PlanetarySystem = {
         },
     },
 
-    async initialize() {
-        console.log("Kepler-442 System plugin initialized");
-    },
+    async initialize() {},
 
-    async cleanup() {
-        console.log("Kepler-442 System plugin cleaned up");
-    },
+    async cleanup() {},
 };
 
 /**
@@ -189,11 +185,7 @@ export const kepler438System: PlanetarySystem = {
         },
     },
 
-    async initialize() {
-        console.log("Kepler-438 System plugin initialized");
-    },
+    async initialize() {},
 
-    async cleanup() {
-        console.log("Kepler-438 System plugin cleaned up");
-    },
+    async cleanup() {},
 };

@@ -82,10 +82,6 @@ export class SceneManager {
         fillLight.castShadow = false;
 
         this.scene.add(fillLight);
-
-        console.log(
-            "Lighting setup complete - all shadows explicitly disabled",
-        );
     }
 
     /**

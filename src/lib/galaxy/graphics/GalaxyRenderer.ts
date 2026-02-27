@@ -523,7 +523,5 @@ export class GalaxyRenderer {
         if (this.container && this.renderer.domElement) {
             this.container.removeChild(this.renderer.domElement);
         }
-
-        console.log("GalaxyRenderer disposed");
     }
 }

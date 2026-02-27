@@ -34,20 +34,17 @@
     const events: GalaxyEvents = {
         onSystemLoad: () => {
             isLoading = false;
-            console.log('Galaxy loaded successfully');
         },
         onError: (err: Error) => {
             error = err.message;
             isLoading = false;
             console.error('Galaxy renderer error:', err);
         },
-        onStarSystemSelect: (system) => {
-            console.log('Star system selected:', system.name);
-            // You can dispatch custom events here for parent components
+        onStarSystemSelect: (_system) => {
+            // Dispatch custom events here for parent components
         },
-        onCameraChange: (position, zoom) => {
+        onCameraChange: (_position, _zoom) => {
             // Handle camera changes if needed
-            console.log('Camera changed:', { position, zoom });
         }
     };
     

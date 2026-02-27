@@ -51,7 +51,6 @@
             isLoading = false;
             isSceneReady = true;
             loadingProgress = 100;
-            console.log('Galaxy loaded successfully');
         },
         onError: (err: Error) => {
             error = err.message;
@@ -63,7 +62,6 @@
             selectedSystemData = system;
             showSystemInfo = true;
             showSystemDialog = true;
-            console.log('Star system selected:', system.name);
         },
         onCameraChange: (position, zoom) => {
             // Handle camera changes if needed

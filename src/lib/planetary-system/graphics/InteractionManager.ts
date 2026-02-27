@@ -16,6 +16,12 @@ export class InteractionManager {
     private hoveredObject: THREE.Mesh | null = null;
     private celestialBodyManager: CelestialBodyManager | null = null;
 
+    // Store bound event handlers so they can be properly removed
+    private boundHandleMouseMove = this.handleMouseMove.bind(this);
+    private boundHandleClick = this.handleClick.bind(this);
+    private boundHandleTouchMove = this.handleTouchMove.bind(this);
+    private boundHandleTouchEnd = this.handleTouchEnd.bind(this);
+
     constructor(
         private container: HTMLElement,
         private camera: THREE.PerspectiveCamera,
@@ -35,19 +41,10 @@ export class InteractionManager {
      * Sets up DOM event listeners
      */
     private setupEventListeners(): void {
-        this.container.addEventListener(
-            "mousemove",
-            this.handleMouseMove.bind(this),
-        );
-        this.container.addEventListener("click", this.handleClick.bind(this));
-        this.container.addEventListener(
-            "touchmove",
-            this.handleTouchMove.bind(this),
-        );
-        this.container.addEventListener(
-            "touchend",
-            this.handleTouchEnd.bind(this),
-        );
+        this.container.addEventListener("mousemove", this.boundHandleMouseMove);
+        this.container.addEventListener("click", this.boundHandleClick);
+        this.container.addEventListener("touchmove", this.boundHandleTouchMove);
+        this.container.addEventListener("touchend", this.boundHandleTouchEnd);
     }
 
     /**
@@ -220,19 +217,16 @@ export class InteractionManager {
     dispose(): void {
         this.container.removeEventListener(
             "mousemove",
-            this.handleMouseMove.bind(this),
+            this.boundHandleMouseMove,
         );
-        this.container.removeEventListener(
-            "click",
-            this.handleClick.bind(this),
-        );
+        this.container.removeEventListener("click", this.boundHandleClick);
         this.container.removeEventListener(
             "touchmove",
-            this.handleTouchMove.bind(this),
+            this.boundHandleTouchMove,
         );
         this.container.removeEventListener(
             "touchend",
-            this.handleTouchEnd.bind(this),
+            this.boundHandleTouchEnd,
         );
 
         // Reset hover state

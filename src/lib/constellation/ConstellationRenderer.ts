@@ -162,8 +162,6 @@ export class ConstellationRenderer {
         starfieldMesh.name = "starfield-background";
         starfieldMesh.renderOrder = 0; // Render first
         this.scene.add(starfieldMesh);
-
-        console.log("Created starfield background sphere");
     }
 
     /**
@@ -443,8 +441,6 @@ export class ConstellationRenderer {
         const starColors: number[] = [];
         const starSizes: number[] = [];
 
-        console.log(`Creating stars for ${stars.length} stars`);
-
         stars.forEach((star) => {
             // Skip stars dimmer than minimum magnitude
             if (star.magnitude > skyConfig.minimumMagnitude) {
@@ -472,16 +468,9 @@ export class ConstellationRenderer {
             starSizes.push(size);
         });
 
-        console.log(
-            `Created ${starPositions.length / 3} visible stars in 360-degree sphere`,
-        );
-
         // If very few stars were created, add some procedural background stars for ambiance
         if (starPositions.length < 300) {
             // Less than 100 stars
-            console.log(
-                "Adding procedural background stars for better sky coverage",
-            );
             for (let i = 0; i < 500; i++) {
                 // Create random stars distributed evenly across the celestial sphere
                 const theta = Math.random() * Math.PI * 2; // Azimuth (0 to 2π)
@@ -542,10 +531,6 @@ export class ConstellationRenderer {
         this.starPoints.name = "stars";
         this.starPoints.renderOrder = 1; // Render after background
         this.scene.add(this.starPoints);
-
-        console.log(
-            `Added ${this.starPoints.geometry.attributes.position.count} stars to 360-degree sky sphere`,
-        );
     }
 
     /**
@@ -615,9 +600,6 @@ export class ConstellationRenderer {
         });
 
         this.scene.add(this.constellationLines);
-        console.log(
-            `Added constellation lines for ${constellations.length} constellations`,
-        );
     }
 
     /**
@@ -700,9 +682,6 @@ export class ConstellationRenderer {
         });
 
         this.scene.add(this.constellationLabels);
-        console.log(
-            `Added constellation name labels for ${constellations.length} constellations`,
-        );
     }
 
     /**
@@ -763,7 +742,6 @@ export class ConstellationRenderer {
         });
 
         this.scene.add(this.labelSprites);
-        console.log(`Added labels for ${brightStars.length} bright stars`);
     }
 
     /**
@@ -775,10 +753,6 @@ export class ConstellationRenderer {
         this.camera.position.set(0, 0, 0);
         this.camera.lookAt(0, 10, 0); // Look upward toward the sky
         this.camera.up.set(0, 1, 0); // Y-up coordinate system for natural orientation
-
-        console.log(
-            "Camera positioned at (0, 0, 0) looking upward at (0, 10, 0)",
-        );
     }
 
     /**

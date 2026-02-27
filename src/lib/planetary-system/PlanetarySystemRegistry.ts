@@ -15,16 +15,7 @@ export class PlanetarySystemRegistry implements IPlanetarySystemRegistry {
      * Register a new planetary system
      */
     registerSystem(system: PlanetarySystem): void {
-        if (this._systems.has(system.id)) {
-            console.warn(
-                `Planetary system with ID "${system.id}" is already registered. Overwriting.`,
-            );
-        }
-
         this._systems.set(system.id, system);
-        console.log(
-            `Registered planetary system: ${system.name} (${system.id})`,
-        );
     }
 
     /**
@@ -64,7 +55,6 @@ export class PlanetarySystemRegistry implements IPlanetarySystemRegistry {
             .map((system) => system.initialize!());
 
         await Promise.all(initPromises);
-        console.log(`Initialized ${initPromises.length} planetary systems`);
     }
 
     /**
@@ -76,7 +66,6 @@ export class PlanetarySystemRegistry implements IPlanetarySystemRegistry {
             .map((system) => system.cleanup!());
 
         await Promise.all(cleanupPromises);
-        console.log("Cleaned up all planetary systems");
     }
 
     /**

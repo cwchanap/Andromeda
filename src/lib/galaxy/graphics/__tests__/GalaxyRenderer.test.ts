@@ -426,10 +426,8 @@ describe("GalaxyRenderer", () => {
         const renderer = new GalaxyRenderer(container, mockConfig, mockEvents);
         await renderer.initialize(mockGalaxyData);
 
-        const disposeSpy = vi.spyOn(console, "log");
         renderer.dispose();
 
-        expect(disposeSpy).toHaveBeenCalledWith("GalaxyRenderer disposed");
         expect((renderer as any).isDisposed).toBe(true);
         expect((renderer as any).animationId).toBeNull();
     });

@@ -92,8 +92,6 @@ export class PerformanceMonitor {
         this.isMonitoring = true;
         this.frameCount = 0;
         this.lastFPSUpdate = performance.now();
-
-        console.log("Performance monitoring started");
     }
 
     /**
@@ -101,7 +99,6 @@ export class PerformanceMonitor {
      */
     stopMonitoring(): void {
         this.isMonitoring = false;
-        console.log("Performance monitoring stopped");
     }
 
     /**

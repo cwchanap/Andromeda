@@ -277,7 +277,7 @@ export class AIService {
 export const aiService = new AIService();
 
 // Export configuration helper
-export function configureAIService(config: AIServiceConfig): void {
-    // This would update the global AI service configuration
-    console.log("AI Service configured with:", config);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function configureAIService(_config: AIServiceConfig): void {
+    // Configuration placeholder for future AI service integration
 }
