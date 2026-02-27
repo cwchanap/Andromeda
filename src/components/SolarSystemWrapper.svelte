@@ -121,7 +121,6 @@
     }, 100);
 
     return () => {
-      console.log("Cleaning up loading interval");
       clearInterval(loadingInterval);
     };
   });
@@ -149,7 +148,6 @@
       return;
     }
 
-    console.log("Container found:", rendererContainer);
     debugInfo = "Container found, creating renderer...";
 
     try {
@@ -176,7 +174,6 @@
           debugInfo = `Error: ${error.message}`;
         },
         onReady: () => {
-          console.log("Solar system renderer ready!");
           loadingProgress = 100;
           debugInfo = "Renderer ready!";
           setTimeout(() => {
@@ -201,8 +198,6 @@
         solarSystemData.star,
         ...solarSystemData.celestialBodies,
       ];
-
-      console.log(`Found ${celestialBodies.length} celestial bodies`);
 
       // Initialize the solar system with background star configuration
       await solarSystemRenderer.initialize(celestialBodies, solarSystemData);

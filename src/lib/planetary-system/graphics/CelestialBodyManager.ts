@@ -22,19 +22,9 @@ export class CelestialBodyManager {
         private camera: THREE.Camera,
     ) {
         this.performanceManager = new PerformanceManager(scene, camera);
-        this.assetLoader = new AssetLoader(
-            (progress) => {
-                console.log(
-                    `Loading assets: ${(progress.progress * 100).toFixed(1)}%`,
-                );
-            },
-            () => {
-                console.log("All assets loaded successfully");
-            },
-            (error) => {
-                console.error("Asset loading error:", error);
-            },
-        );
+        this.assetLoader = new AssetLoader(undefined, undefined, (error) => {
+            console.error("Asset loading error:", error);
+        });
     }
 
     /**
@@ -244,10 +234,6 @@ export class CelestialBodyManager {
             ringGroup.add(rock);
             particlesCreated++;
         }
-
-        console.log(
-            `Created ${particlesCreated} ring particles for ${data.id}`,
-        );
 
         // Apply custom rotation or default to horizontal (Saturn's rings are roughly in the equatorial plane)
         ringGroup.rotation.x =
@@ -597,15 +583,6 @@ export class CelestialBodyManager {
                 body.position.y = orbitCenterY; // Inherit parent's Y offset
                 body.position.z =
                     orbitCenterZ + Math.sin(currentAngle) * data.orbitRadius;
-
-                // Debug: Log orbital position for Earth occasionally
-                if (
-                    id === "earth" &&
-                    Math.floor(time) % 5 === 0 &&
-                    Math.floor(time * 10) % 50 === 0
-                ) {
-                    // Debug log removed
-                }
             }
 
             // Rotate rings slowly for visual effect (Saturn's rings)

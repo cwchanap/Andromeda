@@ -37,6 +37,9 @@ export class SolarSystemRenderer {
     private config: Required<SolarSystemConfig>;
     private events: SolarSystemEvents;
 
+    // Store bound handler for proper cleanup
+    private boundHandleResize = this.handleResize.bind(this);
+
     constructor(
         container: HTMLElement,
         config: SolarSystemConfig = {},
@@ -118,23 +121,7 @@ export class SolarSystemRenderer {
      */
     private setupPerformanceMonitoring(): void {
         this.performanceMonitor = new PerformanceMonitor(this.renderer);
-
-        // Start monitoring
         this.performanceMonitor.startMonitoring();
-
-        // Add performance callbacks
-        this.performanceMonitor.onMetrics((metrics) => {
-            // Log performance metrics periodically
-            if (metrics.fps > 0 && metrics.fps % 10 === 0) {
-                console.log(
-                    `Performance: ${metrics.fps} FPS, ${metrics.frameTime.toFixed(2)}ms frame time`,
-                );
-            }
-        });
-
-        this.performanceMonitor.onWarning((suggestions) => {
-            console.warn("Performance warnings:", suggestions);
-        });
     }
 
     /**
@@ -156,7 +143,7 @@ export class SolarSystemRenderer {
      * Sets up event listeners
      */
     private setupEventListeners(): void {
-        window.addEventListener("resize", this.handleResize.bind(this));
+        window.addEventListener("resize", this.boundHandleResize);
     }
 
     /**
@@ -434,7 +421,7 @@ export class SolarSystemRenderer {
         this.renderer.dispose();
 
         // Remove event listeners
-        window.removeEventListener("resize", this.handleResize);
+        window.removeEventListener("resize", this.boundHandleResize);
 
         // Remove DOM element
         if (this.renderer.domElement.parentElement) {

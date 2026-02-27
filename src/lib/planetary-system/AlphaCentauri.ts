@@ -204,11 +204,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
         },
     },
 
-    async initialize() {
-        console.log("Alpha Centauri System plugin initialized");
-    },
+    async initialize() {},
 
-    async cleanup() {
-        console.log("Alpha Centauri System plugin cleaned up");
-    },
+    async cleanup() {},
 };

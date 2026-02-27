@@ -256,13 +256,9 @@ export const trappist1System: PlanetarySystem = {
         },
     },
 
-    async initialize() {
-        console.log("TRAPPIST-1 System plugin initialized");
-    },
+    async initialize() {},
 
-    async cleanup() {
-        console.log("TRAPPIST-1 System plugin cleaned up");
-    },
+    async cleanup() {},
 };
 
 /**
@@ -384,13 +380,9 @@ export const wolf359System: PlanetarySystem = {
         },
     },
 
-    async initialize() {
-        console.log("Wolf 359 System plugin initialized");
-    },
+    async initialize() {},
 
-    async cleanup() {
-        console.log("Wolf 359 System plugin cleaned up");
-    },
+    async cleanup() {},
 };
 
 /**
@@ -489,13 +481,9 @@ export const barnardsStarSystem: PlanetarySystem = {
         },
     },
 
-    async initialize() {
-        console.log("Barnard's Star System plugin initialized");
-    },
+    async initialize() {},
 
-    async cleanup() {
-        console.log("Barnard's Star System plugin cleaned up");
-    },
+    async cleanup() {},
 };
 
 /**
@@ -596,11 +584,7 @@ export const ross128System: PlanetarySystem = {
         },
     },
 
-    async initialize() {
-        console.log("Ross 128 System plugin initialized");
-    },
+    async initialize() {},
 
-    async cleanup() {
-        console.log("Ross 128 System plugin cleaned up");
-    },
+    async cleanup() {},
 };

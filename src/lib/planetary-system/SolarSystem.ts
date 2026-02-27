@@ -1456,8 +1456,6 @@ export const validateCurrentSolarSystemData = (): boolean => {
 if (process.env.NODE_ENV === "development") {
     if (!validateCurrentSolarSystemData()) {
         console.error("Solar system data validation failed!");
-    } else {
-        console.log("Solar system data validation passed ✓");
     }
 }
 
@@ -1474,11 +1472,7 @@ export const solarSystem: PlanetarySystem = {
 
     systemData: solarSystemData,
 
-    async initialize() {
-        console.log("Solar System plugin initialized");
-    },
+    async initialize() {},
 
-    async cleanup() {
-        console.log("Solar System plugin cleaned up");
-    },
+    async cleanup() {},
 };

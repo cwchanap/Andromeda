@@ -151,7 +151,8 @@ export interface SystemConfiguration {
     renderingConfig: {
         ambientLightIntensity: number;
         pointLightIntensity: number;
-        shadowsEnabled: boolean;
+        /** @deprecated Shadows are permanently disabled project-wide. This field must always be false. */
+        shadowsEnabled: false;
         particleSystemConfig?: {
             count: number;
             spread: number;

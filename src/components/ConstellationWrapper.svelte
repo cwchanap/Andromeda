@@ -48,9 +48,7 @@
     try {
       // Check WebGL support first
       webglSupported = checkWebGLSupport();
-      console.log('WebGL supported:', webglSupported);
       if (!webglSupported) {
-        console.log('WebGL not supported, showing fallback');
         throw new Error("WebGL is not supported by your browser or graphics card");
       }
 
@@ -209,8 +207,7 @@
     viewState.selectedConstellation = constellationId;
     const constellation = constellations.find(c => c.id === constellationId);
     if (constellation) {
-      // You could add highlighting or focusing logic here
-      console.log("Selected constellation:", constellation.name);
+      // Highlighting or focusing logic placeholder
     }
   };
 

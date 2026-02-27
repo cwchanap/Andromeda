@@ -148,8 +148,7 @@
       const events: PlanetarySystemEvents = {
         onBodySelect: handleBodySelect,
         onCameraChange: handleZoomChange,
-        onSystemLoad: (loadedSystemId) => {
-          console.log(`Loaded system: ${loadedSystemId}`);
+        onSystemLoad: (_loadedSystemId) => {
           isSceneReady = true;
           isLoading = false;
           loadingProgress = 100;
