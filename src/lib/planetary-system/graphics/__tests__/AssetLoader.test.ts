@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import * as THREE from "three";
 import { AssetLoader } from "../AssetLoader";
@@ -168,5 +168,34 @@ describe("AssetLoader", () => {
         // 256*256*4 (texture) + 9*4 (position) + 9*4 (normal) + 6*4 (uv)
         const expected = 256 * 256 * 4 + (9 + 9 + 6) * 4;
         expect(usage).toBe(expected);
+    });
+
+    it("getTexture returns preloaded texture without re-loading it", async () => {
+        const loader = new AssetLoader();
+        const fakeTexture = { image: null, dispose: vi.fn() } as any;
+        (loader as any).preloadedAssets.textures.set(
+            "http://example.com/tex.jpg",
+            fakeTexture,
+        );
+        const result = await loader.getTexture("http://example.com/tex.jpg");
+        expect(result).toBe(fakeTexture);
+    });
+
+    it("dispose() frees preloaded materials and geometries", () => {
+        const loader = new AssetLoader();
+        const mat = { dispose: vi.fn() } as any;
+        const geo = {
+            dispose: vi.fn(),
+            getAttribute: vi.fn(() => null),
+        } as any;
+        (loader as any).preloadedAssets.materials.set("m1", mat);
+        (loader as any).preloadedAssets.geometries.set("g1", geo);
+
+        loader.dispose();
+
+        expect(mat.dispose).toHaveBeenCalled();
+        expect(geo.dispose).toHaveBeenCalled();
+        expect((loader as any).preloadedAssets.materials.size).toBe(0);
+        expect((loader as any).preloadedAssets.geometries.size).toBe(0);
     });
 });

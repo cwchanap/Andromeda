@@ -264,4 +264,58 @@ describe("AIService", () => {
             (APIErrorHandler as any).maxRetries = origRetries;
         }
     });
+
+    // ─── General response index coverage ────────────────────────────────────
+
+    it("returns general response index 1 (line 213) with Math.random=0.5", async () => {
+        // Math.floor(0.5 * 3) = 1 → picks index 1 of general response array
+        vi.spyOn(Math, "random").mockReturnValue(0.5);
+        const result = await service.generateResponse(
+            "zxyz random query",
+            makePlanet(),
+        );
+        expect(result).toContain("Let me tell you about");
+    });
+
+    it("returns general response index 2 with star context (covers getTemperatureInsight star branch)", async () => {
+        // Math.floor(0.9 * 3) = 2 → picks index 2, which calls getTemperatureInsight with star
+        vi.spyOn(Math, "random").mockReturnValue(0.9);
+        const result = await service.generateResponse(
+            "zxyz random query",
+            makeStar(),
+        );
+        expect(result).toContain("nuclear processes");
+    });
+
+    it("returns larger-planet size comparison for diameter > 50000 km", async () => {
+        // Math.floor(0.1 * 2) = 0 → picks index 0 of size responses (calls getSizeComparison)
+        vi.spyOn(Math, "random").mockReturnValue(0.1);
+        const largePlanet = makePlanet({
+            keyFacts: { ...makePlanet().keyFacts, diameter: "60,000 km" },
+        });
+        const result = await service.generateResponse(
+            "what is the diameter size",
+            largePlanet,
+        );
+        expect(result).toContain("larger planets");
+    });
+
+    it("performAIRequest throws directly when offline mode is set (lines 91-92)", async () => {
+        vi.mocked(localStorage.getItem).mockReturnValue("true");
+        await expect(
+            (service as any).performAIRequest("hello"),
+        ).rejects.toThrow("Application is in offline mode");
+    });
+
+    it("simulateDelay resolves after timeout using fake timers (lines 111-113)", async () => {
+        vi.useFakeTimers();
+        // Create a fresh service without the simulateDelay mock
+        const { AIService } = await import("../aiService");
+        const freshService = new AIService();
+        const promise = (freshService as any).simulateDelay();
+        // Advance time past the max delay (800 + 1500 = 2300ms)
+        await vi.advanceTimersByTimeAsync(3000);
+        await expect(promise).resolves.toBeUndefined();
+        vi.useRealTimers();
+    });
 });

@@ -262,4 +262,253 @@ describe("TerrainRenderer", () => {
             "ffffff",
         );
     });
+
+    // ─── Additional terrain type coverage ──────────────────────────────────
+
+    const baseFeatures: TerrainConfig["features"] = {
+        craters: {
+            enabled: false,
+            count: 0,
+            minRadius: 0,
+            maxRadius: 0,
+            depth: 0,
+        },
+        mountains: {
+            enabled: false,
+            count: 0,
+            minHeight: 0,
+            maxHeight: 0,
+            smoothness: 1,
+        },
+        valleys: { enabled: false, count: 0, depth: 0, width: 0 },
+        continents: { enabled: false, count: 0, seaLevel: 0 },
+    };
+    const baseColors: TerrainConfig["colors"] = {
+        low: "#111111",
+        mid: "#555555",
+        high: "#999999",
+    };
+
+    it("creates gas terrain material (transparent, opacity=0.8, metalness=0, roughness=0.2)", () => {
+        const config: TerrainConfig = {
+            enabled: true,
+            type: "gas",
+            heightScale: 0.01,
+            resolution: "low",
+            features: baseFeatures,
+            colors: baseColors,
+        };
+        const mat = TerrainRenderer.createTerrainMaterial(
+            config,
+            "#aabbcc",
+        ) as THREE.MeshStandardMaterial;
+        expect(mat.roughness).toBe(0.2);
+        expect(mat.metalness).toBe(0.0);
+        expect(mat.transparent).toBe(true);
+        expect(mat.opacity).toBe(0.8);
+    });
+
+    it("creates earth-like terrain material (metalness=0, roughness=0.6)", () => {
+        const config: TerrainConfig = {
+            enabled: true,
+            type: "earth-like",
+            heightScale: 0.01,
+            resolution: "low",
+            features: baseFeatures,
+            colors: baseColors,
+        };
+        const mat = TerrainRenderer.createTerrainMaterial(
+            config,
+            "#223344",
+        ) as THREE.MeshStandardMaterial;
+        expect(mat.roughness).toBe(0.6);
+        expect(mat.metalness).toBe(0.0);
+    });
+
+    it("creates desert terrain material (metalness=0, roughness=0.8)", () => {
+        const config: TerrainConfig = {
+            enabled: true,
+            type: "desert",
+            heightScale: 0.01,
+            resolution: "low",
+            features: baseFeatures,
+            colors: baseColors,
+        };
+        const mat = TerrainRenderer.createTerrainMaterial(
+            config,
+            "#ddbb88",
+        ) as THREE.MeshStandardMaterial;
+        expect(mat.roughness).toBe(0.8);
+        expect(mat.metalness).toBe(0.0);
+    });
+
+    it("creates terrain material with colorMap, normalMap, roughnessMap textures", () => {
+        const config: TerrainConfig = {
+            enabled: true,
+            type: "rocky",
+            heightScale: 0.01,
+            resolution: "low",
+            features: baseFeatures,
+            colors: baseColors,
+            textures: {
+                colorMap: "/tex/color.jpg",
+                normalMap: "/tex/normal.jpg",
+                roughnessMap: "/tex/rough.jpg",
+            },
+        };
+        const mat = TerrainRenderer.createTerrainMaterial(config, "#888888");
+        expect(mat).toBeInstanceOf(THREE.MeshStandardMaterial);
+    });
+
+    it("creates terrain geometry with valley features (covers applyFeatureHeight valley branch)", () => {
+        const config: TerrainConfig = {
+            enabled: true,
+            type: "earth-like",
+            heightScale: 0.02,
+            resolution: "low",
+            features: {
+                ...baseFeatures,
+                valleys: { enabled: true, count: 2, depth: 0.05, width: 0.3 },
+            },
+            colors: baseColors,
+        };
+        const geo = TerrainRenderer.createTerrainGeometry(config, 1);
+        expect(geo).toBeInstanceOf(THREE.BufferGeometry);
+    });
+
+    it("creates terrain geometry with continent features (covers applyFeatureHeight continent branch)", () => {
+        const config: TerrainConfig = {
+            enabled: true,
+            type: "earth-like",
+            heightScale: 0.02,
+            resolution: "low",
+            features: {
+                ...baseFeatures,
+                continents: { enabled: true, count: 2, seaLevel: 0.2 },
+            },
+            colors: baseColors,
+        };
+        const geo = TerrainRenderer.createTerrainGeometry(config, 1);
+        expect(geo).toBeInstanceOf(THREE.BufferGeometry);
+    });
+
+    describe("calculateFeatureInfluence (private static)", () => {
+        it("returns cosine falloff when distance <= radius (lines 324-325)", () => {
+            const point = new THREE.Vector3(0.1, 0, 0);
+            const feature = {
+                type: "crater",
+                position: new THREE.Vector3(0, 0, 0),
+                radius: 2.0, // large enough to contain point
+                intensity: 0.05,
+                smoothness: 2,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = (TerrainRenderer as any).calculateFeatureInfluence(
+                point,
+                feature,
+            );
+            // distance = 0.1, t = 0.1/2.0 = 0.05, cos(0.05 * PI/2) ≈ 0.9969
+            expect(result).toBeGreaterThan(0);
+            expect(result).toBeLessThanOrEqual(1);
+        });
+
+        it("returns 0 when distance > radius (line 321)", () => {
+            const point = new THREE.Vector3(5, 0, 0);
+            const feature = {
+                type: "crater",
+                position: new THREE.Vector3(0, 0, 0),
+                radius: 0.3,
+                intensity: 0.05,
+                smoothness: 2,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = (TerrainRenderer as any).calculateFeatureInfluence(
+                point,
+                feature,
+            );
+            expect(result).toBe(0);
+        });
+    });
+
+    describe("applyFeatureHeight (private static)", () => {
+        it("returns crater height modification (lines 336-342)", () => {
+            const feature = {
+                type: "crater",
+                intensity: 0.05,
+                radius: 1,
+                position: new THREE.Vector3(0, 0, 0),
+                smoothness: 2,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = (TerrainRenderer as any).applyFeatureHeight(
+                feature,
+                0.5,
+            );
+            expect(typeof result).toBe("number");
+        });
+
+        it("returns mountain height modification (lines 345-351)", () => {
+            const feature = {
+                type: "mountain",
+                intensity: 0.1,
+                radius: 1,
+                position: new THREE.Vector3(0, 0, 0),
+                smoothness: 2,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = (TerrainRenderer as any).applyFeatureHeight(
+                feature,
+                0.7,
+            );
+            expect(result).toBeGreaterThan(0);
+        });
+
+        it("returns valley height modification (lines 354-357)", () => {
+            const feature = {
+                type: "valley",
+                intensity: -0.05,
+                radius: 1,
+                position: new THREE.Vector3(0, 0, 0),
+                smoothness: 2,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = (TerrainRenderer as any).applyFeatureHeight(
+                feature,
+                0.8,
+            );
+            expect(typeof result).toBe("number");
+        });
+
+        it("returns continent height modification (lines 359-362)", () => {
+            const feature = {
+                type: "continent",
+                intensity: 0.08,
+                radius: 1,
+                position: new THREE.Vector3(0, 0, 0),
+                smoothness: 2,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = (TerrainRenderer as any).applyFeatureHeight(
+                feature,
+                0.6,
+            );
+            expect(result).toBeGreaterThan(0);
+        });
+
+        it("returns 0 for unknown feature type (line 364-365)", () => {
+            const feature = {
+                type: "unknown",
+                intensity: 0.05,
+                radius: 1,
+                position: new THREE.Vector3(0, 0, 0),
+                smoothness: 2,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = (TerrainRenderer as any).applyFeatureHeight(
+                feature,
+                0.5,
+            );
+            expect(result).toBe(0);
+        });
+    });
 });

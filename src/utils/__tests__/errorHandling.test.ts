@@ -384,6 +384,27 @@ describe("WebGLErrorHandler", () => {
         HTMLCanvasElement.prototype.getContext = origGetContext;
     });
 
+    it("setRenderer() configures context handlers on a new renderer", () => {
+        const handler = new WebGLErrorHandler();
+        const mockCanvas = document.createElement("canvas");
+        const addEventListenerSpy = vi.spyOn(mockCanvas, "addEventListener");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mockRenderer = { domElement: mockCanvas } as any;
+
+        handler.setRenderer(mockRenderer);
+
+        expect(addEventListenerSpy).toHaveBeenCalledWith(
+            "webglcontextlost",
+            expect.any(Function),
+            false,
+        );
+        expect(addEventListenerSpy).toHaveBeenCalledWith(
+            "webglcontextrestored",
+            expect.any(Function),
+            false,
+        );
+    });
+
     it("handleContextLost fires ErrorLogger entry and invokes callback", () => {
         const mockCanvas = document.createElement("canvas");
         const onContextLost = vi.fn();
