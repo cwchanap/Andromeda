@@ -61,4 +61,88 @@ describe("AssetLoader", () => {
         // Our mock returns plain object for MeshStandardMaterial, not instance checks
         expect((mat1 as any).dispose).toBeTypeOf("function");
     });
+
+    it("createOptimizedMaterial with normalMap, roughnessMap, emissiveMap, emissiveColor, basic, and emissive types", async () => {
+        const loader = new AssetLoader();
+        (globalThis as any).__threeTextureLoadOutcome = {
+            "normal.webp": "ok",
+            "roughness.webp": "ok",
+            "emissive.webp": "ok",
+        };
+
+        const mat = await loader.createOptimizedMaterial("multi_mat", {
+            baseColor: "#ffffff",
+            normalMapUrl: "normal.png",
+            roughnessMapUrl: "roughness.png",
+            emissiveMapUrl: "emissive.png",
+            emissiveColor: "#ff0000",
+            metalness: 0.5,
+            roughness: 0.3,
+        });
+        expect((mat as any).dispose).toBeTypeOf("function");
+
+        const basicMat = await loader.createOptimizedMaterial("basic_mat", {
+            baseColor: "#aaaaaa",
+            materialType: "basic",
+        });
+        expect((basicMat as any).dispose).toBeTypeOf("function");
+
+        const emissiveMat = await loader.createOptimizedMaterial(
+            "emissive_mat",
+            {
+                baseColor: "#ffff00",
+                materialType: "emissive",
+            },
+        );
+        expect((emissiveMat as any).dispose).toBeTypeOf("function");
+    });
+
+    it("loadCelestialBodyAssets returns materials map for planet and star", async () => {
+        const loader = new AssetLoader();
+        (globalThis as any).__threeTextureLoadOutcome = {};
+
+        const planetData = {
+            id: "mars",
+            name: "Mars",
+            type: "planet" as const,
+            description: "",
+            keyFacts: {
+                diameter: "",
+                distanceFromSun: "",
+                orbitalPeriod: "",
+                composition: [],
+                temperature: "",
+                moons: 0,
+            },
+            images: [],
+            position: new THREE.Vector3(0, 0, 0),
+            scale: 1,
+            material: { color: "#ff4500" },
+        };
+        const result = await loader.loadCelestialBodyAssets(planetData);
+        expect(result.materials.has("mars_material")).toBe(true);
+
+        const starData = { ...planetData, id: "sol", type: "star" as const };
+        const starResult = await loader.loadCelestialBodyAssets(starData);
+        expect(starResult.materials.has("sol_material")).toBe(true);
+    });
+
+    it("dispose clears all preloaded assets", async () => {
+        const loader = new AssetLoader();
+        (globalThis as any).__threeTextureLoadOutcome["tex.webp"] = "ok";
+
+        await loader.preloadTexture("tex.png");
+        expect(loader.getLoadingStats().preloadedTextures).toBe(1);
+
+        loader.dispose();
+        expect(loader.getLoadingStats().preloadedTextures).toBe(0);
+        expect(loader.getLoadingStats().preloadedMaterials).toBe(0);
+    });
+
+    it("estimateMemoryUsage returns a number", async () => {
+        const loader = new AssetLoader();
+        const usage = loader.estimateMemoryUsage();
+        expect(typeof usage).toBe("number");
+        expect(usage).toBeGreaterThanOrEqual(0);
+    });
 });

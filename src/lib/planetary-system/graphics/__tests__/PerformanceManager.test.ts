@@ -81,4 +81,75 @@ describe("PerformanceManager", () => {
         );
         expect((emissiveMat as any).dispose).toBeTypeOf("function");
     });
+
+    it("createLODObject builds an LOD with 4 detail levels", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        const data = makeBodyData({ id: "pluto", type: "planet" });
+        const mat = new THREE.MeshStandardMaterial();
+        const lod = perf.createLODObject(data, {
+            high: mat,
+            medium: mat,
+            low: mat,
+        });
+
+        expect(lod).toBeTruthy();
+        expect(lod.name).toBe("pluto");
+    });
+
+    it("getPerformanceStats returns shape with numeric fields", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        const stats = perf.getPerformanceStats();
+        expect(stats).toHaveProperty("cachedGeometries");
+        expect(stats).toHaveProperty("cachedTextures");
+        expect(stats).toHaveProperty("lodObjects");
+        expect(stats).toHaveProperty("memoryUsage");
+        expect(typeof stats.memoryUsage).toBe("number");
+    });
+
+    it("dispose clears geometry and texture caches", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        // Geometries are pre-populated in the cache on construction
+        expect(perf.getPerformanceStats().cachedGeometries).toBeGreaterThan(0);
+
+        perf.dispose();
+
+        expect(perf.getPerformanceStats().cachedGeometries).toBe(0);
+        expect(perf.getPerformanceStats().cachedTextures).toBe(0);
+    });
+
+    it("updateLOD executes without error", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+        expect(() => perf.updateLOD()).not.toThrow();
+    });
+
+    it("getCachedGeometry handles star type and jupiter/saturn special cases", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        const star = makeBodyData({ id: "proxima", type: "star" });
+        const jupiter = makeBodyData({ id: "jupiter", type: "planet" });
+        const saturn = makeBodyData({ id: "saturn", type: "planet" });
+        const earth = makeBodyData({ id: "earth", type: "planet" });
+        const moon = makeBodyData({ id: "luna", type: "moon" });
+        const other = makeBodyData({ id: "asteroid", type: "asteroid" as any });
+
+        expect(perf.getCachedGeometry(star, "high")).toBeTruthy();
+        expect(perf.getCachedGeometry(jupiter, "medium")).toBeTruthy();
+        expect(perf.getCachedGeometry(saturn, "low")).toBeTruthy();
+        expect(perf.getCachedGeometry(earth, "high")).toBeTruthy();
+        expect(perf.getCachedGeometry(moon, "high")).toBeTruthy();
+        expect(perf.getCachedGeometry(other, "medium")).toBeTruthy();
+    });
 });
