@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import * as THREE from "three";
 import {
     ErrorLogger,
     APIErrorHandler,
     AssetLoader,
+    WebGLErrorHandler,
     createUserFriendlyErrorMessage,
     getRecoveryActions,
     type ErrorInfo,
@@ -283,6 +285,12 @@ describe("AssetLoader", () => {
             const geo = await AssetLoader.loadGeometry("sphere", {});
             expect(geo).toHaveProperty("dispose");
         });
+
+        it("falls back to SphereGeometry for unsupported type", async () => {
+            // Using unknown cast to bypass TypeScript type guard for testing invalid input
+            const geo = await AssetLoader.loadGeometry("invalid" as never, {});
+            expect(geo).toHaveProperty("dispose");
+        });
     });
 
     describe("clearCache", () => {
@@ -293,5 +301,128 @@ describe("AssetLoader", () => {
             // After clearing, a new object is returned
             expect(first).not.toBe(second);
         });
+    });
+
+    describe("loadTexture – failedAssets path", () => {
+        it("returns a Color when URL is in failedAssets but not in textureCache", async () => {
+            // First call: fails and populates both caches
+            globalThis.__threeTextureLoadOutcome = {
+                "/textures/fail2.jpg": "error",
+            };
+            await AssetLoader.loadTexture("/textures/fail2.jpg");
+
+            // Manually remove from textureCache (simulating cache eviction) so
+            // the failedAssets early-return branch (lines 213-215) is hit
+            (
+                AssetLoader as unknown as { textureCache: Map<string, unknown> }
+            ).textureCache.delete("texture_/textures/fail2.jpg");
+
+            const result = await AssetLoader.loadTexture("/textures/fail2.jpg");
+            // Should return a THREE.Color (has setHex)
+            expect(result).toHaveProperty("setHex");
+        });
+    });
+});
+
+describe("WebGLErrorHandler", () => {
+    beforeEach(() => {
+        // @ts-expect-error - accessing private static property for testing
+        (ErrorLogger as { instance: unknown }).instance = undefined;
+    });
+
+    it("cleanup() removes event listeners from canvas when renderer is set", () => {
+        const mockCanvas = document.createElement("canvas");
+        const removeEventListenerSpy = vi.spyOn(
+            mockCanvas,
+            "removeEventListener",
+        );
+        const mockRenderer = {
+            domElement: mockCanvas,
+        } as Partial<THREE.WebGLRenderer> & { domElement: HTMLCanvasElement };
+
+        const handler = new WebGLErrorHandler(
+            mockRenderer as THREE.WebGLRenderer,
+        );
+        handler.cleanup();
+
+        expect(removeEventListenerSpy).toHaveBeenCalledWith(
+            "webglcontextlost",
+            expect.any(Function),
+        );
+        expect(removeEventListenerSpy).toHaveBeenCalledWith(
+            "webglcontextrestored",
+            expect.any(Function),
+        );
+    });
+
+    it("cleanup() is a no-op when no renderer was provided", () => {
+        const handler = new WebGLErrorHandler();
+        expect(() => handler.cleanup()).not.toThrow();
+    });
+
+    it("checkWebGLSupport() returns webgl/webgl2 booleans", () => {
+        const handler = new WebGLErrorHandler();
+        const support = handler.checkWebGLSupport();
+        expect(typeof support.webgl).toBe("boolean");
+        expect(typeof support.webgl2).toBe("boolean");
+    });
+
+    it("checkWebGLSupport() reaches experimental-webgl branch when webgl is unavailable", () => {
+        const handler = new WebGLErrorHandler();
+        const origGetContext = HTMLCanvasElement.prototype.getContext;
+        // Make "webgl" return null so the || chain evaluates "experimental-webgl"
+        HTMLCanvasElement.prototype.getContext = function (
+            this: HTMLCanvasElement,
+            type: string,
+            ...args: unknown[]
+        ) {
+            if (type === "webgl") return null;
+            return origGetContext.call(this, type as never, ...args);
+        } as typeof HTMLCanvasElement.prototype.getContext;
+        const support = handler.checkWebGLSupport();
+        expect(typeof support.webgl).toBe("boolean");
+        HTMLCanvasElement.prototype.getContext = origGetContext;
+    });
+
+    it("handleContextLost fires ErrorLogger entry and invokes callback", () => {
+        const mockCanvas = document.createElement("canvas");
+        const onContextLost = vi.fn();
+        const mockRenderer = {
+            domElement: mockCanvas,
+        } as Partial<THREE.WebGLRenderer> & { domElement: HTMLCanvasElement };
+
+        new WebGLErrorHandler(
+            mockRenderer as THREE.WebGLRenderer,
+            onContextLost,
+        );
+
+        const event = new Event("webglcontextlost");
+        mockCanvas.dispatchEvent(event);
+
+        expect(onContextLost).toHaveBeenCalled();
+        const errors = ErrorLogger.getInstance().getErrors();
+        expect(errors.some((e) => e.code === "WEBGL_CONTEXT_LOST")).toBe(true);
+    });
+
+    it("handleContextRestored fires ErrorLogger entry and invokes callback", () => {
+        const mockCanvas = document.createElement("canvas");
+        const onContextRestored = vi.fn();
+        const mockRenderer = {
+            domElement: mockCanvas,
+        } as Partial<THREE.WebGLRenderer> & { domElement: HTMLCanvasElement };
+
+        new WebGLErrorHandler(
+            mockRenderer as THREE.WebGLRenderer,
+            undefined,
+            onContextRestored,
+        );
+
+        mockCanvas.dispatchEvent(new Event("webglcontextrestored"));
+
+        expect(onContextRestored).toHaveBeenCalled();
+        const errors = ErrorLogger.getInstance().getErrors();
+        expect(errors.some((e) => e.code === "WEBGL_CONTEXT_RESTORED")).toBe(
+            true,
+        );
     });
 });

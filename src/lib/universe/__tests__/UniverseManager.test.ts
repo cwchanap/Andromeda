@@ -585,4 +585,115 @@ describe("PluginStorageImpl", () => {
             "plugin:other:y",
         );
     });
+
+    it("set() silently handles localStorage.setItem throwing (QuotaExceeded)", async () => {
+        vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {
+            throw new Error("QuotaExceededError");
+        });
+        const storage = new PluginStorageImpl("my-plugin");
+        // Should not throw even when localStorage throws
+        await expect(storage.set("key", "value")).resolves.toBeUndefined();
+    });
+});
+
+// ─── DefaultSystemValidator.validatePlugin ──────────────────────────────────
+
+describe("DefaultSystemValidator.validatePlugin", () => {
+    interface ValidationError {
+        field: string;
+        message: string;
+    }
+
+    interface ValidationResult {
+        isValid: boolean;
+        errors: ValidationError[];
+    }
+
+    interface SystemValidator {
+        validatePlugin(plugin: unknown): ValidationResult;
+    }
+
+    let validator: SystemValidator;
+
+    beforeEach(() => {
+        // Access the private DefaultSystemValidator via UniverseManager's internals
+        const mgr = new UniverseManager();
+        validator = (mgr as unknown as { validator: SystemValidator })
+            .validator;
+    });
+
+    function makeValidPlugin() {
+        return {
+            id: "test-plugin",
+            name: "Test Plugin",
+            version: "1.0.0",
+            initialize: vi.fn(),
+            cleanup: vi.fn(),
+        };
+    }
+
+    it("returns valid for a well-formed plugin", () => {
+        const result = validator.validatePlugin(makeValidPlugin());
+        expect(result.isValid).toBe(true);
+        expect(result.errors).toHaveLength(0);
+    });
+
+    it("errors when plugin id is missing", () => {
+        const plugin = makeValidPlugin();
+        // @ts-expect-error - testing error handling for missing required property
+        delete plugin.id;
+        const result = validator.validatePlugin(plugin);
+        expect(result.isValid).toBe(false);
+        expect(
+            result.errors.some((e: ValidationError) => e.field === "id"),
+        ).toBe(true);
+    });
+
+    it("errors when plugin name is missing", () => {
+        const plugin = makeValidPlugin();
+        // @ts-expect-error - testing error handling for missing required property
+        delete plugin.name;
+        const result = validator.validatePlugin(plugin);
+        expect(result.isValid).toBe(false);
+        expect(
+            result.errors.some((e: ValidationError) => e.field === "name"),
+        ).toBe(true);
+    });
+
+    it("errors when plugin version is missing", () => {
+        const plugin = makeValidPlugin();
+        // @ts-expect-error - testing error handling for missing required property
+        delete plugin.version;
+        const result = validator.validatePlugin(plugin);
+        expect(result.isValid).toBe(false);
+        expect(
+            result.errors.some((e: ValidationError) => e.field === "version"),
+        ).toBe(true);
+    });
+
+    it("errors when initialize is not a function", () => {
+        const plugin = { ...makeValidPlugin(), initialize: "not-a-fn" };
+        const result = validator.validatePlugin(plugin);
+        expect(result.isValid).toBe(false);
+        expect(
+            result.errors.some(
+                (e: ValidationError) => e.field === "initialize",
+            ),
+        ).toBe(true);
+    });
+
+    it("errors when cleanup is not a function", () => {
+        const plugin = { ...makeValidPlugin(), cleanup: "not-a-fn" };
+        const result = validator.validatePlugin(plugin);
+        expect(result.isValid).toBe(false);
+        expect(
+            result.errors.some((e: ValidationError) => e.field === "cleanup"),
+        ).toBe(true);
+    });
+
+    it("collects multiple errors for a completely invalid plugin", () => {
+        const result = validator.validatePlugin({});
+        expect(result.isValid).toBe(false);
+        expect(result.errors.length).toBeGreaterThanOrEqual(4);
+    });
 });
