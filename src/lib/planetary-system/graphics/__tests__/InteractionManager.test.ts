@@ -325,4 +325,101 @@ describe("InteractionManager", () => {
 
         document.body.removeChild(container);
     });
+
+    it("hover over MeshBasicMaterial mesh adjusts opacity (and resets on un-hover)", async () => {
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        // Create a mesh with MeshBasicMaterial (star-like material)
+        const basicMesh = new THREE.Mesh(
+            undefined,
+            new THREE.MeshBasicMaterial(),
+        );
+
+        const interactions = new InteractionManager(
+            container,
+            camera as any,
+            scene,
+            {},
+        );
+        interactions.initialize(manager);
+
+        // Set opacity < 1.0 so the *1.2 multiplication produces a visible change
+        basicMesh.material.opacity = 0.8;
+        const initialOpacity = 0.8;
+
+        // Hover over the basic-material mesh
+        (globalThis as any).__threeRaycasterIntersects = [
+            { object: basicMesh },
+        ];
+        container.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+
+        // Opacity should be Math.min(1.0, 0.8 * 1.2) = 0.96
+        expect(basicMesh.material.opacity).toBeCloseTo(
+            Math.min(1.0, initialOpacity * 1.2),
+            5,
+        );
+        // originalOpacity should have been stored in userData
+        expect(basicMesh.material.userData.originalOpacity).toBe(
+            initialOpacity,
+        );
+
+        // Un-hover (no intersects)
+        (globalThis as any).__threeRaycasterIntersects = [];
+        container.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+
+        // Opacity should be restored to original
+        expect(basicMesh.material.opacity).toBeCloseTo(initialOpacity, 5);
+
+        interactions.dispose();
+        document.body.removeChild(container);
+    });
+
+    it("hover over MeshPhongMaterial mesh calls emissive.setHex (set and reset)", async () => {
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        // Create a mesh with MeshPhongMaterial
+        const phongMesh = new THREE.Mesh(
+            undefined,
+            new THREE.MeshPhongMaterial(),
+        );
+
+        const interactions = new InteractionManager(
+            container,
+            camera as any,
+            scene,
+            {},
+        );
+        interactions.initialize(manager);
+
+        // Hover over the phong-material mesh
+        (globalThis as any).__threeRaycasterIntersects = [
+            { object: phongMesh },
+        ];
+        container.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+
+        expect(phongMesh.material.emissive.setHex).toHaveBeenCalledWith(
+            0x333333,
+        );
+
+        // Un-hover to trigger resetMaterialHover
+        (globalThis as any).__threeRaycasterIntersects = [];
+        container.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+
+        expect(phongMesh.material.emissive.setHex).toHaveBeenCalledWith(
+            0x000000,
+        );
+
+        interactions.dispose();
+        document.body.removeChild(container);
+    });
 });

@@ -145,4 +145,28 @@ describe("AssetLoader", () => {
         expect(typeof usage).toBe("number");
         expect(usage).toBeGreaterThanOrEqual(0);
     });
+
+    it("estimateMemoryUsage accounts for textures with image dimensions", () => {
+        const loader = new AssetLoader();
+        // Inject a fake texture with an image property so the branch is covered
+        const fakeTexture = { image: { width: 256, height: 256 } } as any;
+        (loader as any).preloadedAssets.textures.set("fake-tex", fakeTexture);
+        // Inject a fake geometry with position/normal/uv attributes
+        const posArr = new Float32Array(9);
+        const normArr = new Float32Array(9);
+        const uvArr = new Float32Array(6);
+        const fakeGeo = {
+            getAttribute: (name: string) => {
+                if (name === "position") return { array: posArr };
+                if (name === "normal") return { array: normArr };
+                if (name === "uv") return { array: uvArr };
+                return null;
+            },
+        } as any;
+        (loader as any).preloadedAssets.geometries.set("fake-geo", fakeGeo);
+        const usage = loader.estimateMemoryUsage();
+        // 256*256*4 (texture) + 9*4 (position) + 9*4 (normal) + 6*4 (uv)
+        const expected = 256 * 256 * 4 + (9 + 9 + 6) * 4;
+        expect(usage).toBe(expected);
+    });
 });

@@ -102,4 +102,22 @@ describe("responsive store", () => {
         expect(received).not.toBeNull();
         unsub();
     });
+
+    it("SSR fallback: returns desktop defaults when window is undefined", async () => {
+        // Simulate server-side rendering environment (no window)
+        vi.resetModules();
+        vi.stubGlobal("window", undefined);
+        try {
+            const { responsive } = await import("../responsiveStore");
+            const state = get(responsive);
+            expect(state.isMobile).toBe(false);
+            expect(state.isTablet).toBe(false);
+            expect(state.isDesktop).toBe(true);
+            expect(state.screenWidth).toBe(1920);
+            expect(state.screenHeight).toBe(1080);
+            expect(state.devicePixelRatio).toBe(1);
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
 });

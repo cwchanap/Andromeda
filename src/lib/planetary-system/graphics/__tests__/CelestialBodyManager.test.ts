@@ -6,12 +6,10 @@ import { CelestialBodyManager } from "../CelestialBodyManager";
 import type { CelestialBodyData } from "../../../../types/game";
 
 // BoxGeometry is not in the setup.ts Three.js mock; add it here
-(THREE as any).BoxGeometry = vi
-    .fn()
-    .mockImplementation(() => ({
-        dispose: vi.fn(),
-        getAttribute: vi.fn(() => ({ array: new Float32Array(0) })),
-    }));
+(THREE as any).BoxGeometry = vi.fn().mockImplementation(() => ({
+    dispose: vi.fn(),
+    getAttribute: vi.fn(() => ({ array: new Float32Array(0) })),
+}));
 
 // Particle rings call rockMaterial.clone() — extend MeshStandardMaterial mock to support it
 const _origStdMatImpl = (
@@ -454,5 +452,35 @@ describe("CelestialBodyManager", () => {
             expect.stringContaining("missing-parent"),
         );
         warnSpy.mockRestore();
+    });
+
+    it("dispose handles bodies and orbit lines with array materials", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        // Manually inject a Mesh with an array material into the bodies map
+        const mat1 = { dispose: vi.fn() } as unknown as THREE.Material;
+        const mat2 = { dispose: vi.fn() } as unknown as THREE.Material;
+        const geo = { dispose: vi.fn() } as unknown as THREE.BufferGeometry;
+        const meshWithArrayMat = new THREE.Mesh(geo, [mat1, mat2] as any);
+        (manager as any).bodies.set("array-mat-body", meshWithArrayMat);
+
+        // Also inject a Line with array material into orbitLines
+        const lineMat1 = { dispose: vi.fn() } as unknown as THREE.Material;
+        const lineMat2 = { dispose: vi.fn() } as unknown as THREE.Material;
+        const lineGeo = { dispose: vi.fn() } as unknown as THREE.BufferGeometry;
+        const lineWithArrayMat = {
+            geometry: lineGeo,
+            material: [lineMat1, lineMat2],
+        } as unknown as THREE.Line;
+        (manager as any).orbitLines.set("array-mat-line", lineWithArrayMat);
+
+        manager.dispose();
+
+        expect(mat1.dispose).toHaveBeenCalled();
+        expect(mat2.dispose).toHaveBeenCalled();
+        expect(lineMat1.dispose).toHaveBeenCalled();
+        expect(lineMat2.dispose).toHaveBeenCalled();
     });
 });
