@@ -5,6 +5,51 @@ import * as THREE from "three";
 import { CelestialBodyManager } from "../CelestialBodyManager";
 import type { CelestialBodyData } from "../../../../types/game";
 
+// BoxGeometry is not in the setup.ts Three.js mock; add it here
+(THREE as any).BoxGeometry = vi
+    .fn()
+    .mockImplementation(() => ({
+        dispose: vi.fn(),
+        getAttribute: vi.fn(() => ({ array: new Float32Array(0) })),
+    }));
+
+// Particle rings call rockMaterial.clone() — extend MeshStandardMaterial mock to support it
+const _origStdMatImpl = (
+    THREE as any
+).MeshStandardMaterial.getMockImplementation();
+(THREE as any).MeshStandardMaterial.mockImplementation((cfg?: any) => {
+    const mat = _origStdMatImpl?.(cfg) ?? { dispose: vi.fn(), userData: {} };
+    if (!mat.clone) {
+        mat.clone = vi.fn(() => ({
+            dispose: vi.fn(),
+            userData: {},
+            emissive: {
+                setHex: vi.fn(),
+                clone: vi.fn(),
+                getHex: vi.fn(() => 0),
+                copy: vi.fn(),
+                r: 0,
+                g: 0,
+                b: 0,
+            },
+        }));
+    }
+    return mat;
+});
+
+// Particle rings call rock.scale.set() and rock.rotation.set() — extend Mesh mock
+const _origMeshImpl = (THREE as any).Mesh.getMockImplementation();
+(THREE as any).Mesh.mockImplementation((geometry?: any, material?: any) => {
+    const mesh = _origMeshImpl(geometry, material);
+    if (mesh.scale && !mesh.scale.set) {
+        mesh.scale.set = vi.fn();
+    }
+    if (mesh.rotation && !mesh.rotation.set) {
+        mesh.rotation.set = vi.fn();
+    }
+    return mesh;
+});
+
 function makeBodyData(partial?: Partial<CelestialBodyData>): CelestialBodyData {
     return {
         id: "earth",
@@ -193,5 +238,221 @@ describe("CelestialBodyManager", () => {
 
         expect(group.position.x).not.toBe(before.x);
         expect(group.position.z).not.toBe(before.z);
+    });
+
+    it("preloadAssets calls through without throwing", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+        const bodies = [makeBodyData({ id: "preload-planet" })];
+        await expect(manager.preloadAssets(bodies)).resolves.toBeUndefined();
+    });
+
+    it("getAllCelestialBodies and getCelestialBodyData return correct data", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        expect(manager.getAllCelestialBodies()).toHaveLength(0);
+
+        const data = makeBodyData({ id: "mercury" });
+        await manager.createCelestialBody(data);
+
+        expect(manager.getAllCelestialBodies()).toHaveLength(1);
+        expect(manager.getCelestialBodyData("mercury")).toBe(data);
+        expect(manager.getCelestialBodyData("unknown")).toBeUndefined();
+    });
+
+    it("getBodyData retrieves data from mesh, parent, _body suffix, and name fallback", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({ id: "venus" });
+        const group = await manager.createCelestialBody(data);
+
+        // Via mesh userData
+        const bodyMesh = (group as any).getObjectByName("venus_body");
+        expect(manager.getBodyData(bodyMesh)).toMatchObject({ id: "venus" });
+
+        // Via _body name fallback: create a mesh with _body suffix but no userData
+        const bare = new THREE.Mesh();
+        bare.name = "venus_body";
+        expect(manager.getBodyData(bare)).toMatchObject({ id: "venus" });
+
+        // Via name fallback: mesh named exactly as the body id
+        const namedMesh = new THREE.Mesh();
+        namedMesh.name = "venus";
+        expect(manager.getBodyData(namedMesh)).toMatchObject({ id: "venus" });
+
+        // Returns null when no data found
+        const unknown = new THREE.Mesh();
+        unknown.name = "no-such-body";
+        expect(manager.getBodyData(unknown)).toBeNull();
+    });
+
+    it("toggleOrbitLines, updateLineResolution, setOrbitLineVisibility, updateOrbitLineOpacity all execute without error", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "saturn",
+            orbitRadius: 9.5,
+            orbitSpeed: 0.3,
+        });
+        await manager.createCelestialBody(data);
+
+        expect(() => manager.toggleOrbitLines(false)).not.toThrow();
+        expect(() => manager.toggleOrbitLines(true)).not.toThrow();
+        expect(() => manager.updateLineResolution(1920, 1080)).not.toThrow();
+        expect(() =>
+            manager.setOrbitLineVisibility("saturn", false),
+        ).not.toThrow();
+        expect(() =>
+            manager.setOrbitLineVisibility("missing", false),
+        ).not.toThrow();
+        expect(() =>
+            manager.updateOrbitLineOpacity(new THREE.Vector3(0, 0, 0)),
+        ).not.toThrow();
+        // Far camera triggers opacity ramp-down
+        expect(() =>
+            manager.updateOrbitLineOpacity(new THREE.Vector3(1000, 0, 0)),
+        ).not.toThrow();
+    });
+
+    it("updateLOD delegates to PerformanceManager without error", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+        expect(() => manager.updateLOD()).not.toThrow();
+    });
+
+    it("getPerformanceStats returns expected shape", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+        await manager.createCelestialBody(makeBodyData({ id: "uranus" }));
+
+        const stats = manager.getPerformanceStats();
+        expect(stats).toHaveProperty("totalBodies");
+        expect(stats.totalBodies).toBe(1);
+        expect(stats).toHaveProperty("performanceStats");
+        expect(stats).toHaveProperty("assetStats");
+    });
+
+    it("dispose removes bodies and orbit lines and clears collections", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        await manager.createCelestialBody(
+            makeBodyData({ id: "neptune", orbitRadius: 30, orbitSpeed: 0.1 }),
+        );
+        expect(manager.getAllCelestialBodies()).toHaveLength(1);
+
+        manager.dispose();
+
+        expect(manager.getAllCelestialBodies()).toHaveLength(0);
+        expect(manager.getCelestialBody("neptune")).toBeUndefined();
+    });
+
+    it("updateAnimations with star type uses slower rotation", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "sol",
+            type: "star",
+            position: new THREE.Vector3(0, 0, 0),
+            orbitRadius: 0,
+            orbitSpeed: 0,
+        });
+        const group = await manager.createCelestialBody(data);
+        const bodyMesh = (group as any).getObjectByName("sol_body");
+        const before = bodyMesh?.rotation.y ?? 0;
+
+        manager.updateAnimations(1.0, 1.0);
+
+        // Star rotates at 0.005 per second vs planet 0.02 – just verify it moved
+        if (bodyMesh) {
+            expect(bodyMesh.rotation.y).not.toBe(before);
+        }
+    });
+
+    it("updateAnimations warns when parent body is missing for a moon", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        // Create a moon with a parentId that was never added
+        const moonData = makeBodyData({
+            id: "orphan-moon",
+            type: "moon",
+            parentId: "non-existent-planet",
+            orbitRadius: 0.5,
+            orbitSpeed: 1.0,
+        });
+        await manager.createCelestialBody(moonData);
+        manager.updateAnimations(0.016, 1.0);
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining("non-existent-planet"),
+        );
+        warnSpy.mockRestore();
+    });
+
+    it("createCelestialBody with particle rings creates a Group for rings", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "ringed",
+            rings: {
+                enabled: true,
+                innerRadius: 1.5,
+                outerRadius: 3.0,
+                color: "#AAAAAA",
+                opacity: 0.7,
+                segments: 1,
+                thetaSegments: 4,
+                particleSystem: {
+                    enabled: true,
+                    particleCount: 5,
+                    particleSize: 0.05,
+                    particleVariation: 0.3,
+                    densityVariation: 0.0,
+                },
+            },
+        });
+
+        const group = await manager.createCelestialBody(data);
+        const ringsObj = (group as any).getObjectByName("ringed_rings");
+        expect(ringsObj).toBeTruthy();
+    });
+
+    it("createCelestialBody warns when parentId is not found at creation time", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        await manager.createCelestialBody(
+            makeBodyData({
+                id: "orphan",
+                type: "moon",
+                parentId: "missing-parent",
+                orbitRadius: 0.5,
+                orbitSpeed: 1.0,
+            }),
+        );
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining("missing-parent"),
+        );
+        warnSpy.mockRestore();
     });
 });

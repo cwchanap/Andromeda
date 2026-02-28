@@ -1,6 +1,10 @@
 // Unit tests for UniverseManager
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { UniverseManager } from "../UniverseManager";
+import {
+    UniverseManager,
+    PluginLoggerImpl,
+    PluginStorageImpl,
+} from "../UniverseManager";
 import type { StarSystemData } from "../../../types/universe";
 import type { PlanetarySystemData } from "../../planetary-system/types";
 import * as THREE from "three";
@@ -266,5 +270,319 @@ describe("UniverseManager", () => {
 
             consoleSpy.mockRestore();
         });
+    });
+});
+
+// ─── DefaultSystemValidator (accessed through UniverseManager.addSystem) ────
+
+describe("DefaultSystemValidator (via UniverseManager)", () => {
+    let manager: UniverseManager;
+
+    const validStar = {
+        id: "star-1",
+        name: "Test Star",
+        type: "star" as const,
+        description: "A star",
+        keyFacts: {
+            diameter: "1,000,000 km",
+            distanceFromSun: "0 km",
+            orbitalPeriod: "N/A",
+            composition: ["Hydrogen"],
+            temperature: "5,000 K",
+        },
+        images: [],
+        position: new THREE.Vector3(0, 0, 0),
+        scale: 1,
+        material: { color: "#fff" },
+    };
+
+    beforeEach(() => {
+        manager = new UniverseManager();
+    });
+
+    it("rejects system with missing name", () => {
+        expect(
+            manager.addSystem({
+                id: "x",
+                name: "",
+                description: "",
+                star: validStar,
+                celestialBodies: [],
+                systemScale: 1,
+                systemCenter: new THREE.Vector3(0, 0, 0),
+                systemType: "solar",
+            }),
+        ).toBe(false);
+    });
+
+    it("rejects system with non-star 'star' field", () => {
+        const wrongType = { ...validStar, type: "planet" as const };
+        expect(
+            manager.addSystem({
+                id: "x",
+                name: "X",
+                description: "",
+                star: wrongType as never,
+                celestialBodies: [],
+                systemScale: 1,
+                systemCenter: new THREE.Vector3(0, 0, 0),
+                systemType: "solar",
+            }),
+        ).toBe(false);
+    });
+
+    it("rejects system with missing star", () => {
+        expect(
+            manager.addSystem({
+                id: "x",
+                name: "X",
+                description: "",
+                star: null as never,
+                celestialBodies: [],
+                systemScale: 1,
+                systemCenter: new THREE.Vector3(0, 0, 0),
+                systemType: "solar",
+            }),
+        ).toBe(false);
+    });
+
+    it("rejects system with non-array celestialBodies", () => {
+        expect(
+            manager.addSystem({
+                id: "x",
+                name: "X",
+                description: "",
+                star: validStar,
+                celestialBodies: null as never,
+                systemScale: 1,
+                systemCenter: new THREE.Vector3(0, 0, 0),
+                systemType: "solar",
+            }),
+        ).toBe(false);
+    });
+
+    it("warns but succeeds for bodies with non-positive orbitRadius", () => {
+        const result = manager.addSystem({
+            id: "x",
+            name: "X",
+            description: "",
+            star: validStar,
+            celestialBodies: [
+                { ...validStar, type: "planet" as const, orbitRadius: -5 },
+            ],
+            systemScale: 1,
+            systemCenter: new THREE.Vector3(0, 0, 0),
+            systemType: "solar",
+        });
+        expect(result).toBe(true);
+    });
+
+    it("rejects universe import when currentSystemId is not in systems", () => {
+        const result = manager.importUniverse({
+            systems: new Map([
+                [
+                    "sol",
+                    {
+                        id: "sol",
+                        name: "Sol",
+                        description: "",
+                        star: validStar,
+                        celestialBodies: [],
+                        systemScale: 1,
+                        systemCenter: new THREE.Vector3(0, 0, 0),
+                        systemType: "solar",
+                    },
+                ],
+            ]),
+            currentSystemId: "missing",
+            metadata: {
+                name: "U",
+                description: "D",
+                version: "1",
+                lastUpdated: new Date(),
+            },
+        });
+        expect(result).toBe(false);
+    });
+});
+
+// ─── SimpleEventBus (accessed through UniverseManager.getEventBus) ──────────
+
+describe("SimpleEventBus (via UniverseManager.getEventBus)", () => {
+    let eventBus: ReturnType<UniverseManager["getEventBus"]>;
+
+    beforeEach(() => {
+        eventBus = new UniverseManager().getEventBus();
+    });
+
+    it("on() registers a handler that receives emitted data", () => {
+        const handler = vi.fn();
+        eventBus.on("test", handler);
+        eventBus.emit("test", { value: 42 });
+        expect(handler).toHaveBeenCalledWith({ value: 42 });
+    });
+
+    it("off() removes a registered handler", () => {
+        const handler = vi.fn();
+        eventBus.on("test", handler);
+        eventBus.off("test", handler);
+        eventBus.emit("test", {});
+        expect(handler).not.toHaveBeenCalled();
+    });
+
+    it("once() fires handler exactly once", () => {
+        const handler = vi.fn();
+        eventBus.once("test", handler);
+        eventBus.emit("test", "first");
+        eventBus.emit("test", "second");
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenCalledWith("first");
+    });
+
+    it("emit() is a no-op for events with no listeners", () => {
+        expect(() => eventBus.emit("no-listeners", {})).not.toThrow();
+    });
+
+    it("listener errors are caught and do not prevent other listeners", () => {
+        const bad = vi.fn(() => {
+            throw new Error("boom");
+        });
+        const good = vi.fn();
+        eventBus.on("test", bad);
+        eventBus.on("test", good);
+        expect(() => eventBus.emit("test", {})).not.toThrow();
+        expect(good).toHaveBeenCalled();
+    });
+});
+
+// ─── PluginLoggerImpl ────────────────────────────────────────────────────────
+
+describe("PluginLoggerImpl", () => {
+    it("debug logs with plugin prefix", () => {
+        const spy = vi.spyOn(console, "debug").mockImplementation(() => {});
+        const logger = new PluginLoggerImpl("test-plugin");
+        logger.debug("hello", { a: 1 });
+        expect(spy).toHaveBeenCalledWith("[test-plugin] hello", { a: 1 });
+        spy.mockRestore();
+    });
+
+    it("info logs with plugin prefix", () => {
+        const spy = vi.spyOn(console, "info").mockImplementation(() => {});
+        const logger = new PluginLoggerImpl("test-plugin");
+        logger.info("info message");
+        expect(spy).toHaveBeenCalledWith(
+            "[test-plugin] info message",
+            undefined,
+        );
+        spy.mockRestore();
+    });
+
+    it("warn logs with plugin prefix", () => {
+        const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const logger = new PluginLoggerImpl("test-plugin");
+        logger.warn("warning");
+        expect(spy).toHaveBeenCalledWith("[test-plugin] warning", undefined);
+        spy.mockRestore();
+    });
+
+    it("error logs with plugin prefix", () => {
+        const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+        const logger = new PluginLoggerImpl("test-plugin");
+        const err = new Error("oops");
+        logger.error("error message", err);
+        expect(spy).toHaveBeenCalledWith("[test-plugin] error message", err);
+        spy.mockRestore();
+    });
+});
+
+// ─── PluginStorageImpl ───────────────────────────────────────────────────────
+
+describe("PluginStorageImpl", () => {
+    beforeEach(() => {
+        (localStorage.getItem as ReturnType<typeof vi.fn>).mockReset();
+        (localStorage.setItem as ReturnType<typeof vi.fn>).mockReset();
+        (localStorage.removeItem as ReturnType<typeof vi.fn>).mockReset();
+        (localStorage.key as ReturnType<typeof vi.fn>).mockReset();
+    });
+
+    it("get() returns null when key not in storage", async () => {
+        (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
+            null,
+        );
+        const storage = new PluginStorageImpl("my-plugin");
+        expect(await storage.get("setting")).toBeNull();
+        expect(localStorage.getItem).toHaveBeenCalledWith(
+            "plugin:my-plugin:setting",
+        );
+    });
+
+    it("get() parses JSON from storage", async () => {
+        (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
+            JSON.stringify({ x: 1 }),
+        );
+        const storage = new PluginStorageImpl("my-plugin");
+        expect(await storage.get("setting")).toEqual({ x: 1 });
+    });
+
+    it("get() returns null on JSON parse error", async () => {
+        (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
+            "{{invalid",
+        );
+        const storage = new PluginStorageImpl("my-plugin");
+        expect(await storage.get("setting")).toBeNull();
+    });
+
+    it("set() serializes value to localStorage", async () => {
+        const storage = new PluginStorageImpl("my-plugin");
+        await storage.set("setting", { value: 42 });
+        expect(localStorage.setItem).toHaveBeenCalledWith(
+            "plugin:my-plugin:setting",
+            JSON.stringify({ value: 42 }),
+        );
+    });
+
+    it("remove() removes the namespaced key", async () => {
+        const storage = new PluginStorageImpl("my-plugin");
+        await storage.remove("setting");
+        expect(localStorage.removeItem).toHaveBeenCalledWith(
+            "plugin:my-plugin:setting",
+        );
+    });
+
+    it("keys() returns unprefixed keys belonging to this plugin", async () => {
+        const prefix = "plugin:my-plugin:";
+        const mockKeys = [`${prefix}a`, `${prefix}b`, "plugin:other:c"];
+        Object.defineProperty(localStorage, "length", {
+            value: mockKeys.length,
+            configurable: true,
+        });
+        (localStorage.key as ReturnType<typeof vi.fn>).mockImplementation(
+            (i: number) => mockKeys[i],
+        );
+
+        const storage = new PluginStorageImpl("my-plugin");
+        const keys = await storage.keys();
+        expect(keys).toContain("a");
+        expect(keys).toContain("b");
+        expect(keys).not.toContain("c");
+    });
+
+    it("clear() removes all keys for this plugin only", async () => {
+        const prefix = "plugin:my-plugin:";
+        const mockKeys = [`${prefix}x`, "plugin:other:y"];
+        Object.defineProperty(localStorage, "length", {
+            value: mockKeys.length,
+            configurable: true,
+        });
+        (localStorage.key as ReturnType<typeof vi.fn>).mockImplementation(
+            (i: number) => mockKeys[i],
+        );
+
+        const storage = new PluginStorageImpl("my-plugin");
+        await storage.clear();
+        expect(localStorage.removeItem).toHaveBeenCalledWith(`${prefix}x`);
+        expect(localStorage.removeItem).not.toHaveBeenCalledWith(
+            "plugin:other:y",
+        );
     });
 });
