@@ -443,4 +443,104 @@ describe("GalaxyRenderer", () => {
         renderer.focusOnStarSystem("sol");
         renderer.updateConfig({ enableControls: false });
     });
+
+    it("focuses on star system without animation (lines 422-425)", async () => {
+        const renderer = new GalaxyRenderer(container, mockConfig, mockEvents);
+        await renderer.initialize(mockGalaxyData);
+
+        renderer.focusOnStarSystem("sol", false);
+
+        const controls = (renderer as any).controls;
+        const camera = (renderer as any).camera;
+        expect(camera.position).toBeDefined();
+        expect(controls.target).toBeDefined();
+        expect(controls.update).toHaveBeenCalled();
+    });
+
+    it("findIntersectedStarSystem returns null when no intersections (line 317)", async () => {
+        const renderer = new GalaxyRenderer(container, mockConfig, mockEvents);
+        await renderer.initialize(mockGalaxyData);
+
+        const starSystemManager = (renderer as any).starSystemManager;
+        vi.spyOn(starSystemManager, "getAllStarMeshes").mockReturnValue([]);
+
+        // No raycaster intersections
+        globalThis.__threeRaycasterIntersects = [];
+
+        const moveEvent = new MouseEvent("mousemove", {
+            clientX: 100,
+            clientY: 100,
+        });
+        const canvas = container.querySelector("canvas");
+        canvas!.dispatchEvent(moveEvent);
+
+        expect((renderer as any).hoveredSystemId).toBeNull();
+    });
+
+    it("handles touchend event (line 283)", async () => {
+        const renderer = new GalaxyRenderer(container, mockConfig, mockEvents);
+        await renderer.initialize(mockGalaxyData);
+
+        const mockStarMesh = new THREE.Mesh();
+        mockStarMesh.userData = { systemId: "sol" };
+
+        const starSystemManager = (renderer as any).starSystemManager;
+        vi.spyOn(starSystemManager, "getAllStarMeshes").mockReturnValue([
+            mockStarMesh,
+        ]);
+        vi.spyOn(starSystemManager, "getSystemIdFromMesh").mockReturnValue(
+            "sol",
+        );
+        globalThis.__threeRaycasterIntersects = [{ object: mockStarMesh }];
+
+        const canvas = container.querySelector("canvas")!;
+        // Create a mock touch object
+        const mockTouch = { clientX: 400, clientY: 300 };
+        const touchEndEvent = new Event("touchend") as unknown as TouchEvent;
+        Object.defineProperty(touchEndEvent, "changedTouches", {
+            value: [mockTouch],
+        });
+        canvas.dispatchEvent(touchEndEvent);
+
+        expect(mockEvents.onStarSystemSelect).toHaveBeenCalledWith(
+            mockGalaxyData.starSystems[0],
+        );
+    });
+
+    it("resets previous hover when moving away from system (lines 245-249)", async () => {
+        const renderer = new GalaxyRenderer(container, mockConfig, mockEvents);
+        await renderer.initialize(mockGalaxyData);
+
+        const mockStarMesh = new THREE.Mesh();
+        mockStarMesh.userData = { systemId: "sol" };
+        const starSystemManager = (renderer as any).starSystemManager;
+        const highlightSpy = vi.spyOn(starSystemManager, "highlightStarSystem");
+        vi.spyOn(starSystemManager, "getAllStarMeshes").mockReturnValue([
+            mockStarMesh,
+        ]);
+        vi.spyOn(starSystemManager, "getSystemIdFromMesh").mockReturnValue(
+            "sol",
+        );
+        const canvas = container.querySelector("canvas")!;
+
+        // First hover over the system
+        globalThis.__threeRaycasterIntersects = [{ object: mockStarMesh }];
+        canvas.dispatchEvent(
+            new MouseEvent("mousemove", { clientX: 400, clientY: 300 }),
+        );
+        expect((renderer as any).hoveredSystemId).toBe("sol");
+
+        // Now move away (no intersections) — triggers "reset previous hover" branch
+        globalThis.__threeRaycasterIntersects = [];
+        vi.spyOn(starSystemManager, "getSystemIdFromMesh").mockReturnValue(
+            null,
+        );
+        canvas.dispatchEvent(
+            new MouseEvent("mousemove", { clientX: 10, clientY: 10 }),
+        );
+
+        // Should have called highlightStarSystem with false to unhighlight
+        expect(highlightSpy).toHaveBeenCalledWith("sol", false);
+        expect((renderer as any).hoveredSystemId).toBeNull();
+    });
 });
