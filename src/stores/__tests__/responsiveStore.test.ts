@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { get } from "svelte/store";
-import { BREAKPOINTS } from "../responsiveStore";
 
 // Helper to set window dimensions in jsdom
 function setWindowSize(width: number, height: number, dpr = 1) {
@@ -22,15 +21,18 @@ function setWindowSize(width: number, height: number, dpr = 1) {
 }
 
 describe("BREAKPOINTS", () => {
-    it("mobile breakpoint is 768", () => {
+    it("mobile breakpoint is 768", async () => {
+        const { BREAKPOINTS } = await import("../responsiveStore");
         expect(BREAKPOINTS.mobile).toBe(768);
     });
 
-    it("tablet breakpoint is 1024", () => {
+    it("tablet breakpoint is 1024", async () => {
+        const { BREAKPOINTS } = await import("../responsiveStore");
         expect(BREAKPOINTS.tablet).toBe(1024);
     });
 
-    it("desktop breakpoint is 1200", () => {
+    it("desktop breakpoint is 1200", async () => {
+        const { BREAKPOINTS } = await import("../responsiveStore");
         expect(BREAKPOINTS.desktop).toBe(1200);
     });
 });

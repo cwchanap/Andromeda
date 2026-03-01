@@ -239,7 +239,7 @@ describe("AIService", () => {
     // ─── Failure paths ─────────────────────────────────────────────────────
 
     it("returns fallback string when offline mode is enabled", async () => {
-        localStorage.setItem("offlineMode", "true");
+        vi.mocked(localStorage.getItem).mockReturnValue("true");
         // Reduce retries to 0 so no exponential-backoff delay needed
         const origRetries = (APIErrorHandler as any).maxRetries;
         (APIErrorHandler as any).maxRetries = 0;
@@ -249,6 +249,7 @@ describe("AIService", () => {
             expect(result.length).toBeGreaterThan(0);
         } finally {
             (APIErrorHandler as any).maxRetries = origRetries;
+            vi.mocked(localStorage.getItem).mockReset();
         }
     });
 

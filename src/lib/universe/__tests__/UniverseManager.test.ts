@@ -587,7 +587,7 @@ describe("PluginStorageImpl", () => {
     });
 
     it("set() silently handles localStorage.setItem throwing (QuotaExceeded)", async () => {
-        vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {
+        vi.mocked(localStorage.setItem).mockImplementationOnce(() => {
             throw new Error("QuotaExceededError");
         });
         const storage = new PluginStorageImpl("my-plugin");
