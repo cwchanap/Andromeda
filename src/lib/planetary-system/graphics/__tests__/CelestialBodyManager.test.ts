@@ -48,7 +48,10 @@ beforeAll(() => {
     // Particle rings call rock.scale.set() and rock.rotation.set() — extend Mesh mock
     origMeshImpl = (THREE as any).Mesh.getMockImplementation();
     (THREE as any).Mesh.mockImplementation((geometry?: any, material?: any) => {
-        const mesh = origMeshImpl(geometry, material);
+        const mesh = origMeshImpl?.(geometry, material) ?? {
+            scale: { set: vi.fn() },
+            rotation: { set: vi.fn() },
+        };
         if (mesh.scale && !mesh.scale.set) {
             mesh.scale.set = vi.fn();
         }
