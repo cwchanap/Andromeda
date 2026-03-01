@@ -229,17 +229,15 @@ describe("InteractionManager", () => {
 
         (globalThis as any).__threeRaycasterIntersects = [{ object: bodyMesh }];
 
-        const touchMove = new TouchEvent("touchmove", {
-            bubbles: true,
-            touches: [
-                new Touch({
-                    identifier: 1,
-                    target: container,
-                    clientX: 50,
-                    clientY: 50,
-                }),
-            ],
-        });
+        const touchMove = new Event("touchmove", { bubbles: true }) as any;
+        touchMove.touches = [
+            {
+                identifier: 1,
+                target: container,
+                clientX: 50,
+                clientY: 50,
+            },
+        ];
         container.dispatchEvent(touchMove);
 
         expect(onHover).toHaveBeenCalled();
@@ -270,17 +268,15 @@ describe("InteractionManager", () => {
 
         (globalThis as any).__threeRaycasterIntersects = [{ object: bodyMesh }];
 
-        const touchEnd = new TouchEvent("touchend", {
-            bubbles: true,
-            changedTouches: [
-                new Touch({
-                    identifier: 1,
-                    target: container,
-                    clientX: 50,
-                    clientY: 50,
-                }),
-            ],
-        });
+        const touchEnd = new Event("touchend", { bubbles: true }) as any;
+        touchEnd.changedTouches = [
+            {
+                identifier: 1,
+                target: container,
+                clientX: 50,
+                clientY: 50,
+            },
+        ];
         container.dispatchEvent(touchEnd);
 
         expect(onSelect).toHaveBeenCalledWith(

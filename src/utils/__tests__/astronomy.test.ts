@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
     celestialToSphere,
     celestialToScreen,
@@ -202,6 +202,10 @@ describe("astronomy", () => {
     });
 
     describe("getCurrentLocation", () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
         it("resolves with LocationData when geolocation succeeds", async () => {
             const mockPosition = {
                 coords: {

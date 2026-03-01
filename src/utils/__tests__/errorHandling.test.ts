@@ -343,15 +343,26 @@ describe("WebGLErrorHandler", () => {
         const handler = new WebGLErrorHandler(
             mockRenderer as THREE.WebGLRenderer,
         );
+
+        // Use the exact bounds methods from the instance
+        const boundLost = (
+            handler as unknown as {
+                boundHandleContextLost: (event: Event) => void;
+            }
+        ).boundHandleContextLost;
+        const boundRestored = (
+            handler as unknown as { boundHandleContextRestored: () => void }
+        ).boundHandleContextRestored;
+
         handler.cleanup();
 
         expect(removeEventListenerSpy).toHaveBeenCalledWith(
             "webglcontextlost",
-            expect.any(Function),
+            boundLost,
         );
         expect(removeEventListenerSpy).toHaveBeenCalledWith(
             "webglcontextrestored",
-            expect.any(Function),
+            boundRestored,
         );
     });
 
@@ -370,18 +381,21 @@ describe("WebGLErrorHandler", () => {
     it("checkWebGLSupport() reaches experimental-webgl branch when webgl is unavailable", () => {
         const handler = new WebGLErrorHandler();
         const origGetContext = HTMLCanvasElement.prototype.getContext;
-        // Make "webgl" return null so the || chain evaluates "experimental-webgl"
-        HTMLCanvasElement.prototype.getContext = function (
-            this: HTMLCanvasElement,
-            type: string,
-            ...args: unknown[]
-        ) {
-            if (type === "webgl") return null;
-            return origGetContext.call(this, type as never, ...args);
-        } as typeof HTMLCanvasElement.prototype.getContext;
-        const support = handler.checkWebGLSupport();
-        expect(typeof support.webgl).toBe("boolean");
-        HTMLCanvasElement.prototype.getContext = origGetContext;
+        try {
+            // Make "webgl" return null so the || chain evaluates "experimental-webgl"
+            HTMLCanvasElement.prototype.getContext = function (
+                this: HTMLCanvasElement,
+                type: string,
+                ...args: unknown[]
+            ) {
+                if (type === "webgl") return null;
+                return origGetContext.call(this, type as never, ...args);
+            } as typeof HTMLCanvasElement.prototype.getContext;
+            const support = handler.checkWebGLSupport();
+            expect(typeof support.webgl).toBe("boolean");
+        } finally {
+            HTMLCanvasElement.prototype.getContext = origGetContext;
+        }
     });
 
     it("setRenderer() configures context handlers on a new renderer", () => {

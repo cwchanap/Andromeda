@@ -97,6 +97,9 @@ export class WebGLErrorHandler {
     private contextLostCallback?: () => void;
     private contextRestoredCallback?: () => void;
 
+    private boundHandleContextLost: (event: Event) => void;
+    private boundHandleContextRestored: () => void;
+
     constructor(
         renderer?: THREE.WebGLRenderer,
         onContextLost?: () => void,
@@ -105,6 +108,8 @@ export class WebGLErrorHandler {
         this.renderer = renderer || null;
         this.contextLostCallback = onContextLost;
         this.contextRestoredCallback = onContextRestored;
+        this.boundHandleContextLost = this.handleContextLost.bind(this);
+        this.boundHandleContextRestored = this.handleContextRestored.bind(this);
 
         if (this.renderer) {
             this.setupContextHandlers();
@@ -123,12 +128,12 @@ export class WebGLErrorHandler {
 
         this.canvas.addEventListener(
             "webglcontextlost",
-            this.handleContextLost.bind(this),
+            this.boundHandleContextLost,
             false,
         );
         this.canvas.addEventListener(
             "webglcontextrestored",
-            this.handleContextRestored.bind(this),
+            this.boundHandleContextRestored,
             false,
         );
     }
@@ -182,11 +187,11 @@ export class WebGLErrorHandler {
         if (this.canvas) {
             this.canvas.removeEventListener(
                 "webglcontextlost",
-                this.handleContextLost.bind(this),
+                this.boundHandleContextLost,
             );
             this.canvas.removeEventListener(
                 "webglcontextrestored",
-                this.handleContextRestored.bind(this),
+                this.boundHandleContextRestored,
             );
         }
     }

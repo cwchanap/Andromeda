@@ -1,51 +1,78 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import * as THREE from "three";
 import { CelestialBodyManager } from "../CelestialBodyManager";
 import type { CelestialBodyData } from "../../../../types/game";
 
-// BoxGeometry is not in the setup.ts Three.js mock; add it here
-(THREE as any).BoxGeometry = vi.fn().mockImplementation(() => ({
-    dispose: vi.fn(),
-    getAttribute: vi.fn(() => ({ array: new Float32Array(0) })),
-}));
+let origBoxGeometry: any;
+let origStdMatImpl: any;
+let origMeshImpl: any;
 
-// Particle rings call rockMaterial.clone() — extend MeshStandardMaterial mock to support it
-const _origStdMatImpl = (
-    THREE as any
-).MeshStandardMaterial.getMockImplementation();
-(THREE as any).MeshStandardMaterial.mockImplementation((cfg?: any) => {
-    const mat = _origStdMatImpl?.(cfg) ?? { dispose: vi.fn(), userData: {} };
-    if (!mat.clone) {
-        mat.clone = vi.fn(() => ({
-            dispose: vi.fn(),
-            userData: {},
-            emissive: {
-                setHex: vi.fn(),
-                clone: vi.fn(),
-                getHex: vi.fn(() => 0),
-                copy: vi.fn(),
-                r: 0,
-                g: 0,
-                b: 0,
-            },
-        }));
+beforeAll(() => {
+    // BoxGeometry is not in the setup.ts Three.js mock; add it here
+    try {
+        origBoxGeometry = (THREE as any).BoxGeometry;
+    } catch (e) {
+        origBoxGeometry = undefined;
     }
-    return mat;
+    (THREE as any).BoxGeometry = vi.fn().mockImplementation(() => ({
+        dispose: vi.fn(),
+        getAttribute: vi.fn(() => ({ array: new Float32Array(0) })),
+    }));
+
+    // Particle rings call rockMaterial.clone() — extend MeshStandardMaterial mock to support it
+    origStdMatImpl = (
+        THREE as any
+    ).MeshStandardMaterial.getMockImplementation();
+    (THREE as any).MeshStandardMaterial.mockImplementation((cfg?: any) => {
+        const mat = origStdMatImpl?.(cfg) ?? { dispose: vi.fn(), userData: {} };
+        if (!mat.clone) {
+            mat.clone = vi.fn(() => ({
+                dispose: vi.fn(),
+                userData: {},
+                emissive: {
+                    setHex: vi.fn(),
+                    clone: vi.fn(),
+                    getHex: vi.fn(() => 0),
+                    copy: vi.fn(),
+                    r: 0,
+                    g: 0,
+                    b: 0,
+                },
+            }));
+        }
+        return mat;
+    });
+
+    // Particle rings call rock.scale.set() and rock.rotation.set() — extend Mesh mock
+    origMeshImpl = (THREE as any).Mesh.getMockImplementation();
+    (THREE as any).Mesh.mockImplementation((geometry?: any, material?: any) => {
+        const mesh = origMeshImpl(geometry, material);
+        if (mesh.scale && !mesh.scale.set) {
+            mesh.scale.set = vi.fn();
+        }
+        if (mesh.rotation && !mesh.rotation.set) {
+            mesh.rotation.set = vi.fn();
+        }
+        return mesh;
+    });
 });
 
-// Particle rings call rock.scale.set() and rock.rotation.set() — extend Mesh mock
-const _origMeshImpl = (THREE as any).Mesh.getMockImplementation();
-(THREE as any).Mesh.mockImplementation((geometry?: any, material?: any) => {
-    const mesh = _origMeshImpl(geometry, material);
-    if (mesh.scale && !mesh.scale.set) {
-        mesh.scale.set = vi.fn();
+afterAll(() => {
+    if (origBoxGeometry !== undefined) {
+        (THREE as any).BoxGeometry = origBoxGeometry;
+    } else {
+        delete (THREE as any).BoxGeometry;
     }
-    if (mesh.rotation && !mesh.rotation.set) {
-        mesh.rotation.set = vi.fn();
+
+    if (origStdMatImpl !== undefined) {
+        (THREE as any).MeshStandardMaterial.mockImplementation(origStdMatImpl);
     }
-    return mesh;
+
+    if (origMeshImpl !== undefined) {
+        (THREE as any).Mesh.mockImplementation(origMeshImpl);
+    }
 });
 
 function makeBodyData(partial?: Partial<CelestialBodyData>): CelestialBodyData {
