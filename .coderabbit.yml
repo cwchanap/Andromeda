@@ -5,4 +5,5 @@ reviews:
     - "!specs/**"
     - "!.specify/**"
     - ".claude/**"
-    - "docs/**"
+    - "!docs/**"
+    - "src/**"
