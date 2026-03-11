@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest";
+import { Vector3 } from "three";
 import {
     calculateRenderedPosition,
     calculateOrbitRadius,
@@ -8,16 +8,13 @@ import {
     getDistanceInfo,
     defaultSolarSystemRenderConfig,
     type DistanceRenderingConfig,
-} from "../DistanceRenderer";
-import type { CelestialBodyData } from "../../../types/game";
-import type { PlanetarySystemData } from "../types";
+} from "@/lib/planetary-system/DistanceRenderer";
+import type { CelestialBodyData } from "@/types/game";
+import type { PlanetarySystemData } from "@/lib/planetary-system/types";
 
-// Helper to create a mock Vector3 with length()
-function makeVec3(x = 0, y = 0, z = 0) {
-    const v: any = { x, y, z };
-    v.length = () => Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-    v.clone = () => makeVec3(v.x, v.y, v.z);
-    return v;
+// Uses the globally-mocked THREE.Vector3 (setup.ts) which includes length() and clone()
+function makeVec3(x = 0, y = 0, z = 0): Vector3 {
+    return new Vector3(x, y, z);
 }
 
 // Helper to create a minimal CelestialBodyData
@@ -36,7 +33,7 @@ function makeCelestialBody(
             temperature: "300 K",
         },
         images: [],
-        position: makeVec3(10, 0, 0) as any,
+        position: makeVec3(10, 0, 0),
         scale: 1,
         material: { color: "#ff0000" },
         orbitRadius: 10,
@@ -55,7 +52,7 @@ function makePlanetarySystem(
         star: makeCelestialBody({ type: "star" }),
         celestialBodies: bodies,
         systemScale: 1,
-        systemCenter: { x: 0, y: 0, z: 0 } as any,
+        systemCenter: makeVec3(0, 0, 0),
         systemType: "solar",
     };
 }
@@ -202,6 +199,7 @@ describe("calculateRenderedPosition", () => {
         });
 
         const config = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             scaleType: "unknown" as any,
             minRenderDistance: 0.1,
             maxRenderDistance: 500,

@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PerformanceMonitor, PerformanceProfiler } from "../PerformanceMonitor";
+import {
+    PerformanceMonitor,
+    PerformanceProfiler,
+} from "@/lib/performance/PerformanceMonitor";
 
 // Mock Three.js renderer info
 const createMockRenderer = (
@@ -194,28 +197,44 @@ describe("PerformanceMonitor", () => {
             const warningCb = vi.fn();
             monitor.onWarning(warningCb);
 
-            // Set FPS to a very low value manually via forcing FPS update
+            // Simulate 1 frame in >1 second → fps=1, which is below minFPS=30
             const mockNow = vi
                 .spyOn(performance, "now")
-                .mockReturnValueOnce(0)
-                .mockReturnValueOnce(0)
-                .mockReturnValue(1001);
+                .mockReturnValueOnce(0) // startMonitoring lastFPSUpdate
+                .mockReturnValueOnce(0) // frameStart
+                .mockReturnValue(1001); // frameEnd – triggers FPS update
 
             monitor.startMonitoring();
-            // Override metrics to simulate low FPS (5 frames in 1 second = 5 fps)
-            for (let i = 0; i < 5; i++) {
-                monitor.frameStart();
-            }
-            monitor.frameEnd();
+            monitor.frameStart();
+            monitor.frameEnd(); // fps=1 < 30 → warning emitted
 
+            expect(warningCb).toHaveBeenCalledTimes(1);
+            expect(warningCb).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({ type: "geometry" }),
+                ]),
+            );
             mockNow.mockRestore();
         });
 
-        it("unsubscribes warning callback correctly", () => {
+        it("does not call warning callback after unsubscribe", () => {
             const warningCb = vi.fn();
             const unsubscribe = monitor.onWarning(warningCb);
             unsubscribe();
-            expect(typeof unsubscribe).toBe("function");
+
+            // Same low-FPS scenario – callback must NOT fire
+            const mockNow = vi
+                .spyOn(performance, "now")
+                .mockReturnValueOnce(0) // startMonitoring
+                .mockReturnValueOnce(0) // frameStart
+                .mockReturnValue(1001); // frameEnd
+
+            monitor.startMonitoring();
+            monitor.frameStart();
+            monitor.frameEnd();
+
+            expect(warningCb).not.toHaveBeenCalled();
+            mockNow.mockRestore();
         });
     });
 
@@ -291,37 +310,75 @@ describe("PerformanceMonitor", () => {
         });
 
         it("classifies performance as excellent for high FPS", () => {
-            // Add frames with high FPS to history via reset + manual setting
-            monitor.startMonitoring();
-
-            // Force high FPS readings into history
+            // Spy must be in place before startMonitoring() so lastFPSUpdate=0
+            let time = 0;
             const mockNow = vi
                 .spyOn(performance, "now")
-                .mockReturnValueOnce(0)
-                .mockReturnValueOnce(0)
-                .mockReturnValue(1001);
+                .mockImplementation(() => time);
 
-            // Simulate 60 frames in 1 second
+            monitor.startMonitoring(); // lastFPSUpdate = 0
+
+            // Phase 1: 60 frames within the first second (history fills with fps=0)
             for (let i = 0; i < 60; i++) {
                 monitor.frameStart();
+                time += 1;
+                monitor.frameEnd();
             }
+
+            // Phase 2: jump past 1 s to trigger FPS update (fps becomes 61)
+            time = 1001;
+            monitor.frameStart();
+            time += 1;
             monitor.frameEnd();
+
+            // Phase 3: 60 more frames to flush old fps=0 entries from the
+            // 60-entry ring buffer; all new entries carry fps=61, frameTime~1ms
+            for (let i = 0; i < 60; i++) {
+                monitor.frameStart();
+                time += 1;
+                monitor.frameEnd();
+            }
+
             mockNow.mockRestore();
 
             const report = monitor.generateOptimizationReport();
-            expect(["excellent", "good", "fair", "poor"]).toContain(
-                report.performance,
-            );
+            expect(report.performance).toBe("excellent");
+            expect(report.stats.avgFPS).toBeGreaterThanOrEqual(55);
         });
 
-        it("provides suggestions for poor performance", () => {
-            // Simulate poor performance by adding entries with low fps to history
-            monitor.startMonitoring();
+        it("classifies performance as poor and provides actionable suggestions", () => {
+            // Spy must be in place before startMonitoring() so lastFPSUpdate=0
+            let time = 0;
+            const mockNow = vi
+                .spyOn(performance, "now")
+                .mockImplementation(() => time);
+
+            monitor.startMonitoring(); // lastFPSUpdate = 0
+
+            // Phase 1: one frame at 100 ms (history: fps=0, frameTime=100)
             monitor.frameStart();
+            time = 100;
             monitor.frameEnd();
 
+            // Phase 2: jump past 1 s to trigger FPS update (fps=2 after this frame)
+            time = 1001;
+            monitor.frameStart();
+            time = 1101;
+            monitor.frameEnd();
+
+            // Phase 3: 60 more 100 ms frames to fill history with fps=2, frameTime=100
+            for (let i = 0; i < 60; i++) {
+                monitor.frameStart();
+                time += 100;
+                monitor.frameEnd();
+            }
+
+            mockNow.mockRestore();
+
             const report = monitor.generateOptimizationReport();
+            expect(report.performance).toBe("poor");
             expect(Array.isArray(report.suggestions)).toBe(true);
+            expect(report.suggestions.length).toBeGreaterThan(0);
         });
     });
 
