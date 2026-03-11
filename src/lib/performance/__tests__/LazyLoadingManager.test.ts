@@ -3,7 +3,7 @@ import {
     LazyLoadingManager,
     BundleSplitter,
     createLazyComponent,
-} from "../LazyLoadingManager";
+} from "@/lib/performance/LazyLoadingManager";
 
 describe("LazyLoadingManager", () => {
     let manager: LazyLoadingManager;
