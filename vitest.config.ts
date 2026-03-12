@@ -20,6 +20,7 @@ export default defineConfig({
                 "**/*.d.ts",
                 "dist/",
                 ".astro/",
+                "e2e/",
             ],
             thresholds: {
                 global: {

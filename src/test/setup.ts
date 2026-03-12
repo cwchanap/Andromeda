@@ -368,6 +368,21 @@ declare global {
         }),
     );
 
+(THREE as any).Float32BufferAttribute = vi
+    .fn()
+    .mockImplementation((array: number[], itemSize: number) => {
+        const arr =
+            array instanceof Float32Array ? array : new Float32Array(array);
+        return {
+            array: arr,
+            itemSize,
+            get count() {
+                return Math.floor(arr.length / itemSize);
+            },
+            needsUpdate: false,
+        };
+    });
+
 // Materials
 const makeStdMaterial = () => ({
     dispose: vi.fn(),
@@ -566,6 +581,7 @@ class MockGroup extends (THREE as any).Group {
             fov: _fov ?? 75,
             near: _near ?? 0.1,
             far: _far ?? 1000,
+            up: { set: vi.fn() },
             updateProjectionMatrix: vi.fn(),
             lookAt: vi.fn(),
         }),
@@ -602,6 +618,7 @@ class MockGroup extends (THREE as any).Group {
         dispose: vi.fn(),
         setPixelRatio: vi.fn(),
         setClearColor: vi.fn(),
+        getContext: vi.fn(() => ({})),
         domElement: document.createElement("canvas"),
         shadowMap: { enabled: false, type: (THREE as any).PCFShadowMap },
         capabilities: { getMaxAnisotropy: vi.fn(() => 4) },
@@ -648,6 +665,27 @@ class MockGroup extends (THREE as any).Group {
         geometry,
         material,
         rotation: { x: 0, y: 0 },
+        castShadow: false,
+        receiveShadow: false,
+    }));
+
+// Line materials and objects
+(THREE as any).LineBasicMaterial = vi.fn().mockImplementation((_cfg?: any) => ({
+    color: _cfg?.color ?? 0xffffff,
+    transparent: _cfg?.transparent ?? false,
+    opacity: _cfg?.opacity ?? 1,
+    linewidth: _cfg?.linewidth ?? 1,
+    depthWrite: _cfg?.depthWrite !== undefined ? _cfg.depthWrite : true,
+    dispose: vi.fn(),
+}));
+
+(THREE as any).LineSegments = vi
+    .fn()
+    .mockImplementation((geometry?: any, material?: any) => ({
+        geometry,
+        material,
+        name: "",
+        renderOrder: 0,
         castShadow: false,
         receiveShadow: false,
     }));
