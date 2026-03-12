@@ -5,6 +5,11 @@ import {
     createLazyComponent,
 } from "@/lib/performance/LazyLoadingManager";
 
+// Keeps per-call timeout short so no live timer handles linger after each test.
+// The implementation now clears the timer on success/failure, but this provides
+// an additional defensive bound in case the default ever changes.
+const FAST = { timeout: 100 };
+
 describe("LazyLoadingManager", () => {
     let manager: LazyLoadingManager;
 
@@ -27,7 +32,11 @@ describe("LazyLoadingManager", () => {
             const module = { value: 42 };
             const importFn = vi.fn().mockResolvedValue(module);
 
-            const result = await manager.loadModule("test-module", importFn);
+            const result = await manager.loadModule(
+                "test-module",
+                importFn,
+                FAST,
+            );
 
             expect(result).toBe(module);
             expect(importFn).toHaveBeenCalledTimes(1);
@@ -38,8 +47,12 @@ describe("LazyLoadingManager", () => {
             const module = { value: 42 };
             const importFn = vi.fn().mockResolvedValue(module);
 
-            await manager.loadModule("cached-module", importFn);
-            const result = await manager.loadModule("cached-module", importFn);
+            await manager.loadModule("cached-module", importFn, FAST);
+            const result = await manager.loadModule(
+                "cached-module",
+                importFn,
+                FAST,
+            );
 
             expect(result).toBe(module);
             expect(importFn).toHaveBeenCalledTimes(1);
@@ -52,8 +65,8 @@ describe("LazyLoadingManager", () => {
             });
             const importFn = vi.fn().mockReturnValue(loadPromise);
 
-            const p1 = manager.loadModule("concurrent-module", importFn);
-            const p2 = manager.loadModule("concurrent-module", importFn);
+            const p1 = manager.loadModule("concurrent-module", importFn, FAST);
+            const p2 = manager.loadModule("concurrent-module", importFn, FAST);
 
             // Only one import call should have been made
             expect(importFn).toHaveBeenCalledTimes(1);
@@ -64,7 +77,7 @@ describe("LazyLoadingManager", () => {
 
         it("increments loadedCount after successful load", async () => {
             const importFn = vi.fn().mockResolvedValue({ value: 1 });
-            await manager.loadModule("count-module", importFn);
+            await manager.loadModule("count-module", importFn, FAST);
 
             const stats = manager.getStats();
             expect(stats.loadedModules).toBe(1);
@@ -79,6 +92,7 @@ describe("LazyLoadingManager", () => {
                 manager.loadModule("fail-module", importFn, {
                     retries: 0,
                     retryDelay: 0,
+                    timeout: 100,
                 }),
             ).rejects.toThrow("Failed to load module fail-module");
 
@@ -95,6 +109,7 @@ describe("LazyLoadingManager", () => {
             const result = await manager.loadModule("retry-module", importFn, {
                 retries: 2,
                 retryDelay: 0,
+                timeout: 100,
             });
 
             expect(result).toBe(module);
@@ -108,6 +123,7 @@ describe("LazyLoadingManager", () => {
             await manager.loadModule(
                 "progress-module",
                 vi.fn().mockResolvedValue({}),
+                FAST,
             );
 
             // Should have been called at least once (at end of load)
@@ -123,6 +139,7 @@ describe("LazyLoadingManager", () => {
             await manager.loadModule(
                 "on-progress-module",
                 vi.fn().mockResolvedValue({}),
+                FAST,
             );
             const callCountBefore = callback.mock.calls.length;
 
@@ -130,6 +147,7 @@ describe("LazyLoadingManager", () => {
             await manager.loadModule(
                 "on-progress-module-2",
                 vi.fn().mockResolvedValue({}),
+                FAST,
             );
 
             // No additional calls after unsubscribe
@@ -143,6 +161,7 @@ describe("LazyLoadingManager", () => {
             await manager.loadModule(
                 "data-module",
                 vi.fn().mockResolvedValue({}),
+                FAST,
             );
 
             const progressArg =
@@ -163,6 +182,7 @@ describe("LazyLoadingManager", () => {
                 manager.loadModule(
                     "error-cb-module",
                     vi.fn().mockResolvedValue({}),
+                    FAST,
                 ),
             ).resolves.toBeDefined();
         });
@@ -177,6 +197,7 @@ describe("LazyLoadingManager", () => {
             await manager.loadModule(
                 "loaded-check",
                 vi.fn().mockResolvedValue({}),
+                FAST,
             );
             expect(manager.isLoaded("loaded-check")).toBe(true);
         });
@@ -194,7 +215,7 @@ describe("LazyLoadingManager", () => {
             });
             const importFn = vi.fn().mockReturnValue(loadPromise);
 
-            manager.loadModule("is-loading-module", importFn);
+            manager.loadModule("is-loading-module", importFn, FAST);
             expect(manager.isLoading("is-loading-module")).toBe(true);
 
             resolveLoad({});
@@ -211,6 +232,7 @@ describe("LazyLoadingManager", () => {
             await manager.loadModule(
                 "get-module-test",
                 vi.fn().mockResolvedValue(module),
+                FAST,
             );
 
             expect(manager.getModule("get-module-test")).toBe(module);
@@ -222,10 +244,12 @@ describe("LazyLoadingManager", () => {
             await manager.loadModule(
                 "stats-module-1",
                 vi.fn().mockResolvedValue({}),
+                FAST,
             );
             await manager.loadModule(
                 "stats-module-2",
                 vi.fn().mockResolvedValue({}),
+                FAST,
             );
 
             const stats = manager.getStats();
@@ -240,6 +264,7 @@ describe("LazyLoadingManager", () => {
             await manager.loadModule(
                 "clear-module",
                 vi.fn().mockResolvedValue({}),
+                FAST,
             );
             expect(manager.isLoaded("clear-module")).toBe(true);
 
@@ -259,10 +284,12 @@ describe("LazyLoadingManager", () => {
                 {
                     id: "preload-1",
                     importFn: vi.fn().mockResolvedValue(module1),
+                    config: FAST,
                 },
                 {
                     id: "preload-2",
                     importFn: vi.fn().mockResolvedValue(module2),
+                    config: FAST,
                 },
             ]);
 
@@ -280,6 +307,7 @@ describe("LazyLoadingManager", () => {
                 {
                     id: "preload-success",
                     importFn: vi.fn().mockResolvedValue({ ok: true }),
+                    config: FAST,
                 },
             ]);
 
@@ -295,6 +323,7 @@ describe("LazyLoadingManager", () => {
             await manager.loadModule(
                 "dispose-module",
                 vi.fn().mockResolvedValue({}),
+                FAST,
             );
 
             const callsBeforeDispose = progressCb.mock.calls.length;
