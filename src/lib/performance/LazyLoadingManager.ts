@@ -137,10 +137,11 @@ export class LazyLoadingManager {
         this.notifyProgress(moduleId);
 
         for (let attempt = 0; attempt <= retries; attempt++) {
+            let timeoutId: ReturnType<typeof setTimeout> | undefined;
             try {
                 // Create timeout promise
                 const timeoutPromise = new Promise<never>((_, reject) => {
-                    setTimeout(
+                    timeoutId = setTimeout(
                         () =>
                             reject(
                                 new Error(`Module ${moduleId} loading timeout`),
@@ -151,8 +152,10 @@ export class LazyLoadingManager {
 
                 // Race between import and timeout
                 const module = await Promise.race([importFn(), timeoutPromise]);
+                clearTimeout(timeoutId); // clear timer on success
                 return module;
             } catch (error) {
+                clearTimeout(timeoutId); // clear timer on failure
                 if (attempt === retries) {
                     throw new Error(
                         `Failed to load module ${moduleId} after ${retries + 1} attempts: ${error}`,
