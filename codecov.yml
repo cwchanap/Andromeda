@@ -1,0 +1,8 @@
+coverage:
+  ignore:
+    - "e2e/**"
+    - "src/test/**"
+    - "**/*.config.*"
+    - "**/*.d.ts"
+    - "dist/**"
+    - ".astro/**"
