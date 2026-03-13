@@ -253,24 +253,22 @@ describe("SolarSystemRenderer", () => {
         expect(() => controls.dispose()).not.toThrow();
     });
 
-    it("onRenderStats callback is invoked if provided (requires initialized)", async () => {
+    it("accepts onRenderStats callback and initializes without throwing", async () => {
         const onRenderStats = vi.fn();
         renderer = new SolarSystemRenderer(container, {}, { onRenderStats });
-        await renderer.initialize([makeStar()]);
-        // Render stats are emitted during the render loop - just verify no throw
-        expect(onRenderStats).toBeDefined();
+        // onRenderStats is only called from within the render loop, which is behind
+        // requestAnimationFrame (mocked to never execute). Verify construction and
+        // initialization succeed without throwing.
+        await expect(
+            renderer.initialize([makeStar()]),
+        ).resolves.toBeUndefined();
     });
 
-    it("onError fires when initialize fails", async () => {
+    it("onError fires and initialize rejects when bodies argument is null", async () => {
         const onError = vi.fn();
         renderer = new SolarSystemRenderer(container, {}, { onError });
-        // Force an error by passing invalid data
         const badBodies = null as any;
-        try {
-            await renderer.initialize(badBodies);
-        } catch {
-            // expected
-        }
-        // Either onError was called or exception thrown - both are valid paths
+        await expect(renderer.initialize(badBodies)).rejects.toBeDefined();
+        expect(onError).toHaveBeenCalled();
     });
 });

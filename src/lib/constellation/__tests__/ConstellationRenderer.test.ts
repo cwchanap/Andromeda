@@ -129,12 +129,13 @@ describe("ConstellationRenderer", () => {
         ).resolves.toBeUndefined();
     });
 
-    it("initialize skips stars dimmer than minimumMagnitude", async () => {
+    it("initialize resolves when all stars are filtered out by minimumMagnitude (uses procedural fallback)", async () => {
         renderer = new ConstellationRenderer(container);
         const dimStars = [
-            makeStar({ magnitude: 8.0 }), // dimmer than default min 6.5
+            makeStar({ magnitude: 8.0 }), // dimmer than minimumMagnitude 3.0 — will be skipped
             makeStar({ id: "s2", magnitude: 9.0 }),
         ];
+        // All real stars are skipped; the renderer falls back to procedural star generation
         await expect(
             renderer.initialize(
                 dimStars,
