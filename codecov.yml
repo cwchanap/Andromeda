@@ -2,6 +2,11 @@ coverage:
   ignore:
     - "e2e/**"
     - "src/test/**"
+    - "src/**/__tests__/**"
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+    - "**/*.test.js"
+    - "**/*.spec.js"
     - "**/*.config.*"
     - "**/*.d.ts"
     - "dist/**"

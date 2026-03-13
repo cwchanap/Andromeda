@@ -370,7 +370,7 @@ declare global {
 
 (THREE as any).Float32BufferAttribute = vi
     .fn()
-    .mockImplementation((array: number[], itemSize: number) => {
+    .mockImplementation((array: Float32Array | number[], itemSize: number) => {
         const arr =
             array instanceof Float32Array ? array : new Float32Array(array);
         return {
@@ -679,16 +679,25 @@ class MockGroup extends (THREE as any).Group {
     dispose: vi.fn(),
 }));
 
+class MockLineSegments {
+    geometry: any;
+    material: any;
+    name = "";
+    renderOrder = 0;
+    castShadow = false;
+    receiveShadow = false;
+    constructor(geometry?: any, material?: any) {
+        this.geometry = geometry;
+        this.material = material;
+        Object.setPrototypeOf(this, (THREE as any).LineSegments.prototype);
+    }
+}
 (THREE as any).LineSegments = vi
     .fn()
-    .mockImplementation((geometry?: any, material?: any) => ({
-        geometry,
-        material,
-        name: "",
-        renderOrder: 0,
-        castShadow: false,
-        receiveShadow: false,
-    }));
+    .mockImplementation(
+        (geometry?: any, material?: any) =>
+            new MockLineSegments(geometry, material),
+    );
 
 // SpriteMaterial and Sprite for labels
 (THREE as any).SpriteMaterial = vi.fn().mockImplementation((_cfg?: any) => ({
