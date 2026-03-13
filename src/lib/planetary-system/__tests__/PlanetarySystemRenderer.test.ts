@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as THREE from "three";
-import { PlanetarySystemRenderer } from "../PlanetarySystemRenderer";
-import type { CelestialBodyData } from "../../../types/game";
+import { PlanetarySystemRenderer } from "@/lib/planetary-system/PlanetarySystemRenderer";
+import type { CelestialBodyData } from "@/types/game";
 import type {
     PlanetarySystemConfig,
     PlanetarySystemEvents,
     PlanetarySystemData,
-} from "../types";
+} from "@/lib/planetary-system/types";
 
 const makeStar = (
     overrides: Partial<CelestialBodyData> = {},
@@ -225,9 +225,8 @@ describe("PlanetarySystemRenderer", () => {
         await expect(renderer.cleanup()).resolves.toBeUndefined();
     });
 
-    it("onCameraChange callback is wired through underlying renderer", () => {
+    it("constructs without throwing when onCameraChange callback is provided (smoke test)", () => {
         const onCameraChange = vi.fn();
-        // Verify no throw when constructing with callback
         expect(() => {
             renderer = new PlanetarySystemRenderer(container, makeConfig(), {
                 onCameraChange,
@@ -235,7 +234,7 @@ describe("PlanetarySystemRenderer", () => {
         }).not.toThrow();
     });
 
-    it("onBodySelect callback is wired through underlying renderer", () => {
+    it("constructs without throwing when onBodySelect callback is provided (smoke test)", () => {
         const onBodySelect = vi.fn();
         expect(() => {
             renderer = new PlanetarySystemRenderer(container, makeConfig(), {

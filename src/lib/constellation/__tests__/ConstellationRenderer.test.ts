@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { ConstellationRenderer } from "../ConstellationRenderer";
+import * as THREE from "three";
+import { ConstellationRenderer } from "@/lib/constellation/ConstellationRenderer";
 import type {
     Star,
     Constellation,
     SkyConfiguration,
-} from "../../../types/constellation";
+} from "@/types/constellation";
 
 const makeContainer = (): HTMLElement => {
     const container = document.createElement("div");
@@ -66,7 +68,8 @@ const makeSkyConfig = (
         longitude: -74.006,
         timezone: "America/New_York",
     },
-    dateTime: new Date("2024-01-15T22:00:00"),
+    // Explicit UTC-5 offset so the timestamp is environment-independent
+    dateTime: new Date("2024-01-15T22:00:00-05:00"),
     fieldOfView: 90,
     showConstellationLines: true,
     showStarNames: true,
@@ -161,19 +164,24 @@ describe("ConstellationRenderer", () => {
         ).resolves.toBeUndefined();
     });
 
-    it("initialize renders bright star labels (magnitude < 1.5)", async () => {
+    it("initialize renders a sprite only for the bright star (magnitude < 1.5)", async () => {
         renderer = new ConstellationRenderer(container);
         const brightStars = [
-            makeStar({ id: "bright", magnitude: 0.5 }),
-            makeStar({ id: "dim", magnitude: 4.0 }),
+            // magnitude 0.5 passes the < 1.5 threshold — one label sprite expected
+            makeStar({ id: "bright", name: "Sirius", magnitude: 0.5 }),
+            // magnitude 4.0 is too dim — no sprite
+            makeStar({ id: "dim", name: "Dim Star", magnitude: 4.0 }),
         ];
-        await expect(
-            renderer.initialize(
-                brightStars,
-                [],
-                makeSkyConfig({ showStarNames: true }),
-            ),
-        ).resolves.toBeUndefined();
+
+        await renderer.initialize(
+            brightStars,
+            [], // no constellations → no constellation-label sprites
+            makeSkyConfig({ showStarNames: true }),
+        );
+
+        // THREE.Sprite is the mock vi.fn() for sprite construction.
+        // It should have been called exactly once: for the bright star.
+        expect((THREE as any).Sprite).toHaveBeenCalledTimes(1);
     });
 
     it("initialize can be called multiple times (re-initializes scene)", async () => {
