@@ -2,8 +2,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as THREE from "three";
-import { SolarSystemRenderer } from "../SolarSystemRenderer";
-import type { CelestialBodyData } from "../../../../types/game";
+import { SolarSystemRenderer } from "@/lib/planetary-system/graphics/SolarSystemRenderer";
+import type { CelestialBodyData } from "@/types/game";
 
 const makeStar = (
     overrides: Partial<CelestialBodyData> = {},
@@ -140,6 +140,7 @@ describe("SolarSystemRenderer", () => {
 
         expect(state).toBeDefined();
         expect(state.position).toBeDefined();
+        expect(state.target).toBeDefined();
         expect(state.zoom).toBeDefined();
     });
 
@@ -214,19 +215,24 @@ describe("SolarSystemRenderer", () => {
         expect(() => renderer.selectCelestialBody(null)).not.toThrow();
     });
 
-    it("configureBackgroundStars stores configuration", () => {
+    it("configureBackgroundStars stores configuration in internal config", () => {
         renderer = new SolarSystemRenderer(container);
-        expect(() =>
-            renderer.configureBackgroundStars({
-                enabled: true,
-                density: 0.5,
-                seed: 999,
-                animationSpeed: 2.0,
-                minRadius: 1000,
-                maxRadius: 5000,
-                colorVariation: false,
-            }),
-        ).not.toThrow();
+        const cfg = {
+            enabled: true,
+            density: 0.5,
+            seed: 999,
+            animationSpeed: 2.0,
+            minRadius: 1000,
+            maxRadius: 5000,
+            colorVariation: false,
+        };
+        renderer.configureBackgroundStars(cfg);
+        // Access private config via type cast to verify the values were stored
+        const internalConfig = (renderer as any).config.backgroundStars;
+        expect(internalConfig.enabled).toBe(true);
+        expect(internalConfig.density).toBe(0.5);
+        expect(internalConfig.seed).toBe(999);
+        expect(internalConfig.colorVariation).toBe(false);
     });
 
     it("configureBackgroundStars with undefined does not throw", () => {
@@ -247,10 +253,12 @@ describe("SolarSystemRenderer", () => {
         expect(() => renderer.dispose()).not.toThrow();
     });
 
-    it("getControls dispose method calls renderer dispose", () => {
+    it("getControls dispose method calls renderer.dispose()", () => {
         renderer = new SolarSystemRenderer(container);
+        const disposeSpy = vi.spyOn(renderer, "dispose");
         const controls = renderer.getControls();
-        expect(() => controls.dispose()).not.toThrow();
+        controls.dispose();
+        expect(disposeSpy).toHaveBeenCalledOnce();
     });
 
     it("accepts onRenderStats callback and initializes without throwing", async () => {

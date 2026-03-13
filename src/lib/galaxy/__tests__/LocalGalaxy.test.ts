@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { localGalaxyData } from "../LocalGalaxy";
-import * as galaxyIndex from "../index";
+import { localGalaxyData } from "@/lib/galaxy/LocalGalaxy";
+import * as galaxyIndex from "@/lib/galaxy/index";
 
 describe("localGalaxyData", () => {
     it("has correct id and name", () => {
@@ -68,6 +68,9 @@ describe("localGalaxyData", () => {
                 expect(star.type).toBe("star");
                 expect(star.material).toBeDefined();
                 expect(star.material.color).toBeTruthy();
+                // keyFacts is required by the info modal
+                expect(star.keyFacts).toBeDefined();
+                expect(Object.keys(star.keyFacts).length).toBeGreaterThan(0);
             }
         }
     });

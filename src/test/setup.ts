@@ -581,7 +581,7 @@ class MockGroup extends (THREE as any).Group {
             fov: _fov ?? 75,
             near: _near ?? 0.1,
             far: _far ?? 1000,
-            up: { set: vi.fn() },
+            up: enhanceVector3({ x: 0, y: 1, z: 0 }),
             updateProjectionMatrix: vi.fn(),
             lookAt: vi.fn(),
         }),
@@ -612,14 +612,15 @@ class MockGroup extends (THREE as any).Group {
 
 // Renderer with capabilities and info
 (THREE as any).WebGLRenderer = vi.fn().mockImplementation((_opts?: any) => {
+    const domElement = document.createElement("canvas");
     const renderer = {
         setSize: vi.fn(),
         render: vi.fn(),
         dispose: vi.fn(),
         setPixelRatio: vi.fn(),
         setClearColor: vi.fn(),
-        getContext: vi.fn(() => ({})),
-        domElement: document.createElement("canvas"),
+        getContext: vi.fn(() => domElement.getContext("webgl")),
+        domElement,
         shadowMap: { enabled: false, type: (THREE as any).PCFShadowMap },
         capabilities: { getMaxAnisotropy: vi.fn(() => 4) },
         info: {
