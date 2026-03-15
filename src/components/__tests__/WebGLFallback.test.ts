@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
-import WebGLFallback from "../WebGLFallback.svelte";
+import WebGLFallback from "@/components/WebGLFallback.svelte";
 
 describe("WebGLFallback", () => {
     afterEach(() => {
@@ -79,18 +79,16 @@ describe("WebGLFallback", () => {
     });
 
     describe("Button Interactions", () => {
-        it("should not throw when 'Try Again' is clicked", async () => {
+        it("should not throw when 'Try Again' is clicked", () => {
             const { getByText } = render(WebGLFallback);
-            await expect(
-                fireEvent.click(getByText("Try Again")),
-            ).resolves.not.toThrow();
+            expect(() => fireEvent.click(getByText("Try Again"))).not.toThrow();
         });
 
-        it("should not throw when 'Go to Home' is clicked", async () => {
+        it("should not throw when 'Go to Home' is clicked", () => {
             const { getByText } = render(WebGLFallback);
-            await expect(
+            expect(() =>
                 fireEvent.click(getByText("Go to Home")),
-            ).resolves.not.toThrow();
+            ).not.toThrow();
         });
     });
 

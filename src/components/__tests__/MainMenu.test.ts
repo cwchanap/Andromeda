@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
-import MainMenu from "../MainMenu.svelte";
-import { settings } from "../../stores/gameStore";
+import MainMenu from "@/components/MainMenu.svelte";
+import { settings } from "@/stores/gameStore";
 
 // Mock gameActions
-vi.mock("../../stores/gameStore", async (importOriginal) => {
-    const actual =
-        await importOriginal<typeof import("../../stores/gameStore")>();
+vi.mock("@/stores/gameStore", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/stores/gameStore")>();
     return {
         ...actual,
         gameActions: {
@@ -18,18 +17,20 @@ vi.mock("../../stores/gameStore", async (importOriginal) => {
 });
 
 // Mock i18n utils
-vi.mock("../../i18n/utils", () => ({
+vi.mock("@/i18n/utils", () => ({
     getLangFromUrl: vi.fn(() => "en"),
     useTranslations: vi.fn(() => (key: string) => key),
     useTranslatedPath: vi.fn(() => (path: string) => path),
 }));
 
 // Mock planetarySystemRegistry
-vi.mock("../../lib/planetary-system", () => ({
+vi.mock("@/lib/planetary-system", () => ({
     planetarySystemRegistry: {
         getAllSystems: vi.fn(() => [
             {
                 id: "solar",
+                name: "Solar System",
+                description: "Our home star system",
                 systemData: {
                     id: "solar",
                     name: "Solar System",
@@ -39,6 +40,8 @@ vi.mock("../../lib/planetary-system", () => ({
             },
             {
                 id: "alpha-centauri",
+                name: "Alpha Centauri",
+                description: "Nearest star system to Sol",
                 systemData: {
                     id: "alpha-centauri",
                     name: "Alpha Centauri",
@@ -50,7 +53,7 @@ vi.mock("../../lib/planetary-system", () => ({
     },
 }));
 
-import { gameActions } from "../../stores/gameStore";
+import { gameActions } from "@/stores/gameStore";
 
 const defaultSettings = {
     enableAnimations: true,
@@ -116,22 +119,18 @@ describe("MainMenu", () => {
     describe("Settings Modal", () => {
         it("should not show settings modal by default", () => {
             const { queryByText } = render(MainMenu);
-            // The settings modal should be closed
             expect(queryByText("Graphics Quality")).toBeNull();
         });
 
         it("should show settings modal when settings button is clicked", async () => {
             const { container } = render(MainMenu);
             const buttons = Array.from(container.querySelectorAll("button"));
-            // Find the Settings button
             const settingsBtn = buttons.find((b) =>
                 b.textContent?.toLowerCase().includes("setting"),
             );
-            if (settingsBtn) {
-                await fireEvent.click(settingsBtn);
-                // Settings modal should now be visible
-                expect(container.textContent).toContain("Settings");
-            }
+            expect(settingsBtn).toBeTruthy();
+            await fireEvent.click(settingsBtn!);
+            expect(container.textContent).toContain("Game Settings");
         });
     });
 
@@ -144,11 +143,11 @@ describe("MainMenu", () => {
                     b.textContent?.toLowerCase().includes("explore") ||
                     b.textContent?.includes("main.explore"),
             );
-            if (exploreBtn) {
-                await fireEvent.click(exploreBtn);
-                // System selector should appear
-                expect(container).toBeTruthy();
-            }
+            expect(exploreBtn).toBeTruthy();
+            await fireEvent.click(exploreBtn!);
+            // System selector with mock systems should appear
+            expect(container.textContent).toContain("Solar System");
+            expect(container.textContent).toContain("Alpha Centauri");
         });
     });
 
@@ -161,64 +160,77 @@ describe("MainMenu", () => {
                     b.textContent?.toLowerCase().includes("solar") ||
                     b.textContent?.includes("main.solar"),
             );
-            if (solarBtn) {
-                await fireEvent.click(solarBtn);
-                expect(gameActions.navigateToView).toHaveBeenCalled();
-            }
+            expect(solarBtn).toBeTruthy();
+            await fireEvent.click(solarBtn!);
+            expect(gameActions.navigateToView).toHaveBeenCalledWith(
+                "solar-system",
+            );
         });
     });
 
     describe("Keyboard Navigation", () => {
-        it("should handle ArrowDown key to change focus", async () => {
-            render(MainMenu);
+        it("should move focus to next item on ArrowDown", async () => {
+            const { container } = render(MainMenu);
+            const menuButtons = container.querySelectorAll(".menu-button");
+            expect(menuButtons.length).toBeGreaterThan(1);
             await fireEvent.keyDown(window, { key: "ArrowDown" });
-            // Should not throw - focus updates silently
-            expect(true).toBe(true);
+            // focusedIndex moved to 1 — second button should now be focused
+            expect(document.activeElement).toBe(menuButtons[1]);
         });
 
-        it("should handle ArrowUp key to change focus", async () => {
-            render(MainMenu);
+        it("should move focus to previous item on ArrowUp", async () => {
+            const { container } = render(MainMenu);
+            const menuButtons = container.querySelectorAll(".menu-button");
+            // Start at index 0, ArrowUp wraps to last
             await fireEvent.keyDown(window, { key: "ArrowUp" });
-            expect(true).toBe(true);
+            expect(document.activeElement).toBe(
+                menuButtons[menuButtons.length - 1],
+            );
         });
 
-        it("should handle ArrowRight key same as ArrowDown", async () => {
-            render(MainMenu);
+        it("should move focus forward on ArrowRight", async () => {
+            const { container } = render(MainMenu);
+            const menuButtons = container.querySelectorAll(".menu-button");
             await fireEvent.keyDown(window, { key: "ArrowRight" });
-            expect(true).toBe(true);
+            expect(document.activeElement).toBe(menuButtons[1]);
         });
 
-        it("should handle ArrowLeft key same as ArrowUp", async () => {
-            render(MainMenu);
+        it("should move focus backward on ArrowLeft", async () => {
+            const { container } = render(MainMenu);
+            const menuButtons = container.querySelectorAll(".menu-button");
             await fireEvent.keyDown(window, { key: "ArrowLeft" });
-            expect(true).toBe(true);
+            expect(document.activeElement).toBe(
+                menuButtons[menuButtons.length - 1],
+            );
         });
 
         it("should not handle keys when enableKeyboardNavigation is false", async () => {
             settings.update((s) => ({ ...s, enableKeyboardNavigation: false }));
             render(MainMenu);
             await fireEvent.keyDown(window, { key: "ArrowDown" });
-            // navigateToView should not be called
             expect(gameActions.navigateToView).not.toHaveBeenCalled();
         });
 
-        it("should handle Enter key to trigger Solar System (index 0)", async () => {
+        it("should trigger Solar System action on Enter at index 0", async () => {
             render(MainMenu);
-            // focusedIndex starts at 0 (Solar System) - pressing Enter navigates
+            // focusedIndex starts at 0 (Solar System)
             await fireEvent.keyDown(window, { key: "Enter" });
-            // navigateToView called or location changed
-            expect(true).toBe(true);
+            expect(gameActions.navigateToView).toHaveBeenCalledWith(
+                "solar-system",
+            );
         });
 
-        it("should handle Space key to trigger current menu item", async () => {
+        it("should trigger Solar System action on Space at index 0", async () => {
             render(MainMenu);
             await fireEvent.keyDown(window, { key: " " });
-            expect(true).toBe(true);
+            expect(gameActions.navigateToView).toHaveBeenCalledWith(
+                "solar-system",
+            );
         });
     });
 
     describe("Galaxy View", () => {
-        it("should navigate to galaxy when Galaxy button is clicked", async () => {
+        it("should navigate to /galaxy when Galaxy button is clicked", async () => {
             const { container } = render(MainMenu);
             const buttons = Array.from(container.querySelectorAll("button"));
             const galaxyBtn = buttons.find(
@@ -226,15 +238,14 @@ describe("MainMenu", () => {
                     b.textContent?.toLowerCase().includes("galaxy") ||
                     b.textContent?.includes("main.galaxy"),
             );
-            if (galaxyBtn) {
-                await fireEvent.click(galaxyBtn);
-                expect(window.location.href).toBeDefined();
-            }
+            expect(galaxyBtn).toBeTruthy();
+            await fireEvent.click(galaxyBtn!);
+            expect(window.location.href).toBe("/galaxy");
         });
     });
 
     describe("Constellation View", () => {
-        it("should navigate to constellation when Constellation button is clicked", async () => {
+        it("should navigate to /constellation when Constellation button is clicked", async () => {
             const { container } = render(MainMenu);
             const buttons = Array.from(container.querySelectorAll("button"));
             const constellationBtn = buttons.find(
@@ -242,10 +253,9 @@ describe("MainMenu", () => {
                     b.textContent?.toLowerCase().includes("constellation") ||
                     b.textContent?.includes("constellation.title"),
             );
-            if (constellationBtn) {
-                await fireEvent.click(constellationBtn);
-                expect(window.location.href).toBeDefined();
-            }
+            expect(constellationBtn).toBeTruthy();
+            await fireEvent.click(constellationBtn!);
+            expect(window.location.href).toBe("/constellation");
         });
     });
 });

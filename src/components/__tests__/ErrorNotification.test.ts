@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
-import ErrorNotification from "../ErrorNotification.svelte";
+import ErrorNotification from "@/components/ErrorNotification.svelte";
 
 const makeError = (overrides = {}) => ({
     id: "err-1",
@@ -98,13 +98,11 @@ describe("ErrorNotification", () => {
     });
 
     describe("Dismiss Button", () => {
-        it("should be clickable without throwing", async () => {
+        it("should be clickable without throwing", () => {
             const { getByText } = render(ErrorNotification, {
                 props: { error: makeError() },
             });
-            await expect(
-                fireEvent.click(getByText("Dismiss")),
-            ).resolves.not.toThrow();
+            expect(() => fireEvent.click(getByText("Dismiss"))).not.toThrow();
         });
     });
 });
