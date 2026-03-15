@@ -26,6 +26,14 @@ export default defineConfig({
                 "dist/",
                 ".astro/",
                 "e2e/",
+                "src/pages/**",
+                "src/layouts/**",
+                "src/middleware.ts",
+                ".prettierrc.mjs",
+                "src/types/**",
+                "src/lib/galaxy/types.ts",
+                "src/lib/planetary-system/types.ts",
+                "src/lib/planetary-system/graphics/types.ts",
             ],
             thresholds: {
                 global: {
