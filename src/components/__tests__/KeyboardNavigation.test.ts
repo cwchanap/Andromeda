@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
 
 // Mock the SolarSystem data with a small set of celestial bodies
-vi.mock("../../lib/planetary-system/SolarSystem", () => ({
+vi.mock("@/lib/planetary-system/SolarSystem", () => ({
     solarSystemData: {
         star: {
             id: "sun",
@@ -34,9 +34,8 @@ vi.mock("../../lib/planetary-system/SolarSystem", () => ({
 }));
 
 // Mock gameActions in the store
-vi.mock("../../stores/gameStore", async (importOriginal) => {
-    const actual =
-        await importOriginal<typeof import("../../stores/gameStore")>();
+vi.mock("@/stores/gameStore", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/stores/gameStore")>();
     return {
         ...actual,
         gameActions: {
@@ -47,8 +46,8 @@ vi.mock("../../stores/gameStore", async (importOriginal) => {
     };
 });
 
-import { settings, gameActions } from "../../stores/gameStore";
-import KeyboardNavigation from "../KeyboardNavigation.svelte";
+import { settings, gameActions } from "@/stores/gameStore";
+import KeyboardNavigation from "@/components/KeyboardNavigation.svelte";
 
 const defaultSettings = {
     enableAnimations: true,

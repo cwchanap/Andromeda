@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/svelte";
-import GlobalLanguageSelector from "../GlobalLanguageSelector.svelte";
+import GlobalLanguageSelector from "@/components/GlobalLanguageSelector.svelte";
 
 describe("GlobalLanguageSelector", () => {
     afterEach(() => {

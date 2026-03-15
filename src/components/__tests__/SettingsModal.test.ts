@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
-import SettingsModal from "../SettingsModal.svelte";
-import type { GameSettings } from "../../stores/gameStore";
+import SettingsModal from "@/components/SettingsModal.svelte";
+import type { GameSettings } from "@/stores/gameStore";
 
 const defaultSettings: GameSettings = {
     enableAnimations: true,
@@ -92,18 +92,26 @@ describe("SettingsModal", () => {
     });
 
     describe("Interactions", () => {
-        it("should call reset handler when Reset button is clicked", async () => {
+        it("should reset form to default values when Reset button is clicked", async () => {
+            // Start with non-default value for animations
+            const modifiedSettings = {
+                ...defaultSettings,
+                enableAnimations: false,
+            };
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: { isOpen: true, currentSettings: modifiedSettings },
             });
             const buttons = Array.from(container.querySelectorAll("button"));
             const resetBtn = buttons.find((b) =>
                 b.textContent?.toLowerCase().includes("reset"),
             );
-            if (resetBtn) {
-                await fireEvent.click(resetBtn);
-                expect(true).toBe(true);
-            }
+            expect(resetBtn).toBeTruthy();
+            await fireEvent.click(resetBtn!);
+            // After reset, Enable Animations checkbox should be checked (default = true)
+            const animationsCheckbox = container.querySelector(
+                "input[aria-label='Enable Animations']",
+            ) as HTMLInputElement;
+            expect(animationsCheckbox?.checked).toBe(true);
         });
 
         it("should toggle checkboxes without throwing", async () => {
@@ -114,22 +122,20 @@ describe("SettingsModal", () => {
                 "input[type='checkbox']",
             );
             for (const checkbox of Array.from(checkboxes).slice(0, 3)) {
-                await fireEvent.click(checkbox);
+                expect(() => fireEvent.click(checkbox)).not.toThrow();
             }
-            expect(true).toBe(true);
         });
 
-        it("should change graphics quality via select", async () => {
+        it("should update graphicsQuality select value when changed", async () => {
             const { container } = render(SettingsModal, {
                 props: { isOpen: true, currentSettings: defaultSettings },
             });
-            const selects = container.querySelectorAll("select");
-            if (selects.length > 0) {
-                await fireEvent.change(selects[0], {
-                    target: { value: "high" },
-                });
-                expect(true).toBe(true);
-            }
+            const select = container.querySelector(
+                "select",
+            ) as HTMLSelectElement;
+            expect(select).toBeTruthy();
+            await fireEvent.change(select, { target: { value: "high" } });
+            expect(select.value).toBe("high");
         });
 
         it("should update range inputs without throwing", async () => {
@@ -138,14 +144,15 @@ describe("SettingsModal", () => {
             });
             const ranges = container.querySelectorAll("input[type='range']");
             for (const range of Array.from(ranges)) {
-                await fireEvent.input(range, { target: { value: "2.0" } });
+                expect(() =>
+                    fireEvent.input(range, { target: { value: "2.0" } }),
+                ).not.toThrow();
             }
-            expect(true).toBe(true);
         });
     });
 
     describe("Current Settings Reflection", () => {
-        it("should reflect highContrastMode when true", () => {
+        it("should reflect highContrastMode=true on the High Contrast Mode checkbox", () => {
             const highContrastSettings = {
                 ...defaultSettings,
                 highContrastMode: true,
@@ -153,14 +160,14 @@ describe("SettingsModal", () => {
             const { container } = render(SettingsModal, {
                 props: { isOpen: true, currentSettings: highContrastSettings },
             });
-            const checkboxes = Array.from(
-                container.querySelectorAll("input[type='checkbox']"),
-            ) as HTMLInputElement[];
-            const checked = checkboxes.some((c) => c.checked);
-            expect(checked).toBe(true);
+            const highContrastCheckbox = container.querySelector(
+                "input[aria-label='High Contrast Mode']",
+            ) as HTMLInputElement;
+            expect(highContrastCheckbox).toBeTruthy();
+            expect(highContrastCheckbox.checked).toBe(true);
         });
 
-        it("should reflect low graphics quality setting", () => {
+        it("should reflect low graphics quality in the select element", () => {
             const lowSettings = {
                 ...defaultSettings,
                 graphicsQuality: "low" as const,
@@ -168,7 +175,11 @@ describe("SettingsModal", () => {
             const { container } = render(SettingsModal, {
                 props: { isOpen: true, currentSettings: lowSettings },
             });
-            expect(container.textContent?.toLowerCase()).toContain("low");
+            const select = container.querySelector(
+                "select",
+            ) as HTMLSelectElement;
+            expect(select).toBeTruthy();
+            expect(select.value).toBe("low");
         });
     });
 });

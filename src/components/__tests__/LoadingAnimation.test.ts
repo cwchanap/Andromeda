@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/svelte";
-import LoadingAnimation from "../LoadingAnimation.svelte";
+import LoadingAnimation from "@/components/LoadingAnimation.svelte";
 
 describe("LoadingAnimation", () => {
     afterEach(() => {

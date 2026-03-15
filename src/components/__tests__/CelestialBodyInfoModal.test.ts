@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
-import CelestialBodyInfoModal from "../CelestialBodyInfoModal.svelte";
-import type { CelestialBodyData } from "../../types/game";
+import CelestialBodyInfoModal from "@/components/CelestialBodyInfoModal.svelte";
+import type { CelestialBodyData } from "@/types/game";
 
 const mockEarth: CelestialBodyData = {
     id: "earth",

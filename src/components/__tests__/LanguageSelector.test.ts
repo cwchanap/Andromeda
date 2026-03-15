@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
-import LanguageSelector from "../LanguageSelector.svelte";
-
-// Stub window.location for navigation tests
-const locationStub = { href: "http://localhost/" };
+import LanguageSelector from "@/components/LanguageSelector.svelte";
 
 describe("LanguageSelector", () => {
     afterEach(() => {
@@ -84,15 +81,19 @@ describe("LanguageSelector", () => {
 
     describe("Language Options", () => {
         it("should show all language options in dropdown", async () => {
-            const { container, getAllByText } = render(LanguageSelector);
+            const { container, getAllByText, getByText } =
+                render(LanguageSelector);
             const toggleBtn = container.querySelector(
                 "button",
             ) as HTMLButtonElement;
 
             await fireEvent.click(toggleBtn);
 
-            // Should show at least one English option
+            // English may appear in both the toggle button and the dropdown list
             expect(getAllByText("English").length).toBeGreaterThan(0);
+            // These only appear in the dropdown
+            expect(getByText("中文")).toBeTruthy();
+            expect(getByText("日本語")).toBeTruthy();
         });
 
         it("should close dropdown on Escape key", async () => {
@@ -111,24 +112,21 @@ describe("LanguageSelector", () => {
     describe("Language Change Navigation", () => {
         it("should navigate to correct URL when a language is selected", async () => {
             vi.stubGlobal("location", {
-                ...locationStub,
                 href: "http://localhost/",
             });
 
-            const { container } = render(LanguageSelector);
+            const { container, getByText } = render(LanguageSelector);
             const toggleBtn = container.querySelector(
                 "button",
             ) as HTMLButtonElement;
 
             await fireEvent.click(toggleBtn);
 
-            // Click on the English option (first language button in dropdown)
-            const languageButtons = document.querySelectorAll(
-                ".fixed button:not([aria-label])",
-            );
-            if (languageButtons.length > 0) {
-                await fireEvent.click(languageButtons[0]);
-            }
+            // Click on the Japanese (日本語) language button — should navigate to /ja/
+            const jaButton = getByText("日本語");
+            await fireEvent.click(jaButton);
+
+            expect(window.location.href).toBe("/ja/");
         });
     });
 

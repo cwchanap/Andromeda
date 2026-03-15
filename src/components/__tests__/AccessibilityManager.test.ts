@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/svelte";
-import { settings } from "../../stores/gameStore";
+import { settings } from "@/stores/gameStore";
 
 // Mock CSS imports that AccessibilityManager uses
-vi.mock("../../styles/high-contrast.css", () => ({}));
-vi.mock("../../styles/reduced-motion.css", () => ({}));
+vi.mock("@/styles/high-contrast.css", () => ({}));
+vi.mock("@/styles/reduced-motion.css", () => ({}));
 
 // matchMedia mock factory
 function createMatchMediaMock(matchesQuery?: (q: string) => boolean) {
@@ -20,7 +20,7 @@ function createMatchMediaMock(matchesQuery?: (q: string) => boolean) {
     }));
 }
 
-import AccessibilityManager from "../AccessibilityManager.svelte";
+import AccessibilityManager from "@/components/AccessibilityManager.svelte";
 
 // Default matchMedia mock (no system preferences active)
 let matchMediaMock = createMatchMediaMock();
@@ -57,7 +57,9 @@ describe("AccessibilityManager", () => {
         // Remove any leftover announcement elements from previous tests
         document.body
             .querySelectorAll('[aria-live="polite"].sr-only')
-            .forEach((el) => el.remove());
+            .forEach((el) => {
+                el.remove();
+            });
     });
 
     afterEach(() => {

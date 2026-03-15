@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
-import Dialog from "../Dialog.svelte";
+import Dialog from "@/components/ui/Dialog.svelte";
 
 describe("Dialog", () => {
     afterEach(() => {
@@ -47,53 +47,52 @@ describe("Dialog", () => {
     });
 
     describe("Close Button Interaction", () => {
-        it("should not throw when close button is clicked", async () => {
+        it("should not throw when close button is clicked", () => {
             const { container } = render(Dialog, { props: { open: true } });
             const closeButton = container.querySelector(
                 "button",
             ) as HTMLButtonElement;
-            await expect(fireEvent.click(closeButton)).resolves.not.toThrow();
+            expect(() => fireEvent.click(closeButton)).not.toThrow();
         });
     });
 
     describe("Overlay Click", () => {
-        it("should not throw when overlay is clicked", async () => {
+        it("should not throw when overlay is clicked", () => {
             const { container } = render(Dialog, { props: { open: true } });
-            // The overlay is the outermost div (fixed inset-0) with role=button
             const overlay = container.querySelector(
                 'div[role="button"]',
             ) as HTMLElement;
-            await expect(fireEvent.click(overlay)).resolves.not.toThrow();
+            expect(() => fireEvent.click(overlay)).not.toThrow();
         });
     });
 
     describe("Keyboard Interaction", () => {
-        it("should not throw when Escape key is pressed on overlay", async () => {
+        it("should not throw when Escape key is pressed on overlay", () => {
             const { container } = render(Dialog, { props: { open: true } });
             const overlay = container.querySelector(
                 'div[role="button"]',
             ) as HTMLElement;
-            await expect(
+            expect(() =>
                 fireEvent.keyDown(overlay, { key: "Escape" }),
-            ).resolves.not.toThrow();
+            ).not.toThrow();
         });
 
-        it("should not throw when Enter key is pressed on overlay", async () => {
+        it("should not throw when Enter key is pressed on overlay", () => {
             const { container } = render(Dialog, { props: { open: true } });
             const overlay = container.querySelector(
                 'div[role="button"]',
             ) as HTMLElement;
-            await expect(
+            expect(() =>
                 fireEvent.keyDown(overlay, { key: "Enter" }),
-            ).resolves.not.toThrow();
+            ).not.toThrow();
         });
 
-        it("should not throw when Escape is pressed on dialog content", async () => {
+        it("should not throw when Escape is pressed on dialog content", () => {
             const { getByRole } = render(Dialog, { props: { open: true } });
             const dialog = getByRole("dialog");
-            await expect(
+            expect(() =>
                 fireEvent.keyDown(dialog, { key: "Escape" }),
-            ).resolves.not.toThrow();
+            ).not.toThrow();
         });
     });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
-import ErrorBoundary from "../ErrorBoundary.svelte";
+import ErrorBoundary from "@/components/ErrorBoundary.svelte";
 
 describe("ErrorBoundary", () => {
     afterEach(() => {
@@ -145,24 +145,32 @@ describe("ErrorBoundary", () => {
     describe("Reload Page", () => {
         it("should call window.location.reload when Reload Page is clicked", async () => {
             const reloadSpy = vi.fn();
+            const originalLocation = window.location;
             Object.defineProperty(window, "location", {
                 configurable: true,
                 value: { reload: reloadSpy },
             });
 
-            const { getByText } = render(ErrorBoundary);
+            try {
+                const { getByText } = render(ErrorBoundary);
 
-            window.dispatchEvent(
-                new ErrorEvent("error", {
-                    error: new Error("crash"),
-                    message: "crash",
-                }),
-            );
-            await new Promise((r) => setTimeout(r, 0));
+                window.dispatchEvent(
+                    new ErrorEvent("error", {
+                        error: new Error("crash"),
+                        message: "crash",
+                    }),
+                );
+                await new Promise((r) => setTimeout(r, 0));
 
-            await fireEvent.click(getByText("Reload Page"));
+                await fireEvent.click(getByText("Reload Page"));
 
-            expect(reloadSpy).toHaveBeenCalledOnce();
+                expect(reloadSpy).toHaveBeenCalledOnce();
+            } finally {
+                Object.defineProperty(window, "location", {
+                    configurable: true,
+                    value: originalLocation,
+                });
+            }
         });
     });
 
