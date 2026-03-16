@@ -277,21 +277,25 @@ describe("ConstellationRenderer", () => {
     it("mousemove on canvas without prior mousedown does not update rotation", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        const anyRenderer = renderer as any;
+        const initialX = anyRenderer.cameraRotationX as number;
+        const initialY = anyRenderer.cameraRotationY as number;
         // No mousedown first — move should be a no-op
-        expect(() =>
-            canvas.dispatchEvent(
-                new MouseEvent("mousemove", {
-                    clientX: 200,
-                    clientY: 200,
-                    bubbles: true,
-                }),
-            ),
-        ).not.toThrow();
+        canvas.dispatchEvent(
+            new MouseEvent("mousemove", {
+                clientX: 200,
+                clientY: 200,
+                bubbles: true,
+            }),
+        );
+        expect(anyRenderer.cameraRotationX).toBe(initialX);
+        expect(anyRenderer.cameraRotationY).toBe(initialY);
     });
 
     it("mousemove after mousedown updates camera rotation", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        const anyRenderer = renderer as any;
         canvas.dispatchEvent(
             new MouseEvent("mousedown", {
                 clientX: 100,
@@ -299,15 +303,18 @@ describe("ConstellationRenderer", () => {
                 bubbles: true,
             }),
         );
-        expect(() =>
-            canvas.dispatchEvent(
-                new MouseEvent("mousemove", {
-                    clientX: 150,
-                    clientY: 120,
-                    bubbles: true,
-                }),
-            ),
-        ).not.toThrow();
+        const initialX = anyRenderer.cameraRotationX as number;
+        const initialY = anyRenderer.cameraRotationY as number;
+        canvas.dispatchEvent(
+            new MouseEvent("mousemove", {
+                clientX: 150,
+                clientY: 120,
+                bubbles: true,
+            }),
+        );
+        // deltaX=50 → cameraRotationY changes; deltaY=20 → cameraRotationX changes
+        expect(anyRenderer.cameraRotationY).not.toBe(initialY);
+        expect(anyRenderer.cameraRotationX).not.toBe(initialX);
     });
 
     it("mouseup after drag with high velocity triggers momentum animation", () => {
@@ -386,14 +393,31 @@ describe("ConstellationRenderer", () => {
         expect(event.defaultPrevented).toBe(true);
     });
 
+    // Helper that creates a TouchEvent even when the constructor is unavailable
+    // (some jsdom versions don't expose TouchEvent or Touch globally)
+    const createTouchEvent = (
+        type: string,
+        touches: Touch[] = [],
+    ): TouchEvent => {
+        if (typeof TouchEvent !== "undefined") {
+            return new TouchEvent(type, { touches, bubbles: true });
+        }
+        const event = new Event(type, {
+            bubbles: true,
+        }) as unknown as TouchEvent;
+        Object.defineProperty(event, "touches", {
+            value: touches,
+            configurable: true,
+        });
+        return event;
+    };
+
     it("touchend event on canvas does not throw", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;
         // touchend without prior touchstart — velocity stays zero, no momentum animation
         expect(() =>
-            canvas.dispatchEvent(
-                new TouchEvent("touchend", { touches: [], bubbles: true }),
-            ),
+            canvas.dispatchEvent(createTouchEvent("touchend", [])),
         ).not.toThrow();
     });
 
@@ -401,8 +425,9 @@ describe("ConstellationRenderer", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;
 
-        // Create Touch objects if the API is available (not always present in jsdom)
+        // Create individual Touch points if the API is available
         const makeTouch = (x: number, y: number): Touch | null => {
+            if (typeof Touch === "undefined") return null;
             try {
                 return new Touch({
                     identifier: 1,
@@ -419,27 +444,15 @@ describe("ConstellationRenderer", () => {
         const t2 = makeTouch(200, 110);
 
         if (t1 && t2) {
-            canvas.dispatchEvent(
-                new TouchEvent("touchstart", {
-                    touches: [t1],
-                    bubbles: true,
-                }),
-            );
+            canvas.dispatchEvent(createTouchEvent("touchstart", [t1]));
             expect(() =>
-                canvas.dispatchEvent(
-                    new TouchEvent("touchmove", {
-                        touches: [t2],
-                        bubbles: true,
-                    }),
-                ),
+                canvas.dispatchEvent(createTouchEvent("touchmove", [t2])),
             ).not.toThrow();
         }
 
         // touchend is always safe to fire
         expect(() =>
-            canvas.dispatchEvent(
-                new TouchEvent("touchend", { touches: [], bubbles: true }),
-            ),
+            canvas.dispatchEvent(createTouchEvent("touchend", [])),
         ).not.toThrow();
     });
 });
