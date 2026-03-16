@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import * as THREE from "three";
 import { CelestialBodyManager } from "../CelestialBodyManager";
-import type { CelestialBodyData } from "../../../../types/game";
+import type { CelestialBodyData } from "@/types/game";
 
 let origBoxGeometry: any;
 let origStdMatImpl: any;

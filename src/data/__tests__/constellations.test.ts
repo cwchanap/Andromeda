@@ -23,30 +23,16 @@ describe("constellations data", () => {
 });
 
 describe("getStarById", () => {
-    it("returns a star for a known id", () => {
-        // Use the first star's id from a known constellation
-        const firstStar = constellations[0]?.stars[0];
-        if (firstStar) {
-            // getStarById searches the private stars array; test with a known id
-            const result = getStarById(firstStar.id);
-            // May or may not be in the exported stars list — just check no throw
-            expect(result === undefined || result.id === firstStar.id).toBe(
-                true,
-            );
-        }
+    it("returns a known star by id from the catalog", () => {
+        // "dubhe" is the first star declared in the catalog
+        const result = getStarById("dubhe");
+        expect(result).toBeDefined();
+        expect(result!.id).toBe("dubhe");
+        expect(result!.name).toBeTruthy();
     });
 
     it("returns undefined for an unknown id", () => {
         expect(getStarById("definitely-not-a-real-star-id")).toBeUndefined();
-    });
-
-    it("returns the correct star for known star ids in the catalog", () => {
-        // dubhe is the first star in the catalog
-        const dubhe = getStarById("dubhe");
-        if (dubhe) {
-            expect(dubhe.id).toBe("dubhe");
-            expect(dubhe.name).toBeTruthy();
-        }
     });
 });
 
@@ -98,23 +84,18 @@ describe("getVisibleConstellations", () => {
     });
 
     it("northern hemisphere filter excludes northern-only constellations at -35 latitude", () => {
+        // The filter returns false when hemisphere==="northern" && latitude < -30
         const result = getVisibleConstellations(-35, 1);
-        result.forEach((c) => {
-            if (c.visibility.hemisphere === "northern") {
-                // northern hemisphere constellations at lat -35 should not appear
-                // (the filter returns false when hemisphere=northern && latitude < -30)
-                expect(true).toBe(false); // should not reach here
-            }
-        });
+        expect(
+            result.every((c) => c.visibility.hemisphere !== "northern"),
+        ).toBe(true);
     });
 
     it("southern hemisphere filter excludes southern-only constellations at +35 latitude", () => {
+        // The filter returns false when hemisphere==="southern" && latitude > 30
         const result = getVisibleConstellations(35, 6);
-        result.forEach((c) => {
-            if (c.visibility.hemisphere === "southern") {
-                // southern hemisphere constellations at lat +35 should not appear
-                expect(true).toBe(false); // should not reach here
-            }
-        });
+        expect(
+            result.every((c) => c.visibility.hemisphere !== "southern"),
+        ).toBe(true);
     });
 });
