@@ -616,5 +616,134 @@ describe("Comparison Utilities", () => {
 
             expect(compositionAttr?.getValue(mockBody)).toBe("");
         });
+
+        it("distance getValue returns distanceFromParent for moon type", () => {
+            const distanceAttr = COMPARISON_ATTRIBUTES.find(
+                (a) => a.key === "distance",
+            );
+            const moon: CelestialBodyData = {
+                id: "luna",
+                name: "Moon",
+                type: "moon",
+                description: "Earth's moon",
+                keyFacts: {
+                    diameter: "3,474 km",
+                    orbitalPeriod: "27.3 days",
+                    composition: ["Silicate"],
+                    temperature: "-20°C",
+                },
+                distanceFromParent: {
+                    kilometers: 384400,
+                    formattedString: "384,400 km",
+                },
+                images: [],
+                position: new THREE.Vector3(0, 0, 0),
+                scale: 1,
+                material: { color: "#C0C0C0" },
+            };
+            expect(distanceAttr?.getValue(moon)).toBe("384,400 km");
+        });
+
+        it("distance getValue returns dash when moon has no distanceFromParent", () => {
+            const distanceAttr = COMPARISON_ATTRIBUTES.find(
+                (a) => a.key === "distance",
+            );
+            const moon: CelestialBodyData = {
+                id: "deimos",
+                name: "Deimos",
+                type: "moon",
+                description: "Mars moon",
+                keyFacts: {
+                    diameter: "12 km",
+                    orbitalPeriod: "1.26 days",
+                    composition: ["Rock"],
+                    temperature: "-40°C",
+                },
+                images: [],
+                position: new THREE.Vector3(0, 0, 0),
+                scale: 1,
+                material: { color: "#808080" },
+            };
+            expect(distanceAttr?.getValue(moon)).toBe("-");
+        });
+
+        it("distance getValue returns distanceFromSun for planet type", () => {
+            const distanceAttr = COMPARISON_ATTRIBUTES.find(
+                (a) => a.key === "distance",
+            );
+            const planet: CelestialBodyData = {
+                id: "mars",
+                name: "Mars",
+                type: "planet",
+                description: "Red planet",
+                keyFacts: {
+                    diameter: "6,779 km",
+                    distanceFromSun: "228 million km",
+                    orbitalPeriod: "687 days",
+                    composition: ["Rock"],
+                    temperature: "-65°C",
+                },
+                images: [],
+                position: new THREE.Vector3(0, 0, 0),
+                scale: 1,
+                material: { color: "#CD5C5C" },
+            };
+            expect(distanceAttr?.getValue(planet)).toBe("228 million km");
+        });
+
+        it("distance getValue returns dash when planet has no distanceFromSun", () => {
+            const distanceAttr = COMPARISON_ATTRIBUTES.find(
+                (a) => a.key === "distance",
+            );
+            const planet: CelestialBodyData = {
+                id: "rogue",
+                name: "Rogue",
+                type: "planet",
+                description: "Rogue planet",
+                keyFacts: {
+                    diameter: "5,000 km",
+                    orbitalPeriod: "N/A",
+                    composition: ["Ice"],
+                    temperature: "-200°C",
+                },
+                images: [],
+                position: new THREE.Vector3(0, 0, 0),
+                scale: 1,
+                material: { color: "#AAAAAA" },
+            };
+            expect(distanceAttr?.getValue(planet)).toBe("-");
+        });
+
+        it("composition getValue returns up to 3 items joined", () => {
+            const compositionAttr = COMPARISON_ATTRIBUTES.find(
+                (a) => a.key === "composition",
+            );
+            const planet: CelestialBodyData = {
+                id: "test",
+                name: "Test",
+                type: "planet",
+                description: "Test",
+                keyFacts: {
+                    diameter: "1000 km",
+                    orbitalPeriod: "1 day",
+                    composition: ["Hydrogen", "Helium", "Oxygen", "Carbon"],
+                    temperature: "0°C",
+                },
+                images: [],
+                position: new THREE.Vector3(0, 0, 0),
+                scale: 1,
+                material: { color: "#FFFFFF" },
+            };
+            expect(compositionAttr?.getValue(planet)).toBe(
+                "Hydrogen, Helium, Oxygen",
+            );
+        });
+    });
+
+    describe("parseOrbitalPeriod fallback", () => {
+        it("returns 0 for a non-empty string that does not match years or days", () => {
+            // Hits the final `return 0` at line 88 (not the early N/A guard)
+            expect(parseOrbitalPeriod("unknown period")).toBe(0);
+        });
     });
 });

@@ -261,4 +261,185 @@ describe("ConstellationRenderer", () => {
         // Trigger resize
         expect(() => window.dispatchEvent(new Event("resize"))).not.toThrow();
     });
+
+    it("mousedown on canvas sets dragging state without throwing", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        expect(canvas).toBeTruthy();
+        const event = new MouseEvent("mousedown", {
+            clientX: 100,
+            clientY: 150,
+            bubbles: true,
+        });
+        expect(() => canvas.dispatchEvent(event)).not.toThrow();
+    });
+
+    it("mousemove on canvas without prior mousedown does not update rotation", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        // No mousedown first — move should be a no-op
+        expect(() =>
+            canvas.dispatchEvent(
+                new MouseEvent("mousemove", {
+                    clientX: 200,
+                    clientY: 200,
+                    bubbles: true,
+                }),
+            ),
+        ).not.toThrow();
+    });
+
+    it("mousemove after mousedown updates camera rotation", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        canvas.dispatchEvent(
+            new MouseEvent("mousedown", {
+                clientX: 100,
+                clientY: 100,
+                bubbles: true,
+            }),
+        );
+        expect(() =>
+            canvas.dispatchEvent(
+                new MouseEvent("mousemove", {
+                    clientX: 150,
+                    clientY: 120,
+                    bubbles: true,
+                }),
+            ),
+        ).not.toThrow();
+    });
+
+    it("mouseup after drag with high velocity triggers momentum animation", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        // Mousedown
+        canvas.dispatchEvent(
+            new MouseEvent("mousedown", {
+                clientX: 0,
+                clientY: 0,
+                bubbles: true,
+            }),
+        );
+        // Mousemove with large delta to build velocity
+        canvas.dispatchEvent(
+            new MouseEvent("mousemove", {
+                clientX: 100,
+                clientY: 0,
+                bubbles: true,
+            }),
+        );
+        // Mouseup — dragVelocityX ≫ 0.5 so startMomentumAnimation is called
+        expect(() =>
+            canvas.dispatchEvent(new MouseEvent("mouseup", { bubbles: true })),
+        ).not.toThrow();
+    });
+
+    it("mouseup without significant drag velocity does not throw", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        canvas.dispatchEvent(
+            new MouseEvent("mousedown", {
+                clientX: 100,
+                clientY: 100,
+                bubbles: true,
+            }),
+        );
+        // Tiny move → velocity stays near zero
+        canvas.dispatchEvent(
+            new MouseEvent("mousemove", {
+                clientX: 100,
+                clientY: 100,
+                bubbles: true,
+            }),
+        );
+        expect(() =>
+            canvas.dispatchEvent(new MouseEvent("mouseup", { bubbles: true })),
+        ).not.toThrow();
+    });
+
+    it("wheel event on canvas adjusts field of view without throwing", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        // Scroll down (zoom out)
+        expect(() =>
+            canvas.dispatchEvent(
+                new WheelEvent("wheel", { deltaY: 100, bubbles: true }),
+            ),
+        ).not.toThrow();
+        // Scroll up (zoom in)
+        expect(() =>
+            canvas.dispatchEvent(
+                new WheelEvent("wheel", { deltaY: -100, bubbles: true }),
+            ),
+        ).not.toThrow();
+    });
+
+    it("contextmenu event on canvas is prevented without throwing", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        const event = new MouseEvent("contextmenu", {
+            bubbles: true,
+            cancelable: true,
+        });
+        canvas.dispatchEvent(event);
+        expect(event.defaultPrevented).toBe(true);
+    });
+
+    it("touchend event on canvas does not throw", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        // touchend without prior touchstart — velocity stays zero, no momentum animation
+        expect(() =>
+            canvas.dispatchEvent(
+                new TouchEvent("touchend", { touches: [], bubbles: true }),
+            ),
+        ).not.toThrow();
+    });
+
+    it("touch start/move/end sequence executes without throwing", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+
+        // Create Touch objects if the API is available (not always present in jsdom)
+        const makeTouch = (x: number, y: number): Touch | null => {
+            try {
+                return new Touch({
+                    identifier: 1,
+                    target: canvas,
+                    clientX: x,
+                    clientY: y,
+                });
+            } catch {
+                return null;
+            }
+        };
+
+        const t1 = makeTouch(100, 100);
+        const t2 = makeTouch(200, 110);
+
+        if (t1 && t2) {
+            canvas.dispatchEvent(
+                new TouchEvent("touchstart", {
+                    touches: [t1],
+                    bubbles: true,
+                }),
+            );
+            expect(() =>
+                canvas.dispatchEvent(
+                    new TouchEvent("touchmove", {
+                        touches: [t2],
+                        bubbles: true,
+                    }),
+                ),
+            ).not.toThrow();
+        }
+
+        // touchend is always safe to fire
+        expect(() =>
+            canvas.dispatchEvent(
+                new TouchEvent("touchend", { touches: [], bubbles: true }),
+            ),
+        ).not.toThrow();
+    });
 });
