@@ -14,7 +14,7 @@ import {
     COMPARISON_ATTRIBUTES,
     type SelectableBody,
 } from "../comparisonUtils";
-import type { CelestialBodyData } from "../../types/game";
+import type { CelestialBodyData } from "@/types/game";
 import * as THREE from "three";
 
 // Mock the planetary system registry
