@@ -74,10 +74,15 @@ describe("AccessibilityManager", () => {
             expect(container).toBeTruthy();
         });
 
-        it("should render a DOM element", () => {
-            const { container } = render(AccessibilityManager);
-            // Component has no visual content but renders a container div
-            expect(container.firstChild).toBeTruthy();
+        it("should not set accessibility attributes by default", () => {
+            render(AccessibilityManager);
+            // With default settings, no accessibility attributes should be applied
+            expect(
+                document.documentElement.getAttribute("data-high-contrast"),
+            ).toBeNull();
+            expect(
+                document.documentElement.getAttribute("data-reduced-motion"),
+            ).toBeNull();
         });
     });
 
