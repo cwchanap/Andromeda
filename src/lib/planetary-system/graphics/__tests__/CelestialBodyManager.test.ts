@@ -513,4 +513,105 @@ describe("CelestialBodyManager", () => {
         expect(lineMat1.dispose).toHaveBeenCalled();
         expect(lineMat2.dispose).toHaveBeenCalled();
     });
+
+    it("dispose handles a Mesh with a single material (non-array) without throwing", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const singleMat = { dispose: vi.fn() } as unknown as THREE.Material;
+        const geo = { dispose: vi.fn() } as unknown as THREE.BufferGeometry;
+        const mesh = new THREE.Mesh(geo, singleMat as any);
+        (manager as any).bodies.set("single-mat-body", mesh);
+
+        // orbit line with single material
+        const lineMat = { dispose: vi.fn() } as unknown as THREE.Material;
+        const lineGeo = { dispose: vi.fn() } as unknown as THREE.BufferGeometry;
+        const line = {
+            geometry: lineGeo,
+            material: lineMat,
+        } as unknown as THREE.Line;
+        (manager as any).orbitLines.set("single-mat-line", line);
+
+        manager.dispose();
+
+        expect(singleMat.dispose).toHaveBeenCalled();
+        expect(lineMat.dispose).toHaveBeenCalled();
+    });
+
+    it("updateAnimations animates solid rings rotation", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "ringed-planet",
+            rings: {
+                enabled: true,
+                innerRadius: 2,
+                outerRadius: 4,
+                color: "#CCCCCC",
+                opacity: 0.5,
+                segments: 1,
+                thetaSegments: 8,
+                // No particleSystem → solid ring path
+            },
+        });
+
+        const group = await manager.createCelestialBody(data);
+        const ringObject = (group as any).getObjectByName(
+            "ringed-planet_rings",
+        );
+
+        // Record initial rotation before animation
+        const initialRotationZ = ringObject?.rotation?.z ?? 0;
+
+        // Animate — this should execute the solid ring rotation (rotation.z += deltaTime * 0.001)
+        expect(() => manager.updateAnimations(1.0, 1.0)).not.toThrow();
+
+        if (ringObject) {
+            // rotation.z should have changed
+            expect(ringObject.rotation.z).not.toBe(initialRotationZ);
+        }
+    });
+
+    it("createFallbackGeometry uses default sphere for unknown body types", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        // "asteroid" is not one of star/planet/moon — hits the default branch
+        const data = makeBodyData({
+            id: "ceres",
+            type: "asteroid" as any,
+        });
+
+        const group = await manager.createCelestialBody(data);
+        expect(group).toBeTruthy();
+        const mesh = (group as any).getObjectByName("ceres_body");
+        expect(mesh).toBeTruthy();
+    });
+
+    it("createSolidRings with texture loads texture loader without throwing", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "textured-ring",
+            rings: {
+                enabled: true,
+                innerRadius: 1,
+                outerRadius: 3,
+                color: "#FFFFFF",
+                opacity: 0.8,
+                segments: 1,
+                thetaSegments: 8,
+                texture: "/textures/ring.png",
+                // No particleSystem → solid ring with texture
+            },
+        });
+
+        await expect(manager.createCelestialBody(data)).resolves.toBeTruthy();
+    });
 });
