@@ -2,14 +2,17 @@
 // Primary goal: exercise initialize() and cleanup() methods for coverage
 import { describe, it, expect } from "vitest";
 
-import { alphaCentauriSystem } from "../AlphaCentauri";
-import { kepler442System, kepler438System } from "../KeplerSystems";
+import { alphaCentauriSystem } from "@/lib/planetary-system/AlphaCentauri";
+import {
+    kepler442System,
+    kepler438System,
+} from "@/lib/planetary-system/KeplerSystems";
 import {
     trappist1System,
     wolf359System,
     barnardsStarSystem,
     ross128System,
-} from "../NearbyExoplanets";
+} from "@/lib/planetary-system/NearbyExoplanets";
 
 // ─── AlphaCentauri ────────────────────────────────────────────────────────────
 
