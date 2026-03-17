@@ -697,3 +697,88 @@ describe("DefaultSystemValidator.validatePlugin", () => {
         expect(result.errors.length).toBeGreaterThanOrEqual(4);
     });
 });
+
+// ─── validateUniverse additional branch coverage ─────────────────────────────
+
+describe("validateUniverse missing/empty currentSystemId branch", () => {
+    let manager: UniverseManager;
+
+    const validStar = {
+        id: "star-1",
+        name: "Test Star",
+        type: "star" as const,
+        description: "A star",
+        keyFacts: {
+            diameter: "1,000,000 km",
+            distanceFromSun: "0 km",
+            orbitalPeriod: "N/A",
+            composition: ["Hydrogen"],
+            temperature: "5,000 K",
+        },
+        images: [],
+        position: new THREE.Vector3(0, 0, 0),
+        scale: 1,
+        material: { color: "#fff" },
+    };
+
+    beforeEach(() => {
+        manager = new UniverseManager();
+    });
+
+    it("rejects universe import when currentSystemId is empty string", () => {
+        const result = manager.importUniverse({
+            systems: new Map([
+                [
+                    "sol",
+                    {
+                        id: "sol",
+                        name: "Sol",
+                        description: "",
+                        star: validStar,
+                        celestialBodies: [],
+                        systemScale: 1,
+                        systemCenter: new THREE.Vector3(0, 0, 0),
+                        systemType: "solar",
+                    },
+                ],
+            ]),
+            currentSystemId: "",
+            metadata: {
+                name: "U",
+                description: "D",
+                version: "1",
+                lastUpdated: new Date(),
+            },
+        });
+        expect(result).toBe(false);
+    });
+
+    it("rejects universe import when an inner system fails validation", () => {
+        // The system has an empty name, which makes validateStarSystem fail
+        const result = manager.importUniverse({
+            systems: new Map([
+                [
+                    "bad-system",
+                    {
+                        id: "bad-system",
+                        name: "",
+                        description: "",
+                        star: validStar,
+                        celestialBodies: [],
+                        systemScale: 1,
+                        systemCenter: new THREE.Vector3(0, 0, 0),
+                        systemType: "solar",
+                    },
+                ],
+            ]),
+            currentSystemId: "bad-system",
+            metadata: {
+                name: "U",
+                description: "D",
+                version: "1",
+                lastUpdated: new Date(),
+            },
+        });
+        expect(result).toBe(false);
+    });
+});

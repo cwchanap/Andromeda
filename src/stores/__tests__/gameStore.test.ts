@@ -466,3 +466,42 @@ describe("Game Store", () => {
         });
     });
 });
+
+// ─── Edge case coverage for uncovered branches ────────────────────────────────
+
+describe("gameStore edge cases", () => {
+    beforeEach(() => {
+        gameActions.resetGameState();
+    });
+
+    describe("updateSystemTransitionProgress when no transition is active", () => {
+        it("is a no-op when systemTransition is undefined (no crash)", () => {
+            // No transition started - systemTransition is undefined
+            expect(() =>
+                gameActions.updateSystemTransitionProgress(0.7),
+            ).not.toThrow();
+            const state = get(gameState);
+            // systemTransition should remain undefined
+            expect(state.universe?.systemTransition).toBeUndefined();
+        });
+
+        it("updates progress when called after startSystemTransition", () => {
+            gameActions.startSystemTransition("sol", "kepler");
+            gameActions.updateSystemTransitionProgress(0.75);
+            const state = get(gameState);
+            expect(state.universe?.systemTransition?.progress).toBe(0.75);
+        });
+    });
+
+    describe("updateSystemTransitionProgress when universe is undefined", () => {
+        it("handles null universe state gracefully", () => {
+            // Force universe to undefined by resetting and not setting it
+            gameActions.updateGameState({ universe: undefined });
+            expect(() =>
+                gameActions.updateSystemTransitionProgress(0.5),
+            ).not.toThrow();
+            const state = get(gameState);
+            expect(state.universe).toBeUndefined();
+        });
+    });
+});
