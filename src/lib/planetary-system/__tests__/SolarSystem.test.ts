@@ -19,8 +19,8 @@ import {
     kmToAU,
     updatePositionsFromRealDistance,
     validateCelestialBodyData,
-} from "../SolarSystem";
-import type { CelestialBodyData } from "../../../types/game";
+} from "@/lib/planetary-system/SolarSystem";
+import type { CelestialBodyData } from "@/types/game";
 
 describe("solarSystemData", () => {
     it("has expected id and name", () => {
