@@ -201,6 +201,7 @@ describe("getCelestialBodiesByType", () => {
 
     it("returns only moons", () => {
         const moons = getCelestialBodiesByType("moon");
+        expect(moons.length).toBeGreaterThan(0);
         expect(moons.every((b) => b.type === "moon")).toBe(true);
     });
 });
@@ -266,7 +267,8 @@ describe("calculateOrbitPosition", () => {
 
     it("uses default systemScale when not provided", () => {
         const pos = calculateOrbitPosition(5, 0);
-        expect(pos.y).toBe(0);
+        expect(pos.x).toBeCloseTo(5 * solarSystemData.systemScale);
+        expect(pos.z).toBeCloseTo(0);
     });
 });
 
@@ -418,9 +420,17 @@ describe("updatePositionsFromRealDistance", () => {
         expect(result).not.toBe(solarSystemData);
     });
 
-    it("updates positions based on real distances", () => {
+    it("updates positions for bodies that have realDistance set", () => {
+        const bodyWithRealDistance = solarSystemData.celestialBodies.find(
+            (b) => b.realDistance,
+        );
+        expect(bodyWithRealDistance).toBeDefined();
         const result = updatePositionsFromRealDistance(solarSystemData);
-        expect(Array.isArray(result.celestialBodies)).toBe(true);
+        const updatedBody = result.celestialBodies.find(
+            (b) => b.id === bodyWithRealDistance!.id,
+        )!;
+        // Position x should be non-zero (scaled from real km distance)
+        expect(updatedBody.position.x).not.toBe(0);
     });
 
     it("updates orbitRadius from realDistance when present", () => {

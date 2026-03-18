@@ -494,7 +494,7 @@ describe("gameStore edge cases", () => {
     });
 
     describe("updateSystemTransitionProgress when universe is undefined", () => {
-        it("handles null universe state gracefully", () => {
+        it("handles undefined universe state gracefully", () => {
             // Force universe to undefined by resetting and not setting it
             gameActions.updateGameState({ universe: undefined });
             expect(() =>
