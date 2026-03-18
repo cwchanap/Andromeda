@@ -425,12 +425,19 @@ describe("updatePositionsFromRealDistance", () => {
             (b) => b.realDistance,
         );
         expect(bodyWithRealDistance).toBeDefined();
+        const expected = getScaledPosition(
+            bodyWithRealDistance!,
+            solarSystemData.systemScale,
+        );
         const result = updatePositionsFromRealDistance(solarSystemData);
         const updatedBody = result.celestialBodies.find(
             (b) => b.id === bodyWithRealDistance!.id,
         )!;
-        // Position x should be non-zero (scaled from real km distance)
-        expect(updatedBody.position.x).not.toBe(0);
+        expect(updatedBody.position).toMatchObject({
+            x: expected.x,
+            y: expected.y,
+            z: expected.z,
+        });
     });
 
     it("updates orbitRadius from realDistance when present", () => {

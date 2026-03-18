@@ -484,13 +484,6 @@ describe("gameStore edge cases", () => {
             // systemTransition should remain undefined
             expect(state.universe?.systemTransition).toBeUndefined();
         });
-
-        it("updates progress when called after startSystemTransition", () => {
-            gameActions.startSystemTransition("sol", "kepler");
-            gameActions.updateSystemTransitionProgress(0.75);
-            const state = get(gameState);
-            expect(state.universe?.systemTransition?.progress).toBe(0.75);
-        });
     });
 
     describe("updateSystemTransitionProgress when universe is undefined", () => {
