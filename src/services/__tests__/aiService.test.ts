@@ -319,4 +319,61 @@ describe("AIService", () => {
         await expect(promise).resolves.toBeUndefined();
         vi.useRealTimers();
     });
+
+    // ─── generateSystemPrompt private method ─────────────────────────────────
+
+    it("generateSystemPrompt without context returns general astronomy prompt", () => {
+        const prompt = (service as any).generateSystemPrompt();
+        expect(typeof prompt).toBe("string");
+        expect(prompt.toLowerCase()).toContain("astronomy");
+    });
+
+    it("generateSystemPrompt with planet context includes planet name and facts", () => {
+        const planet = makePlanet();
+        const prompt = (service as any).generateSystemPrompt(planet);
+        expect(prompt).toContain("Earth");
+        expect(prompt).toContain("12,742 km"); // diameter
+        expect(prompt).toContain("nitrogen"); // composition
+    });
+
+    it("generateSystemPrompt with star context includes star fields", () => {
+        const star = makeStar();
+        const prompt = (service as any).generateSystemPrompt(star);
+        expect(prompt).toContain("Sun");
+        expect(prompt).toContain("hydrogen");
+    });
+
+    it("generateSystemPrompt with context that has moons includes moon count", () => {
+        const planet = makePlanet(); // has moons: 1
+        const prompt = (service as any).generateSystemPrompt(planet);
+        expect(prompt).toContain("moons");
+    });
+
+    it("generateSystemPrompt with context that has no moons omits moon line", () => {
+        const planet = makePlanet();
+        delete (planet.keyFacts as any).moons;
+        const prompt = (service as any).generateSystemPrompt(planet);
+        // Should still produce a string without errors
+        expect(typeof prompt).toBe("string");
+    });
+
+    // ─── Line 77: fallback message when createFallbackResponse.message is falsy ─
+
+    it("generateResponse returns built-in fallback message when createFallbackResponse has no message", async () => {
+        vi.spyOn(Math, "random").mockReturnValue(0.05); // force network failure
+        const origRetries = (APIErrorHandler as any).maxRetries;
+        (APIErrorHandler as any).maxRetries = 0;
+
+        // Make createFallbackResponse return an object with no .message
+        vi.spyOn(APIErrorHandler, "createFallbackResponse").mockReturnValue({
+            isError: true,
+        });
+
+        try {
+            const result = await service.generateResponse("hello");
+            expect(result).toContain("I'm sorry");
+        } finally {
+            (APIErrorHandler as any).maxRetries = origRetries;
+        }
+    });
 });

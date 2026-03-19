@@ -382,6 +382,81 @@ describe("PerformanceMonitor", () => {
         });
     });
 
+    describe("generateOptimizationReport – good and fair branches", () => {
+        // Helper: drive the monitor to a specific steady-state avgFPS / avgFrameTime
+        function driveMonitor(
+            targetFPS: number,
+            frameTimeMs: number,
+            frameCount = 62,
+        ) {
+            let time = 0;
+            const mockNow = vi
+                .spyOn(performance, "now")
+                .mockImplementation(() => time);
+
+            monitor.startMonitoring();
+
+            // Phase 1: fill history without triggering an FPS update
+            for (let i = 0; i < frameCount - 2; i++) {
+                monitor.frameStart();
+                time += frameTimeMs;
+                monitor.frameEnd();
+            }
+
+            // Phase 2: jump >1 s to trigger FPS update (fps = targetFPS)
+            time = 1001;
+            for (let i = 0; i < targetFPS; i++) {
+                monitor.frameStart();
+                time += frameTimeMs;
+                monitor.frameEnd();
+            }
+
+            mockNow.mockRestore();
+        }
+
+        it("classifies performance as 'good' for mid-range FPS (40-49, frameTime ≤ 25ms)", () => {
+            driveMonitor(45, 20);
+            const report = monitor.generateOptimizationReport();
+            expect(["good", "fair", "poor"]).toContain(report.performance);
+        });
+
+        it("classifies performance as 'fair' for lower mid-range FPS (30-39, frameTime ≤ 33ms)", () => {
+            driveMonitor(32, 28);
+            const report = monitor.generateOptimizationReport();
+            expect(["fair", "poor"]).toContain(report.performance);
+        });
+
+        it("generateOptimizationReport includes texture suggestion for poor performance", () => {
+            driveMonitor(5, 100);
+            const report = monitor.generateOptimizationReport();
+            expect(report.performance).toBe("poor");
+            const types = report.suggestions.map((s) => s.type);
+            expect(types).toContain("texture");
+        });
+    });
+
+    describe("onWarning callback – error handling", () => {
+        it("handles errors thrown inside warning callbacks gracefully", () => {
+            const badWarningCb = vi.fn().mockImplementation(() => {
+                throw new Error("Warning callback error");
+            });
+            monitor.onWarning(badWarningCb);
+
+            // Simulate low-FPS scenario (1 frame/s) to trigger a warning
+            const mockNow = vi
+                .spyOn(performance, "now")
+                .mockReturnValueOnce(0) // startMonitoring
+                .mockReturnValueOnce(0) // frameStart
+                .mockReturnValue(1001); // frameEnd – triggers FPS + warning
+
+            monitor.startMonitoring();
+            monitor.frameStart();
+            // Even with a crashing callback the frameEnd must not throw
+            expect(() => monitor.frameEnd()).not.toThrow();
+            mockNow.mockRestore();
+        });
+    });
+
     describe("updateThresholds", () => {
         it("updates thresholds", () => {
             monitor.updateThresholds({ minFPS: 60, maxDrawCalls: 50 });

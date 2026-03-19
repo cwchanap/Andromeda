@@ -249,4 +249,74 @@ describe("PlanetarySystemRenderer", () => {
             renderer.updateConfig({ orbitSpeedMultiplier: 2.5 }),
         ).not.toThrow();
     });
+
+    it("onCameraChange adapter forwards zoom from internal CameraState to event callback", async () => {
+        const onCameraChange = vi.fn();
+        renderer = new PlanetarySystemRenderer(container, makeConfig(), {
+            onCameraChange,
+        });
+        await renderer.initialize(makeSystemData());
+
+        // Access the underlying SolarSystemRenderer's stored events and invoke onCameraChange
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const solarRenderer = (renderer as any).solarSystemRenderer;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const internalEvents = (solarRenderer as any).events as any;
+        const mockCameraState = {
+            zoom: 3.7,
+            position: new THREE.Vector3(),
+            target: new THREE.Vector3(),
+        };
+        internalEvents.onCameraChange(mockCameraState);
+
+        expect(onCameraChange).toHaveBeenCalledWith(3.7);
+    });
+
+    it("initialize throws and calls onError when the underlying renderer fails", async () => {
+        const onError = vi.fn();
+        renderer = new PlanetarySystemRenderer(container, makeConfig(), {
+            onError,
+        });
+
+        // Force the underlying SolarSystemRenderer.initialize to reject
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const solarRenderer = (renderer as any).solarSystemRenderer;
+        vi.spyOn(solarRenderer, "initialize").mockRejectedValue(
+            new Error("renderer init failed"),
+        );
+
+        await expect(renderer.initialize(makeSystemData())).rejects.toThrow(
+            "renderer init failed",
+        );
+        expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it("initialize wraps non-Error rejections in an Error before calling onError", async () => {
+        const onError = vi.fn();
+        renderer = new PlanetarySystemRenderer(container, makeConfig(), {
+            onError,
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const solarRenderer = (renderer as any).solarSystemRenderer;
+        vi.spyOn(solarRenderer, "initialize").mockRejectedValue(
+            "string error value",
+        );
+
+        await expect(renderer.initialize(makeSystemData())).rejects.toThrow(
+            "string error value",
+        );
+        expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it("initialize throws when solarSystemRenderer is null", async () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        // Simulate missing renderer (e.g. after disposal)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (renderer as any).solarSystemRenderer = null;
+
+        await expect(renderer.initialize(makeSystemData())).rejects.toThrow(
+            "Solar system renderer not initialized",
+        );
+    });
 });
