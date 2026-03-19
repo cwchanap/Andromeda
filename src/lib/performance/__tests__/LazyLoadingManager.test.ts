@@ -396,6 +396,68 @@ describe("BundleSplitter", () => {
                 BundleSplitter.loadChunksByPriority([]),
             ).resolves.toBeUndefined();
         });
+
+        it("loads high-priority chunks after critical ones", async () => {
+            const order: string[] = [];
+            await BundleSplitter.loadChunksByPriority([
+                {
+                    id: "high-chunk",
+                    priority: "high",
+                    importFn: vi.fn().mockImplementation(async () => {
+                        order.push("high");
+                        return {};
+                    }),
+                },
+                {
+                    id: "critical-chunk",
+                    priority: "critical",
+                    importFn: vi.fn().mockImplementation(async () => {
+                        order.push("critical");
+                        return {};
+                    }),
+                },
+            ]);
+            expect(order.indexOf("critical")).toBeLessThan(
+                order.indexOf("high"),
+            );
+        });
+
+        it("background chunks (medium/low) are dispatched without blocking", async () => {
+            const mediumFn = vi.fn().mockResolvedValue({});
+            const lowFn = vi.fn().mockResolvedValue({});
+
+            await expect(
+                BundleSplitter.loadChunksByPriority([
+                    {
+                        id: "med-chunk-bg",
+                        priority: "medium",
+                        importFn: mediumFn,
+                    },
+                    { id: "low-chunk-bg", priority: "low", importFn: lowFn },
+                ]),
+            ).resolves.toBeUndefined();
+        });
+
+        it("background chunk failures are swallowed without unhandled rejection", async () => {
+            const failFn = vi
+                .fn()
+                .mockRejectedValue(new Error("background fail"));
+            const consoleSpy = vi
+                .spyOn(console, "warn")
+                .mockImplementation(() => {});
+
+            await expect(
+                BundleSplitter.loadChunksByPriority([
+                    {
+                        id: "fail-bg-chunk",
+                        priority: "medium",
+                        importFn: failFn,
+                    },
+                ]),
+            ).resolves.toBeUndefined();
+
+            consoleSpy.mockRestore();
+        });
     });
 });
 
