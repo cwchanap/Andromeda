@@ -311,8 +311,7 @@ describe("PlanetarySystemRenderer", () => {
 
     it("initialize throws when solarSystemRenderer is null", async () => {
         const onError = vi.fn();
-        renderer = new PlanetarySystemRenderer(container, {
-            ...makeConfig(),
+        renderer = new PlanetarySystemRenderer(container, makeConfig(), {
             onError,
         });
         // Simulate missing renderer (e.g. after disposal)

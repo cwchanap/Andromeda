@@ -383,11 +383,15 @@ describe("PerformanceMonitor", () => {
     });
 
     describe("generateOptimizationReport – good and fair branches", () => {
-        // Helper: drive the monitor to a specific steady-state avgFPS / avgFrameTime
+        // Helper: drive the monitor with uniform frameTimeMs.
+        // Measured fps ≈ 1000 / frameTimeMs (set by the frame-counter window).
+        // frameCount = 120 ensures the 60-entry ring buffer is fully overwritten
+        // with post-FPS-update entries, eliminating zero-fps initialisation noise.
+        // _targetFPS is kept only as documentation – it has no effect on the clock.
         function driveMonitor(
-            targetFPS: number,
+            _targetFPS: number,
             frameTimeMs: number,
-            frameCount = 62,
+            frameCount = 120,
         ) {
             let time = 0;
             const mockNow = vi
@@ -396,16 +400,7 @@ describe("PerformanceMonitor", () => {
 
             monitor.startMonitoring();
 
-            // Phase 1: fill history without triggering an FPS update
-            for (let i = 0; i < frameCount - 2; i++) {
-                monitor.frameStart();
-                time += frameTimeMs;
-                monitor.frameEnd();
-            }
-
-            // Phase 2: jump >1 s to trigger FPS update (fps = targetFPS)
-            time = 1001;
-            for (let i = 0; i < targetFPS; i++) {
+            for (let i = 0; i < frameCount; i++) {
                 monitor.frameStart();
                 time += frameTimeMs;
                 monitor.frameEnd();
@@ -415,15 +410,17 @@ describe("PerformanceMonitor", () => {
             return mockNow;
         }
 
-        it("classifies performance as 'good' for mid-range FPS (40-49, frameTime ≤ 25ms)", () => {
-            const mockNow = driveMonitor(45, 20);
+        it("classifies performance as 'good' for mid-range FPS (~45fps, 22ms frame time)", () => {
+            // 1000/22 ≈ 45fps (≥40, <50) and 22ms ≤ 25ms → "good"
+            const mockNow = driveMonitor(45, 22);
             const report = monitor.generateOptimizationReport();
             mockNow.mockRestore();
             expect(report.performance).toBe("good");
         });
 
-        it("classifies performance as 'fair' for lower mid-range FPS (30-39, frameTime ≤ 33ms)", () => {
-            const mockNow = driveMonitor(32, 28);
+        it("classifies performance as 'fair' for lower mid-range FPS (~32fps, 31ms frame time)", () => {
+            // 1000/31 ≈ 32fps (≥30, <40) and 31ms ≤ 33ms → "fair"
+            const mockNow = driveMonitor(32, 31);
             const report = monitor.generateOptimizationReport();
             mockNow.mockRestore();
             expect(report.performance).toBe("fair");
