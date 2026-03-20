@@ -456,6 +456,8 @@ describe("BundleSplitter", () => {
                 ]),
             ).resolves.toBeUndefined();
 
+            // Flush microtask queue so the background .catch(() => console.warn(...)) runs
+            await Promise.resolve();
             consoleSpy.mockRestore();
         });
     });

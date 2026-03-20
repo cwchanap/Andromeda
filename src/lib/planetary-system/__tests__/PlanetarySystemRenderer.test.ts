@@ -310,7 +310,11 @@ describe("PlanetarySystemRenderer", () => {
     });
 
     it("initialize throws when solarSystemRenderer is null", async () => {
-        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        const onError = vi.fn();
+        renderer = new PlanetarySystemRenderer(container, {
+            ...makeConfig(),
+            onError,
+        });
         // Simulate missing renderer (e.g. after disposal)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (renderer as any).solarSystemRenderer = null;
@@ -318,5 +322,7 @@ describe("PlanetarySystemRenderer", () => {
         await expect(renderer.initialize(makeSystemData())).rejects.toThrow(
             "Solar system renderer not initialized",
         );
+        // The null-check throws before the try/catch that would call onError
+        expect(onError).not.toHaveBeenCalled();
     });
 });

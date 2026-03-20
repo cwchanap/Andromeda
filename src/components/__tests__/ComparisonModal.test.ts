@@ -125,12 +125,8 @@ describe("ComparisonModal", () => {
             ".modal-overlay",
         ) as HTMLElement;
         // Simulate clicking directly on the overlay (not a child)
-        await fireEvent.click(overlay, {
-            target: overlay,
-            currentTarget: overlay,
-        });
-        // onClose may or may not fire depending on target check; just verify no throw
-        expect(typeof onClose).toBe("function");
+        await fireEvent.click(overlay);
+        expect(onClose).toHaveBeenCalledTimes(1);
     });
 
     it("renders body names when bodies are provided", async () => {

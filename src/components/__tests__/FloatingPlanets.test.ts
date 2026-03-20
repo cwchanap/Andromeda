@@ -13,11 +13,10 @@ describe("FloatingPlanets", () => {
 
     it("renders nothing before mount (no planet divs visible initially)", () => {
         const { container } = render(FloatingPlanets);
-        // Before onMount fires in jsdom the {#if mounted} block is false
-        // so no .floating-planet elements should exist yet
+        // In jsdom onMount fires synchronously, so either 0 or 5 planets are valid.
+        // After that synchronous flush the {#if mounted} guard may already be true.
         const planets = container.querySelectorAll(".floating-planet");
-        // Either 0 (not mounted) or 5 (mounted) – both are valid depending on timing
-        expect(planets.length).toBeGreaterThanOrEqual(0);
+        expect([0, 5]).toContain(planets.length);
     });
 
     it("after mount renders exactly 5 planet containers", async () => {
