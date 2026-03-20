@@ -401,7 +401,7 @@ describe("BundleSplitter", () => {
             const order: string[] = [];
             await BundleSplitter.loadChunksByPriority([
                 {
-                    id: "high-chunk",
+                    id: "high-chunk-order",
                     priority: "high",
                     importFn: vi.fn().mockImplementation(async () => {
                         order.push("high");
@@ -409,7 +409,7 @@ describe("BundleSplitter", () => {
                     }),
                 },
                 {
-                    id: "critical-chunk",
+                    id: "critical-chunk-order",
                     priority: "critical",
                     importFn: vi.fn().mockImplementation(async () => {
                         order.push("critical");
