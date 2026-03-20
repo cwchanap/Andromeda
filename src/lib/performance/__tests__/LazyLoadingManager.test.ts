@@ -436,9 +436,15 @@ describe("BundleSplitter", () => {
                     { id: "low-chunk-bg", priority: "low", importFn: lowFn },
                 ]),
             ).resolves.toBeUndefined();
+
+            // Flush microtask queue so background imports fire
+            await Promise.resolve();
+            expect(mediumFn).toHaveBeenCalledTimes(1);
+            expect(lowFn).toHaveBeenCalledTimes(1);
         });
 
         it("background chunk failures are swallowed without unhandled rejection", async () => {
+            vi.useFakeTimers();
             const failFn = vi
                 .fn()
                 .mockRejectedValue(new Error("background fail"));
@@ -446,19 +452,32 @@ describe("BundleSplitter", () => {
                 .spyOn(console, "warn")
                 .mockImplementation(() => {});
 
-            await expect(
-                BundleSplitter.loadChunksByPriority([
+            try {
+                // loadChunksByPriority returns immediately (background not awaited)
+                const loadPromise = BundleSplitter.loadChunksByPriority([
                     {
                         id: "fail-bg-chunk",
                         priority: "medium",
                         importFn: failFn,
                     },
-                ]),
-            ).resolves.toBeUndefined();
+                ]);
 
-            // Flush microtask queue so the background .catch(() => console.warn(...)) runs
-            await Promise.resolve();
-            consoleSpy.mockRestore();
+                // Advance past all retry delays (default: 3 retries × 1000 ms each)
+                await vi.advanceTimersByTimeAsync(4000);
+                await loadPromise;
+
+                // Flush remaining microtasks so the .catch(console.warn) fires
+                await Promise.resolve();
+
+                expect(consoleSpy).toHaveBeenCalled();
+                expect(consoleSpy).toHaveBeenCalledWith(
+                    expect.stringContaining("fail-bg-chunk"),
+                    expect.any(Error),
+                );
+            } finally {
+                consoleSpy.mockRestore();
+                vi.useRealTimers();
+            }
         });
     });
 });
