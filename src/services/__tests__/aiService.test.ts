@@ -346,7 +346,7 @@ describe("AIService", () => {
     it("generateSystemPrompt with context that has moons includes moon count", () => {
         const planet = makePlanet(); // has moons: 1
         const prompt = (service as any).generateSystemPrompt(planet);
-        expect(prompt).toContain("moons");
+        expect(prompt).toContain("Number of moons: 1");
     });
 
     it("generateSystemPrompt with context that has no moons omits moon line", () => {
