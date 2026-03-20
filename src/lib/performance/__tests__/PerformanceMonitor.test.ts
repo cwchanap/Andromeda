@@ -411,24 +411,28 @@ describe("PerformanceMonitor", () => {
                 monitor.frameEnd();
             }
 
-            mockNow.mockRestore();
+            // Return mock so the caller can restore it after inspecting the report
+            return mockNow;
         }
 
         it("classifies performance as 'good' for mid-range FPS (40-49, frameTime ≤ 25ms)", () => {
-            driveMonitor(45, 20);
+            const mockNow = driveMonitor(45, 20);
             const report = monitor.generateOptimizationReport();
-            expect(["good", "fair", "poor"]).toContain(report.performance);
+            mockNow.mockRestore();
+            expect(report.performance).toBe("good");
         });
 
         it("classifies performance as 'fair' for lower mid-range FPS (30-39, frameTime ≤ 33ms)", () => {
-            driveMonitor(32, 28);
+            const mockNow = driveMonitor(32, 28);
             const report = monitor.generateOptimizationReport();
-            expect(["fair", "poor"]).toContain(report.performance);
+            mockNow.mockRestore();
+            expect(report.performance).toBe("fair");
         });
 
         it("generateOptimizationReport includes texture suggestion for poor performance", () => {
-            driveMonitor(5, 100);
+            const mockNow = driveMonitor(5, 100);
             const report = monitor.generateOptimizationReport();
+            mockNow.mockRestore();
             expect(report.performance).toBe("poor");
             const types = report.suggestions.map((s) => s.type);
             expect(types).toContain("texture");

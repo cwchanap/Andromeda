@@ -355,6 +355,7 @@ describe("AIService", () => {
         const prompt = (service as any).generateSystemPrompt(planet);
         // Should still produce a string without errors
         expect(typeof prompt).toBe("string");
+        expect(prompt).not.toContain("Number of moons");
     });
 
     // ─── Line 77: fallback message when createFallbackResponse.message is falsy ─

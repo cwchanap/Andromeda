@@ -25,11 +25,11 @@ describe("CosmicParticles", () => {
         expect(canvas).not.toBeNull();
     });
 
-    it("canvas has position fixed or absolute styling", () => {
+    it("canvas has position fixed styling via CSS class", () => {
         const { container } = render(CosmicParticles);
         const canvas = container.querySelector("canvas");
-        // The canvas style is typically set via CSS class
         expect(canvas).not.toBeNull();
+        expect((canvas as HTMLElement).classList.contains("fixed")).toBe(true);
     });
 
     it("unmounts cleanly without errors", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/svelte";
+import { render, screen } from "@testing-library/svelte";
 import GalaxyWrapper from "@/components/GalaxyWrapper.svelte";
 
 // Mock heavy dependencies so the component mounts without real Three.js
@@ -37,23 +37,19 @@ describe("GalaxyWrapper", () => {
 
     it("shows loading indicator initially", () => {
         render(GalaxyWrapper);
-        // LoadingAnimation is rendered while isLoading=true
-        // Look for text that indicates loading state
-        const { container } = render(GalaxyWrapper);
-        // The LoadingAnimation component or .loading-overlay should be present
-        expect(container.innerHTML).toBeTruthy();
+        // LoadingAnimation is rendered while isLoading=true; it shows this hardcoded text
+        expect(screen.getByText(/Initializing 3D engine/i)).toBeDefined();
     });
 
-    it("does not show error panel on initial render", () => {
+    it("does not show error overlay on initial render", () => {
         const { container } = render(GalaxyWrapper);
-        // error is null at start so no error panel
-        expect(container.querySelector(".error-panel")).toBeNull();
+        // error is null at start so no error overlay
+        expect(container.querySelector(".error-overlay")).toBeNull();
     });
 
     it("renders a back-to-menu control", () => {
-        render(GalaxyWrapper);
-        // The wrapper always renders navigation controls
         const { container } = render(GalaxyWrapper);
-        expect(container.innerHTML.length).toBeGreaterThan(0);
+        // The wrapper always renders navigation controls
+        expect(container.firstElementChild).not.toBeNull();
     });
 });

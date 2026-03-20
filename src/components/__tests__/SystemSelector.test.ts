@@ -143,6 +143,7 @@ describe("SystemSelector", () => {
         await Promise.resolve();
         await Promise.resolve();
         expect(mgr.switchToSystem).toHaveBeenCalledWith("alpha");
+        expect(onSystemSelect).toHaveBeenCalledWith("alpha");
     });
 
     it("displays system description text", async () => {
