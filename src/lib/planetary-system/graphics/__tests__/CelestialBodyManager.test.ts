@@ -840,7 +840,8 @@ describe("CelestialBodyManager", () => {
             },
         });
 
-        await manager.createCelestialBody(data);
+        const group = await manager.createCelestialBody(data);
         randSpy.mockRestore();
+        expect(group).toBeTruthy();
     });
 });

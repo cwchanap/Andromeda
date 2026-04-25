@@ -79,15 +79,17 @@ describe("ErrorLogger", () => {
         const logger = ErrorLogger.getInstance();
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-        logger.log(makeError("CRITICAL_ERR", "critical"));
+        try {
+            logger.log(makeError("CRITICAL_ERR", "critical"));
 
-        expect(warnSpy).toHaveBeenCalledWith(
-            "Critical error would be reported to crash analytics:",
-            expect.any(Object),
-        );
-
-        warnSpy.mockRestore();
-        vi.unstubAllEnvs();
+            expect(warnSpy).toHaveBeenCalledWith(
+                "Critical error would be reported to crash analytics:",
+                expect.any(Object),
+            );
+        } finally {
+            warnSpy.mockRestore();
+            vi.unstubAllEnvs();
+        }
     });
 });
 
