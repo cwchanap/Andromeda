@@ -160,7 +160,7 @@ describe("GalaxyRenderer component – event callbacks and exported methods", ()
                 return {
                     initialize: vi.fn().mockImplementation(async () => {
                         await Promise.resolve();
-                        evts.onError(new Error("renderer error"));
+                        evts.onError?.(new Error("renderer error"));
                     }),
                     dispose: vi.fn(),
                     onResize: vi.fn(),
@@ -178,46 +178,40 @@ describe("GalaxyRenderer component – event callbacks and exported methods", ()
     });
 
     it("focusOnStarSystem exported method delegates to renderer", async () => {
-        render(GalaxyRendererComponent);
+        const { component } = render(GalaxyRendererComponent);
         await new Promise((r) => setTimeout(r, 50));
         const inst = (GalaxyRenderer as ReturnType<typeof vi.fn>).mock
             .results[0]?.value;
-        if (inst) {
-            inst.focusOnStarSystem("solar-system", true);
-            expect(inst.focusOnStarSystem).toHaveBeenCalledWith(
-                "solar-system",
-                true,
-            );
-        }
+        (component as any).focusOnStarSystem?.("solar-system", true);
+        expect(inst?.focusOnStarSystem).toHaveBeenCalledWith(
+            "solar-system",
+            true,
+        );
     });
 
     it("highlightStarSystem exported method delegates to renderer", async () => {
-        render(GalaxyRendererComponent);
+        const { component } = render(GalaxyRendererComponent);
         await new Promise((r) => setTimeout(r, 50));
         const inst = (GalaxyRenderer as ReturnType<typeof vi.fn>).mock
             .results[0]?.value;
-        if (inst) {
-            inst.highlightStarSystem("solar-system", true);
-            expect(inst.highlightStarSystem).toHaveBeenCalledWith(
-                "solar-system",
-                true,
-            );
-        }
+        (component as any).highlightStarSystem?.("solar-system", true);
+        expect(inst?.highlightStarSystem).toHaveBeenCalledWith(
+            "solar-system",
+            true,
+        );
     });
 
     it("getCameraState returns value from renderer", async () => {
-        render(GalaxyRendererComponent);
+        const { component } = render(GalaxyRendererComponent);
         await new Promise((r) => setTimeout(r, 50));
-        const inst = (GalaxyRenderer as ReturnType<typeof vi.fn>).mock
-            .results[0]?.value;
-        expect(inst?.getCameraState()).toEqual({ zoom: 1 });
+        const result = (component as any).getCameraState?.();
+        expect(result).toEqual({ zoom: 1 });
     });
 
     it("getStats returns value from renderer", async () => {
-        render(GalaxyRendererComponent);
+        const { component } = render(GalaxyRendererComponent);
         await new Promise((r) => setTimeout(r, 50));
-        const inst = (GalaxyRenderer as ReturnType<typeof vi.fn>).mock
-            .results[0]?.value;
-        expect(inst?.getStats()).toEqual({ fps: 60 });
+        const result = (component as any).getStats?.();
+        expect(result).toEqual({ fps: 60 });
     });
 });

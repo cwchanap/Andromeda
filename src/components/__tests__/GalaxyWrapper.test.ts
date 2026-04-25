@@ -90,21 +90,19 @@ describe("GalaxyWrapper", () => {
         const { container } = render(GalaxyWrapper);
         await new Promise((r) => setTimeout(r, 50));
 
-        const hamburger = container.querySelector(".hamburger-button");
-        if (hamburger) {
-            expect(hamburger).not.toBeNull();
-        }
+        expect(container.querySelector(".hamburger-button")).not.toBeNull();
     });
 
     it("toggles hamburger menu on click", async () => {
         const { container } = render(GalaxyWrapper);
         await new Promise((r) => setTimeout(r, 50));
 
-        const hamburger = container.querySelector(".hamburger-button");
-        if (hamburger) {
-            await fireEvent.click(hamburger);
-            await fireEvent.click(hamburger);
-        }
+        const hamburger = container.querySelector(
+            ".hamburger-button",
+        ) as HTMLElement;
+        expect(hamburger).not.toBeNull();
+        await fireEvent.click(hamburger);
+        await fireEvent.click(hamburger);
         expect(container.firstElementChild).not.toBeNull();
     });
 
@@ -112,11 +110,12 @@ describe("GalaxyWrapper", () => {
         const { container } = render(GalaxyWrapper);
         await new Promise((r) => setTimeout(r, 50));
 
-        const controlsBtn = container.querySelector(".controls-button");
-        if (controlsBtn) {
-            await fireEvent.click(controlsBtn);
-            await fireEvent.click(controlsBtn);
-        }
+        const controlsBtn = container.querySelector(
+            ".controls-button",
+        ) as HTMLElement;
+        expect(controlsBtn).not.toBeNull();
+        await fireEvent.click(controlsBtn);
+        await fireEvent.click(controlsBtn);
         expect(container.firstElementChild).not.toBeNull();
     });
 
@@ -161,7 +160,7 @@ describe("GalaxyWrapper – event callbacks", () => {
                 const evts = events as any;
                 return makeRendererMock(async () => {
                     await Promise.resolve();
-                    evts.onError(new Error("renderer error"));
+                    evts.onError?.(new Error("renderer error"));
                 });
             },
         );
@@ -178,7 +177,7 @@ describe("GalaxyWrapper – event callbacks", () => {
                 const evts = events as any;
                 return makeRendererMock(async () => {
                     await Promise.resolve();
-                    evts.onError(new Error("another error"));
+                    evts.onError?.(new Error("another error"));
                 });
             },
         );
@@ -256,9 +255,8 @@ describe("GalaxyWrapper – event callbacks", () => {
         const closeBtn = container.querySelector(
             ".system-info-tooltip .close-button",
         ) as HTMLElement;
-        if (closeBtn) {
-            await fireEvent.click(closeBtn);
-            expect(container.querySelector(".system-info-tooltip")).toBeNull();
-        }
+        expect(closeBtn).not.toBeNull();
+        await fireEvent.click(closeBtn);
+        expect(container.querySelector(".system-info-tooltip")).toBeNull();
     });
 });

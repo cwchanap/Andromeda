@@ -228,11 +228,10 @@ describe("ComparisonModal – body selector", () => {
         const bodyOption = container.querySelector(
             ".body-option",
         ) as HTMLElement;
-        if (bodyOption) {
-            await fireEvent.click(bodyOption);
-            expect(onAddBody).toHaveBeenCalledWith(marsBody);
-            expect(container.querySelector(".body-selector")).toBeNull();
-        }
+        expect(bodyOption).not.toBeNull();
+        await fireEvent.click(bodyOption);
+        expect(onAddBody).toHaveBeenCalledWith(marsBody);
+        expect(container.querySelector(".body-selector")).toBeNull();
     });
 });
 
@@ -326,15 +325,18 @@ describe("ComparisonModal – export", () => {
             .spyOn(HTMLAnchorElement.prototype, "click")
             .mockImplementation(() => {});
 
-        const exportBtn = container.querySelector(
-            ".export-btn",
-        ) as HTMLButtonElement;
-        await fireEvent.click(exportBtn);
-        await vi.advanceTimersByTimeAsync(10);
+        try {
+            const exportBtn = container.querySelector(
+                ".export-btn",
+            ) as HTMLButtonElement;
+            await fireEvent.click(exportBtn);
+            await vi.advanceTimersByTimeAsync(10);
 
-        const inst = (ComparisonSphereRenderer as ReturnType<typeof vi.fn>).mock
-            .results[0]?.value;
-        expect(inst?.exportAsPNG).toHaveBeenCalled();
-        clickSpy.mockRestore();
+            const inst = (ComparisonSphereRenderer as ReturnType<typeof vi.fn>)
+                .mock.results[0]?.value;
+            expect(inst?.exportAsPNG).toHaveBeenCalled();
+        } finally {
+            clickSpy.mockRestore();
+        }
     });
 });

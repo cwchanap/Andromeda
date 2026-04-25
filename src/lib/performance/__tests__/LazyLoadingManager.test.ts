@@ -87,12 +87,12 @@ describe("LazyLoadingManager", () => {
         it("rejects with timeout error when import hangs past the timeout", async () => {
             // Intercept setTimeout so the timeout callback fires synchronously
             let timeoutCb: (() => void) | undefined;
-            vi.spyOn(globalThis, "setTimeout").mockImplementationOnce(
-                (fn: TimerHandler) => {
+            const setTimeoutSpy = vi
+                .spyOn(globalThis, "setTimeout")
+                .mockImplementationOnce((fn: TimerHandler) => {
                     timeoutCb = fn as () => void;
                     return 9999 as unknown as ReturnType<typeof setTimeout>;
-                },
-            );
+                });
 
             let resolveImport!: (v: unknown) => void;
             const hangingPromise = new Promise((resolve) => {
@@ -100,18 +100,26 @@ describe("LazyLoadingManager", () => {
             });
             const importFn = vi.fn().mockReturnValue(hangingPromise);
 
-            const loadPromise = manager.loadModule("slow-module", importFn, {
-                retries: 0,
-                retryDelay: 0,
-                timeout: 50,
-            });
+            try {
+                const loadPromise = manager.loadModule(
+                    "slow-module",
+                    importFn,
+                    {
+                        retries: 0,
+                        retryDelay: 0,
+                        timeout: 50,
+                    },
+                );
 
-            // Fire the captured timeout callback manually
-            timeoutCb?.();
-            // Resolve the import to prevent dangling unhandled promise
-            resolveImport({});
+                // Fire the captured timeout callback manually
+                timeoutCb?.();
+                // Resolve the import to prevent dangling unhandled promise
+                resolveImport({});
 
-            await expect(loadPromise).rejects.toThrow("slow-module");
+                await expect(loadPromise).rejects.toThrow("slow-module");
+            } finally {
+                setTimeoutSpy.mockRestore();
+            }
         });
 
         it("throws error when import function fails all retries", async () => {

@@ -216,14 +216,16 @@ describe("SolarSystemWrapper – initialization via fake timers", () => {
 
     it("hides loading state after onReady fires and setTimeout(500) elapses", async () => {
         const { container } = render(SolarSystemWrapper);
-        await vi.advanceTimersByTimeAsync(1500);
+        // Advance well past the onReady 500ms timer; Math.random progress sim
+        // may need up to ~1200ms, plus 500ms = 1700ms total, so use 3000ms for headroom.
+        await vi.advanceTimersByTimeAsync(3000);
 
         // After initialization + onReady's 500ms timer: isLoading=false, isSceneReady=true
-        // Either the loading UI is gone or the scene is ready
         const sceneContainer = container.querySelector(
             ".solar-system-container",
         );
         expect(sceneContainer).not.toBeNull();
+        expect(screen.queryByText(/Loading solar system/i)).toBeNull();
     });
 
     it("unmounts cleanly after fake-timer initialization", async () => {
