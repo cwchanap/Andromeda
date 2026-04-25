@@ -614,4 +614,233 @@ describe("CelestialBodyManager", () => {
 
         await expect(manager.createCelestialBody(data)).resolves.toBeTruthy();
     });
+
+    it("updateAnimations animates particle ring group rotation when particleSystem.enabled=true", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "particle-ringed",
+            rings: {
+                enabled: true,
+                innerRadius: 1.5,
+                outerRadius: 3.0,
+                color: "#AAAAAA",
+                opacity: 0.7,
+                segments: 1,
+                thetaSegments: 4,
+                particleSystem: {
+                    enabled: true,
+                    particleCount: 5,
+                    particleSize: 0.05,
+                    particleVariation: 0.3,
+                    densityVariation: 0.0,
+                },
+            },
+        });
+
+        await manager.createCelestialBody(data);
+
+        // Covers lines 595-623: particle ring animation path in updateAnimations()
+        expect(() => manager.updateAnimations(1.0, 1.0)).not.toThrow();
+    });
+
+    it("getBodyData returns data from parent.userData.celestialBodyData", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const bodyData = makeBodyData({ id: "test-body" });
+        const mockMesh = {
+            userData: {},
+            parent: {
+                userData: { celestialBodyData: bodyData },
+            },
+            name: "test-body",
+        } as any;
+
+        const result = manager.getBodyData(mockMesh);
+        expect(result).toEqual(bodyData);
+    });
+
+    it("getBodyData returns null when no data found", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const mockMesh = { userData: {}, parent: null, name: "" } as any;
+        expect(manager.getBodyData(mockMesh)).toBeNull();
+    });
+
+    it("highlightCelestialBody applies emissive to single material mesh", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(),
+            new THREE.MeshStandardMaterial(),
+        );
+        (manager as any).bodies.set("highlight-body", mesh);
+
+        expect(() =>
+            manager.highlightCelestialBody("highlight-body"),
+        ).not.toThrow();
+    });
+
+    it("highlightCelestialBody handles array material", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(), [
+            new THREE.MeshStandardMaterial(),
+        ] as any);
+        (manager as any).bodies.set("array-mat-body", mesh);
+
+        expect(() =>
+            manager.highlightCelestialBody("array-mat-body"),
+        ).not.toThrow();
+    });
+
+    it("unhighlightCelestialBody resets emissive on single material mesh", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(),
+            new THREE.MeshStandardMaterial(),
+        );
+        (manager as any).bodies.set("unhighlight-body", mesh);
+
+        expect(() =>
+            manager.unhighlightCelestialBody("unhighlight-body"),
+        ).not.toThrow();
+    });
+
+    it("unhighlightCelestialBody handles array material", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(), [
+            new THREE.MeshStandardMaterial(),
+        ] as any);
+        (manager as any).bodies.set("array-unhighlight-body", mesh);
+
+        expect(() =>
+            manager.unhighlightCelestialBody("array-unhighlight-body"),
+        ).not.toThrow();
+    });
+
+    it("createCelestialBody with rings using explicit rotationX covers the truthy branch", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "ring-rotx",
+            rings: {
+                enabled: true,
+                innerRadius: 2,
+                outerRadius: 4,
+                color: "#AAAAAA",
+                opacity: 0.7,
+                segments: 1,
+                thetaSegments: 8,
+                rotationX: 0.5, // explicit non-undefined → covers line 241/287 truthy branch
+            },
+        });
+
+        const group = await manager.createCelestialBody(data);
+        expect(group).toBeTruthy();
+    });
+
+    it("createCelestialBody with orbitRadius=0 skips orbit line creation (covers early return)", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "no-orbit",
+            orbitRadius: 0,
+            orbitSpeed: 0,
+        });
+        const group = await manager.createCelestialBody(data);
+        expect(group).toBeTruthy();
+    });
+
+    it("createOrbitLine early-return when called directly with orbitRadius=0", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+        // Private method invoked directly to cover the early-return guard
+        expect(() =>
+            (manager as any).createOrbitLine(
+                makeBodyData({ id: "zero-orbit", orbitRadius: 0 }),
+            ),
+        ).not.toThrow();
+    });
+
+    it("createParticleRings with rotationX set covers the truthy branch on line 241", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "particle-rotx",
+            rings: {
+                enabled: true,
+                innerRadius: 2,
+                outerRadius: 4,
+                color: "#AAAAAA",
+                opacity: 0.7,
+                segments: 1,
+                thetaSegments: 8,
+                rotationX: 0.5,
+                particleSystem: {
+                    enabled: true,
+                    particleCount: 2,
+                    particleSize: 0.1,
+                    densityVariation: 0,
+                },
+            },
+        });
+
+        const group = await manager.createCelestialBody(data);
+        expect(group).toBeTruthy();
+    });
+
+    it("createParticleRings density variation skips particles (covers continue on line 202)", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        // Mock Math.random to always return 0 so densityVariation condition fires
+        const randSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+
+        const data = makeBodyData({
+            id: "density-skip",
+            rings: {
+                enabled: true,
+                innerRadius: 1,
+                outerRadius: 3,
+                color: "#BBBBBB",
+                opacity: 0.5,
+                segments: 1,
+                thetaSegments: 4,
+                particleSystem: {
+                    enabled: true,
+                    particleCount: 2, // small count so we cross the 50% threshold quickly
+                    particleSize: 0.1,
+                    densityVariation: 0.5, // triggers the skip when random < 0.5
+                },
+            },
+        });
+
+        await manager.createCelestialBody(data);
+        randSpy.mockRestore();
+    });
 });

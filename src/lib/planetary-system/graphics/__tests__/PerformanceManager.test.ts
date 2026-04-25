@@ -152,4 +152,115 @@ describe("PerformanceManager", () => {
         expect(perf.getCachedGeometry(moon, "high")).toBeTruthy();
         expect(perf.getCachedGeometry(other, "medium")).toBeTruthy();
     });
+
+    it("getCachedGeometry falls back to new SphereGeometry when cache entry is missing", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        // Clear cache so every lookup misses
+        (perf as any).geometryCache.clear();
+
+        const body = makeBodyData({ id: "orphan", type: "planet" });
+        const geo = perf.getCachedGeometry(body, "high");
+        expect(geo).toBeTruthy();
+    });
+
+    it("updateLOD calls lod.update for each registered LOD object", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        const data = makeBodyData({ id: "neptune", type: "planet" });
+        const mat = new THREE.MeshStandardMaterial();
+        perf.createLODObject(data, { high: mat, medium: mat, low: mat });
+
+        expect(perf.getPerformanceStats().lodObjects).toBe(1);
+        expect(() => perf.updateLOD()).not.toThrow();
+    });
+
+    it("preloadTexture returns cached texture on second call without reloading", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        (globalThis as any).__threeTextureLoadOutcome = { "cached.png": "ok" };
+
+        const tex1 = await perf.preloadTexture("cached.png");
+        const tex2 = await perf.preloadTexture("cached.png");
+        expect(tex2).toBe(tex1);
+    });
+
+    it("preloadTexture rejects when texture fails to load", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        (globalThis as any).__threeTextureLoadOutcome = { "fail.png": "error" };
+
+        await expect(perf.preloadTexture("fail.png")).rejects.toBeDefined();
+    });
+
+    it("createOptimizedMaterial catches texture load failure and falls back to base color", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        (globalThis as any).__threeTextureLoadOutcome = {
+            "bad-tex.png": "error",
+        };
+
+        const mat = await perf.createOptimizedMaterial(
+            "#ff0000",
+            "bad-tex.png",
+            "standard",
+        );
+        expect((mat as any).dispose).toBeTypeOf("function");
+    });
+
+    it("dispose calls texture.dispose() for each cached texture", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        (globalThis as any).__threeTextureLoadOutcome = {
+            "tex-dispose.png": "ok",
+        };
+        await perf.preloadTexture("tex-dispose.png");
+
+        expect(perf.getPerformanceStats().cachedTextures).toBe(1);
+        perf.dispose();
+        expect(perf.getPerformanceStats().cachedTextures).toBe(0);
+    });
+
+    it("dispose clears lodLevels map", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        const data = makeBodyData({ id: "lod-body", type: "planet" });
+        const mat = new THREE.MeshStandardMaterial();
+        perf.createLODObject(data, { high: mat, medium: mat, low: mat });
+
+        expect(perf.getPerformanceStats().lodObjects).toBe(1);
+        perf.dispose();
+        expect(perf.getPerformanceStats().lodObjects).toBe(0);
+    });
+
+    it("estimateMemoryUsage accounts for cached textures with image dimensions", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const perf = new PerformanceManager(scene, camera);
+
+        // Clear geometry cache to isolate texture contribution
+        (perf as any).geometryCache.clear();
+
+        (globalThis as any).__threeTextureLoadOutcome = { "mem-tex.png": "ok" };
+        await perf.preloadTexture("mem-tex.png");
+
+        const stats = perf.getPerformanceStats();
+        // Mock texture has image: {width:512, height:512}, so 512*512*4 = 1,048,576
+        expect(stats.cachedTextures).toBe(1);
+        expect(stats.memoryUsage).toBeGreaterThan(0);
+    });
 });

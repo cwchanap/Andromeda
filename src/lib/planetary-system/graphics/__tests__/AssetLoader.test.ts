@@ -198,4 +198,105 @@ describe("AssetLoader", () => {
         expect((loader as any).preloadedAssets.materials.size).toBe(0);
         expect((loader as any).preloadedAssets.geometries.size).toBe(0);
     });
+
+    it("LoadingManager onLoad callback fires when invoked", () => {
+        const onLoadCb = vi.fn();
+        // Constructor signature: (onProgress, onLoad, onError)
+        new AssetLoader(undefined, onLoadCb);
+
+        const loadingManagerCtor = THREE.LoadingManager as ReturnType<
+            typeof vi.fn
+        >;
+        const ctorCall =
+            loadingManagerCtor.mock.calls[
+                loadingManagerCtor.mock.calls.length - 1
+            ];
+        const [onLoad] = ctorCall; // first arg to LoadingManager = onLoad callback
+
+        onLoad?.();
+        expect(onLoadCb).toHaveBeenCalled();
+    });
+
+    it("LoadingManager onProgress callback fires when invoked", () => {
+        const onProgressCb = vi.fn();
+        // Constructor signature: (onProgress, onLoad, onError)
+        new AssetLoader(onProgressCb);
+
+        const loadingManagerCtor = THREE.LoadingManager as ReturnType<
+            typeof vi.fn
+        >;
+        const ctorCall =
+            loadingManagerCtor.mock.calls[
+                loadingManagerCtor.mock.calls.length - 1
+            ];
+        const [, onProgress] = ctorCall; // second arg to LoadingManager = onProgress callback
+
+        onProgress?.("/texture.jpg", 1, 2);
+        expect(onProgressCb).toHaveBeenCalledWith(
+            expect.objectContaining({
+                loaded: 1,
+                total: 2,
+                currentItem: "/texture.jpg",
+            }),
+        );
+    });
+
+    it("LoadingManager onError callback fires when invoked", () => {
+        const onErrorCb = vi.fn();
+        // Constructor signature: (onProgress, onLoad, onError)
+        new AssetLoader(undefined, undefined, onErrorCb);
+
+        const loadingManagerCtor = THREE.LoadingManager as ReturnType<
+            typeof vi.fn
+        >;
+        const ctorCall =
+            loadingManagerCtor.mock.calls[
+                loadingManagerCtor.mock.calls.length - 1
+            ];
+        const [, , onError] = ctorCall; // third arg to LoadingManager = onError callback
+
+        onError?.("/bad-texture.jpg");
+        expect(onErrorCb).toHaveBeenCalledWith(
+            expect.objectContaining({
+                message: "Failed to load asset: /bad-texture.jpg",
+            }),
+        );
+    });
+
+    it("preloadCelestialBodyAssets handles normalMap, roughnessMap, emissiveMap", async () => {
+        const loader = new AssetLoader();
+        (globalThis as any).__threeTextureLoadOutcome = {
+            "normal.webp": "ok",
+            "roughness.webp": "ok",
+            "emissive.webp": "ok",
+        };
+
+        const body = {
+            id: "earth",
+            name: "Earth",
+            type: "planet",
+            description: "Our home",
+            keyFacts: {
+                diameter: "12742 km",
+                orbitalPeriod: "365 days",
+                composition: [],
+                temperature: "15°C",
+            },
+            images: [],
+            position: { x: 0, y: 0, z: 0 },
+            scale: 1,
+            material: {
+                color: "#0000ff",
+                normalMap: "normal.jpg",
+                roughnessMap: "roughness.jpg",
+                emissiveMap: "emissive.jpg",
+            },
+        } as any;
+
+        await expect(
+            loader.preloadCelestialBodyAssets([body]),
+        ).resolves.toBeUndefined();
+        const stats = loader.getLoadingStats();
+        expect(stats.preloadedTextures).toBeGreaterThan(0);
+    });
 });

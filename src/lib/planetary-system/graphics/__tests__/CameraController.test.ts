@@ -186,4 +186,55 @@ describe("CameraController", () => {
         controller.dispose();
         expect(() => controller.update()).not.toThrow();
     });
+
+    it("controls change event fires onCameraChange and onZoomChange", () => {
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000) as any;
+        camera.position.set(0, 0, 100);
+        const container = document.createElement("canvas");
+        const onCameraChange = vi.fn();
+        const onZoomChange = vi.fn();
+
+        const controller = new CameraController(camera, {
+            onCameraChange,
+            onZoomChange,
+        });
+        controller.initialize(container);
+
+        // Extract the "change" callback registered with OrbitControls.addEventListener
+        const controls = (controller as any).controls;
+        const changeArgs = (
+            controls.addEventListener as ReturnType<typeof vi.fn>
+        ).mock.calls.find((c: any[]) => c[0] === "change");
+        const changeCallback = changeArgs?.[1];
+
+        expect(changeCallback).toBeTypeOf("function");
+        changeCallback?.();
+        expect(onCameraChange).toHaveBeenCalled();
+        expect(onZoomChange).toHaveBeenCalled();
+    });
+
+    it("transition completes when progress reaches 1 (covers completion branch)", () => {
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000) as any;
+        camera.position.set(0, 0, 0);
+        const container = document.createElement("canvas");
+        const controller = new CameraController(camera, {});
+        controller.initialize(container);
+
+        // Mock performance.now so startTime is known
+        const nowSpy = vi.spyOn(performance, "now").mockReturnValue(0);
+        controller.animateToPosition(
+            new THREE.Vector3(0, 0, 10),
+            new THREE.Vector3(),
+            10,
+        );
+
+        // Advance past duration to trigger progress >= 1 path
+        nowSpy.mockReturnValue(100);
+        controller.update();
+
+        nowSpy.mockRestore();
+
+        // After transition, transitionState should be null
+        expect((controller as any).transitionState).toBeNull();
+    });
 });

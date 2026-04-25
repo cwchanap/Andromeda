@@ -1,4 +1,5 @@
 // Unit tests for UniverseManager
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
     UniverseManager,
@@ -772,6 +773,86 @@ describe("validateUniverse missing/empty currentSystemId branch", () => {
                 ],
             ]),
             currentSystemId: "bad-system",
+            metadata: {
+                name: "U",
+                description: "D",
+                version: "1",
+                lastUpdated: new Date(),
+            },
+        });
+        expect(result).toBe(false);
+    });
+});
+
+describe("validateUniverse edge cases", () => {
+    it("rejects when systems is not a Map (duck-typed object)", () => {
+        const manager = new UniverseManager();
+        // Provide an object with .has() and an empty iterator to avoid crashes
+        const fakeMap = {
+            has: () => true,
+            [Symbol.iterator]: function* () {
+                /* empty */
+            },
+        };
+        const result = manager.importUniverse({
+            systems: fakeMap as any,
+            currentSystemId: "x",
+            metadata: {
+                name: "U",
+                description: "D",
+                version: "1",
+                lastUpdated: new Date(),
+            },
+        });
+        expect(result).toBe(false);
+    });
+
+    it("propagates warnings from inner system validation", () => {
+        const manager = new UniverseManager();
+        const star = {
+            id: "s",
+            name: "S",
+            type: "star" as const,
+            description: "",
+            keyFacts: {
+                diameter: "",
+                distanceFromSun: "",
+                orbitalPeriod: "",
+                composition: [],
+                temperature: "",
+            },
+            images: [],
+            position: new THREE.Vector3(),
+            scale: 1,
+            material: { color: "#fff" },
+        };
+        // Empty name triggers an error (invalid) + orbitRadius <= 0 triggers a warning
+        const result = manager.importUniverse({
+            systems: new Map([
+                [
+                    "bad",
+                    {
+                        id: "bad",
+                        name: "",
+                        description: "",
+                        star,
+                        celestialBodies: [
+                            {
+                                ...star,
+                                id: "body",
+                                name: "Body",
+                                type: "planet" as const,
+                                orbitRadius: -1,
+                                orbitSpeed: 0,
+                            },
+                        ],
+                        systemScale: 1,
+                        systemCenter: new THREE.Vector3(),
+                        systemType: "solar",
+                    },
+                ],
+            ]),
+            currentSystemId: "bad",
             metadata: {
                 name: "U",
                 description: "D",

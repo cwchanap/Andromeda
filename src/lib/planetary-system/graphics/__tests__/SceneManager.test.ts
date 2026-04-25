@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import * as THREE from "three";
 import { SceneManager } from "../SceneManager";
 
@@ -103,5 +103,31 @@ describe("SceneManager", () => {
         };
         const manager = new SceneManager(scene, config);
         await expect(manager.initialize()).resolves.toBeUndefined();
+    });
+
+    it("updateAnimations uses default starConfig when backgroundStars is undefined", async () => {
+        const scene = new THREE.Scene();
+        const config = {
+            ...makeConfig(),
+            backgroundStars: undefined as any,
+        };
+        const manager = new SceneManager(scene, config);
+        await manager.initialize();
+        // Calling updateAnimations covers the fallback default starConfig object (lines 229-236)
+        expect(() => manager.updateAnimations(0.016)).not.toThrow();
+    });
+
+    it("dispose handles array materials on particles", async () => {
+        const scene = new THREE.Scene();
+        const manager = new SceneManager(scene, makeConfig());
+        await manager.initialize();
+
+        // Force particles.material to be an array so the array branch is covered
+        if ((manager as any).particles) {
+            const fakeMat = { dispose: vi.fn() };
+            (manager as any).particles.material = [fakeMat, fakeMat];
+        }
+
+        expect(() => manager.dispose()).not.toThrow();
     });
 });

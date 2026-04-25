@@ -1,4 +1,4 @@
-<script lang="ts"></script>
+<script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import * as THREE from 'three';
 
