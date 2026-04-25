@@ -519,6 +519,209 @@ describe("PerformanceMonitor", () => {
             expect(metrics.textures).toBe(11);
         });
     });
+
+    describe("checkPerformanceThresholds – draw-calls branch", () => {
+        // frameStart at t=1000 so that frameTime=10ms (below maxFrameTime=33.33ms),
+        // while still satisfying now - lastFPSUpdate = 1010 >= 1000 to trigger the FPS update.
+        // This avoids the frame-time branch which also uses type="draw-calls".
+        function triggerThresholdCheck(monitorInstance: PerformanceMonitor) {
+            const mockNow = vi
+                .spyOn(performance, "now")
+                .mockReturnValueOnce(0) // startMonitoring → lastFPSUpdate = 0
+                .mockReturnValueOnce(1000) // frameStart → frameStartTime = 1000
+                .mockReturnValue(1010); // frameEnd → frameTime=10ms, 1010-0=1010 >= 1000
+            monitorInstance.startMonitoring();
+            monitorInstance.frameStart();
+            monitorInstance.frameEnd();
+            mockNow.mockRestore();
+        }
+
+        it("fires draw-calls warning (medium) when drawCalls > maxDrawCalls (default 100)", () => {
+            const renderer = createMockRenderer({ calls: 150 }) as any;
+            const mon = new PerformanceMonitor(renderer);
+            const warnCb = vi.fn();
+            mon.onWarning(warnCb);
+
+            triggerThresholdCheck(mon);
+
+            expect(warnCb).toHaveBeenCalled();
+            const suggestions = warnCb.mock.calls[0][0] as {
+                type: string;
+                severity: string;
+                message: string;
+            }[];
+            const drawCallsSuggestion = suggestions.find(
+                (s) =>
+                    s.type === "draw-calls" && s.message.includes("draw calls"),
+            );
+            expect(drawCallsSuggestion).toBeDefined();
+            expect(drawCallsSuggestion?.severity).toBe("medium");
+        });
+
+        it("fires draw-calls warning (high) when drawCalls > 200", () => {
+            const renderer = createMockRenderer({ calls: 250 }) as any;
+            const mon = new PerformanceMonitor(renderer);
+            const warnCb = vi.fn();
+            mon.onWarning(warnCb);
+
+            triggerThresholdCheck(mon);
+
+            expect(warnCb).toHaveBeenCalled();
+            const suggestions = warnCb.mock.calls[0][0] as {
+                type: string;
+                severity: string;
+                message: string;
+            }[];
+            const drawCallsSuggestion = suggestions.find(
+                (s) =>
+                    s.type === "draw-calls" && s.message.includes("draw calls"),
+            );
+            expect(drawCallsSuggestion?.severity).toBe("high");
+        });
+    });
+
+    describe("checkPerformanceThresholds – texture branch", () => {
+        function triggerThresholdCheck(monitorInstance: PerformanceMonitor) {
+            const mockNow = vi
+                .spyOn(performance, "now")
+                .mockReturnValueOnce(0)
+                .mockReturnValueOnce(1000)
+                .mockReturnValue(1010);
+            monitorInstance.startMonitoring();
+            monitorInstance.frameStart();
+            monitorInstance.frameEnd();
+            mockNow.mockRestore();
+        }
+
+        it("fires texture warning (medium) when textures > 50", () => {
+            const renderer = createMockRenderer({ textures: 75 }) as any;
+            const mon = new PerformanceMonitor(renderer);
+            const warnCb = vi.fn();
+            mon.onWarning(warnCb);
+
+            triggerThresholdCheck(mon);
+
+            expect(warnCb).toHaveBeenCalled();
+            const suggestions = warnCb.mock.calls[0][0] as {
+                type: string;
+                severity: string;
+            }[];
+            const textureSuggestion = suggestions.find(
+                (s) => s.type === "texture",
+            );
+            expect(textureSuggestion).toBeDefined();
+            expect(textureSuggestion?.severity).toBe("medium");
+        });
+
+        it("fires texture warning (high) when textures > 100", () => {
+            const renderer = createMockRenderer({ textures: 125 }) as any;
+            const mon = new PerformanceMonitor(renderer);
+            const warnCb = vi.fn();
+            mon.onWarning(warnCb);
+
+            triggerThresholdCheck(mon);
+
+            expect(warnCb).toHaveBeenCalled();
+            const suggestions = warnCb.mock.calls[0][0] as {
+                type: string;
+                severity: string;
+            }[];
+            const textureSuggestion = suggestions.find(
+                (s) => s.type === "texture",
+            );
+            expect(textureSuggestion?.severity).toBe("high");
+        });
+
+        it("reads memory usage when performance.memory is available", () => {
+            const originalMemory = (performance as any).memory;
+            Object.defineProperty(performance, "memory", {
+                value: {
+                    usedJSHeapSize: 100 * 1024 * 1024,
+                    totalJSHeapSize: 512 * 1024 * 1024,
+                },
+                configurable: true,
+                writable: true,
+            });
+
+            const mon = new PerformanceMonitor();
+            triggerThresholdCheck(mon);
+
+            const metrics = mon.getMetrics();
+            expect(metrics.memoryUsage.used).toBe(100 * 1024 * 1024);
+
+            // Restore
+            Object.defineProperty(performance, "memory", {
+                value: originalMemory,
+                configurable: true,
+                writable: true,
+            });
+        });
+
+        it("fires memory warning when usage exceeds 512MB threshold", () => {
+            const originalMemory = (performance as any).memory;
+            const highMemory = 600 * 1024 * 1024; // > 512MB
+            Object.defineProperty(performance, "memory", {
+                value: {
+                    usedJSHeapSize: highMemory,
+                    totalJSHeapSize: 1024 * 1024 * 1024,
+                },
+                configurable: true,
+                writable: true,
+            });
+
+            const mon = new PerformanceMonitor();
+            const warnCb = vi.fn();
+            mon.onWarning(warnCb);
+
+            triggerThresholdCheck(mon);
+
+            expect(warnCb).toHaveBeenCalled();
+            const suggestions = warnCb.mock.calls[0][0] as { type: string }[];
+            expect(suggestions.some((s) => s.type === "memory")).toBe(true);
+
+            Object.defineProperty(performance, "memory", {
+                value: originalMemory,
+                configurable: true,
+                writable: true,
+            });
+        });
+
+        it("fires memory warning with severity=critical when usage > 90% of total", () => {
+            const originalMemory = (performance as any).memory;
+            const totalHeap = 1024 * 1024 * 1024;
+            const usedHeap = Math.round(totalHeap * 0.95); // 95% > 90% threshold
+            Object.defineProperty(performance, "memory", {
+                value: {
+                    usedJSHeapSize: usedHeap,
+                    totalJSHeapSize: totalHeap,
+                },
+                configurable: true,
+                writable: true,
+            });
+
+            const mon = new PerformanceMonitor();
+            const warnCb = vi.fn();
+            mon.onWarning(warnCb);
+
+            triggerThresholdCheck(mon);
+
+            expect(warnCb).toHaveBeenCalled();
+            const suggestions = warnCb.mock.calls[0][0] as {
+                type: string;
+                severity: string;
+            }[];
+            const memorySuggestion = suggestions.find(
+                (s) => s.type === "memory",
+            );
+            expect(memorySuggestion?.severity).toBe("critical");
+
+            Object.defineProperty(performance, "memory", {
+                value: originalMemory,
+                configurable: true,
+                writable: true,
+            });
+        });
+    });
 });
 
 describe("PerformanceProfiler", () => {

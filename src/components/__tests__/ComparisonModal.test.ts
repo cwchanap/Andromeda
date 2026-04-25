@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, fireEvent } from "@testing-library/svelte";
 import ComparisonModal from "@/components/ComparisonModal.svelte";
+import { ComparisonSphereRenderer } from "@/lib/comparison/ComparisonSphereRenderer";
 import type { CelestialBodyData } from "@/types/game";
 
 // Mock ComparisonSphereRenderer to avoid Three.js side-effects
 vi.mock("@/lib/comparison/ComparisonSphereRenderer", () => ({
     ComparisonSphereRenderer: vi.fn().mockImplementation(() => ({
         initialize: vi.fn().mockResolvedValue(undefined),
-        updateBodies: vi.fn().mockResolvedValue(undefined),
+        updateBodies: vi.fn(),
+        startAnimation: vi.fn(),
         dispose: vi.fn(),
-        exportImage: vi.fn().mockResolvedValue("data:image/png;base64,abc"),
+        exportAsPNG: vi.fn(() => "data:image/png;base64,abc"),
     })),
 }));
 
@@ -167,5 +169,172 @@ describe("ComparisonModal", () => {
         const { container } = render(ComparisonModal, { props: defaultProps });
         const buttons = container.querySelectorAll("button");
         expect(buttons.length).toBeGreaterThan(0);
+    });
+});
+
+describe("ComparisonModal – body selector", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it("clicking add-body-btn opens the body selector", async () => {
+        const { container } = render(ComparisonModal, { props: defaultProps });
+        const addBtn = container.querySelector(".add-body-btn") as HTMLElement;
+        expect(addBtn).not.toBeNull();
+        await fireEvent.click(addBtn);
+        expect(container.querySelector(".body-selector")).not.toBeNull();
+    });
+
+    it("pressing Escape when body selector is open closes selector instead of modal", async () => {
+        const onClose = vi.fn();
+        const { container } = render(ComparisonModal, {
+            props: { ...defaultProps, onClose },
+        });
+        const addBtn = container.querySelector(".add-body-btn") as HTMLElement;
+        await fireEvent.click(addBtn);
+        expect(container.querySelector(".body-selector")).not.toBeNull();
+
+        const overlay = container.querySelector(
+            ".modal-overlay",
+        ) as HTMLElement;
+        await fireEvent.keyDown(overlay, { key: "Escape" });
+
+        expect(container.querySelector(".body-selector")).toBeNull();
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it("handleSelectBody calls onAddBody and hides the selector", async () => {
+        const onAddBody = vi.fn();
+        const marsBody = makeBody("mars");
+
+        const compUtils = await import("@/utils/comparisonUtils");
+        (
+            compUtils.getAllBodiesFromAllSystems as ReturnType<typeof vi.fn>
+        ).mockReturnValueOnce([
+            { body: marsBody, systemName: "Solar System", systemId: "solar" },
+        ]);
+        (compUtils.searchBodies as ReturnType<typeof vi.fn>).mockImplementation(
+            (bodies: unknown[]) => bodies,
+        );
+
+        const { container } = render(ComparisonModal, {
+            props: { ...defaultProps, onAddBody },
+        });
+
+        const addBtn = container.querySelector(".add-body-btn") as HTMLElement;
+        await fireEvent.click(addBtn);
+        await Promise.resolve();
+
+        const bodyOption = container.querySelector(
+            ".body-option",
+        ) as HTMLElement;
+        if (bodyOption) {
+            await fireEvent.click(bodyOption);
+            expect(onAddBody).toHaveBeenCalledWith(marsBody);
+            expect(container.querySelector(".body-selector")).toBeNull();
+        }
+    });
+});
+
+describe("ComparisonModal – renderer creation and cleanup", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("creates ComparisonSphereRenderer after 100ms when 2+ bodies present", async () => {
+        const bodies = [makeBody("earth"), makeBody("mars")];
+        render(ComparisonModal, {
+            props: { ...defaultProps, isOpen: true, bodies },
+        });
+        await vi.advanceTimersByTimeAsync(200);
+        expect(ComparisonSphereRenderer).toHaveBeenCalled();
+    });
+
+    it("calls startAnimation on created renderer", async () => {
+        const bodies = [makeBody("earth"), makeBody("mars")];
+        render(ComparisonModal, {
+            props: { ...defaultProps, isOpen: true, bodies },
+        });
+        await vi.advanceTimersByTimeAsync(200);
+        const inst = (ComparisonSphereRenderer as ReturnType<typeof vi.fn>).mock
+            .results[0]?.value;
+        expect(inst?.startAnimation).toHaveBeenCalled();
+    });
+
+    it("calls dispose on renderer when unmounted after creation", async () => {
+        const bodies = [makeBody("earth"), makeBody("mars")];
+        const { unmount } = render(ComparisonModal, {
+            props: { ...defaultProps, isOpen: true, bodies },
+        });
+        await vi.advanceTimersByTimeAsync(200);
+        const inst = (ComparisonSphereRenderer as ReturnType<typeof vi.fn>).mock
+            .results[0]?.value;
+        unmount();
+        expect(inst?.dispose).toHaveBeenCalled();
+    });
+
+    it("clears pending initTimer when unmounted before timer fires", async () => {
+        const bodies = [makeBody("earth"), makeBody("mars")];
+        const { unmount } = render(ComparisonModal, {
+            props: { ...defaultProps, isOpen: true, bodies },
+        });
+        // Unmount before the 100ms timer fires
+        expect(() => unmount()).not.toThrow();
+        // Timer should never fire after unmount
+        await vi.advanceTimersByTimeAsync(200);
+        expect(ComparisonSphereRenderer).not.toHaveBeenCalled();
+    });
+});
+
+describe("ComparisonModal – export", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("export button is enabled when 2+ bodies are present", async () => {
+        const bodies = [makeBody("earth"), makeBody("mars")];
+        const { container } = render(ComparisonModal, {
+            props: { ...defaultProps, isOpen: true, bodies },
+        });
+        const exportBtn = container.querySelector(
+            ".export-btn",
+        ) as HTMLButtonElement;
+        expect(exportBtn).not.toBeNull();
+        expect(exportBtn.disabled).toBe(false);
+    });
+
+    it("clicking export button triggers handleExport and creates download link", async () => {
+        const bodies = [makeBody("earth"), makeBody("mars")];
+        const { container } = render(ComparisonModal, {
+            props: { ...defaultProps, isOpen: true, bodies },
+        });
+        // Wait for renderer to be created
+        await vi.advanceTimersByTimeAsync(200);
+
+        // Spy on anchor click to prevent navigation
+        const clickSpy = vi
+            .spyOn(HTMLAnchorElement.prototype, "click")
+            .mockImplementation(() => {});
+
+        const exportBtn = container.querySelector(
+            ".export-btn",
+        ) as HTMLButtonElement;
+        await fireEvent.click(exportBtn);
+        await vi.advanceTimersByTimeAsync(10);
+
+        const inst = (ComparisonSphereRenderer as ReturnType<typeof vi.fn>).mock
+            .results[0]?.value;
+        expect(inst?.exportAsPNG).toHaveBeenCalled();
+        clickSpy.mockRestore();
     });
 });

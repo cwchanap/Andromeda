@@ -279,4 +279,30 @@ describe("SolarSystemRenderer", () => {
         await expect(renderer.initialize(badBodies)).rejects.toBeDefined();
         expect(onError).toHaveBeenCalled();
     });
+
+    it("window resize event triggers handleResize without throwing", async () => {
+        renderer = new SolarSystemRenderer(container);
+        await renderer.initialize([makeStar()]);
+        expect(() => window.dispatchEvent(new Event("resize"))).not.toThrow();
+    });
+
+    it("selectCelestialBody with known planet ID triggers focusOnPlanet", async () => {
+        renderer = new SolarSystemRenderer(container);
+        await renderer.initialize([
+            makeStar(),
+            makePlanet({ id: "earth", orbitRadius: 10, orbitSpeed: 0.01 }),
+        ]);
+        // Should cover focusOnPlanet lines that animate camera to the planet
+        expect(() => renderer.selectCelestialBody("earth")).not.toThrow();
+    });
+
+    it("getControls focusOnPlanet with known body ID covers planet focus path", async () => {
+        renderer = new SolarSystemRenderer(container);
+        await renderer.initialize([
+            makeStar(),
+            makePlanet({ id: "mars", orbitRadius: 15, orbitSpeed: 0.008 }),
+        ]);
+        const controls = renderer.getControls();
+        expect(() => controls.focusOnPlanet("mars")).not.toThrow();
+    });
 });

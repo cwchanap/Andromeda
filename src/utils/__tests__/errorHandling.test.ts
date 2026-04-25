@@ -72,6 +72,23 @@ describe("ErrorLogger", () => {
         }
         expect(logger.getErrors()).toHaveLength(100);
     });
+
+    it("calls reportToCrashlytics (console.warn) for critical errors when PROD=true", () => {
+        vi.stubEnv("PROD", "true");
+        resetSingleton();
+        const logger = ErrorLogger.getInstance();
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        logger.log(makeError("CRITICAL_ERR", "critical"));
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            "Critical error would be reported to crash analytics:",
+            expect.any(Object),
+        );
+
+        warnSpy.mockRestore();
+        vi.unstubAllEnvs();
+    });
 });
 
 describe("createUserFriendlyErrorMessage", () => {

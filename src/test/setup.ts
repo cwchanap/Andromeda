@@ -368,6 +368,29 @@ declare global {
         }),
     );
 
+(THREE as any).PlaneGeometry = vi
+    .fn()
+    .mockImplementation(
+        (_w?: number, _h?: number, _ws?: number, _hs?: number) => {
+            const attributes: Record<string, any> = {
+                position: {
+                    array: new Float32Array(9),
+                    count: 3,
+                    getX: vi.fn((_i: number) => 0),
+                    getY: vi.fn((_i: number) => 0),
+                    setZ: vi.fn(),
+                    needsUpdate: false,
+                },
+            };
+            return {
+                dispose: vi.fn(),
+                attributes,
+                getAttribute: vi.fn((name: string) => attributes[name] ?? null),
+                computeVertexNormals: vi.fn(),
+            };
+        },
+    );
+
 (THREE as any).Float32BufferAttribute = vi
     .fn()
     .mockImplementation((array: Float32Array | number[], itemSize: number) => {
@@ -567,6 +590,9 @@ class MockGroup extends (THREE as any).Group {
         children: [] as any[],
         userData: {},
         background: undefined,
+        clear: vi.fn(function () {
+            scene.children.length = 0;
+        }),
     };
     return scene;
 });
@@ -701,17 +727,27 @@ class MockLineSegments {
     );
 
 // SpriteMaterial and Sprite for labels
-(THREE as any).SpriteMaterial = vi.fn().mockImplementation((_cfg?: any) => ({
-    map: _cfg?.map ?? null,
-    transparent: _cfg?.transparent ?? false,
-    dispose: vi.fn(),
-}));
+(THREE as any).SpriteMaterial = vi.fn().mockImplementation((_cfg?: any) => {
+    const mat = {
+        map: _cfg?.map ?? null,
+        transparent: _cfg?.transparent ?? false,
+        dispose: vi.fn(),
+    };
+    Object.setPrototypeOf(mat, (THREE as any).SpriteMaterial.prototype);
+    return mat;
+});
 
-(THREE as any).Sprite = vi.fn().mockImplementation((material?: any) => ({
-    material,
-    position: enhanceVector3({ x: 0, y: 0, z: 0 }),
-    scale: { set: vi.fn() },
-}));
+(THREE as any).Sprite = vi.fn().mockImplementation((material?: any) => {
+    const sprite = {
+        material,
+        position: enhanceVector3({ x: 0, y: 0, z: 0 }),
+        scale: { set: vi.fn() },
+        renderOrder: 0,
+        name: "",
+    };
+    Object.setPrototypeOf(sprite, (THREE as any).Sprite.prototype);
+    return sprite;
+});
 
 // Raycaster with overridable intersects
 declare global {

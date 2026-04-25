@@ -158,6 +158,10 @@ describe("Comparison Utilities", () => {
         it("should handle case insensitive million", () => {
             expect(parseDistance("150 Million km")).toBe(150_000_000);
         });
+
+        it("should return 0 for string with no numeric content", () => {
+            expect(parseDistance("no numbers here")).toBe(0);
+        });
     });
 
     describe("parseTemperature", () => {

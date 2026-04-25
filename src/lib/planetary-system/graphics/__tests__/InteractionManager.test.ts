@@ -418,4 +418,46 @@ describe("InteractionManager", () => {
         interactions.dispose();
         document.body.removeChild(container);
     });
+
+    it("resetMaterialHover falls back to setHex(0) when originalEmissive is not set", async () => {
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const body = makeBodyData({ id: "hover-reset" });
+        const group = await manager.createCelestialBody(body);
+        const mesh = (group as any).getObjectByName("hover-reset_body");
+
+        // Add emissive.copy so setMaterialHover doesn't throw
+        if (mesh?.material?.emissive) mesh.material.emissive.copy = vi.fn();
+
+        const interactions = new InteractionManager(
+            container,
+            camera as any,
+            scene,
+            {},
+        );
+        interactions.initialize(manager);
+
+        // Hover the mesh to trigger setMaterialHover
+        (globalThis as any).__threeRaycasterIntersects = [{ object: mesh }];
+        container.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+
+        // Manually nullify originalEmissive so the else branch runs on un-hover
+        if (mesh?.material?.userData) {
+            mesh.material.userData.originalEmissive = null;
+        }
+
+        // Un-hover: resetMaterialHover runs with originalEmissive = null → setHex(0x000000)
+        (globalThis as any).__threeRaycasterIntersects = [];
+        container.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+
+        expect(mesh?.material?.emissive?.setHex).toHaveBeenCalledWith(0x000000);
+
+        interactions.dispose();
+        document.body.removeChild(container);
+    });
 });

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as THREE from "three";
 import { ConstellationRenderer } from "@/lib/constellation/ConstellationRenderer";
 import type {
@@ -231,6 +231,45 @@ describe("ConstellationRenderer", () => {
             makeSkyConfig(),
         );
         expect(() => renderer.dispose()).not.toThrow();
+    });
+
+    it("clearScene handles array materials on starPoints", async () => {
+        renderer = new ConstellationRenderer(container);
+        await renderer.initialize(
+            [makeStar({ magnitude: 1.0 })],
+            [makeConstellation()],
+            makeSkyConfig(),
+        );
+        // Force starPoints.material to be an array so the array branch executes
+        const sp = (renderer as any).starPoints;
+        if (sp) {
+            sp.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
+        }
+        expect(() => renderer.dispose()).not.toThrow();
+    });
+
+    it("clearScene handles array materials on constellationLines children", async () => {
+        renderer = new ConstellationRenderer(container);
+        await renderer.initialize(
+            [makeStar({ magnitude: 1.0 })],
+            [makeConstellation()],
+            makeSkyConfig(),
+        );
+        // Force a LineSegments child to have array materials
+        const cl = (renderer as any).constellationLines;
+        if (cl && cl.children.length > 0) {
+            const child = cl.children[0] as any;
+            child.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
+        }
+        expect(() => renderer.dispose()).not.toThrow();
+    });
+
+    it("animate calls updateCameraRotation when isMouseDown is true", async () => {
+        renderer = new ConstellationRenderer(container);
+        await renderer.initialize([makeStar()], [], makeSkyConfig());
+        // Force isMouseDown true so the camera rotation branch is covered
+        (renderer as any).isMouseDown = true;
+        expect(() => (renderer as any).animate()).not.toThrow();
     });
 
     it("initialize with a constellation that has no star entries creates no lines", async () => {

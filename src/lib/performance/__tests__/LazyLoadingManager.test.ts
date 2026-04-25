@@ -3,6 +3,7 @@ import {
     LazyLoadingManager,
     BundleSplitter,
     createLazyComponent,
+    lazyLoad,
 } from "@/lib/performance/LazyLoadingManager";
 
 // Keeps per-call timeout short so no live timer handles linger after each test.
@@ -81,6 +82,36 @@ describe("LazyLoadingManager", () => {
 
             const stats = manager.getStats();
             expect(stats.loadedModules).toBe(1);
+        });
+
+        it("rejects with timeout error when import hangs past the timeout", async () => {
+            // Intercept setTimeout so the timeout callback fires synchronously
+            let timeoutCb: (() => void) | undefined;
+            vi.spyOn(globalThis, "setTimeout").mockImplementationOnce(
+                (fn: TimerHandler) => {
+                    timeoutCb = fn as () => void;
+                    return 9999 as unknown as ReturnType<typeof setTimeout>;
+                },
+            );
+
+            let resolveImport!: (v: unknown) => void;
+            const hangingPromise = new Promise((resolve) => {
+                resolveImport = resolve;
+            });
+            const importFn = vi.fn().mockReturnValue(hangingPromise);
+
+            const loadPromise = manager.loadModule("slow-module", importFn, {
+                retries: 0,
+                retryDelay: 0,
+                timeout: 50,
+            });
+
+            // Fire the captured timeout callback manually
+            timeoutCb?.();
+            // Resolve the import to prevent dangling unhandled promise
+            resolveImport({});
+
+            await expect(loadPromise).rejects.toThrow("slow-module");
         });
 
         it("throws error when import function fails all retries", async () => {
@@ -532,5 +563,36 @@ describe("createLazyComponent", () => {
         await (lazyComp as (...args: unknown[]) => Promise<unknown>)();
 
         expect(importFn).toHaveBeenCalledTimes(1);
+    });
+
+    it("throws when module resolves to a falsy non-null value with no default export", async () => {
+        // module = false → false.default = undefined, cachedComponent = false (falsy) → throws
+        const importFn = vi.fn().mockResolvedValue(false);
+        const lazyComp = createLazyComponent("falsy-module", importFn);
+        await expect(
+            (lazyComp as (...args: unknown[]) => Promise<unknown>)(),
+        ).rejects.toThrow(/does not export a valid component/);
+    });
+});
+
+describe("lazyLoad decorator", () => {
+    it("wraps method to load module before calling original", async () => {
+        const importFn = vi.fn().mockResolvedValue({ success: true });
+        const originalMethod = vi.fn().mockReturnValue("original-result");
+
+        const descriptor: PropertyDescriptor = {
+            value: originalMethod,
+            writable: true,
+            enumerable: false,
+            configurable: true,
+        };
+
+        const decorator = lazyLoad("decorator-module", importFn);
+        const newDescriptor = decorator({}, "testMethod", descriptor);
+
+        const result = await newDescriptor.value.call({}, "arg1");
+        expect(importFn).toHaveBeenCalled();
+        expect(originalMethod).toHaveBeenCalledWith("arg1");
+        expect(result).toBe("original-result");
     });
 });
