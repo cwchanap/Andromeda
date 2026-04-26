@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/svelte";
 import PlanetarySystemWrapper from "@/components/PlanetarySystemWrapper.svelte";
@@ -219,25 +218,7 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         vi.clearAllMocks();
     });
 
-    function makeRendererWithEvents(onInit: (events: any) => void) {
-        return {
-            initialize: vi.fn().mockImplementation(async () => {
-                // Will be set up via mockImplementationOnce below
-            }),
-            dispose: vi.fn(),
-            cleanup: vi.fn().mockResolvedValue(undefined),
-            selectBody: vi.fn(),
-            updateConfig: vi.fn(),
-            getControls: vi.fn(() => ({
-                zoomIn: vi.fn(),
-                zoomOut: vi.fn(),
-                resetView: vi.fn(),
-            })),
-            getSystemData: vi.fn(() => mockSystemData),
-        };
-    }
-
-    it("onBodySelect callback sets selected body in game store", async () => {
+    it("onBodySelect callback fires without crashing", async () => {
         const mockBody = mockSystemData.star;
         (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
@@ -304,7 +285,7 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         expect(container.firstElementChild).not.toBeNull();
     });
 
-    it("onCameraChange callback updates zoom state", async () => {
+    it("onCameraChange callback fires without crashing", async () => {
         (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mockImplementationOnce(
