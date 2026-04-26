@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/svelte";
+import { render, waitFor } from "@testing-library/svelte";
 import PlanetarySystemWrapper from "@/components/PlanetarySystemWrapper.svelte";
 import { PlanetarySystemRenderer } from "@/lib/planetary-system";
+import { gameActions } from "@/stores/gameStore";
 
 const mockSystemData = {
     id: "alpha-centauri",
@@ -160,18 +161,14 @@ describe("PlanetarySystemWrapper", () => {
         render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        // Flush microtasks so the async onMount completes
-        await new Promise((r) => setTimeout(r, 50));
-        expect(PlanetarySystemRenderer).toHaveBeenCalled();
+        await waitFor(() => expect(PlanetarySystemRenderer).toHaveBeenCalled());
     });
 
     it("calls initialize on the renderer with system data", async () => {
         render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        await new Promise((r) => setTimeout(r, 50));
-
-        // The mocked renderer's initialize should have been called with system data
+        await waitFor(() => expect(PlanetarySystemRenderer).toHaveBeenCalled());
         const mockInstance = (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mock.results[0]?.value;
@@ -182,8 +179,7 @@ describe("PlanetarySystemWrapper", () => {
         render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        await new Promise((r) => setTimeout(r, 50));
-
+        await waitFor(() => expect(PlanetarySystemRenderer).toHaveBeenCalled());
         const mockInstance = (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mock.results[0]?.value;
@@ -194,7 +190,7 @@ describe("PlanetarySystemWrapper", () => {
         const { unmount } = render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        await new Promise((r) => setTimeout(r, 50));
+        await waitFor(() => expect(PlanetarySystemRenderer).toHaveBeenCalled());
         expect(() => unmount()).not.toThrow();
     });
 
@@ -202,14 +198,12 @@ describe("PlanetarySystemWrapper", () => {
         const { unmount } = render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        await new Promise((r) => setTimeout(r, 50));
-        unmount();
-        // cleanup() is called in onDestroy (which may be async)
-        await new Promise((r) => setTimeout(r, 10));
+        await waitFor(() => expect(PlanetarySystemRenderer).toHaveBeenCalled());
         const mockInstance = (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mock.results[0]?.value;
-        expect(mockInstance?.cleanup).toHaveBeenCalled();
+        unmount();
+        await waitFor(() => expect(mockInstance?.cleanup).toHaveBeenCalled());
     });
 });
 
@@ -218,8 +212,10 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         vi.clearAllMocks();
     });
 
-    it("onBodySelect callback fires without crashing", async () => {
+    it("onBodySelect callback delegates to gameActions.selectCelestialBody", async () => {
         const mockBody = mockSystemData.star;
+        const selectSpy = vi.spyOn(gameActions, "selectCelestialBody");
+
         (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mockImplementationOnce(
@@ -245,14 +241,14 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
             },
         );
 
-        const { container } = render(PlanetarySystemWrapper, {
+        render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        await new Promise((r) => setTimeout(r, 50));
-        expect(container.firstElementChild).not.toBeNull();
+        await waitFor(() => expect(selectSpy).toHaveBeenCalledWith(mockBody));
+        selectSpy.mockRestore();
     });
 
-    it("onError callback sets loading to false without crashing", async () => {
+    it("onError callback sets isLoading to false (loading overlay disappears)", async () => {
         (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mockImplementationOnce(
@@ -280,12 +276,16 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         const { container } = render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        await new Promise((r) => setTimeout(r, 50));
-        // Component mounts and handles error without throwing
-        expect(container.firstElementChild).not.toBeNull();
+        // When onError fires, isLoading=false removes the LoadingAnimation child
+        await waitFor(() =>
+            expect(
+                container.querySelector("#planetary-system-renderer")
+                    ?.firstElementChild,
+            ).toBeNull(),
+        );
     });
 
-    it("onCameraChange callback fires without crashing", async () => {
+    it("onCameraChange callback triggers scene-ready UI (system-info-panel visible)", async () => {
         (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mockImplementationOnce(
@@ -314,7 +314,12 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         const { container } = render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        await new Promise((r) => setTimeout(r, 50));
-        expect(container.firstElementChild).not.toBeNull();
+        // onSystemLoad sets isSceneReady=true, making system-info-panel visible;
+        // onCameraChange must not crash for this to complete successfully
+        await waitFor(() =>
+            expect(
+                container.querySelector(".system-info-panel"),
+            ).not.toBeNull(),
+        );
     });
 });

@@ -84,7 +84,10 @@ describe("ErrorLogger", () => {
 
             expect(warnSpy).toHaveBeenCalledWith(
                 "Critical error would be reported to crash analytics:",
-                expect.any(Object),
+                expect.objectContaining({
+                    code: "CRITICAL_ERR",
+                    severity: "critical",
+                }),
             );
         } finally {
             warnSpy.mockRestore();

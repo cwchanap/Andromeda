@@ -250,6 +250,8 @@ describe("ComparisonModal – renderer creation and cleanup", () => {
         render(ComparisonModal, {
             props: { ...defaultProps, isOpen: true, bodies },
         });
+        await vi.advanceTimersByTimeAsync(50);
+        expect(ComparisonSphereRenderer).not.toHaveBeenCalled();
         await vi.advanceTimersByTimeAsync(200);
         expect(ComparisonSphereRenderer).toHaveBeenCalled();
     });
@@ -300,7 +302,7 @@ describe("ComparisonModal – export", () => {
         vi.useRealTimers();
     });
 
-    it("export button is enabled when 2+ bodies are present", async () => {
+    it("export button is enabled when 2+ bodies are present", () => {
         const bodies = [makeBody("earth"), makeBody("mars")];
         const { container } = render(ComparisonModal, {
             props: { ...defaultProps, isOpen: true, bodies },
