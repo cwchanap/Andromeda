@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/svelte";
 import GalaxyRendererComponent from "@/components/GalaxyRenderer.svelte";
 import { GalaxyRenderer } from "@/lib/galaxy";
@@ -139,6 +139,11 @@ describe("GalaxyRenderer component", () => {
                 throw new Error("Init failed");
             }),
             dispose: vi.fn(),
+            onResize: vi.fn(),
+            focusOnStarSystem: vi.fn(),
+            highlightStarSystem: vi.fn(),
+            getCameraState: vi.fn(() => ({ zoom: 1 })),
+            getStats: vi.fn(() => ({ fps: 60 })),
         };
         (GalaxyRenderer as ReturnType<typeof vi.fn>).mockImplementationOnce(
             () => mockInstance,
