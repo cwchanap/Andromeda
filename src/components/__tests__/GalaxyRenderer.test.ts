@@ -44,6 +44,11 @@ vi.mock("@/lib/galaxy", () => {
 describe("GalaxyRenderer component", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it("renders without throwing", () => {
@@ -93,13 +98,13 @@ describe("GalaxyRenderer component", () => {
 
     it("constructs GalaxyRenderer on mount with autoStart=true", async () => {
         render(GalaxyRendererComponent);
-        await new Promise((r) => setTimeout(r, 50));
+        await vi.runAllTimersAsync();
         expect(GalaxyRenderer).toHaveBeenCalled();
     });
 
     it("calls initialize on GalaxyRenderer", async () => {
         render(GalaxyRendererComponent);
-        await new Promise((r) => setTimeout(r, 50));
+        await vi.runAllTimersAsync();
 
         const mockInstance = (GalaxyRenderer as ReturnType<typeof vi.fn>).mock
             .results[0]?.value;
@@ -108,7 +113,7 @@ describe("GalaxyRenderer component", () => {
 
     it("hides loading overlay after onSystemLoad fires", async () => {
         const { container } = render(GalaxyRendererComponent);
-        await new Promise((r) => setTimeout(r, 50));
+        await vi.runAllTimersAsync();
 
         // onSystemLoad sets isLoading=false
         const loadingOverlay = container.querySelector(".loading-overlay");
@@ -117,7 +122,7 @@ describe("GalaxyRenderer component", () => {
 
     it("calls dispose on cleanup", async () => {
         const { unmount } = render(GalaxyRendererComponent);
-        await new Promise((r) => setTimeout(r, 50));
+        await vi.runAllTimersAsync();
 
         unmount();
 
@@ -140,8 +145,7 @@ describe("GalaxyRenderer component", () => {
         );
 
         const { container } = render(GalaxyRendererComponent);
-        // Wait long enough for the async rejection and Svelte to process it
-        await new Promise((r) => setTimeout(r, 100));
+        await vi.runAllTimersAsync();
 
         const errorOverlay = container.querySelector(".error-overlay");
         expect(errorOverlay).not.toBeNull();
@@ -151,6 +155,11 @@ describe("GalaxyRenderer component", () => {
 describe("GalaxyRenderer component – event callbacks and exported methods", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it("shows error overlay when onError event fires from renderer", async () => {
@@ -173,13 +182,13 @@ describe("GalaxyRenderer component – event callbacks and exported methods", ()
         );
 
         const { container } = render(GalaxyRendererComponent);
-        await new Promise((r) => setTimeout(r, 50));
+        await vi.runAllTimersAsync();
         expect(container.querySelector(".error-overlay")).not.toBeNull();
     });
 
     it("focusOnStarSystem exported method delegates to renderer", async () => {
         const { component } = render(GalaxyRendererComponent);
-        await new Promise((r) => setTimeout(r, 50));
+        await vi.runAllTimersAsync();
         const inst = (GalaxyRenderer as ReturnType<typeof vi.fn>).mock
             .results[0]?.value;
         (component as any).focusOnStarSystem?.("solar-system", true);
@@ -191,7 +200,7 @@ describe("GalaxyRenderer component – event callbacks and exported methods", ()
 
     it("highlightStarSystem exported method delegates to renderer", async () => {
         const { component } = render(GalaxyRendererComponent);
-        await new Promise((r) => setTimeout(r, 50));
+        await vi.runAllTimersAsync();
         const inst = (GalaxyRenderer as ReturnType<typeof vi.fn>).mock
             .results[0]?.value;
         (component as any).highlightStarSystem?.("solar-system", true);
@@ -203,14 +212,14 @@ describe("GalaxyRenderer component – event callbacks and exported methods", ()
 
     it("getCameraState returns value from renderer", async () => {
         const { component } = render(GalaxyRendererComponent);
-        await new Promise((r) => setTimeout(r, 50));
+        await vi.runAllTimersAsync();
         const result = (component as any).getCameraState?.();
         expect(result).toEqual({ zoom: 1 });
     });
 
     it("getStats returns value from renderer", async () => {
         const { component } = render(GalaxyRendererComponent);
-        await new Promise((r) => setTimeout(r, 50));
+        await vi.runAllTimersAsync();
         const result = (component as any).getStats?.();
         expect(result).toEqual({ fps: 60 });
     });

@@ -173,13 +173,21 @@ describe("SolarSystemWrapper", () => {
 });
 
 describe("SolarSystemWrapper – initialization via fake timers", () => {
+    let mathRandomSpy: ReturnType<typeof vi.spyOn>;
+
     beforeEach(() => {
         cleanup(); // unmount prior renders before clearing mocks
         vi.clearAllMocks();
         vi.useFakeTimers();
+        // Stub Math.random so each 100ms tick adds a fixed 13.5 (= 0.9 * 15).
+        // 80 / 13.5 = 6 ticks (600ms) to reach the 80% threshold, then
+        // 100ms delay + ~0ms async init + 500ms onReady timer = 1200ms total,
+        // safely inside every test's 1500ms advancement.
+        mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(0.9);
     });
 
     afterEach(() => {
+        mathRandomSpy.mockRestore();
         vi.useRealTimers();
     });
 
@@ -216,9 +224,7 @@ describe("SolarSystemWrapper – initialization via fake timers", () => {
 
     it("hides loading state after onReady fires and setTimeout(500) elapses", async () => {
         const { container } = render(SolarSystemWrapper);
-        // Advance well past the onReady 500ms timer; Math.random progress sim
-        // may need up to ~1200ms, plus 500ms = 1700ms total, so use 3000ms for headroom.
-        await vi.advanceTimersByTimeAsync(3000);
+        await vi.advanceTimersByTimeAsync(1500);
 
         // After initialization + onReady's 500ms timer: isLoading=false, isSceneReady=true
         const sceneContainer = container.querySelector(
