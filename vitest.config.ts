@@ -1,9 +1,13 @@
 import { defineConfig } from "vitest/config";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import type { PluginOption } from "vite";
 
 export default defineConfig({
     plugins: [
-        svelte({ hot: !process.env.VITEST, compilerOptions: { dev: true } }),
+        svelte({
+            hot: !process.env.VITEST,
+            compilerOptions: { dev: true },
+        }) as unknown as PluginOption,
     ],
     test: {
         globals: true,

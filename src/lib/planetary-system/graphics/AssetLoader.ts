@@ -22,10 +22,7 @@ export class AssetLoader {
     private loadingManager!: THREE.LoadingManager;
     private textureLoader!: THREE.TextureLoader;
     private preloadedAssets: PreloadedAssets;
-    private loadingPromises = new Map<
-        string,
-        Promise<THREE.Texture | THREE.Material | THREE.BufferGeometry>
-    >();
+    private loadingPromises = new Map<string, Promise<THREE.Texture>>();
     private compressionSupport = {
         s3tc: false,
         pvrtc: false,
