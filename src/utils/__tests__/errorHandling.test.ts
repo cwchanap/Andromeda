@@ -74,7 +74,7 @@ describe("ErrorLogger", () => {
     });
 
     it("calls reportToCrashlytics (console.warn) for critical errors when PROD=true", () => {
-        vi.stubEnv("PROD", "true");
+        vi.stubEnv("PROD", true);
         resetSingleton();
         const logger = ErrorLogger.getInstance();
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});

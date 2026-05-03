@@ -186,11 +186,11 @@ describe("ParticleSystem", () => {
 
         it("should render scene in animation loop", () => {
             // Mock requestAnimationFrame to capture callback without executing it
-            let animationCallback: FrameRequestCallback | null = null;
+            const animationCallbacks: FrameRequestCallback[] = [];
             const rafSpy = vi
                 .spyOn(global, "requestAnimationFrame")
                 .mockImplementation((callback) => {
-                    animationCallback = callback;
+                    animationCallbacks.push(callback);
                     return 1;
                 });
 
@@ -200,9 +200,11 @@ describe("ParticleSystem", () => {
             expect(rafSpy).toHaveBeenCalled();
 
             // Manually execute the animation callback once
-            if (animationCallback) {
-                animationCallback(0);
+            const callback = animationCallbacks[0];
+            if (!callback) {
+                throw new Error("Expected requestAnimationFrame callback");
             }
+            callback(0);
 
             const rendererInstance = vi.mocked(THREE.WebGLRenderer).mock
                 .results[0]?.value;

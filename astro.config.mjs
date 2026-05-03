@@ -14,7 +14,7 @@ export default defineConfig({
   adapter: vercel(),
   integrations: [svelte()],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [/** @type {any} */ (tailwindcss())],
   },
   i18n: {
     defaultLocale: "en",
