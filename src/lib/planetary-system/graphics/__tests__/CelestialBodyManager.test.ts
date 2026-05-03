@@ -194,7 +194,6 @@ describe("CelestialBodyManager", () => {
         const moonGroup = await manager.createCelestialBody(moonData);
 
         // Store initial positions
-        const initialMoonX = moonGroup.position.x;
         const initialParentX = parentGroup.position.x;
 
         // Update animations - both should move
@@ -902,6 +901,7 @@ describe("CelestialBodyManager", () => {
                     particleCount: 2,
                     particleSize: 0.1,
                     densityVariation: 0,
+                    particleVariation: 0.3,
                 },
             },
         });
@@ -933,6 +933,7 @@ describe("CelestialBodyManager", () => {
                     particleCount: 2, // small count so we cross the 50% threshold quickly
                     particleSize: 0.1,
                     densityVariation: 0.5, // triggers the skip when random < 0.5
+                    particleVariation: 0.3,
                 },
             },
         });
