@@ -14,6 +14,7 @@ export class CelestialBodyManager {
     private orbitLines = new Map<string, Line2>();
     private bodyData = new Map<string, CelestialBodyData>();
     private orbitAngles = new Map<string, number>(); // Track accumulated orbital angles
+    private visualOrbitRadii = new Map<string, number>();
     private performanceManager: PerformanceManager;
     private assetLoader: AssetLoader;
 
@@ -67,14 +68,15 @@ export class CelestialBodyManager {
             }
         }
 
-        // Create orbit path visualization
-        if (data.orbitRadius && data.orbitRadius > 0) {
-            this.createOrbitLine(data);
-        }
-
-        // Store references
+        // Store references before orbit calculations so children can inspect parent data.
         this.bodies.set(data.id, celestialGroup);
         this.bodyData.set(data.id, data);
+
+        const visualOrbitRadius = this.getVisualOrbitRadius(data);
+        if (visualOrbitRadius > 0) {
+            this.visualOrbitRadii.set(data.id, visualOrbitRadius);
+            this.createOrbitLine(data, visualOrbitRadius);
+        }
 
         // Initialize orbital angle based on current position if orbiting
         if (data.orbitRadius && data.orbitSpeed) {
@@ -295,8 +297,41 @@ export class CelestialBodyManager {
     /**
      * Creates orbit line visualization for celestial bodies
      */
-    private createOrbitLine(data: CelestialBodyData): void {
+    private getVisualOrbitRadius(data: CelestialBodyData): number {
         if (!data.orbitRadius || data.orbitRadius <= 0) {
+            return 0;
+        }
+
+        if (!data.parentId) {
+            return data.orbitRadius;
+        }
+
+        const parentData = this.bodyData.get(data.parentId);
+        if (!parentData) {
+            return data.orbitRadius;
+        }
+
+        const minimumRadius = this.getMinimumParentRelativeOrbitRadius(
+            parentData,
+            data,
+        );
+
+        return Math.max(data.orbitRadius, minimumRadius);
+    }
+
+    private getMinimumParentRelativeOrbitRadius(
+        parentData: CelestialBodyData,
+        childData: CelestialBodyData,
+    ): number {
+        const clearance = Math.max(0.15, parentData.scale * 0.1);
+        return parentData.scale + childData.scale + clearance;
+    }
+
+    private createOrbitLine(
+        data: CelestialBodyData,
+        orbitRadius: number,
+    ): void {
+        if (orbitRadius <= 0) {
             return;
         }
 
@@ -306,8 +341,8 @@ export class CelestialBodyManager {
 
         for (let i = 0; i <= segments; i++) {
             const angle = (i / segments) * Math.PI * 2;
-            const x = Math.cos(angle) * data.orbitRadius;
-            const z = Math.sin(angle) * data.orbitRadius;
+            const x = Math.cos(angle) * orbitRadius;
+            const z = Math.sin(angle) * orbitRadius;
             orbitPoints.push(x, 0, z); // LineGeometry expects flat array
         }
 
@@ -577,12 +612,15 @@ export class CelestialBodyManager {
                     }
                 }
 
+                const orbitRadius =
+                    this.visualOrbitRadii.get(id) ?? data.orbitRadius;
+
                 // Calculate position from the smooth accumulated angle relative to orbit center
                 body.position.x =
-                    orbitCenterX + Math.cos(currentAngle) * data.orbitRadius;
+                    orbitCenterX + Math.cos(currentAngle) * orbitRadius;
                 body.position.y = orbitCenterY; // Inherit parent's Y offset
                 body.position.z =
-                    orbitCenterZ + Math.sin(currentAngle) * data.orbitRadius;
+                    orbitCenterZ + Math.sin(currentAngle) * orbitRadius;
             }
 
             // Rotate rings slowly for visual effect (Saturn's rings)
@@ -679,6 +717,7 @@ export class CelestialBodyManager {
         this.bodies.clear();
         this.bodyData.clear();
         this.orbitLines.clear();
+        this.visualOrbitRadii.clear();
 
         // Dispose performance manager and asset loader
         this.performanceManager.dispose();

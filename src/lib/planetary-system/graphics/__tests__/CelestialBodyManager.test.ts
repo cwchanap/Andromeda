@@ -207,14 +207,110 @@ describe("CelestialBodyManager", () => {
         const parentPos = parentGroup.position;
         const moonPos = moonGroup.position;
 
-        // Distance from moon to parent should be approximately orbitRadius
+        // Distance from moon to parent should be approximately the visual orbit radius
         const distanceToParent = Math.sqrt(
             Math.pow(moonPos.x - parentPos.x, 2) +
                 Math.pow(moonPos.z - parentPos.z, 2),
         );
 
-        // Allow some floating point tolerance
-        expect(distanceToParent).toBeCloseTo(0.5, 1);
+        // The visual orbit radius expands past the rendered parent radius.
+        expect(distanceToParent).toBeCloseTo(1.44, 5);
+    });
+
+    it("expands a too-small moon orbit radius outside the rendered parent", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const parentData = makeBodyData({
+            id: "earth",
+            position: new THREE.Vector3(15, 0, 0),
+            scale: 1.0,
+            orbitRadius: 0,
+            orbitSpeed: 0,
+        });
+        const parentGroup = await manager.createCelestialBody(parentData);
+
+        const moonData = makeBodyData({
+            id: "luna",
+            name: "Moon",
+            type: "moon",
+            parentId: "earth",
+            position: new THREE.Vector3(15.4, 0, 0),
+            scale: 0.27,
+            orbitRadius: 0.4,
+            orbitSpeed: 1.0,
+        });
+        const moonGroup = await manager.createCelestialBody(moonData);
+
+        manager.updateAnimations(0, 1.0);
+
+        const distanceToParent = Math.sqrt(
+            Math.pow(moonGroup.position.x - parentGroup.position.x, 2) +
+                Math.pow(moonGroup.position.z - parentGroup.position.z, 2),
+        );
+
+        expect(distanceToParent).toBeCloseTo(1.42, 5);
+        expect(moonData.orbitRadius).toBe(0.4);
+    });
+
+    it("preserves an already-large moon orbit radius", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const parentData = makeBodyData({
+            id: "jupiter",
+            position: new THREE.Vector3(20, 0, 0),
+            scale: 1.2,
+            orbitRadius: 0,
+            orbitSpeed: 0,
+        });
+        const parentGroup = await manager.createCelestialBody(parentData);
+
+        const moonData = makeBodyData({
+            id: "ganymede",
+            name: "Ganymede",
+            type: "moon",
+            parentId: "jupiter",
+            position: new THREE.Vector3(22.5, 0, 0),
+            scale: 0.3,
+            orbitRadius: 2.5,
+            orbitSpeed: 1.0,
+        });
+        const moonGroup = await manager.createCelestialBody(moonData);
+
+        manager.updateAnimations(0, 1.0);
+
+        const distanceToParent = Math.sqrt(
+            Math.pow(moonGroup.position.x - parentGroup.position.x, 2) +
+                Math.pow(moonGroup.position.z - parentGroup.position.z, 2),
+        );
+
+        expect(distanceToParent).toBeCloseTo(2.5, 5);
+    });
+
+    it("keeps non-parented planet orbit radius unchanged", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const data = makeBodyData({
+            id: "mars",
+            position: new THREE.Vector3(5, 0, 0),
+            scale: 0.7,
+            orbitRadius: 5,
+            orbitSpeed: 1.0,
+        });
+        const group = await manager.createCelestialBody(data);
+
+        manager.updateAnimations(0, 1.0);
+
+        const distanceToSystemCenter = Math.sqrt(
+            Math.pow(group.position.x, 2) + Math.pow(group.position.z, 2),
+        );
+
+        expect(distanceToSystemCenter).toBeCloseTo(5, 5);
     });
 
     it("createCelestialBody builds a group with body mesh, optional rings, and orbit line", async () => {
@@ -780,6 +876,7 @@ describe("CelestialBodyManager", () => {
         expect(() =>
             (manager as any).createOrbitLine(
                 makeBodyData({ id: "zero-orbit", orbitRadius: 0 }),
+                0,
             ),
         ).not.toThrow();
     });
