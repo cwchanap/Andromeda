@@ -4,6 +4,10 @@ import type { PluginOption } from "vite";
 
 export default defineConfig({
     plugins: [
+        // Cast required: @sveltejs/vite-plugin-svelte@5.x (pinned by @astrojs/svelte)
+        // only declares peer support for Vite ^6.0.0, but Vitest brings in Vite 7.x.
+        // The plugin is runtime-compatible; the cast bridges the type gap until Astro
+        // upgrades its Svelte integration to plugin v6+.
         svelte({
             hot: !process.env.VITEST,
             compilerOptions: { dev: true },

@@ -447,15 +447,21 @@ export class CelestialBodyManager {
             const data = this.bodyData.get(id);
             if (!data || !data.orbitRadius) return;
 
+            // Use the same resolved radius as orbit-line geometry and body
+            // positioning so opacity thresholds stay consistent when a moon's
+            // visual radius is expanded beyond its authored value.
+            const orbitRadius =
+                this.visualOrbitRadii.get(id) ?? data.orbitRadius;
+
             // Calculate distance from camera to orbit center
             const distance = cameraPosition.length();
 
             // Adjust opacity based on distance - closer = more visible
             let opacity = 0.3;
-            if (distance > data.orbitRadius * 3) {
+            if (distance > orbitRadius * 3) {
                 opacity = Math.max(
                     0.1,
-                    0.3 - (distance - data.orbitRadius * 3) * 0.01,
+                    0.3 - (distance - orbitRadius * 3) * 0.01,
                 );
             }
 

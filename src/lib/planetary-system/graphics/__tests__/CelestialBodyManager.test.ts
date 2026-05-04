@@ -491,6 +491,50 @@ describe("CelestialBodyManager", () => {
         ).not.toThrow();
     });
 
+    it("updateOrbitLineOpacity uses visual orbit radius, not authored radius", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        // Create parent at origin with no orbit
+        const parentData = makeBodyData({
+            id: "earth",
+            position: new THREE.Vector3(0, 0, 0),
+            scale: 1.0,
+            orbitRadius: 0,
+            orbitSpeed: 0,
+        });
+        await manager.createCelestialBody(parentData);
+
+        // Moon with authored orbitRadius 0.4 — getVisualOrbitRadius expands it
+        // to ~1.42 (parent scale 1.0 → clearance 0.15 → min = 0.5+0.15+0.27*0.5+…)
+        const moonData = makeBodyData({
+            id: "luna",
+            name: "Moon",
+            type: "moon",
+            parentId: "earth",
+            position: new THREE.Vector3(0.4, 0, 0),
+            scale: 0.27,
+            orbitRadius: 0.4,
+            orbitSpeed: 1.0,
+        });
+        await manager.createCelestialBody(moonData);
+
+        // Pick a camera distance between the two fade thresholds:
+        //   authored radius threshold: 0.4 * 3 = 1.2
+        //   visual radius threshold:   ~1.42 * 3 ≈ 4.26
+        // At distance 2.0:
+        //   - If authored radius used → opacity would be ramped down (< 0.3)
+        //   - If visual radius used  → still within threshold → opacity = 0.3
+        manager.updateOrbitLineOpacity(new THREE.Vector3(2, 0, 0));
+
+        const orbitLine = scene.children.find(
+            (c) => c.name === "luna_orbit",
+        ) as any;
+        expect(orbitLine).toBeDefined();
+        expect(orbitLine.material.opacity).toBe(0.3);
+    });
+
     it("updateLOD delegates to PerformanceManager without error", async () => {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
