@@ -289,6 +289,53 @@ describe("CelestialBodyManager", () => {
         expect(distanceToParent).toBeCloseTo(2.5, 5);
     });
 
+    it("sets initial position at visual orbit radius coordinates at creation time", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const parentData = makeBodyData({
+            id: "earth",
+            position: new THREE.Vector3(15, 0, 0),
+            scale: 1.0,
+            orbitRadius: 0,
+            orbitSpeed: 0,
+        });
+        await manager.createCelestialBody(parentData);
+
+        // Moon's data.position places it at raw orbitRadius (0.4) from parent,
+        // but visual orbit radius expands to ~1.42 to clear parent's rendered size.
+        const moonData = makeBodyData({
+            id: "luna",
+            name: "Moon",
+            type: "moon",
+            parentId: "earth",
+            position: new THREE.Vector3(15.4, 0, 0),
+            scale: 0.27,
+            orbitRadius: 0.4,
+            orbitSpeed: 1.0,
+        });
+        const moonGroup = await manager.createCelestialBody(moonData);
+
+        // Without calling updateAnimations, the position should already be at
+        // the visual orbit coordinates, not the raw data.position.
+        const parentGroup = manager.getCelestialBody("earth")!;
+        const distanceToParent = Math.sqrt(
+            Math.pow(moonGroup.position.x - parentGroup.position.x, 2) +
+                Math.pow(moonGroup.position.z - parentGroup.position.z, 2),
+        );
+
+        expect(distanceToParent).toBeCloseTo(1.42, 5);
+
+        // Verify a subsequent zero-delta animation doesn't shift the position
+        manager.updateAnimations(0, 1.0);
+        const distanceAfterAnimation = Math.sqrt(
+            Math.pow(moonGroup.position.x - parentGroup.position.x, 2) +
+                Math.pow(moonGroup.position.z - parentGroup.position.z, 2),
+        );
+        expect(distanceAfterAnimation).toBeCloseTo(1.42, 5);
+    });
+
     it("keeps non-parented planet orbit radius unchanged", async () => {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
