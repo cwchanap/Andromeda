@@ -100,6 +100,29 @@ export class CelestialBodyManager {
 
             const initialAngle = Math.atan2(relativeZ, relativeX);
             this.orbitAngles.set(data.id, initialAngle);
+
+            // Set initial position from visual orbit coordinates so the body
+            // is consistent with the animation system from the first frame.
+            const orbitRadius =
+                this.visualOrbitRadii.get(data.id) ?? data.orbitRadius;
+            let orbitCenterX = 0;
+            let orbitCenterY = 0;
+            let orbitCenterZ = 0;
+
+            if (data.parentId) {
+                const parentBody = this.bodies.get(data.parentId);
+                if (parentBody) {
+                    orbitCenterX = parentBody.position.x;
+                    orbitCenterY = parentBody.position.y;
+                    orbitCenterZ = parentBody.position.z;
+                }
+            }
+
+            celestialGroup.position.x =
+                orbitCenterX + Math.cos(initialAngle) * orbitRadius;
+            celestialGroup.position.y = orbitCenterY;
+            celestialGroup.position.z =
+                orbitCenterZ + Math.sin(initialAngle) * orbitRadius;
         }
 
         this.scene.add(celestialGroup);
