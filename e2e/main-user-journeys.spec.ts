@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 // Test constants for maintainability
 const ROUTES = {
     HOME: "/",
-    SOLAR_SYSTEM: "/en/planetary/solar",
+    SOLAR_SYSTEM: "/planetary/solar",
 } as const;
 
 const PAGE_TITLES = {
@@ -81,7 +81,7 @@ test.describe("Main Menu Navigation", () => {
 
 test.describe("Solar System View", () => {
     test("should load 3D solar system scene", async ({ page }) => {
-        await page.goto("/en/planetary/solar");
+        await page.goto(ROUTES.SOLAR_SYSTEM);
 
         // Wait for either the 3D renderer to load OR a fallback/loading state
         // In headless CI without WebGL, the canvas may not appear
@@ -105,7 +105,7 @@ test.describe("Solar System View", () => {
     });
 
     test("should display navigation controls", async ({ page }) => {
-        await page.goto("/en/planetary/solar");
+        await page.goto(ROUTES.SOLAR_SYSTEM);
 
         // Wait for the page to load - the 3D scene may or may not appear
         // depending on WebGL support in the test environment
@@ -131,7 +131,7 @@ test.describe("Solar System View", () => {
     });
 
     test("should handle planet selection", async ({ page }) => {
-        await page.goto("/en/planetary/solar");
+        await page.goto(ROUTES.SOLAR_SYSTEM);
 
         // Wait for scene to load
         await page.waitForSelector("canvas", { timeout: 30000 });
@@ -425,7 +425,7 @@ test.describe("Performance", () => {
     });
 
     test("should handle 3D scene loading gracefully", async ({ page }) => {
-        await page.goto("/en/planetary/solar");
+        await page.goto(ROUTES.SOLAR_SYSTEM);
 
         // Wait for the page to settle
         await page.waitForLoadState("networkidle");

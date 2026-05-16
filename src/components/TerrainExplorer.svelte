@@ -5,11 +5,12 @@
   import { gameState, gameActions } from '../stores/gameStore';
   import type { CelestialBodyData } from '../types/game';
   import { planetarySystemRegistry } from '../lib/planetary-system';
+  import { routes, type AppLocale } from '../i18n/routes';
   import * as THREE from 'three';
   
   // Props
   export let planetId: string;
-  export let lang: 'en' | 'zh' | 'ja' = 'en';
+  export let lang: AppLocale = 'en';
   export let translations: Record<string, string> = {};
   
   // Translation function
@@ -228,8 +229,7 @@
   
   // Navigation functions
   const handleBackToSolar = () => {
-    const solarUrl = lang === 'en' ? '/en/planetary/solar' : `/${lang}/planetary/solar`;
-    window.location.href = solarUrl;
+    window.location.href = routes.planetarySystem('solar', lang);
   };
   
   const handleResetView = () => {

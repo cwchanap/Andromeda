@@ -22,7 +22,7 @@ export default defineConfig({
     routing: {
       prefixDefaultLocale: false,
       redirectToDefaultLocale: true,
-      fallbackType: "redirect",
+      fallbackType: "rewrite",
     },
     fallback: {
       zh: "en",

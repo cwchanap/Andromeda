@@ -1,9 +1,15 @@
-import { ui, defaultLang, showDefaultLang, type UiKey } from "./ui";
+import { ui, defaultLang, type UiKey } from "./ui";
+import {
+    getLocaleFromPath,
+    isAppLocale,
+    localizePath,
+    stripLocaleFromPath,
+    type AppLocale,
+} from "./routes";
 
-export function getLangFromUrl(url: URL) {
-    const [, lang] = url.pathname.split("/");
-    if (lang in ui) return lang as keyof typeof ui;
-    return defaultLang;
+export function getLangFromUrl(url: URL, currentLocale?: string): AppLocale {
+    if (isAppLocale(currentLocale)) return currentLocale;
+    return getLocaleFromPath(url.pathname);
 }
 
 export function useTranslations(lang: keyof typeof ui) {
@@ -25,7 +31,7 @@ export function useTranslations(lang: keyof typeof ui) {
 
 export function useTranslatedPath(lang: keyof typeof ui) {
     return function translatePath(path: string, l: keyof typeof ui = lang) {
-        return !showDefaultLang && l === defaultLang ? path : `/${l}${path}`;
+        return localizePath(path, l);
     };
 }
 
@@ -35,20 +41,11 @@ export function getStaticPaths() {
 
 export function pathHasLocale(pathname: string) {
     const segments = pathname.split("/");
-    return segments.length > 1 && segments[1] in ui;
-}
-
-export function stripLocaleFromPath(pathname: string) {
-    const segments = pathname.split("/");
-    if (segments.length > 1 && segments[1] in ui) {
-        return "/" + segments.slice(2).join("/");
-    }
-    return pathname;
+    return segments.length > 1 && isAppLocale(segments[1]);
 }
 
 export function addLocaleToPath(pathname: string, locale: keyof typeof ui) {
-    if (!showDefaultLang && locale === defaultLang) {
-        return pathname;
-    }
-    return `/${locale}${pathname}`;
+    return localizePath(pathname, locale);
 }
+
+export { stripLocaleFromPath };

@@ -5,19 +5,19 @@
   import { gameState, settings, gameActions } from "../stores/gameStore";
   import { planetarySystemRegistry } from "../lib/planetary-system";
   import { onMount, onDestroy } from "svelte";
-  import { getLangFromUrl, useTranslations, useTranslatedPath } from "../i18n/utils";
+  import { getLangFromUrl, useTranslations } from "../i18n/utils";
+  import { routes, type AppLocale } from "../i18n/routes";
   import type { GameSettings } from "../stores/gameStore";
 
   // Accept language as prop and pre-computed translations
-  export let lang: 'en' | 'zh' | 'ja' = 'en';
+  export let lang: AppLocale = 'en';
   export let translations: Record<string, string> = {};
 
   let showSettings = false;
   let showSystemSelector = false;
   let focusedIndex = 0; // Track which button is focused for keyboard navigation
-  let currentLang: 'en' | 'zh' | 'ja' = lang;
+  let currentLang: AppLocale = lang;
   let t: (key: any, replacements?: Record<string, string>) => string;
-  let translatePath: (path: string, locale?: 'en' | 'zh' | 'ja') => string;
   
   // Get all available planetary systems
   const availableSystems = planetarySystemRegistry.getAllSystems();
@@ -32,7 +32,6 @@
       // Fallback to utility function
       t = useTranslations(currentLang);
     }
-    translatePath = useTranslatedPath(currentLang);
   }
 
   onMount(() => {
@@ -40,15 +39,12 @@
     if (typeof window !== 'undefined' && !lang) {
       currentLang = getLangFromUrl(new URL(window.location.href));
       t = useTranslations(currentLang);
-      translatePath = useTranslatedPath(currentLang);
     }
   });
 
   const handleStartGame = () => {
     gameActions.navigateToView("solar-system");
-    // Navigate to the default solar system - redirect to en version
-    const targetUrl = `/en/planetary/solar`;
-    window.location.href = targetUrl;
+    window.location.href = routes.planetarySystem("solar", currentLang);
   };
 
   const handleSystemSelector = () => {
@@ -56,23 +52,17 @@
   };
 
   const handleGalaxyView = () => {
-    // Navigate to the galaxy page  
-    const targetUrl = currentLang === 'en' ? '/galaxy' : `/${currentLang}/galaxy`;
-    window.location.href = targetUrl;
+    window.location.href = routes.galaxy(currentLang);
   };
 
   const handleConstellationView = () => {
-    // Navigate to the constellation page
-    const targetUrl = currentLang === 'en' ? '/constellation' : `/${currentLang}/constellation`;
-    window.location.href = targetUrl;
+    window.location.href = routes.constellation(currentLang);
   };
 
   const handleSelectSystem = (systemId: string) => {
     gameActions.navigateToView("solar-system"); // Use existing type
     showSystemSelector = false;
-    // Navigate to the selected planetary system - redirect to en version
-    const targetUrl = `/en/planetary/${systemId}`;
-    window.location.href = targetUrl;
+    window.location.href = routes.planetarySystem(systemId, currentLang);
   };
 
   const handleCloseSystemSelector = () => {

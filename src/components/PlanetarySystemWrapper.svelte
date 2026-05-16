@@ -9,18 +9,19 @@
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { PlanetarySystemRenderer, planetarySystemRegistry } from '../lib/planetary-system';
-  import { getLangFromUrl, useTranslations, useTranslatedPath } from '../i18n/utils';
+  import { getLangFromUrl, useTranslations } from '../i18n/utils';
+  import { routes, type AppLocale } from '../i18n/routes';
   import type { PlanetarySystemConfig, PlanetarySystemEvents } from '../lib/planetary-system/types';
   import type { CelestialBodyData } from '../types/game';
   
   // Props
   export let systemId: string;
-  export let lang: 'en' | 'zh' | 'ja' = 'en';
+  export let lang: AppLocale = 'en';
   export let translations: Record<string, string> = {};
   
   // Translation function
   let t: (key: string) => string;
-  let currentLang: 'en' | 'zh' | 'ja' = lang;
+  let currentLang: AppLocale = lang;
   
   // Initialize translations
   $: {
@@ -85,8 +86,7 @@
 
   const handleBackToMenu = () => {
     gameActions.navigateToView("menu");
-    const menuUrl = currentLang === 'en' ? '/' : `/${currentLang}/`;
-    window.location.href = menuUrl;
+    window.location.href = routes.home(currentLang);
   };
   
   const handleZoomChange = (zoom: number) => {
