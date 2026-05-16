@@ -1,10 +1,10 @@
 ---
-import "../styles/global.css";
 import GalaxyWrapper from "../components/GalaxyWrapper.svelte";
+import GlobalStyles from "../components/GlobalStyles.astro";
 import GlobalLanguageSelector from "../components/GlobalLanguageSelector.svelte";
 import { getLangFromUrl, useTranslations } from "../i18n/utils";
 
-const lang = getLangFromUrl(Astro.url);
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
 ---
 
@@ -14,6 +14,7 @@ const t = useTranslations(lang);
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    <GlobalStyles />
     <title>{t("main.galaxy")} - {t("main.title")}</title>
   </head>
 
@@ -22,7 +23,7 @@ const t = useTranslations(lang);
     <GlobalLanguageSelector client:load />
 
     <div id="galaxy-container">
-      <GalaxyWrapper client:only="svelte" />
+      <GalaxyWrapper {lang} client:only="svelte" />
     </div>
 
     <style>

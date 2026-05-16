@@ -2,11 +2,14 @@
   import { onMount, onDestroy } from "svelte";
   import { gameState } from "../stores/gameStore";
   import { getLangFromUrl, useTranslations } from "../i18n/utils";
+  import { routes, type AppLocale } from "../i18n/routes";
   import Button from "./ui/Button.svelte";
   import { ConstellationRenderer } from "../lib/constellation/ConstellationRenderer";
   import { constellations, getVisibleConstellations } from "../data/constellations";
   import { getCurrentLocation, isConstellationVisible, formatCoordinates } from "../utils/astronomy";
   import type { ConstellationViewState, SkyConfiguration, LocationData } from "../types/constellation";
+
+  export let lang: AppLocale = "en";
 
   let container: HTMLElement;
   let renderer: ConstellationRenderer | null = null;
@@ -20,7 +23,7 @@
   let webglSupported = true;
   
   // Current language and translations
-  let currentLang: 'en' | 'zh' | 'ja' = 'en';
+  let currentLang: AppLocale = lang;
   let t: (key: any) => string;
 
   // Constellation view state
@@ -191,8 +194,7 @@
   });
 
   const handleBackToMenu = () => {
-    const targetUrl = currentLang === 'en' ? '/' : `/${currentLang}/`;
-    window.location.href = targetUrl;
+    window.location.href = routes.home(currentLang);
   };
 
   const handleToggleControls = () => {

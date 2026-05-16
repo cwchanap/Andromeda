@@ -165,6 +165,20 @@ describe("MainMenu", () => {
             expect(gameActions.navigateToView).toHaveBeenCalledWith(
                 "solar-system",
             );
+            expect(window.location.href).toBe("/planetary/solar");
+        });
+
+        it("should keep the selected locale when navigating to Solar System", async () => {
+            const { container } = render(MainMenu, { props: { lang: "zh" } });
+            const buttons = Array.from(container.querySelectorAll("button"));
+            const solarBtn = buttons.find(
+                (b) =>
+                    b.textContent?.toLowerCase().includes("solar") ||
+                    b.textContent?.includes("main.solar"),
+            );
+            expect(solarBtn).toBeTruthy();
+            await fireEvent.click(solarBtn!);
+            expect(window.location.href).toBe("/zh/planetary/solar");
         });
     });
 
@@ -241,6 +255,19 @@ describe("MainMenu", () => {
             expect(galaxyBtn).toBeTruthy();
             await fireEvent.click(galaxyBtn!);
             expect(window.location.href).toBe("/galaxy");
+        });
+
+        it("should navigate to localized galaxy route for Chinese", async () => {
+            const { container } = render(MainMenu, { props: { lang: "zh" } });
+            const buttons = Array.from(container.querySelectorAll("button"));
+            const galaxyBtn = buttons.find(
+                (b) =>
+                    b.textContent?.toLowerCase().includes("galaxy") ||
+                    b.textContent?.includes("main.galaxy"),
+            );
+            expect(galaxyBtn).toBeTruthy();
+            await fireEvent.click(galaxyBtn!);
+            expect(window.location.href).toBe("/zh/galaxy");
         });
     });
 

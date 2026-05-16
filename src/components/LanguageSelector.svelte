@@ -1,56 +1,24 @@
 <script lang="ts">
   import { languages } from '../i18n/ui';
-  import { getLangFromUrl, useTranslations, useTranslatedPath } from '../i18n/utils';
+  import { getLangFromUrl, useTranslations } from '../i18n/utils';
+  import { switchLocalePath, type AppLocale } from '../i18n/routes';
   import { onMount } from 'svelte';
   
   let showLanguageSelector = false;
-  let currentLang: keyof typeof languages = 'en';
+  let currentLang: AppLocale = 'en';
   let t: (key: any, replacements?: Record<string, string>) => string;
-  let translatePath: (path: string, locale?: keyof typeof languages) => string;
   
   onMount(() => {
     if (typeof window !== 'undefined') {
       currentLang = getLangFromUrl(new URL(window.location.href));
       t = useTranslations(currentLang);
-      translatePath = useTranslatedPath(currentLang);
     }
   });
   
-  function handleLanguageChange(newLang: keyof typeof languages) {
+  function handleLanguageChange(newLang: AppLocale) {
     if (typeof window !== 'undefined') {
       const currentUrl = new URL(window.location.href);
-      const currentPath = currentUrl.pathname;
-      
-      // Remove current locale from path if it exists
-      const pathSegments = currentPath.split('/');
-      let cleanPath = currentPath;
-      
-      // Check if first segment is a locale and remove it
-      if (pathSegments.length > 1 && pathSegments[1] in languages) {
-        cleanPath = '/' + pathSegments.slice(2).join('/');
-        // Handle root path case
-        if (cleanPath === '/') {
-          cleanPath = '';
-        }
-      }
-      
-      // Add new locale to path (only if not English)
-      let newPath: string;
-      if (newLang === 'en') {
-        // For English, use the clean path without locale prefix
-        newPath = cleanPath || '/';
-      } else {
-        // For other languages, add the locale prefix with trailing slash
-        const basePath = cleanPath || '/';
-        newPath = `/${newLang}${basePath}`;
-      }
-
-      // Ensure trailing slash for consistency with Astro config
-      if (!newPath.endsWith('/')) {
-        newPath += '/';
-      }
-      
-      // Navigate to the new URL
+      const newPath = `${switchLocalePath(currentUrl.pathname, newLang)}${currentUrl.search}${currentUrl.hash}`;
       window.location.href = newPath;
     }
     showLanguageSelector = false;
@@ -107,7 +75,7 @@
         <div class="space-y-2">
           {#each Object.entries(languages) as [langCode, langName]}
             <button
-              on:click={() => handleLanguageChange(langCode as keyof typeof languages)}
+              on:click={() => handleLanguageChange(langCode as AppLocale)}
               class="w-full rounded-lg border border-white/20 bg-white/5 p-3 text-left transition-all duration-300 hover:border-white/40 hover:bg-white/10 {currentLang === langCode ? 'ring-2 ring-blue-400' : ''}"
             >
               <div class="flex items-center justify-between">

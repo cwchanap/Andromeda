@@ -1,9 +1,13 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { GalaxyRenderer, localGalaxyData, type GalaxyConfig, type GalaxyEvents } from '../lib/galaxy';
+    import { planetarySystemRegistry } from '../lib/planetary-system';
+    import { routes, type AppLocale } from '../i18n/routes';
     import LoadingAnimation from './LoadingAnimation.svelte';
     import ErrorBoundary from './ErrorBoundary.svelte';
     import AccessibilityManager from './AccessibilityManager.svelte';
+
+    export let lang: AppLocale = 'en';
     
     // Component state
     let container: HTMLElement;
@@ -113,7 +117,7 @@
     
     // Navigation handlers
     const handleBackToMenu = () => {
-        window.location.href = '/';
+        window.location.href = routes.home(lang);
     };
     
     const toggleHamburgerMenu = () => {
@@ -142,22 +146,10 @@
     };
     
     const navigateToSystem = (systemId: string) => {
-        // Map system IDs to their routes - redirect to en versions
-        const systemRoutes: Record<string, string> = {
-            'solar-system': '/en/planetary/solar',
-            'alpha-centauri': '/en/planetary/alpha-centauri',
-            'barnards-star': '/en/planetary/barnards-star',
-            'wolf-359': '/en/planetary/wolf-359',
-            'trappist-1': '/en/planetary/trappist-1',
-            'ross-128': '/en/planetary/ross-128',
-            'kepler-442': '/en/planetary/kepler-442',
-            'kepler-438': '/en/planetary/kepler-438',
-            'sirius': '/en/planetary/sirius' // placeholder
-        };
-        
-        const route = systemRoutes[systemId];
-        if (route) {
-            window.location.href = route;
+        const routeSystemId = systemId === 'solar-system' ? 'solar' : systemId;
+
+        if (planetarySystemRegistry.hasSystem(routeSystemId)) {
+            window.location.href = routes.planetarySystem(routeSystemId, lang);
         } else {
             // Show placeholder message for unimplemented systems
             alert(`Detailed view for ${selectedSystemData?.name || systemId} is coming soon!`);

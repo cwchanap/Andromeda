@@ -1,32 +1,20 @@
 ---
-import "../../../styles/global.css";
 import TerrainExplorer from "../../../components/TerrainExplorer.svelte";
+import GlobalStyles from "../../../components/GlobalStyles.astro";
 import { getLangFromUrl, useTranslations } from "../../../i18n/utils";
+import { routes } from "../../../i18n/routes";
 import { ui } from "../../../i18n/ui";
 
-export async function getStaticPaths() {
-  // Define the planets that have terrain rendering
-  const planetsWithTerrain = [
-    { planetId: "mercury" },
-    { planetId: "venus" },
-    { planetId: "earth" },
-    { planetId: "mars" },
-  ];
-
-  return planetsWithTerrain.map(({ planetId }) => ({
-    params: { planetId },
-  }));
-}
-
 const { planetId } = Astro.params;
-const lang = getLangFromUrl(Astro.url);
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
 const translations = ui[lang] || ui.en;
+const fallbackUrl = routes.planetarySystem("solar", lang);
 
 // Validate planet ID
 const validPlanets = ["mercury", "venus", "earth", "mars"];
 if (!validPlanets.includes(planetId as string)) {
-  return Astro.redirect("/planetary/solar");
+  return Astro.redirect(fallbackUrl);
 }
 
 // Get planet name safely
@@ -41,6 +29,7 @@ const planetName = t(planetNameKey);
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    <GlobalStyles />
     <title>{planetName} Terrain - {t("main.title")}</title>
     <meta
       name="description"

@@ -1,0 +1,61 @@
+---
+import GlobalStyles from "@/components/GlobalStyles.astro";
+import PlanetarySystemWrapper from "@/components/PlanetarySystemWrapper.svelte";
+import GlobalLanguageSelector from "@/components/GlobalLanguageSelector.svelte";
+import { planetarySystemRegistry } from "@/lib/planetary-system";
+import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { routes } from "@/i18n/routes";
+import { ui } from "@/i18n/ui";
+
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
+const t = useTranslations(lang);
+const translations = ui[lang] || ui.en;
+const { systemId } = Astro.params;
+const fallbackUrl = routes.home(lang);
+
+if (!systemId || !planetarySystemRegistry.hasSystem(systemId)) {
+  return Astro.redirect(fallbackUrl);
+}
+
+const system = planetarySystemRegistry.getSystem(systemId);
+const title =
+  systemId === "solar" ? t("main.solar") : system?.systemData.name || systemId;
+---
+
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <GlobalStyles />
+    <title>{title} - {t("main.title")}</title>
+  </head>
+
+  <body>
+    <GlobalLanguageSelector client:load />
+
+    <div id="planetary-system-container">
+      <PlanetarySystemWrapper
+        systemId={systemId}
+        {lang}
+        {translations}
+        client:only="svelte"
+      />
+    </div>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      #planetary-system-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </body>
+</html>

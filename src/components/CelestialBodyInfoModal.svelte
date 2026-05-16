@@ -1,18 +1,16 @@
 <script lang="ts">
   import type { CelestialBodyData } from '../types/game';
   import { gameState, gameActions } from '../stores/gameStore';
+  import { routes, type AppLocale } from '../i18n/routes';
 
   export let isOpen: boolean = false;
   export let celestialBody: CelestialBodyData | null = null;
   export let onClose: () => void;
-  export let lang: string = 'en';
+  export let lang: AppLocale = 'en';
   export let translations: Record<string, string> = {};
   
   // Create translation function with fallback
   $: t = (key: string) => translations[key] || key;
-  
-  // Reactive statement that uses lang prop to suppress warning
-  $: currentLanguage = lang;
   
   // Get translated planet content
   $: getTranslatedName = (body: CelestialBodyData | null) => {
@@ -340,10 +338,7 @@
             <button 
               class="terrain-button"
               on:click={() => {
-                const terrainUrl = lang === 'en' 
-                  ? `/en/planetary/terrain/${celestialBody.id}` 
-                  : `/${lang}/planetary/terrain/${celestialBody.id}`;
-                window.location.href = terrainUrl;
+                window.location.href = routes.terrain(celestialBody.id, lang);
               }}
               type="button"
             >

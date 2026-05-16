@@ -5,7 +5,7 @@ import GlobalLanguageSelector from "@/components/GlobalLanguageSelector.svelte";
 import ErrorBoundary from "@/components/ErrorBoundary.svelte";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 
-const lang = getLangFromUrl(Astro.url);
+const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
 
 // Pre-compute all translations needed by MainMenu
