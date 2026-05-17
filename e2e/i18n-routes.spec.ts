@@ -1,6 +1,20 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("i18n routes", () => {
+    test("serves localized home fallback pages with page styles @smoke", async ({
+        page,
+    }) => {
+        const response = await page.goto("/zh/");
+
+        expect(response?.status()).toBe(200);
+        await expect(page.locator("html")).toHaveAttribute("lang", "zh");
+
+        const stylesheetCount = await page
+            .locator('link[rel="stylesheet"], style')
+            .count();
+        expect(stylesheetCount).toBeGreaterThan(0);
+    });
+
     test("serves localized galaxy fallback with page styles @smoke", async ({
         page,
     }) => {
