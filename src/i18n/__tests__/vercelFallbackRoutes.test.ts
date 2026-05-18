@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     createLocaleRouteDefinitions,
     injectLocaleRouteDefinitions,
-} from "../vercelFallbackRoutes.js";
+} from "@/i18n/vercelFallbackRoutes";
 
 const appRoutes = [
     {
@@ -49,6 +49,35 @@ describe("Vercel i18n fallback routes", () => {
                 dest: "_render",
             },
         ]);
+    });
+
+    it("handles config that omits the routes property entirely", () => {
+        const config = { version: 3 };
+
+        const result = injectLocaleRouteDefinitions(config, [
+            { src: "^/(?:en|zh|ja)/?$", dest: "_render" },
+            { src: "^/(?:en|zh|ja)/galaxy/?$", dest: "_render" },
+        ]);
+
+        expect(result).toEqual({
+            version: 3,
+            routes: [
+                { src: "^/(?:en|zh|ja)/?$", dest: "_render" },
+                { src: "^/(?:en|zh|ja)/galaxy/?$", dest: "_render" },
+            ],
+        });
+    });
+
+    it("preserves other top-level fields when injecting into config without routes", () => {
+        const config = { version: 3, someFlag: true };
+
+        const result = injectLocaleRouteDefinitions(config, [
+            { src: "^/(?:en|zh|ja)/?$", dest: "_render" },
+        ]);
+
+        expect(result.someFlag).toBe(true);
+        expect(result.version).toBe(3);
+        expect(result.routes).toHaveLength(1);
     });
 
     it("injects locale-prefixed entries before canonical render routes", () => {

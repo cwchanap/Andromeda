@@ -113,7 +113,7 @@ export function patchVercelOutputConfig({
     return { patched: false, count: 0 };
   }
 
-  const count = patchedConfig.routes.length - config.routes.length;
+  const count = patchedConfig.routes.length - (config.routes?.length ?? 0);
   writeFileSync(configPath, `${JSON.stringify(patchedConfig, null, "\t")}\n`);
   logger?.info(
     `Added ${count} locale-prefixed Vercel route${count === 1 ? "" : "s"}.`,
