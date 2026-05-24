@@ -2,7 +2,7 @@
   export let opacity: number = 0.06;
 </script>
 
-<div class="scan-lines" style="--scan-opacity: {opacity}; pointer-events: none;" aria-hidden="true">
+<div class="scan-lines" style="--scan-opacity: {opacity};" aria-hidden="true">
   <div class="scan-lines-fine"></div>
   <div class="scan-lines-coarse"></div>
 </div>
