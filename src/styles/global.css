@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;600;700&family=Orbitron:wght@700&family=JetBrains+Mono:wght@400;600&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "./high-contrast.css";
@@ -234,4 +234,33 @@ html[lang="ja"] h1,
 html[lang="zh"] h2,
 html[lang="ja"] h2 {
   line-height: 1.3;
+}
+
+/* ----- HUD design tokens (constellation page) ----- */
+:root {
+  --hud-void: #02040a;
+  --hud-cyan: #00f0ff;
+  --hud-cyan-dim: #1b6b7a;
+  --hud-magenta: #ff2db4;
+  --hud-ivory: #e8f4ff;
+  --hud-amber: #ffb547;
+
+  --hud-font-display: "Orbitron", system-ui, sans-serif;
+  --hud-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --hud-ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --hud-ease-glide: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --hud-dur-snap: 120ms;
+  --hud-dur-glide: 420ms;
+  --hud-dur-flow: 2600ms;
+  --hud-dur-scan: 8000ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --hud-dur-snap: 0ms;
+    --hud-dur-glide: 0ms;
+    --hud-dur-flow: 0ms;
+    --hud-dur-scan: 0ms;
+  }
 }
