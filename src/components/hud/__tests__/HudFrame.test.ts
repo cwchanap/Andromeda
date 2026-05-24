@@ -11,8 +11,20 @@ describe("HudFrame", () => {
 
     it("applies the color prop to brackets via stroke", () => {
         const { container } = render(HudFrame, { props: { color: "#ff2db4" } });
-        const path = container.querySelector("[data-corner] line");
-        expect(path?.getAttribute("stroke")).toBe("#ff2db4");
+        const line = container.querySelector("[data-corner] line");
+        expect(line?.getAttribute("stroke")).toBe("#ff2db4");
+    });
+
+    it("applies hud-frame-glow class when glow prop is true", () => {
+        const { container } = render(HudFrame, { props: { glow: true } });
+        const wrapper = container.querySelector(".hud-frame") as HTMLElement;
+        expect(wrapper.classList.contains("hud-frame-glow")).toBe(true);
+    });
+
+    it("does not apply hud-frame-glow class when glow is false (default)", () => {
+        const { container } = render(HudFrame, { props: {} });
+        const wrapper = container.querySelector(".hud-frame") as HTMLElement;
+        expect(wrapper.classList.contains("hud-frame-glow")).toBe(false);
     });
 
     it("respects bracketLength prop", () => {
