@@ -16,6 +16,7 @@
       width={bracketLength}
       height={bracketLength}
       viewBox="0 0 {bracketLength} {bracketLength}"
+      overflow="visible"
       aria-hidden="true"
     >
       {#if corner === "tl"}
