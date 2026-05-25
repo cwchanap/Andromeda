@@ -1192,8 +1192,7 @@ export class ConstellationRenderer {
      * Handle canvas click — raycast against constellation line groups and fire onConstellationClick.
      */
     private handleCanvasClick(event: MouseEvent): void {
-        if (!this.callbacks.onConstellationClick && !this.callbacks.onStarHover)
-            return;
+        if (!this.callbacks.onConstellationClick) return;
         const rect = this.canvas.getBoundingClientRect();
         this.mouseNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         this.mouseNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
