@@ -9,9 +9,10 @@
   class="hud-reticle"
   data-state={state}
   style="transform: translate(-50%, -50%) translate({x}px, {y}px);"
-  aria-hidden="true"
+  role="img"
+  aria-label={label ?? undefined}
 >
-  <svg class="reticle-svg" viewBox="-40 -40 80 80" width="80" height="80">
+  <svg class="reticle-svg" viewBox="-40 -40 80 80" width="80" height="80" aria-hidden="true">
     <circle class="ring" cx="0" cy="0" r="22" fill="none" stroke-width="1" />
     <line class="cross" x1="-32" y1="0" x2="-12" y2="0" />
     <line class="cross" x1="12" y1="0" x2="32" y2="0" />
@@ -45,8 +46,9 @@
   }
   .ring {
     stroke: currentColor;
+    transform-box: fill-box;
     transform-origin: center;
-    transition: r var(--hud-dur-snap) var(--hud-ease-snap), stroke-width var(--hud-dur-snap);
+    transition: transform var(--hud-dur-snap) var(--hud-ease-snap);
   }
   .cross {
     stroke: currentColor;
@@ -54,8 +56,11 @@
   }
   .dot { fill: var(--hud-magenta); }
   .ticks line { stroke: var(--hud-cyan); stroke-width: 1.5; }
-  [data-state="locked"] .ring { r: 26; stroke-width: 1.6; }
+  [data-state="locked"] .ring {
+    transform: scale(1.18);
+  }
   [data-state="locked"] .ticks {
+    transform-box: fill-box;
     transform-origin: center;
     animation: reticle-spin var(--hud-dur-scan) linear infinite;
   }
@@ -74,5 +79,10 @@
   @keyframes reticle-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-state="locked"] .ticks {
+      animation: none;
+    }
   }
 </style>

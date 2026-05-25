@@ -25,4 +25,38 @@ describe("HudReticle", () => {
         });
         expect(getByText("BETELGEUSE")).toBeTruthy();
     });
+
+    it("does not render label by default", () => {
+        const { container } = render(HudReticle, {
+            props: { x: 0, y: 0, state: "hover" },
+        });
+        const labelEl = container.querySelector(".reticle-label");
+        expect(labelEl).toBeNull();
+    });
+
+    it("renders locked-state ticks when state is 'locked'", () => {
+        const { container } = render(HudReticle, {
+            props: { x: 0, y: 0, state: "locked" },
+        });
+        const ticks = container.querySelector(".ticks");
+        expect(ticks).not.toBeNull();
+        const lines = ticks!.querySelectorAll("line");
+        expect(lines).toHaveLength(8);
+    });
+
+    it("marks svg as decorative with aria-hidden", () => {
+        const { container } = render(HudReticle, {
+            props: { x: 0, y: 0, state: "hover" },
+        });
+        const svg = container.querySelector("svg");
+        expect(svg?.getAttribute("aria-hidden")).toBe("true");
+    });
+
+    it("exposes label via aria-label on wrapper when label is set", () => {
+        const { container } = render(HudReticle, {
+            props: { x: 0, y: 0, state: "hover", label: "Andromeda" },
+        });
+        const wrapper = container.querySelector(".hud-reticle");
+        expect(wrapper?.getAttribute("aria-label")).toBe("Andromeda");
+    });
 });
