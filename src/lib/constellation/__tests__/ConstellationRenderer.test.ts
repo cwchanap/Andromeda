@@ -503,6 +503,37 @@ describe("ConstellationRenderer", () => {
         });
     });
 
+    describe("twinkle shader", () => {
+        it("uses a ShaderMaterial with uTime uniform for stars", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const stars = (renderer as any).starPoints;
+            expect(stars.material.uniforms.uTime).toBeDefined();
+            // animate() runs once during initialize, so uTime.value is >= 0
+            expect(typeof stars.material.uniforms.uTime.value).toBe("number");
+            expect(isFinite(stars.material.uniforms.uTime.value)).toBe(true);
+        });
+
+        it("increments uTime each frame during animate()", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const stars = (renderer as any).starPoints;
+            const initial = stars.material.uniforms.uTime.value;
+            (renderer as any).tickUniforms(0.5);
+            expect(stars.material.uniforms.uTime.value).toBeGreaterThan(
+                initial,
+            );
+        });
+    });
+
     it("touch start/move/end sequence executes without throwing", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;
