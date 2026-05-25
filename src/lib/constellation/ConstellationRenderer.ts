@@ -25,6 +25,23 @@ export class ConstellationRenderer {
     private isDragging: boolean = false;
     private dragVelocityX: number = 0;
     private dragVelocityY: number = 0;
+    private tweenState: {
+        startX: number;
+        startY: number;
+        targetX: number;
+        targetY: number;
+        startedAt: number;
+        duration: number;
+        active: boolean;
+    } = {
+        startX: 0,
+        startY: 0,
+        targetX: 0,
+        targetY: 0,
+        startedAt: 0,
+        duration: 0,
+        active: false,
+    };
     private lastMouseX: number = 0;
     private lastMouseY: number = 0;
     private clock = new THREE.Clock();
@@ -895,6 +912,52 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Smoothly pan the camera to the given rotation angles over durationMs milliseconds.
+     * Cancels any active drag momentum so the tween runs uninterrupted.
+     */
+    public tweenCameraTo(
+        targetRotX: number,
+        targetRotY: number,
+        durationMs: number = 900,
+    ): void {
+        this.dragVelocityX = 0;
+        this.dragVelocityY = 0;
+        this.tweenState = {
+            startX: this.cameraRotationX,
+            startY: this.cameraRotationY,
+            targetX: Math.max(
+                -Math.PI / 2.2,
+                Math.min(Math.PI / 2.2, targetRotX),
+            ),
+            targetY: targetRotY,
+            startedAt: performance.now(),
+            duration: durationMs,
+            active: true,
+        };
+    }
+
+    private easeInOutCubic(t: number): number {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    public tickTween(nowMs: number = performance.now()): void {
+        if (!this.tweenState.active) return;
+        const t = Math.min(
+            1,
+            (nowMs - this.tweenState.startedAt) / this.tweenState.duration,
+        );
+        const k = this.easeInOutCubic(t);
+        this.cameraRotationX =
+            this.tweenState.startX +
+            (this.tweenState.targetX - this.tweenState.startX) * k;
+        this.cameraRotationY =
+            this.tweenState.startY +
+            (this.tweenState.targetY - this.tweenState.startY) * k;
+        this.updateCameraRotation();
+        if (t >= 1) this.tweenState.active = false;
+    }
+
+    /**
      * Get the currently selected constellation id, or null if none selected.
      */
     public getSelectedId(): string | null {
@@ -944,6 +1007,7 @@ export class ConstellationRenderer {
             this.updateCameraRotation();
         }
 
+        this.tickTween();
         this.tickUniforms(this.clock.getDelta());
         this.renderer.render(this.scene, this.camera);
     }
