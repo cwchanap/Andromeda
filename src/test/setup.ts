@@ -725,6 +725,7 @@ class MockLineSegments {
     renderOrder = 0;
     castShadow = false;
     receiveShadow = false;
+    userData: Record<string, any> = {};
     constructor(geometry?: any, material?: any) {
         this.geometry = geometry;
         this.material = material;
