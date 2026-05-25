@@ -99,4 +99,12 @@
       transform: translateX(100%);
     }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .boot-scanbar {
+      animation: none;
+    }
+    .boot-line {
+      animation: none;
+    }
+  }
 </style>
