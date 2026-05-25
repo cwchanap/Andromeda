@@ -45,6 +45,11 @@ export class ConstellationRenderer {
     private lastMouseX: number = 0;
     private lastMouseY: number = 0;
     private clock = new THREE.Clock();
+    private activeShootingStar: THREE.Line | null = null;
+    private shootingStarCount: number = 0;
+    private nextShootingStarAt: number = 0;
+    private shootingStarStarted: number = 0;
+    private _reducedMotion: boolean | null = null;
 
     public callbacks: {
         onStarHover?: (
@@ -1081,6 +1086,89 @@ export class ConstellationRenderer {
         }
     }
 
+    private prefersReducedMotion(): boolean {
+        if (this._reducedMotion === null) {
+            this._reducedMotion =
+                window.matchMedia?.("(prefers-reduced-motion: reduce)")
+                    ?.matches ?? false;
+        }
+        return this._reducedMotion;
+    }
+
+    private maybeSpawnShootingStar(now: number): void {
+        if (this.prefersReducedMotion()) return;
+        if (this.shootingStarCount > 0) return;
+        if (this.nextShootingStarAt === 0) {
+            this.nextShootingStarAt = now + (8000 + Math.random() * 6000);
+            return;
+        }
+        if (now < this.nextShootingStarAt) return;
+        this.spawnShootingStar();
+        this.nextShootingStarAt = now + (8000 + Math.random() * 6000);
+    }
+
+    private spawnShootingStar(): void {
+        if (this.shootingStarCount > 0) return;
+        const startAz = Math.random() * Math.PI * 2;
+        const startEl = (Math.random() - 0.5) * Math.PI * 0.7;
+        const len = 12 + Math.random() * 8;
+        const dirAz = startAz + (Math.random() - 0.5) * 0.6;
+        const dirEl = startEl + 0.3 + Math.random() * 0.2;
+
+        const r = 95;
+        const start = {
+            x: r * Math.cos(startEl) * Math.cos(startAz),
+            y: r * Math.sin(startEl),
+            z: r * Math.cos(startEl) * Math.sin(startAz),
+        };
+        const end = {
+            x: r * Math.cos(dirEl) * Math.cos(dirAz),
+            y: r * Math.sin(dirEl),
+            z: r * Math.cos(dirEl) * Math.sin(dirAz),
+        };
+
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(
+                [start.x, start.y, start.z, end.x, end.y, end.z],
+                3,
+            ),
+        );
+        const mat = new THREE.LineBasicMaterial({
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.9,
+            depthWrite: false,
+        });
+        const line = new THREE.LineSegments(geom, mat);
+        line.renderOrder = 3;
+        this.scene.add(line);
+        this.activeShootingStar = line as unknown as THREE.Line;
+        this.shootingStarCount = 1;
+        this.shootingStarStarted = performance.now();
+        void len; // length unused — start/end derive their own direction
+    }
+
+    private tickShootingStar(now: number): void {
+        if (!this.activeShootingStar) return;
+        const elapsed = now - this.shootingStarStarted;
+        const t = elapsed / 700;
+        if (t >= 1) {
+            this.scene.remove(this.activeShootingStar);
+            const line = this
+                .activeShootingStar as unknown as THREE.LineSegments;
+            line.geometry.dispose();
+            (line.material as THREE.Material).dispose();
+            this.activeShootingStar = null;
+            this.shootingStarCount = 0;
+            return;
+        }
+        const mat = (this.activeShootingStar as unknown as THREE.LineSegments)
+            .material as THREE.LineBasicMaterial;
+        mat.opacity = 0.9 * (1 - t);
+    }
+
     /**
      * Animation loop
      */
@@ -1092,8 +1180,11 @@ export class ConstellationRenderer {
             this.updateCameraRotation();
         }
 
-        this.tickTween();
+        const now = performance.now();
+        this.tickTween(now);
         this.tickUniforms(this.clock.getDelta());
+        this.tickShootingStar(now);
+        this.maybeSpawnShootingStar(now);
         this.renderer.render(this.scene, this.camera);
     }
 

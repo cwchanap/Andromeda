@@ -83,6 +83,22 @@ describe("ConstellationRenderer", () => {
 
     beforeEach(() => {
         container = makeContainer();
+        // Ensure matchMedia is always a vi.fn() so tests that use mockReturnValueOnce
+        // are not affected by a prior vi.spyOn + mockRestore() in sibling tests.
+        Object.defineProperty(window, "matchMedia", {
+            writable: true,
+            configurable: true,
+            value: vi.fn().mockImplementation((query: string) => ({
+                matches: false,
+                media: query,
+                onchange: null,
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn(),
+            })),
+        });
     });
 
     afterEach(() => {
@@ -860,6 +876,46 @@ describe("ConstellationRenderer", () => {
                     preventDefault: () => {},
                 }),
             ).not.toThrow();
+        });
+    });
+
+    describe("shooting stars", () => {
+        it("does not spawn shooting stars when reduced-motion is preferred", async () => {
+            (window.matchMedia as any).mockReturnValueOnce({
+                matches: true,
+                media: "(prefers-reduced-motion: reduce)",
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+            });
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const sceneAddCalls = ((renderer as any).scene.add as any).mock
+                .calls.length;
+            for (let i = 0; i < 1000; i++)
+                (renderer as any).maybeSpawnShootingStar(
+                    performance.now() + i * 100,
+                );
+            expect(((renderer as any).scene.add as any).mock.calls.length).toBe(
+                sceneAddCalls,
+            );
+        });
+
+        it("spawns at most one shooting star at a time", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            // Force-spawn by directly invoking
+            (renderer as any).spawnShootingStar();
+            (renderer as any).spawnShootingStar();
+            expect((renderer as any).activeShootingStar).not.toBeNull();
+            expect((renderer as any).shootingStarCount).toBe(1);
         });
     });
 
