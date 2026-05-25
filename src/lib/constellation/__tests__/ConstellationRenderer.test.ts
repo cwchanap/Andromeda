@@ -788,6 +788,79 @@ describe("ConstellationRenderer", () => {
             });
             expect(onConstellationClick).not.toHaveBeenCalled();
         });
+
+        it("fires onConstellationHover with id and screen position on hit", async () => {
+            const onConstellationHover = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onConstellationHover,
+            });
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const group = (renderer as any).constellationLines;
+            globalThis.__threeRaycasterIntersects = [
+                { object: group.children[0] },
+            ];
+
+            // First call sets lastHoverEmit; force enough time to elapse:
+            (renderer as any).lastHoverEmit = 0;
+
+            (renderer as any).onMouseMove({
+                clientX: 150,
+                clientY: 200,
+                preventDefault: () => {},
+            });
+
+            expect(onConstellationHover).toHaveBeenCalledWith(
+                "orion",
+                expect.objectContaining({
+                    x: expect.any(Number),
+                    y: expect.any(Number),
+                }),
+            );
+            globalThis.__threeRaycasterIntersects = undefined;
+        });
+
+        it("fires onConstellationHover with null when there is no hit", async () => {
+            const onConstellationHover = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onConstellationHover,
+            });
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            globalThis.__threeRaycasterIntersects = [];
+            (renderer as any).lastHoverEmit = 0;
+
+            (renderer as any).onMouseMove({
+                clientX: 0,
+                clientY: 0,
+                preventDefault: () => {},
+            });
+
+            expect(onConstellationHover).toHaveBeenCalledWith(null, null);
+        });
+
+        it("does not crash when handleCanvasClick is called with no callbacks configured", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            globalThis.__threeRaycasterIntersects = [];
+            expect(() =>
+                (renderer as any).handleCanvasClick({
+                    clientX: 0,
+                    clientY: 0,
+                    preventDefault: () => {},
+                }),
+            ).not.toThrow();
+        });
     });
 
     it("touch start/move/end sequence executes without throwing", () => {
