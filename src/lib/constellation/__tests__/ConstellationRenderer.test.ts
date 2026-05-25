@@ -532,6 +532,17 @@ describe("ConstellationRenderer", () => {
                 initial,
             );
         });
+
+        it("does not throw when tickUniforms is called after dispose clears starPoints", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            renderer.dispose();
+            expect(() => (renderer as any).tickUniforms(0.5)).not.toThrow();
+        });
     });
 
     it("touch start/move/end sequence executes without throwing", () => {
