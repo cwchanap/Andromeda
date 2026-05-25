@@ -14,6 +14,7 @@
 
 <div
   class="callout-card"
+  role="tooltip"
   style="transform: translate({x + offset}px, {y}px);"
 >
   <div class="callout-title">{title}</div>
@@ -31,18 +32,20 @@
     transform-origin: 0 0;
   }
   .callout-card {
+    --callout-vertical-shift: -28px; /* lifts card so leader line meets card mid-height */
     position: absolute;
-    top: -28px;
+    top: var(--callout-vertical-shift);
     left: 0;
     pointer-events: none;
-    background: rgba(2, 4, 10, 0.85);
+    background: color-mix(in srgb, var(--hud-void) 85%, transparent);
     border: 1px solid var(--hud-cyan);
     padding: 6px 10px;
     min-width: 120px;
     font-family: var(--hud-font-mono);
     font-size: 11px;
     color: var(--hud-ivory);
-    box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--hud-cyan) 25%, transparent);
+    -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
   }
   .callout-title {
