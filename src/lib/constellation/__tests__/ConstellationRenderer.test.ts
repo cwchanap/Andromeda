@@ -741,6 +741,55 @@ describe("ConstellationRenderer", () => {
         });
     });
 
+    describe("interaction callbacks", () => {
+        it("fires onConstellationClick when raycaster hits a constellation line group", async () => {
+            const onConstellationClick = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onConstellationClick,
+            });
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+
+            // Force the raycaster mock to return a hit on the orion line group
+            const group = (renderer as any).constellationLines;
+            globalThis.__threeRaycasterIntersects = [
+                { object: group.children[0] },
+            ];
+
+            // Simulate click
+            (renderer as any).handleCanvasClick({
+                clientX: 100,
+                clientY: 100,
+                preventDefault: () => {},
+            });
+
+            expect(onConstellationClick).toHaveBeenCalledWith("orion");
+            globalThis.__threeRaycasterIntersects = undefined;
+        });
+
+        it("does not fire onConstellationClick when there are no hits", async () => {
+            const onConstellationClick = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onConstellationClick,
+            });
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            globalThis.__threeRaycasterIntersects = [];
+            (renderer as any).handleCanvasClick({
+                clientX: 100,
+                clientY: 100,
+                preventDefault: () => {},
+            });
+            expect(onConstellationClick).not.toHaveBeenCalled();
+        });
+    });
+
     it("touch start/move/end sequence executes without throwing", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;

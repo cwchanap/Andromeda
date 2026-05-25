@@ -46,7 +46,28 @@ export class ConstellationRenderer {
     private lastMouseY: number = 0;
     private clock = new THREE.Clock();
 
-    constructor(container: HTMLElement) {
+    public callbacks: {
+        onStarHover?: (
+            star: Star | null,
+            screenPos: { x: number; y: number } | null,
+        ) => void;
+        onConstellationHover?: (
+            id: string | null,
+            screenPos: { x: number; y: number } | null,
+        ) => void;
+        onConstellationClick?: (id: string) => void;
+    } = {};
+
+    private raycaster: THREE.Raycaster = new THREE.Raycaster();
+    private mouseNDC: { x: number; y: number } = { x: 0, y: 0 };
+    private lastHoverEmit: number = 0;
+    private _clickHandler: (event: MouseEvent) => void = () => {};
+
+    constructor(
+        container: HTMLElement,
+        callbacks: typeof ConstellationRenderer.prototype.callbacks = {},
+    ) {
+        this.callbacks = callbacks;
         // Initialize Three.js scene
         this.scene = new THREE.Scene();
 
@@ -99,6 +120,10 @@ export class ConstellationRenderer {
         // Setup mouse and touch controls for 360-degree viewing
         this.setupMouseControls();
         this.setupTouchControls();
+
+        // Register click handler for raycasting
+        this._clickHandler = this.handleCanvasClick.bind(this);
+        this.canvas.addEventListener("click", this._clickHandler);
     }
 
     /**
@@ -298,31 +323,78 @@ export class ConstellationRenderer {
      * Handle mouse move event
      */
     private onMouseMove(event: MouseEvent): void {
-        if (!this.isMouseDown) return;
+        if (this.isMouseDown) {
+            const deltaX = event.clientX - this.mouseX;
+            const deltaY = event.clientY - this.mouseY;
 
-        const deltaX = event.clientX - this.mouseX;
-        const deltaY = event.clientY - this.mouseY;
+            // Calculate velocity for momentum
+            this.dragVelocityX = event.clientX - this.lastMouseX;
+            this.dragVelocityY = event.clientY - this.lastMouseY;
 
-        // Calculate velocity for momentum
-        this.dragVelocityX = event.clientX - this.lastMouseX;
-        this.dragVelocityY = event.clientY - this.lastMouseY;
+            // Update camera rotation with improved sensitivity
+            this.cameraRotationY -= deltaX * 0.008; // Horizontal rotation (increased sensitivity)
+            this.cameraRotationX -= deltaY * 0.008; // Vertical rotation (increased sensitivity)
 
-        // Update camera rotation with improved sensitivity
-        this.cameraRotationY -= deltaX * 0.008; // Horizontal rotation (increased sensitivity)
-        this.cameraRotationX -= deltaY * 0.008; // Vertical rotation (increased sensitivity)
+            // Limit vertical rotation to prevent over-rotation (allow looking behind)
+            this.cameraRotationX = Math.max(
+                -Math.PI / 2.2,
+                Math.min(Math.PI / 2.2, this.cameraRotationX),
+            );
 
-        // Limit vertical rotation to prevent over-rotation (allow looking behind)
-        this.cameraRotationX = Math.max(
-            -Math.PI / 2.2,
-            Math.min(Math.PI / 2.2, this.cameraRotationX),
-        );
+            this.updateCameraRotation();
 
-        this.updateCameraRotation();
+            this.mouseX = event.clientX;
+            this.mouseY = event.clientY;
+            this.lastMouseX = event.clientX;
+            this.lastMouseY = event.clientY;
+        }
 
-        this.mouseX = event.clientX;
-        this.mouseY = event.clientY;
-        this.lastMouseX = event.clientX;
-        this.lastMouseY = event.clientY;
+        // Hover raycasting (throttled to ~60fps)
+        const now = performance.now();
+        if (
+            !this.isMouseDown &&
+            now - this.lastHoverEmit > 16 &&
+            (this.callbacks.onConstellationHover || this.callbacks.onStarHover)
+        ) {
+            this.lastHoverEmit = now;
+            const rect = this.canvas.getBoundingClientRect();
+            this.mouseNDC.x =
+                ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            this.mouseNDC.y =
+                -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            this.raycaster.setFromCamera(
+                this.mouseNDC as unknown as THREE.Vector2,
+                this.camera,
+            );
+
+            let hoveredId: string | null = null;
+            if (this.constellationLines) {
+                const hits = this.raycaster.intersectObjects(
+                    this.constellationLines.children,
+                    false,
+                );
+                if (hits.length > 0) {
+                    hoveredId =
+                        (
+                            hits[0].object.userData as {
+                                constellationId?: string;
+                            }
+                        ).constellationId ?? null;
+                }
+            }
+            if (this.callbacks.onConstellationHover) {
+                const rect2 = this.canvas.getBoundingClientRect();
+                const screen = {
+                    x: event.clientX - rect2.left,
+                    y: event.clientY - rect2.top,
+                };
+                this.callbacks.onConstellationHover(
+                    hoveredId,
+                    hoveredId ? screen : null,
+                );
+            }
+            this.setHovered(hoveredId);
+        }
     }
 
     /**
@@ -1117,6 +1189,34 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Handle canvas click — raycast against constellation line groups and fire onConstellationClick.
+     */
+    private handleCanvasClick(event: MouseEvent): void {
+        if (!this.callbacks.onConstellationClick && !this.callbacks.onStarHover)
+            return;
+        const rect = this.canvas.getBoundingClientRect();
+        this.mouseNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        this.mouseNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        this.raycaster.setFromCamera(
+            this.mouseNDC as unknown as THREE.Vector2,
+            this.camera,
+        );
+
+        if (this.constellationLines && this.callbacks.onConstellationClick) {
+            const hits = this.raycaster.intersectObjects(
+                this.constellationLines.children,
+                false,
+            );
+            if (hits.length > 0) {
+                const id = (
+                    hits[0].object.userData as { constellationId?: string }
+                ).constellationId;
+                if (id) this.callbacks.onConstellationClick(id);
+            }
+        }
+    }
+
+    /**
      * Dispose of resources
      */
     dispose(): void {
@@ -1138,6 +1238,9 @@ export class ConstellationRenderer {
         this.canvas.removeEventListener("contextmenu", (e) =>
             e.preventDefault(),
         );
+
+        // Remove click (raycasting) listener
+        this.canvas.removeEventListener("click", this._clickHandler);
 
         // Remove touch event listeners
         this.canvas.removeEventListener("touchstart", () => {});
