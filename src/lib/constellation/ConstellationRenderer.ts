@@ -25,6 +25,7 @@ export class ConstellationRenderer {
     private dragVelocityY: number = 0;
     private lastMouseX: number = 0;
     private lastMouseY: number = 0;
+    private clock = new THREE.Clock();
 
     constructor(container: HTMLElement) {
         // Initialize Three.js scene
@@ -518,6 +519,14 @@ export class ConstellationRenderer {
             new THREE.Float32BufferAttribute(starSizes, 1),
         );
 
+        // Dispose prior ShaderMaterial if re-initializing to prevent material leak.
+        if (
+            this.starPoints?.material &&
+            !Array.isArray(this.starPoints.material)
+        ) {
+            (this.starPoints.material as THREE.Material).dispose();
+        }
+
         // Per-star randomized seed for varied twinkle phase/speed.
         const starSeeds: number[] = [];
         for (let i = 0; i < starPositions.length / 3; i++) {
@@ -848,7 +857,7 @@ export class ConstellationRenderer {
             this.updateCameraRotation();
         }
 
-        this.tickUniforms(0.016);
+        this.tickUniforms(this.clock.getDelta());
         this.renderer.render(this.scene, this.camera);
     }
 
