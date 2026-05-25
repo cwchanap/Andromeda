@@ -68,6 +68,7 @@
   .boot-line:last-child {
     color: var(--hud-magenta);
     text-shadow: 0 0 6px var(--hud-magenta);
+    text-transform: uppercase;
   }
   .boot-scanbar {
     position: absolute;
