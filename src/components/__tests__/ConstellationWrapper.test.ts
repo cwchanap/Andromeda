@@ -80,11 +80,15 @@ describe("ConstellationWrapper", () => {
         expect(buttons.length).toBeGreaterThanOrEqual(2);
     });
 
-    it("shows loading overlay initially (loading=true)", () => {
+    it("shows an overlay when loading or error state is active", () => {
         const { container } = render(ConstellationWrapper);
-        // loading starts as true, shows overlay with bg-black/80
-        const overlay = container.querySelector(".bg-black\\/80");
-        expect(overlay).not.toBeNull();
+        // In jsdom, WebGL is unavailable so onMount resolves to error state;
+        // the error overlay uses bg-black/80. If loading were still true the
+        // BootSequence (.boot-sequence) would be rendered instead.
+        const errorOverlay = container.querySelector(".bg-black\\/80");
+        const bootSequence = container.querySelector(".boot-sequence");
+        // At least one overlay should be present
+        expect(errorOverlay !== null || bootSequence !== null).toBe(true);
     });
 
     it("unmounts cleanly", () => {

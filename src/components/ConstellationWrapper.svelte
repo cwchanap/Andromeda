@@ -12,6 +12,7 @@
   import HudReticle from "./hud/HudReticle.svelte";
   import HudCallout from "./hud/HudCallout.svelte";
   import TargetLockOverlay from "./hud/TargetLockOverlay.svelte";
+  import BootSequence from "./hud/BootSequence.svelte";
 
   export let lang: AppLocale = "en";
 
@@ -436,73 +437,64 @@
   </div>
 
   <!-- Loading/Error overlay -->
-  {#if loading || error || !webglSupported}
+  {#if loading}
+    <div class="absolute inset-0 z-30">
+      <BootSequence debugInfo={debugInfo} />
+    </div>
+  {:else if error}
     <div class="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
       <div class="text-center text-white max-w-md mx-auto px-4">
-        {#if !webglSupported}
-          <div class="mb-4">
-            <div class="text-amber-400 text-4xl">⚠️</div>
-          </div>
-          <h2 class="text-xl font-semibold mb-2 text-amber-400">3D Graphics Not Available</h2>
-          <p class="text-sm text-gray-300 mb-4">
-            Your browser doesn't support WebGL, which is required for the constellation view.
-          </p>
-          <div class="text-xs text-gray-400 mb-4">
-            <p class="mb-2">Try these solutions:</p>
-            <ul class="text-left list-disc list-inside space-y-1">
-              <li>Update to the latest browser version</li>
-              <li>Enable hardware acceleration in settings</li>
-              <li>Try a different browser (Chrome, Firefox, Edge)</li>
-            </ul>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            on:click={handleBackToMenu}
-            className="text-white border-white/30 hover:bg-white/10"
-          >
-            Back to Menu
-          </Button>
-        {:else if loading}
-          <div class="mb-4">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto"></div>
-          </div>
-          <h2 class="text-xl font-semibold mb-2">{t('constellation.loading')}</h2>
-          <p class="text-sm text-gray-300">{debugInfo}</p>
-          {#if !viewState.locationPermissionGranted && attemptCount > 5}
-            <p class="text-xs text-yellow-300 mt-2">{t('constellation.locationPermission')}</p>
-          {/if}
-        {:else if error}
-          <div class="mb-4">
-            <div class="text-red-400 text-4xl">❌</div>
-          </div>
-          <h2 class="text-xl font-semibold mb-2 text-red-400">{t('constellation.error')}</h2>
-          <p class="text-sm text-gray-300 mb-4">{error}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            on:click={() => window.location.reload()}
-            className="text-white border-white/30 hover:bg-white/10"
-          >
-            Retry
-          </Button>
-        {/if}
+        <div class="mb-4">
+          <div class="text-red-400 text-4xl">❌</div>
+        </div>
+        <h2 class="text-xl font-semibold mb-2 text-red-400">{t('constellation.error')}</h2>
+        <p class="text-sm text-gray-300 mb-4">{error}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          on:click={() => window.location.reload()}
+          className="text-white border-white/30 hover:bg-white/10"
+        >
+          Retry
+        </Button>
+      </div>
+    </div>
+  {:else if !webglSupported}
+    <div class="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
+      <div class="text-center text-white max-w-md mx-auto px-4">
+        <div class="mb-4">
+          <div class="text-amber-400 text-4xl">⚠️</div>
+        </div>
+        <h2 class="text-xl font-semibold mb-2 text-amber-400">3D Graphics Not Available</h2>
+        <p class="text-sm text-gray-300 mb-4">
+          Your browser doesn't support WebGL, which is required for the constellation view.
+        </p>
+        <div class="text-xs text-gray-400 mb-4">
+          <p class="mb-2">Try these solutions:</p>
+          <ul class="text-left list-disc list-inside space-y-1">
+            <li>Update to the latest browser version</li>
+            <li>Enable hardware acceleration in settings</li>
+            <li>Try a different browser (Chrome, Firefox, Edge)</li>
+          </ul>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          on:click={handleBackToMenu}
+          className="text-white border-white/30 hover:bg-white/10"
+        >
+          Back to Menu
+        </Button>
       </div>
     </div>
   {/if}
 
   <!-- Drag Instructions Overlay -->
   {#if !loading && !error && webglSupported && showDragInstructions}
-    <div class="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
-      <div class="bg-black/70 backdrop-blur-sm rounded-lg border border-cyan-400/30 p-4 text-white text-center">
-        <div class="flex items-center justify-center space-x-2 mb-2">
-          <span class="text-cyan-400">🖱️</span>
-          <span class="text-sm font-medium">Drag to explore the 360° sky</span>
-          <span class="text-cyan-400">🖱️</span>
-        </div>
-        <div class="text-xs text-gray-300">
-          Click and drag to look around • Scroll to zoom
-        </div>
+    <div class="absolute bottom-12 left-12 z-5" style="pointer-events: none;">
+      <div class="hud-drag-card">
+        <span class="hud-drag-prefix">&gt;</span>
+        AWAITING TARGET — DRAG TO ORIENT
       </div>
     </div>
   {/if}
@@ -727,6 +719,32 @@
       max-height: 40vh;
     }
   } */
+
+  .hud-drag-card {
+    font-family: var(--hud-font-mono);
+    font-size: 11px;
+    color: var(--hud-cyan);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-shadow: 0 0 4px var(--hud-cyan);
+    padding: 8px 12px;
+    background: color-mix(in srgb, var(--hud-void) 60%, transparent);
+    border: 1px solid var(--hud-cyan);
+    animation: drag-fade-in var(--hud-dur-glide) var(--hud-ease-glide);
+  }
+  .hud-drag-prefix {
+    color: var(--hud-magenta);
+    margin-right: 6px;
+  }
+  @keyframes drag-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hud-drag-card {
+      animation: none;
+    }
+  }
 
   /* Custom scrollbar for constellation list */
   .space-y-1.max-h-40.overflow-y-auto::-webkit-scrollbar {
