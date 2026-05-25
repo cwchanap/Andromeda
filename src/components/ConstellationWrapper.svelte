@@ -288,6 +288,11 @@
     ? `${viewState.skyConfig.location.latitude.toFixed(4)}°, ${viewState.skyConfig.location.longitude.toFixed(4)}°`
     : '';
 
+  // UTC readout for HUD display (YYYY-MM-DD HH:MM)
+  $: utcReadout = viewState.skyConfig?.dateTime
+    ? viewState.skyConfig.dateTime.toISOString().slice(0, 16).replace("T", " ")
+    : "";
+
   // Check WebGL support
   function checkWebGLSupport(): boolean {
     try {
@@ -516,34 +521,23 @@
             <span class="hud-panel-tick"></span>
           </div>
 
-          <!-- Location info toggle -->
-          <div class="mb-4">
-            <button
-              type="button"
-              class="w-full inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] border shadow-xs hover:text-accent-foreground text-white border-white/30 hover:bg-white/10 h-9 rounded-md px-3"
-              on:click={handleToggleLocationInfo}
-            >
-              {showLocationInfo ? 'Hide' : 'Show'} Location Info
-            </button>
-          </div>
-
-          <!-- Location and time info -->
-          {#if showLocationInfo && viewState.skyConfig}
-            <div class="mb-4 space-y-2">
-              <div>
-                <span class="text-sm text-gray-300">{t('constellation.currentLocation')}:</span>
-                <div class="text-xs text-cyan-200">{locationString}</div>
-                {#if !viewState.locationPermissionGranted}
-                  <div class="text-xs text-yellow-300">({t('constellation.locationPermission')})</div>
+          <!-- Location/time HUD readout -->
+          <div class="hud-readout">
+            <div class="readout-row">
+              <span class="readout-label">GEO-LOCK</span>
+              <span class="readout-blink" data-state={viewState.locationPermissionGranted ? "live" : "fallback"}></span>
+              <span class="readout-value">
+                {#if viewState.skyConfig}
+                  {Math.abs(viewState.skyConfig.location.latitude).toFixed(4)}°{viewState.skyConfig.location.latitude >= 0 ? "N" : "S"}
+                  {Math.abs(viewState.skyConfig.location.longitude).toFixed(4)}°{viewState.skyConfig.location.longitude >= 0 ? "E" : "W"}
                 {/if}
-              </div>
-
-              <div>
-                <span class="text-sm text-gray-300">{t('constellation.currentTime')}:</span>
-                <div class="text-xs text-cyan-200">{currentTimeString}</div>
-              </div>
+              </span>
             </div>
-          {/if}
+            <div class="readout-row">
+              <span class="readout-label">UTC</span>
+              <span class="readout-value">{utcReadout}</span>
+            </div>
+          </div>
 
           <!-- Visible constellations -->
           <div>
@@ -949,5 +943,46 @@
     background: var(--hud-cyan);
     border-color: var(--hud-cyan);
     box-shadow: 0 0 4px var(--hud-cyan);
+  }
+
+  .hud-readout {
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--hud-cyan-dim);
+    background: color-mix(in srgb, var(--hud-cyan) 4%, transparent);
+    font-family: var(--hud-font-mono);
+    font-size: 11px;
+  }
+  .readout-row {
+    display: grid;
+    grid-template-columns: 64px 12px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+  }
+  .readout-label {
+    color: var(--hud-cyan);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .readout-blink {
+    width: 6px; height: 6px;
+    background: var(--hud-magenta);
+    box-shadow: 0 0 4px var(--hud-magenta);
+    animation: blink-live 1s steps(2, end) infinite;
+  }
+  .readout-blink[data-state="fallback"] {
+    background: var(--hud-amber);
+    box-shadow: 0 0 4px var(--hud-amber);
+  }
+  .readout-value {
+    color: var(--hud-ivory);
+  }
+  @keyframes blink-live {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0.2; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .readout-blink { animation: none; }
   }
 </style>
