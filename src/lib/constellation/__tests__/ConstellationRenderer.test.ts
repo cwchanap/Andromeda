@@ -656,6 +656,40 @@ describe("ConstellationRenderer", () => {
         });
     });
 
+    describe("tweenCameraTo", () => {
+        it("reaches the target rotation within tolerance after duration", async () => {
+            vi.useFakeTimers();
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            renderer.tweenCameraTo(0.5, 1.0, 100);
+            // simulate frames
+            for (let i = 0; i < 12; i++) {
+                (renderer as any).tickTween(performance.now() + i * 16);
+            }
+            expect((renderer as any).cameraRotationX).toBeCloseTo(0.5, 1);
+            expect((renderer as any).cameraRotationY).toBeCloseTo(1.0, 1);
+            vi.useRealTimers();
+        });
+
+        it("cancels active drag momentum on tween start", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            (renderer as any).dragVelocityX = 5;
+            (renderer as any).dragVelocityY = 5;
+            renderer.tweenCameraTo(0, 0, 200);
+            expect((renderer as any).dragVelocityX).toBe(0);
+            expect((renderer as any).dragVelocityY).toBe(0);
+        });
+    });
+
     it("touch start/move/end sequence executes without throwing", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;
