@@ -13,6 +13,7 @@
   import HudCallout from "./hud/HudCallout.svelte";
   import TargetLockOverlay from "./hud/TargetLockOverlay.svelte";
   import BootSequence from "./hud/BootSequence.svelte";
+  import HudFrame from "./hud/HudFrame.svelte";
 
   export let lang: AppLocale = "en";
 
@@ -416,24 +417,28 @@
 <div class="constellation-view">
   <!-- Back button -->
   <div class="absolute top-4 left-4 z-20">
-    <button
-      type="button"
-      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] border shadow-xs hover:text-accent-foreground bg-black/50 text-white border-white/30 hover:bg-white/10 h-9 rounded-md px-3"
-      on:click={handleBackToMenu}
-    >
-      {t('constellation.backToMenu')}
-    </button>
+    <HudFrame color="var(--hud-cyan)" bracketLength={12}>
+      <button
+        type="button"
+        class="hud-btn"
+        on:click={handleBackToMenu}
+      >
+        <span class="hud-btn-bracket">&lt;</span> RETURN
+      </button>
+    </HudFrame>
   </div>
 
   <!-- Controls toggle -->
   <div class="absolute top-4 right-4 z-20">
-    <button
-      type="button"
-      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] border shadow-xs hover:text-accent-foreground bg-black/50 text-white border-white/30 hover:bg-white/10 h-9 rounded-md px-3"
-      on:click={handleToggleControls}
-    >
-      {showControls ? '⚙️' : '📊'}
-    </button>
+    <HudFrame color="var(--hud-cyan)" bracketLength={12}>
+      <button
+        type="button"
+        class="hud-btn"
+        on:click={handleToggleControls}
+      >
+        {showControls ? "PANEL ON" : "PANEL OFF"}
+      </button>
+    </HudFrame>
   </div>
 
   <!-- Loading/Error overlay -->
@@ -744,6 +749,38 @@
     .hud-drag-card {
       animation: none;
     }
+  }
+
+  .hud-btn {
+    font-family: var(--hud-font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--hud-cyan);
+    background: color-mix(in srgb, var(--hud-void) 65%, transparent);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: none;
+    padding: 8px 14px;
+    cursor: pointer;
+    position: relative;
+    text-shadow: 0 0 4px var(--hud-cyan);
+  }
+  .hud-btn::after {
+    content: "";
+    position: absolute;
+    left: 14px; right: 14px; bottom: 4px;
+    height: 1px;
+    background: var(--hud-magenta);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 140ms var(--hud-ease-snap);
+  }
+  .hud-btn:hover::after { transform: scaleX(1); }
+  .hud-btn-bracket { color: var(--hud-magenta); margin-right: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    .hud-btn::after { transition: none; }
   }
 
   /* Custom scrollbar for constellation list */
