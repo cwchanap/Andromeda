@@ -378,19 +378,22 @@ export class ConstellationRenderer {
     }
 
     /**
-     * Update camera rotation based on mouse movement
+     * Compute the camera forward unit vector from the current rotation angles.
      */
-    private updateCameraRotation(): void {
-        // Create rotation matrix for camera
+    private _getCameraForward(): { x: number; y: number; z: number } {
         const cosX = Math.cos(this.cameraRotationX);
         const sinX = Math.sin(this.cameraRotationX);
         const cosY = Math.cos(this.cameraRotationY);
         const sinY = Math.sin(this.cameraRotationY);
+        return { x: sinY * cosX, y: sinX, z: cosY * cosX };
+    }
 
+    /**
+     * Update camera rotation based on mouse movement
+     */
+    private updateCameraRotation(): void {
         // Calculate look direction
-        const lookX = sinY * cosX;
-        const lookY = sinX;
-        const lookZ = cosY * cosX;
+        const { x: lookX, y: lookY, z: lookZ } = this._getCameraForward();
 
         // Set camera look direction
         this.camera.lookAt(lookX * 10, lookY * 10, lookZ * 10);
@@ -765,16 +768,14 @@ export class ConstellationRenderer {
         visible: boolean;
     } {
         const vec = new THREE.Vector3(point.x, point.y, point.z);
-        // Manually compute camera-space z to determine behind-camera state.
-        // We use a forward vector derived from current rotation.
-        const cosX = Math.cos(this.cameraRotationX);
-        const sinX = Math.sin(this.cameraRotationX);
-        const cosY = Math.cos(this.cameraRotationY);
-        const sinY = Math.sin(this.cameraRotationY);
-        const fwdX = sinY * cosX;
-        const fwdY = sinX;
-        const fwdZ = cosY * cosX;
-        const dot = vec.x * fwdX + vec.y * fwdY + vec.z * fwdZ;
+        // Compute the forward vector from current camera rotation angles.
+        const { x: fwdX, y: fwdY, z: fwdZ } = this._getCameraForward();
+        // Compute the vector from the camera position to the point so that
+        // behind-camera detection is correct even when the camera has moved.
+        const rel = new THREE.Vector3(point.x, point.y, point.z).sub(
+            this.camera.position,
+        );
+        const dot = rel.x * fwdX + rel.y * fwdY + rel.z * fwdZ;
         if (dot <= 0) return { x: 0, y: 0, visible: false };
 
         vec.project(this.camera);

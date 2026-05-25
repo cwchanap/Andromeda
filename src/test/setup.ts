@@ -168,6 +168,12 @@ const enhanceVector3 = (v: any) => {
         v.z = (a.z ?? 0) + ((b.z ?? 0) - (a.z ?? 0)) * t;
         return v;
     });
+    v.sub = vi.fn((other: any) => {
+        v.x -= other.x ?? 0;
+        v.y -= other.y ?? 0;
+        v.z -= other.z ?? 0;
+        return v;
+    });
     v.distanceTo = vi.fn((o: any) => {
         const dx = v.x - (o.x ?? 0);
         const dy = v.y - (o.y ?? 0);
