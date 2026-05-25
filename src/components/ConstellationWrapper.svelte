@@ -434,6 +434,7 @@
       <button
         type="button"
         class="hud-btn"
+        aria-pressed={showControls}
         on:click={handleToggleControls}
       >
         {showControls ? "PANEL ON" : "PANEL OFF"}
