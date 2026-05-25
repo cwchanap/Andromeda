@@ -902,6 +902,13 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Get the currently hovered constellation id, or null if none hovered.
+     */
+    public getHoveredId(): string | null {
+        return this.hoveredId;
+    }
+
+    /**
      * Advance time-based shader uniforms by deltaSec seconds.
      */
     public tickUniforms(deltaSec: number): void {
@@ -1016,6 +1023,9 @@ export class ConstellationRenderer {
             });
             this.constellationLabels = null;
         }
+
+        this.selectedId = null;
+        this.hoveredId = null;
     }
 
     /**
