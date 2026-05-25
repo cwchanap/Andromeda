@@ -545,6 +545,42 @@ describe("ConstellationRenderer", () => {
         });
     });
 
+    describe("selection state", () => {
+        it("setSelected highlights the chosen constellation and dims the rest", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            const c1 = makeConstellation({ id: "orion" });
+            const c2 = makeConstellation({ id: "lyra" });
+            await renderer.initialize([makeStar()], [c1, c2], makeSkyConfig());
+            renderer.setSelected("orion");
+            const children = (renderer as any).constellationLines.children;
+            const orionMat = children.find(
+                (c: any) => c.userData.constellationId === "orion",
+            ).material;
+            const lyraMat = children.find(
+                (c: any) => c.userData.constellationId === "lyra",
+            ).material;
+            expect(orionMat.uniforms.uIsSelected.value).toBe(1);
+            expect(orionMat.uniforms.uIsDimmed.value).toBe(0);
+            expect(lyraMat.uniforms.uIsSelected.value).toBe(0);
+            expect(lyraMat.uniforms.uIsDimmed.value).toBe(1);
+        });
+
+        it("setSelected(null) restores idle state on all", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            renderer.setSelected("orion");
+            renderer.setSelected(null);
+            const mat = (renderer as any).constellationLines.children[0]
+                .material;
+            expect(mat.uniforms.uIsSelected.value).toBe(0);
+            expect(mat.uniforms.uIsDimmed.value).toBe(0);
+        });
+    });
+
     describe("energy-flow lines", () => {
         it("creates ShaderMaterial with uIsSelected and uIsDimmed uniforms per constellation", async () => {
             const renderer = new ConstellationRenderer(makeContainer());
