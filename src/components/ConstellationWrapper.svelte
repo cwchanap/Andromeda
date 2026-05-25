@@ -546,19 +546,21 @@
 
           <!-- Visible constellations -->
           <div>
-            <h4 class="text-sm font-medium mb-2 text-gray-300">{t('constellation.visibility')}:</h4>
-            <div class="space-y-1 max-h-40 overflow-y-auto">
+            <h4 class="hud-section-label">VISIBLE</h4>
+            <div class="hud-list">
               {#each viewState.visibleConstellations as constellationId}
                 {#each constellations.filter(c => c.id === constellationId) as constellation}
                   <button
                     type="button"
-                    class="w-full text-left px-2 py-1 rounded text-xs hover:bg-white/10 transition-colors
-                           {viewState.selectedConstellation === constellation.id ? 'bg-cyan-600/30 border border-cyan-400/50' : ''}"
+                    class="hud-list-row"
+                    class:is-selected={viewState.selectedConstellation === constellation.id}
                     on:click={() => handleSelectConstellation(constellation.id)}
                     data-constellation-id={constellation.id}
                   >
-                    <div class="font-medium">{constellation.name}</div>
-                    <div class="text-gray-400 text-xs">{constellation.abbreviation} • {constellation.stars.length} stars</div>
+                    <span class="row-abbr">[{constellation.abbreviation}]</span>
+                    <span class="row-name">{constellation.name}</span>
+                    <span class="row-leader"></span>
+                    <span class="row-count">{constellation.stars.length}★</span>
                   </button>
                 {/each}
               {/each}
@@ -835,22 +837,59 @@
     }
   }
 
-  /* Custom scrollbar for constellation list */
-  .space-y-1.max-h-40.overflow-y-auto::-webkit-scrollbar {
-    width: 4px;
+  .hud-section-label {
+    font-family: var(--hud-font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--hud-cyan-dim);
+    margin: 8px 0 6px;
   }
-
-  .space-y-1.max-h-40.overflow-y-auto::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
+  .hud-list { display: flex; flex-direction: column; gap: 1px; max-height: 11rem; overflow-y: auto; }
+  .hud-list-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    gap: 8px;
+    align-items: baseline;
+    padding: 6px 8px 6px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-family: var(--hud-font-mono);
+    font-size: 11px;
+    color: var(--hud-ivory);
+    text-align: left;
   }
-
-  .space-y-1.max-h-40.overflow-y-auto::-webkit-scrollbar-thumb {
-    background: rgba(34, 197, 94, 0.5);
-    border-radius: 2px;
+  .hud-list-row::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0;
+    width: 2px; height: 0;
+    background: var(--hud-magenta);
+    box-shadow: 0 0 4px var(--hud-magenta);
+    transition: height 120ms var(--hud-ease-snap);
   }
-
-  .space-y-1.max-h-40.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background: rgba(34, 197, 94, 0.7);
+  .hud-list-row:hover {
+    background: color-mix(in srgb, var(--hud-cyan) 8%, transparent);
+  }
+  .hud-list-row:hover::before { height: 100%; }
+  .hud-list-row.is-selected {
+    border-color: var(--hud-cyan);
+    background: color-mix(in srgb, var(--hud-cyan) 6%, transparent);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--hud-magenta) 25%, transparent);
+  }
+  .hud-list-row.is-selected::before { height: 100%; }
+  .row-abbr { color: var(--hud-cyan); }
+  .row-name { color: var(--hud-ivory); }
+  .row-leader {
+    border-bottom: 1px dotted var(--hud-cyan-dim);
+    align-self: end;
+    margin-bottom: 4px;
+  }
+  .row-count { color: var(--hud-magenta); }
+  @media (prefers-reduced-motion: reduce) {
+    .hud-list-row::before { transition: none; }
   }
 </style>
