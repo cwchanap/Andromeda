@@ -881,7 +881,7 @@ describe("ConstellationRenderer", () => {
 
     describe("shooting stars", () => {
         it("does not spawn shooting stars when reduced-motion is preferred", async () => {
-            (window.matchMedia as any).mockReturnValueOnce({
+            (window.matchMedia as any).mockReturnValue({
                 matches: true,
                 media: "(prefers-reduced-motion: reduce)",
                 addEventListener: vi.fn(),
