@@ -922,6 +922,19 @@ export class ConstellationRenderer {
     ): void {
         this.dragVelocityX = 0;
         this.dragVelocityY = 0;
+        if (
+            typeof window !== "undefined" &&
+            window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+        ) {
+            this.cameraRotationX = Math.max(
+                -Math.PI / 2.2,
+                Math.min(Math.PI / 2.2, targetRotX),
+            );
+            this.cameraRotationY = targetRotY;
+            this.updateCameraRotation();
+            this.tweenState.active = false;
+            return;
+        }
         this.tweenState = {
             startX: this.cameraRotationX,
             startY: this.cameraRotationY,
@@ -1107,6 +1120,7 @@ export class ConstellationRenderer {
      * Dispose of resources
      */
     dispose(): void {
+        this.tweenState.active = false;
         this.clearScene();
         window.removeEventListener("resize", this.handleResize.bind(this));
 

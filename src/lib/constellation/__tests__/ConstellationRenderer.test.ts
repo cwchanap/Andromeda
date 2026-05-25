@@ -688,6 +688,57 @@ describe("ConstellationRenderer", () => {
             expect((renderer as any).dragVelocityX).toBe(0);
             expect((renderer as any).dragVelocityY).toBe(0);
         });
+
+        it("deactivates the tween when t reaches 1", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            renderer.tweenCameraTo(0.3, 0.4, 100);
+            // Advance well past duration:
+            (renderer as any).tickTween(performance.now() + 500);
+            expect((renderer as any).tweenState.active).toBe(false);
+        });
+
+        it("clamps targetRotX to ±π/2.2", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            renderer.tweenCameraTo(Math.PI, 0, 100);
+            const limit = Math.PI / 2.2;
+            expect((renderer as any).tweenState.targetX).toBeCloseTo(limit, 5);
+        });
+
+        it("snaps to target when reduced-motion is preferred", async () => {
+            const mqlSpy = vi.spyOn(window, "matchMedia").mockReturnValue({
+                matches: true,
+                media: "(prefers-reduced-motion: reduce)",
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                onchange: null,
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                dispatchEvent: vi.fn(),
+            } as unknown as MediaQueryList);
+
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            renderer.tweenCameraTo(0.3, 0.4, 1000);
+            expect((renderer as any).cameraRotationX).toBeCloseTo(0.3, 5);
+            expect((renderer as any).cameraRotationY).toBeCloseTo(0.4, 5);
+            expect((renderer as any).tweenState.active).toBe(false);
+
+            mqlSpy.mockRestore();
+        });
     });
 
     it("touch start/move/end sequence executes without throwing", () => {
