@@ -176,6 +176,12 @@ const enhanceVector3 = (v: any) => {
     });
     // Add length method for camera.position.length()
     v.length = () => Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+    v.project = vi.fn((_camera: any) => {
+        // Simple deterministic mock: leaves x/y in -1..1 range proportional to original.
+        v.x = Math.tanh(v.x / 100);
+        v.y = Math.tanh(v.y / 100);
+        return v;
+    });
     return v;
 };
 // Patch existing mocked Vector3 factory to include methods when constructed in tests

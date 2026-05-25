@@ -460,6 +460,30 @@ describe("ConstellationRenderer", () => {
         ).not.toThrow();
     });
 
+    describe("worldToScreen", () => {
+        it("returns visible=false when point is behind the camera", () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            // Camera at origin looking +Z (default). A point behind us has z < 0 (in camera space).
+            const result = renderer.worldToScreen({
+                x: 0,
+                y: 0,
+                z: -50,
+            } as any);
+            expect(result.visible).toBe(false);
+        });
+
+        it("returns visible=true and screen x/y inside viewport for points in front", () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            const result = renderer.worldToScreen({ x: 0, y: 0, z: 50 } as any);
+            expect(result.visible).toBe(true);
+            expect(result.x).toBeGreaterThanOrEqual(0);
+            expect(result.x).toBeLessThanOrEqual(container.clientWidth);
+            expect(result.y).toBeGreaterThanOrEqual(0);
+            expect(result.y).toBeLessThanOrEqual(container.clientHeight);
+        });
+    });
+
     it("touch start/move/end sequence executes without throwing", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;
