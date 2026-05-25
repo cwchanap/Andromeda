@@ -8,6 +8,10 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         initialize: vi.fn().mockResolvedValue(undefined),
         dispose: vi.fn(),
         resize: vi.fn(),
+        setSelected: vi.fn(),
+        setHovered: vi.fn(),
+        tweenCameraTo: vi.fn(),
+        worldToScreen: vi.fn(() => ({ x: 0, y: 0, visible: false })),
     };
     return {
         ConstellationRenderer: vi.fn().mockImplementation(() => mockRenderer),
@@ -21,6 +25,7 @@ vi.mock("@/utils/astronomy", () => ({
         .mockRejectedValue(new Error("Location unavailable")),
     isConstellationVisible: vi.fn(() => true),
     formatCoordinates: vi.fn(() => "40.71°N, 74.01°W"),
+    celestialToSphere: vi.fn(() => ({ x: 0, y: 0, z: 100, visible: true })),
 }));
 
 // Mock constellation data

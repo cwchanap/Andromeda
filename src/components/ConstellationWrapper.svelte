@@ -6,8 +6,12 @@
   import Button from "./ui/Button.svelte";
   import { ConstellationRenderer } from "../lib/constellation/ConstellationRenderer";
   import { constellations, getVisibleConstellations } from "../data/constellations";
-  import { getCurrentLocation, isConstellationVisible, formatCoordinates } from "../utils/astronomy";
+  import { getCurrentLocation, isConstellationVisible, formatCoordinates, celestialToSphere } from "../utils/astronomy";
   import type { ConstellationViewState, SkyConfiguration, LocationData } from "../types/constellation";
+  import ScanLines from "./hud/ScanLines.svelte";
+  import HudReticle from "./hud/HudReticle.svelte";
+  import HudCallout from "./hud/HudCallout.svelte";
+  import TargetLockOverlay from "./hud/TargetLockOverlay.svelte";
 
   export let lang: AppLocale = "en";
 
@@ -40,6 +44,14 @@
   let showControls = true;
   let showLocationInfo = true;
   let showDragInstructions = true;
+
+  // HUD state
+  let hoverPos: { x: number; y: number } | null = null;
+  let lockedPos: { x: number; y: number; visible: boolean } | null = null;
+  let hoverStarPos: { x: number; y: number; name: string; magnitude: number } | null = null;
+  let hudRafId: number | null = null;
+  let selectedId: string | null = null;
+  let hoveredConstellationId: string | null = null;
 
   // Initialize translations
   if (typeof window !== 'undefined') {
@@ -119,7 +131,20 @@
 
       // Initialize constellation renderer
       try {
-        renderer = new ConstellationRenderer(container);
+        renderer = new ConstellationRenderer(container, {
+          onConstellationHover: (id, screenPos) => {
+            hoveredConstellationId = id;
+            hoverPos = screenPos;
+          },
+          onConstellationClick: (id) => {
+            handleSelectConstellation(id);
+          },
+          onStarHover: (star, screenPos) => {
+            hoverStarPos = star && screenPos
+              ? { x: screenPos.x, y: screenPos.y, name: star.name, magnitude: star.magnitude }
+              : null;
+          },
+        });
 
         // Get all stars from visible constellations
         const allStars = visibleConstellations.flatMap(constellation => constellation.stars);
@@ -158,6 +183,24 @@
       viewState.loading = false;
       debugInfo = "Constellation view ready";
 
+      // Start HUD rAF loop for screen-coords projection
+      const tickHud = () => {
+        if (renderer && selectedId && viewState.skyConfig) {
+          const c = constellations.find(x => x.id === selectedId);
+          if (c && c.stars.length) {
+            let avgRA = 0, avgDec = 0;
+            c.stars.forEach(s => { avgRA += s.rightAscension; avgDec += s.declination; });
+            avgRA /= c.stars.length; avgDec /= c.stars.length;
+            const p = celestialToSphere(avgRA, avgDec, viewState.skyConfig.location, viewState.skyConfig.dateTime, 100);
+            lockedPos = renderer.worldToScreen(p);
+          }
+        } else {
+          lockedPos = null;
+        }
+        hudRafId = requestAnimationFrame(tickHud);
+      };
+      tickHud();
+
       // Hide drag instructions after 5 seconds
       setTimeout(() => {
         showDragInstructions = false;
@@ -185,6 +228,7 @@
   });
 
   onDestroy(() => {
+    if (hudRafId !== null) cancelAnimationFrame(hudRafId);
     if (renderer) {
       renderer.dispose();
     }
@@ -207,10 +251,21 @@
 
   const handleSelectConstellation = (constellationId: string) => {
     viewState.selectedConstellation = constellationId;
-    const constellation = constellations.find(c => c.id === constellationId);
-    if (constellation) {
-      // Highlighting or focusing logic placeholder
-    }
+    selectedId = constellationId;
+    if (!renderer || !viewState.skyConfig) return;
+    renderer.setSelected(constellationId);
+
+    const c = constellations.find(x => x.id === constellationId);
+    if (!c || c.stars.length === 0) return;
+    let avgRA = 0, avgDec = 0;
+    c.stars.forEach(s => { avgRA += s.rightAscension; avgDec += s.declination; });
+    avgRA /= c.stars.length; avgDec /= c.stars.length;
+
+    const p = celestialToSphere(avgRA, avgDec, viewState.skyConfig.location, viewState.skyConfig.dateTime, 100);
+    const r = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z) || 1;
+    const targetY = Math.atan2(p.x, p.z);
+    const targetX = Math.asin(p.y / r);
+    renderer.tweenCameraTo(targetX, targetY, 900);
   };
 
   // Format current time for display
@@ -537,6 +592,31 @@
     <!-- 3D Container (background) -->
     <div bind:this={container} class="constellation-container"></div>
 
+    <!-- HUD overlay layer (z-index: 5) -->
+    <div class="hud-layer" aria-hidden="true">
+      <ScanLines />
+      {#if hoveredConstellationId && hoverPos}
+        <HudReticle x={hoverPos.x} y={hoverPos.y} state="hover"
+          label={constellations.find(c => c.id === hoveredConstellationId)?.abbreviation ?? ""} />
+      {/if}
+      {#if hoverStarPos}
+        <HudCallout
+          x={hoverStarPos.x}
+          y={hoverStarPos.y}
+          title={hoverStarPos.name}
+          lines={[`MAG ${hoverStarPos.magnitude.toFixed(2)}`]}
+        />
+      {/if}
+      {#if selectedId && lockedPos && lockedPos.visible}
+        <TargetLockOverlay
+          visible={true}
+          x={lockedPos.x}
+          y={lockedPos.y}
+          name={constellations.find(c => c.id === selectedId)?.name ?? ""}
+        />
+      {/if}
+    </div>
+
     <!-- Text-based constellation display (always visible) -->
     <!-- <div class="text-constellation-display">
       <h3 class="text-xl font-bold text-white mb-4">All Constellations</h3>
@@ -613,6 +693,14 @@
 
   .constellation-container:active {
     cursor: grabbing;
+  }
+
+  .hud-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    overflow: hidden;
   }
 
   /* .text-constellation-display {
