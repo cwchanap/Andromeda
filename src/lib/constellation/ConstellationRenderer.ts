@@ -756,6 +756,38 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Project a world-space point to canvas pixel coordinates.
+     * Returns `visible: false` if the point lies behind the camera.
+     */
+    public worldToScreen(point: { x: number; y: number; z: number }): {
+        x: number;
+        y: number;
+        visible: boolean;
+    } {
+        const vec = new THREE.Vector3(point.x, point.y, point.z);
+        // Manually compute camera-space z to determine behind-camera state.
+        // We use a forward vector derived from current rotation.
+        const cosX = Math.cos(this.cameraRotationX);
+        const sinX = Math.sin(this.cameraRotationX);
+        const cosY = Math.cos(this.cameraRotationY);
+        const sinY = Math.sin(this.cameraRotationY);
+        const fwdX = sinY * cosX;
+        const fwdY = sinX;
+        const fwdZ = cosY * cosX;
+        const dot = vec.x * fwdX + vec.y * fwdY + vec.z * fwdZ;
+        if (dot <= 0) return { x: 0, y: 0, visible: false };
+
+        vec.project(this.camera);
+        const width = this.canvas.clientWidth || this.canvas.width;
+        const height = this.canvas.clientHeight || this.canvas.height;
+        return {
+            x: (vec.x * 0.5 + 0.5) * width,
+            y: (1 - (vec.y * 0.5 + 0.5)) * height,
+            visible: true,
+        };
+    }
+
+    /**
      * Animation loop
      */
     private animate(): void {
