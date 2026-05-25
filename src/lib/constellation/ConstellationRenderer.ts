@@ -20,6 +20,8 @@ export class ConstellationRenderer {
     private mouseY: number = 0;
     private cameraRotationX: number = 0;
     private cameraRotationY: number = 0;
+    private selectedId: string | null = null;
+    private hoveredId: string | null = null;
     private isDragging: boolean = false;
     private dragVelocityX: number = 0;
     private dragVelocityY: number = 0;
@@ -863,6 +865,40 @@ export class ConstellationRenderer {
             y: (1 - (vec.y * 0.5 + 0.5)) * height,
             visible: true,
         };
+    }
+
+    /**
+     * Set the selected constellation by id (or null to deselect).
+     * Highlights the selected constellation and dims the rest.
+     */
+    public setSelected(id: string | null): void {
+        this.selectedId = id;
+        if (!this.constellationLines) return;
+        this.constellationLines.children.forEach((child: THREE.Object3D) => {
+            const mat = (child as THREE.LineSegments)
+                .material as THREE.ShaderMaterial;
+            if (!mat?.uniforms) return;
+            const constellationId = (child.userData as Record<string, unknown>)
+                .constellationId as string | undefined;
+            const isThisOne = constellationId === id;
+            mat.uniforms.uIsSelected.value = isThisOne ? 1 : 0;
+            mat.uniforms.uIsDimmed.value = id && !isThisOne ? 1 : 0;
+        });
+    }
+
+    /**
+     * Set the hovered constellation by id (or null to clear hover).
+     * Stored for future overlay-driven hover effects.
+     */
+    public setHovered(id: string | null): void {
+        this.hoveredId = id;
+    }
+
+    /**
+     * Get the currently selected constellation id, or null if none selected.
+     */
+    public getSelectedId(): string | null {
+        return this.selectedId;
     }
 
     /**
