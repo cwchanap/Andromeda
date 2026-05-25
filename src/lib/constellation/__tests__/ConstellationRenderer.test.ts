@@ -579,6 +579,50 @@ describe("ConstellationRenderer", () => {
             expect(mat.uniforms.uIsSelected.value).toBe(0);
             expect(mat.uniforms.uIsDimmed.value).toBe(0);
         });
+
+        it("setSelected with an unknown id dims all constellations", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [
+                    makeConstellation({ id: "orion" }),
+                    makeConstellation({ id: "lyra" }),
+                ],
+                makeSkyConfig(),
+            );
+            renderer.setSelected("nonexistent");
+            const children = (renderer as any).constellationLines.children;
+            children.forEach((c: any) => {
+                expect(c.material.uniforms.uIsSelected.value).toBe(0);
+                expect(c.material.uniforms.uIsDimmed.value).toBe(1);
+            });
+        });
+
+        it("getSelectedId returns the id passed to setSelected", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            renderer.setSelected("orion");
+            expect(renderer.getSelectedId()).toBe("orion");
+            renderer.setSelected(null);
+            expect(renderer.getSelectedId()).toBeNull();
+        });
+
+        it("setHovered stores the id, retrievable via getHoveredId", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            renderer.setHovered("orion");
+            expect(renderer.getHoveredId()).toBe("orion");
+            renderer.setHovered(null);
+            expect(renderer.getHoveredId()).toBeNull();
+        });
     });
 
     describe("energy-flow lines", () => {
