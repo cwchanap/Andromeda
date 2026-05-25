@@ -6,6 +6,8 @@ import type {
 } from "../../types/constellation";
 import { celestialToSphere, magnitudeToSize } from "../../utils/astronomy";
 
+const HUD_CYAN = 0x00f0ff;
+
 export class ConstellationRenderer {
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
@@ -1097,15 +1099,14 @@ export class ConstellationRenderer {
             return;
         }
         if (now < this.nextShootingStarAt) return;
-        this.spawnShootingStar();
+        this.spawnShootingStar(now);
         this.nextShootingStarAt = now + (8000 + Math.random() * 6000);
     }
 
-    private spawnShootingStar(): void {
+    private spawnShootingStar(now: number): void {
         if (this.shootingStarCount > 0) return;
         const startAz = Math.random() * Math.PI * 2;
         const startEl = (Math.random() - 0.5) * Math.PI * 0.7;
-        const len = 12 + Math.random() * 8;
         const dirAz = startAz + (Math.random() - 0.5) * 0.6;
         const dirEl = startEl + 0.3 + Math.random() * 0.2;
 
@@ -1130,18 +1131,17 @@ export class ConstellationRenderer {
             ),
         );
         const mat = new THREE.LineBasicMaterial({
-            color: 0x00f0ff,
+            color: HUD_CYAN,
             transparent: true,
             opacity: 0.9,
             depthWrite: false,
         });
         const line = new THREE.LineSegments(geom, mat);
-        line.renderOrder = 3;
+        line.renderOrder = 5; // above hover sprites (3) and label sprites (4)
         this.scene.add(line);
         this.activeShootingStar = line as unknown as THREE.Line;
         this.shootingStarCount = 1;
-        this.shootingStarStarted = performance.now();
-        void len; // length unused — start/end derive their own direction
+        this.shootingStarStarted = now;
     }
 
     private tickShootingStar(now: number): void {
@@ -1202,6 +1202,18 @@ export class ConstellationRenderer {
      * Clear the scene
      */
     private clearScene(): void {
+        if (this.activeShootingStar) {
+            this.scene.remove(this.activeShootingStar);
+            const line = this
+                .activeShootingStar as unknown as THREE.LineSegments;
+            line.geometry.dispose();
+            (line.material as THREE.Material).dispose();
+            this.activeShootingStar = null;
+            this.shootingStarCount = 0;
+        }
+        this.nextShootingStarAt = 0;
+        this.shootingStarStarted = 0;
+
         if (this.starPoints) {
             this.scene.remove(this.starPoints);
             this.starPoints.geometry.dispose();

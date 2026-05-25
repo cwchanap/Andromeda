@@ -912,8 +912,8 @@ describe("ConstellationRenderer", () => {
                 makeSkyConfig(),
             );
             // Force-spawn by directly invoking
-            (renderer as any).spawnShootingStar();
-            (renderer as any).spawnShootingStar();
+            (renderer as any).spawnShootingStar(1000);
+            (renderer as any).spawnShootingStar(2000);
             expect((renderer as any).activeShootingStar).not.toBeNull();
             expect((renderer as any).shootingStarCount).toBe(1);
         });
