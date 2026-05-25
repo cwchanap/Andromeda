@@ -49,7 +49,6 @@ export class ConstellationRenderer {
     private shootingStarCount: number = 0;
     private nextShootingStarAt: number = 0;
     private shootingStarStarted: number = 0;
-    private _reducedMotion: boolean | null = null;
 
     public callbacks: {
         onStarHover?: (
@@ -1087,12 +1086,7 @@ export class ConstellationRenderer {
     }
 
     private prefersReducedMotion(): boolean {
-        if (this._reducedMotion === null) {
-            this._reducedMotion =
-                window.matchMedia?.("(prefers-reduced-motion: reduce)")
-                    ?.matches ?? false;
-        }
-        return this._reducedMotion;
+        return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     }
 
     private maybeSpawnShootingStar(now: number): void {
