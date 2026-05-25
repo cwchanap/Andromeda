@@ -14,6 +14,7 @@
   import TargetLockOverlay from "./hud/TargetLockOverlay.svelte";
   import BootSequence from "./hud/BootSequence.svelte";
   import HudFrame from "./hud/HudFrame.svelte";
+  import GlitchText from "./hud/GlitchText.svelte";
 
   export let lang: AppLocale = "en";
 
@@ -570,19 +571,25 @@
           <!-- Selected constellation info -->
           {#if viewState.selectedConstellation}
             {#each constellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
-              <div class="mt-4 pt-4 border-t border-white/20">
-                <h4 class="text-sm font-medium text-cyan-300">{constellation.name}</h4>
-                <p class="text-xs text-gray-300 mt-1">{constellation.description}</p>
+              <div class="hud-details">
+                <div class="hud-divider">
+                  <span class="hud-divider-diamond"></span>
+                </div>
+                <h4 class="hud-details-name">
+                  <GlitchText text={constellation.name.toUpperCase()} />
+                </h4>
+                <p class="hud-details-desc">{constellation.description}</p>
                 {#if constellation.mythology}
-                  <p class="text-xs text-gray-400 mt-2 italic">{constellation.mythology}</p>
+                  <p class="hud-details-myth">// {constellation.mythology}</p>
                 {/if}
-                <div class="mt-2 text-xs">
-                  <span class="text-gray-400">Best months:</span>
-                  <span class="text-cyan-200">
-                    {constellation.visibility.bestMonths.map(m =>
-                      new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'short' })
-                    ).join(', ')}
-                  </span>
+                <div class="hud-month-strip" aria-label="Best viewing months">
+                  {#each Array(12) as _, m}
+                    <div
+                      class="month-cell"
+                      class:is-best={constellation.visibility.bestMonths.includes(m + 1)}
+                      title={new Date(2000, m).toLocaleDateString(currentLang, { month: "short" })}
+                    ></div>
+                  {/each}
                 </div>
               </div>
             {/each}
@@ -891,5 +898,56 @@
   .row-count { color: var(--hud-magenta); }
   @media (prefers-reduced-motion: reduce) {
     .hud-list-row::before { transition: none; }
+  }
+
+  .hud-details { margin-top: 12px; padding-top: 12px; }
+  .hud-divider {
+    position: relative;
+    border-top: 1px dashed var(--hud-cyan);
+    margin-bottom: 12px;
+  }
+  .hud-divider-diamond {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 8px; height: 8px;
+    background: var(--hud-magenta);
+    box-shadow: 0 0 6px var(--hud-magenta);
+  }
+  .hud-details-name {
+    font-family: var(--hud-font-display);
+    font-size: 14px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+  .hud-details-desc {
+    font-family: var(--hud-font-mono);
+    font-size: 11px;
+    color: var(--hud-ivory);
+    opacity: 0.85;
+    margin: 0 0 8px;
+  }
+  .hud-details-myth {
+    font-family: var(--hud-font-mono);
+    font-size: 10px;
+    font-style: italic;
+    color: var(--hud-cyan-dim);
+    margin: 0 0 10px;
+  }
+  .hud-month-strip {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2px;
+  }
+  .month-cell {
+    height: 8px;
+    border: 1px solid var(--hud-cyan-dim);
+  }
+  .month-cell.is-best {
+    background: var(--hud-cyan);
+    border-color: var(--hud-cyan);
+    box-shadow: 0 0 4px var(--hud-cyan);
   }
 </style>
