@@ -511,7 +511,7 @@
       <HudFrame color="var(--hud-cyan)" bracketLength={18} glow={true}>
         <div class="hud-panel">
           <div class="hud-panel-header">
-            <h3 class="hud-panel-title">CONSTELLATIONS</h3>
+            <h3 class="hud-panel-title">{t('constellation.title')}</h3>
             <span class="hud-panel-tick"></span>
           </div>
 
@@ -813,6 +813,7 @@
     letter-spacing: 0.2em;
     color: var(--hud-cyan);
     text-shadow: 0 0 6px var(--hud-cyan);
+    text-transform: uppercase;
     flex: 1;
   }
   .hud-panel-tick {
