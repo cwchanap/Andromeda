@@ -545,6 +545,37 @@ describe("ConstellationRenderer", () => {
         });
     });
 
+    describe("energy-flow lines", () => {
+        it("creates ShaderMaterial with uIsSelected and uIsDimmed uniforms per constellation", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const group = (renderer as any).constellationLines;
+            expect(group.children.length).toBe(1);
+            const mat = group.children[0].material;
+            expect(mat.uniforms.uIsSelected.value).toBe(0);
+            expect(mat.uniforms.uIsDimmed.value).toBe(0);
+            expect(typeof mat.uniforms.uTime.value).toBe("number");
+            expect(isFinite(mat.uniforms.uTime.value)).toBe(true);
+        });
+
+        it("ticks line uTime every frame", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const line = (renderer as any).constellationLines.children[0];
+            const t0 = line.material.uniforms.uTime.value;
+            (renderer as any).tickUniforms(0.25);
+            expect(line.material.uniforms.uTime.value).toBeGreaterThan(t0);
+        });
+    });
+
     it("touch start/move/end sequence executes without throwing", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;

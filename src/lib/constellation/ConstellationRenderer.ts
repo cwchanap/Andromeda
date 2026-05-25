@@ -596,23 +596,21 @@ export class ConstellationRenderer {
         constellations.forEach((constellation) => {
             const lineGeometry = new THREE.BufferGeometry();
             const linePositions: number[] = [];
+            const lineProgress: number[] = [];
 
-            // Get star positions in 3D sphere
-            const starPositions = constellation.stars.map((star) => {
-                return celestialToSphere(
+            const starPositions = constellation.stars.map((star) =>
+                celestialToSphere(
                     star.rightAscension,
                     star.declination,
                     skyConfig.location,
                     skyConfig.dateTime,
-                    98, // Slightly smaller radius than stars for depth
-                );
-            });
+                    98,
+                ),
+            );
 
-            // Create line segments
             constellation.lines.forEach(([startIndex, endIndex]) => {
                 const startPos = starPositions[startIndex];
                 const endPos = starPositions[endIndex];
-
                 if (startPos && endPos) {
                     linePositions.push(
                         startPos.x,
@@ -622,31 +620,63 @@ export class ConstellationRenderer {
                         endPos.y,
                         endPos.z,
                     );
+                    lineProgress.push(0, 1); // 0 at start vertex, 1 at end vertex
                 }
             });
 
-            if (linePositions.length > 0) {
-                lineGeometry.setAttribute(
-                    "position",
-                    new THREE.Float32BufferAttribute(linePositions, 3),
-                );
+            if (linePositions.length === 0) return;
 
-                const lineMaterial = new THREE.LineBasicMaterial({
-                    color: 0x4488cc,
-                    transparent: true,
-                    opacity: 0.7,
-                    linewidth: 3,
-                    depthWrite: false,
-                });
+            lineGeometry.setAttribute(
+                "position",
+                new THREE.Float32BufferAttribute(linePositions, 3),
+            );
+            lineGeometry.setAttribute(
+                "aLineProgress",
+                new THREE.Float32BufferAttribute(lineProgress, 1),
+            );
 
-                const lines = new THREE.LineSegments(
-                    lineGeometry,
-                    lineMaterial,
-                );
-                lines.name = `constellation-${constellation.id}`;
-                lines.renderOrder = 2; // Render after stars
-                this.constellationLines!.add(lines);
-            }
+            const lineMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0 },
+                    uIsSelected: { value: 0 },
+                    uIsDimmed: { value: 0 },
+                    uColorIdle: { value: new THREE.Color(0x1b6b7a) },
+                    uColorHot: { value: new THREE.Color(0x00f0ff) },
+                },
+                vertexShader: `
+                    attribute float aLineProgress;
+                    varying float vProgress;
+                    void main() {
+                        vProgress = aLineProgress;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float uTime;
+                    uniform float uIsSelected;
+                    uniform float uIsDimmed;
+                    uniform vec3 uColorIdle;
+                    uniform vec3 uColorHot;
+                    varying float vProgress;
+                    void main() {
+                        // Energy pulse: a hot stripe rides along the segment.
+                        float pulse = fract(vProgress * 3.0 - uTime * 0.4);
+                        float pulseIntensity = smoothstep(0.85, 1.0, pulse) * (uIsSelected > 0.5 ? 1.0 : 0.35);
+                        vec3 base = mix(uColorIdle, uColorHot, uIsSelected);
+                        vec3 col = base + uColorHot * pulseIntensity;
+                        float alpha = uIsDimmed > 0.5 ? 0.18 : (uIsSelected > 0.5 ? 1.0 : 0.5);
+                        gl_FragColor = vec4(col, alpha);
+                    }
+                `,
+                transparent: true,
+                depthWrite: false,
+            });
+
+            const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
+            lines.name = `constellation-${constellation.id}`;
+            lines.userData.constellationId = constellation.id;
+            lines.renderOrder = 2;
+            this.constellationLines!.add(lines);
         });
 
         this.scene.add(this.constellationLines);
@@ -839,10 +869,24 @@ export class ConstellationRenderer {
      * Advance time-based shader uniforms by deltaSec seconds.
      */
     public tickUniforms(deltaSec: number): void {
-        if (!this.starPoints) return;
-        const mat = this.starPoints.material as THREE.ShaderMaterial;
-        if (mat.uniforms?.uTime) {
-            mat.uniforms.uTime.value += deltaSec;
+        if (
+            this.starPoints &&
+            (this.starPoints.material as THREE.ShaderMaterial).uniforms?.uTime
+        ) {
+            (
+                this.starPoints.material as THREE.ShaderMaterial
+            ).uniforms.uTime.value += deltaSec;
+        }
+        if (this.constellationLines) {
+            this.constellationLines.children.forEach(
+                (child: THREE.Object3D) => {
+                    const mat = (child as THREE.LineSegments)
+                        .material as THREE.ShaderMaterial;
+                    if (mat?.uniforms?.uTime) {
+                        mat.uniforms.uTime.value += deltaSec;
+                    }
+                },
+            );
         }
     }
 
