@@ -518,18 +518,56 @@ export class ConstellationRenderer {
             new THREE.Float32BufferAttribute(starSizes, 1),
         );
 
-        // Create enhanced material with better visibility
-        const material = new THREE.PointsMaterial({
-            size: 6,
-            sizeAttenuation: false,
+        // Per-star randomized seed for varied twinkle phase/speed.
+        const starSeeds: number[] = [];
+        for (let i = 0; i < starPositions.length / 3; i++) {
+            starSeeds.push(Math.random());
+        }
+        geometry.setAttribute(
+            "aSeed",
+            new THREE.Float32BufferAttribute(starSeeds, 1),
+        );
+
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uPixelRatio: {
+                    value: Math.min(window.devicePixelRatio || 1, 2),
+                },
+            },
+            vertexShader: `
+    attribute float size;
+    attribute float aSeed;
+    varying vec3 vColor;
+    varying float vSeed;
+    uniform float uPixelRatio;
+    void main() {
+      vColor = color;
+      vSeed = aSeed;
+      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mvPos;
+      gl_PointSize = size * 4.0 * uPixelRatio;
+    }
+  `,
+            fragmentShader: `
+    uniform float uTime;
+    varying vec3 vColor;
+    varying float vSeed;
+    void main() {
+      vec2 uv = gl_PointCoord - vec2(0.5);
+      float d = length(uv);
+      float alpha = smoothstep(0.5, 0.1, d);
+      float twinkle = 1.0 + 0.35 * sin(uTime * (2.0 + vSeed * 3.0) + vSeed * 6.28318);
+      vec3 col = vColor * twinkle;
+      gl_FragColor = vec4(col, alpha);
+    }
+  `,
             vertexColors: true,
             transparent: true,
-            opacity: 0.95,
             blending: THREE.AdditiveBlending,
-            depthWrite: false, // Prevent depth issues
+            depthWrite: false,
         });
 
-        // Create points object
         this.starPoints = new THREE.Points(geometry, material);
         this.starPoints.name = "stars";
         this.starPoints.renderOrder = 1; // Render after background
@@ -789,6 +827,17 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Advance time-based shader uniforms by deltaSec seconds.
+     */
+    public tickUniforms(deltaSec: number): void {
+        if (!this.starPoints) return;
+        const mat = this.starPoints.material as THREE.ShaderMaterial;
+        if (mat.uniforms?.uTime) {
+            mat.uniforms.uTime.value += deltaSec;
+        }
+    }
+
+    /**
      * Animation loop
      */
     private animate(): void {
@@ -799,6 +848,7 @@ export class ConstellationRenderer {
             this.updateCameraRotation();
         }
 
+        this.tickUniforms(0.016);
         this.renderer.render(this.scene, this.camera);
     }
 
