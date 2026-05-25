@@ -507,81 +507,86 @@
 
   <!-- Controls panel -->
   {#if showControls && !loading && !error}
-    <div class="absolute top-20 right-4 z-20 w-80">
-      <div class="bg-black/70 backdrop-blur-sm rounded-lg border border-white/20 p-4 text-white">
-        <h3 class="text-lg font-semibold mb-3 text-cyan-300">{t('constellation.title')}</h3>
-        
-        <!-- Location info toggle -->
-        <div class="mb-4">
-          <button
-            type="button"
-            class="w-full inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] border shadow-xs hover:text-accent-foreground text-white border-white/30 hover:bg-white/10 h-9 rounded-md px-3"
-            on:click={handleToggleLocationInfo}
-          >
-            {showLocationInfo ? 'Hide' : 'Show'} Location Info
-          </button>
-        </div>
-
-        <!-- Location and time info -->
-        {#if showLocationInfo && viewState.skyConfig}
-          <div class="mb-4 space-y-2">
-            <div>
-              <span class="text-sm text-gray-300">{t('constellation.currentLocation')}:</span>
-              <div class="text-xs text-cyan-200">{locationString}</div>
-              {#if !viewState.locationPermissionGranted}
-                <div class="text-xs text-yellow-300">({t('constellation.locationPermission')})</div>
-              {/if}
-            </div>
-            
-            <div>
-              <span class="text-sm text-gray-300">{t('constellation.currentTime')}:</span>
-              <div class="text-xs text-cyan-200">{currentTimeString}</div>
-            </div>
+    <div class="absolute top-20 right-4 z-20 w-80 hud-panel-anim">
+      <HudFrame color="var(--hud-cyan)" bracketLength={18} glow={true}>
+        <div class="hud-panel">
+          <div class="hud-panel-header">
+            <h3 class="hud-panel-title">CONSTELLATIONS</h3>
+            <span class="hud-panel-tick"></span>
           </div>
-        {/if}
 
-        <!-- Visible constellations -->
-        <div>
-          <h4 class="text-sm font-medium mb-2 text-gray-300">{t('constellation.visibility')}:</h4>
-          <div class="space-y-1 max-h-40 overflow-y-auto">
-            {#each viewState.visibleConstellations as constellationId}
-              {#each constellations.filter(c => c.id === constellationId) as constellation}
-                <button
-                  type="button"
-                  class="w-full text-left px-2 py-1 rounded text-xs hover:bg-white/10 transition-colors
-                         {viewState.selectedConstellation === constellation.id ? 'bg-cyan-600/30 border border-cyan-400/50' : ''}"
-                  on:click={() => handleSelectConstellation(constellation.id)}
-                  data-constellation-id={constellation.id}
-                >
-                  <div class="font-medium">{constellation.name}</div>
-                  <div class="text-gray-400 text-xs">{constellation.abbreviation} • {constellation.stars.length} stars</div>
-                </button>
-              {/each}
-            {/each}
+          <!-- Location info toggle -->
+          <div class="mb-4">
+            <button
+              type="button"
+              class="w-full inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] border shadow-xs hover:text-accent-foreground text-white border-white/30 hover:bg-white/10 h-9 rounded-md px-3"
+              on:click={handleToggleLocationInfo}
+            >
+              {showLocationInfo ? 'Hide' : 'Show'} Location Info
+            </button>
           </div>
-        </div>
 
-        <!-- Selected constellation info -->
-        {#if viewState.selectedConstellation}
-          {#each constellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
-            <div class="mt-4 pt-4 border-t border-white/20">
-              <h4 class="text-sm font-medium text-cyan-300">{constellation.name}</h4>
-              <p class="text-xs text-gray-300 mt-1">{constellation.description}</p>
-              {#if constellation.mythology}
-                <p class="text-xs text-gray-400 mt-2 italic">{constellation.mythology}</p>
-              {/if}
-              <div class="mt-2 text-xs">
-                <span class="text-gray-400">Best months:</span>
-                <span class="text-cyan-200">
-                  {constellation.visibility.bestMonths.map(m => 
-                    new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'short' })
-                  ).join(', ')}
-                </span>
+          <!-- Location and time info -->
+          {#if showLocationInfo && viewState.skyConfig}
+            <div class="mb-4 space-y-2">
+              <div>
+                <span class="text-sm text-gray-300">{t('constellation.currentLocation')}:</span>
+                <div class="text-xs text-cyan-200">{locationString}</div>
+                {#if !viewState.locationPermissionGranted}
+                  <div class="text-xs text-yellow-300">({t('constellation.locationPermission')})</div>
+                {/if}
+              </div>
+
+              <div>
+                <span class="text-sm text-gray-300">{t('constellation.currentTime')}:</span>
+                <div class="text-xs text-cyan-200">{currentTimeString}</div>
               </div>
             </div>
-          {/each}
-        {/if}
-      </div>
+          {/if}
+
+          <!-- Visible constellations -->
+          <div>
+            <h4 class="text-sm font-medium mb-2 text-gray-300">{t('constellation.visibility')}:</h4>
+            <div class="space-y-1 max-h-40 overflow-y-auto">
+              {#each viewState.visibleConstellations as constellationId}
+                {#each constellations.filter(c => c.id === constellationId) as constellation}
+                  <button
+                    type="button"
+                    class="w-full text-left px-2 py-1 rounded text-xs hover:bg-white/10 transition-colors
+                           {viewState.selectedConstellation === constellation.id ? 'bg-cyan-600/30 border border-cyan-400/50' : ''}"
+                    on:click={() => handleSelectConstellation(constellation.id)}
+                    data-constellation-id={constellation.id}
+                  >
+                    <div class="font-medium">{constellation.name}</div>
+                    <div class="text-gray-400 text-xs">{constellation.abbreviation} • {constellation.stars.length} stars</div>
+                  </button>
+                {/each}
+              {/each}
+            </div>
+          </div>
+
+          <!-- Selected constellation info -->
+          {#if viewState.selectedConstellation}
+            {#each constellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
+              <div class="mt-4 pt-4 border-t border-white/20">
+                <h4 class="text-sm font-medium text-cyan-300">{constellation.name}</h4>
+                <p class="text-xs text-gray-300 mt-1">{constellation.description}</p>
+                {#if constellation.mythology}
+                  <p class="text-xs text-gray-400 mt-2 italic">{constellation.mythology}</p>
+                {/if}
+                <div class="mt-2 text-xs">
+                  <span class="text-gray-400">Best months:</span>
+                  <span class="text-cyan-200">
+                    {constellation.visibility.bestMonths.map(m =>
+                      new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'short' })
+                    ).join(', ')}
+                  </span>
+                </div>
+              </div>
+            {/each}
+          {/if}
+        </div>
+      </HudFrame>
     </div>
   {/if}
 
@@ -782,6 +787,51 @@
   .hud-btn-bracket { color: var(--hud-magenta); margin-right: 4px; }
   @media (prefers-reduced-motion: reduce) {
     .hud-btn::after { transition: none; }
+  }
+
+  .hud-panel {
+    background: color-mix(in srgb, var(--hud-void) 82%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    color: var(--hud-ivory);
+    padding: 16px;
+    font-family: var(--hud-font-mono);
+    font-size: 12px;
+  }
+  .hud-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--hud-cyan);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  .hud-panel-title {
+    font-family: var(--hud-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    color: var(--hud-cyan);
+    text-shadow: 0 0 6px var(--hud-cyan);
+    flex: 1;
+  }
+  .hud-panel-tick {
+    width: 8px;
+    height: 8px;
+    background: var(--hud-magenta);
+    box-shadow: 0 0 6px var(--hud-magenta);
+  }
+  .hud-panel-anim {
+    animation: hud-panel-in var(--hud-dur-glide) var(--hud-ease-glide);
+  }
+  @keyframes hud-panel-in {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hud-panel-anim {
+      animation: none;
+    }
   }
 
   /* Custom scrollbar for constellation list */
