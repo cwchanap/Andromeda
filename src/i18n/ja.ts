@@ -192,6 +192,10 @@ export const ja = {
     "constellation.magnitude": "等級",
     "constellation.coordinates": "座標",
     "constellation.backToMenu": "← メニューに戻る",
+    "constellation.return": "戻る",
+    "constellation.panelOn": "パネル ON",
+    "constellation.panelOff": "パネル OFF",
+    "constellation.dragInstructions": "ターゲット待機 — ドラッグで方向調整",
 
     // Common actions
     "action.start": "開始",

@@ -54,6 +54,8 @@
   let hudRafId: number | null = null;
   let selectedId: string | null = null;
   let hoveredConstellationId: string | null = null;
+  // Cached world-space center for selected constellation (recomputed on selection change)
+  let selectedCenter: { x: number; y: number; z: number } | null = null;
 
   // Initialize translations
   if (typeof window !== 'undefined') {
@@ -187,15 +189,8 @@
 
       // Start HUD rAF loop for screen-coords projection
       const tickHud = () => {
-        if (renderer && selectedId && viewState.skyConfig) {
-          const c = constellations.find(x => x.id === selectedId);
-          if (c && c.stars.length) {
-            let avgRA = 0, avgDec = 0;
-            c.stars.forEach(s => { avgRA += s.rightAscension; avgDec += s.declination; });
-            avgRA /= c.stars.length; avgDec /= c.stars.length;
-            const p = celestialToSphere(avgRA, avgDec, viewState.skyConfig.location, viewState.skyConfig.dateTime, 100);
-            lockedPos = renderer.worldToScreen(p);
-          }
+        if (renderer && selectedId && selectedCenter) {
+          lockedPos = renderer.worldToScreen(selectedCenter);
         } else {
           lockedPos = null;
         }
@@ -254,12 +249,17 @@
     renderer.setSelected(constellationId);
 
     const c = constellations.find(x => x.id === constellationId);
-    if (!c || c.stars.length === 0) return;
+    if (!c || c.stars.length === 0) {
+      selectedCenter = null;
+      return;
+    }
     let avgRA = 0, avgDec = 0;
     c.stars.forEach(s => { avgRA += s.rightAscension; avgDec += s.declination; });
     avgRA /= c.stars.length; avgDec /= c.stars.length;
 
     const p = celestialToSphere(avgRA, avgDec, viewState.skyConfig.location, viewState.skyConfig.dateTime, 100);
+    // Cache the center for the HUD tick loop
+    selectedCenter = p;
     const r = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z) || 1;
     const targetY = Math.atan2(p.x, p.z);
     const targetX = Math.asin(p.y / r);
@@ -424,7 +424,7 @@
         class="hud-btn"
         on:click={handleBackToMenu}
       >
-        <span class="hud-btn-bracket">&lt;</span> RETURN
+        <span class="hud-btn-bracket">&lt;</span> {t('constellation.return')}
       </button>
     </HudFrame>
   </div>
@@ -438,7 +438,7 @@
         aria-pressed={showControls}
         on:click={handleToggleControls}
       >
-        {showControls ? "PANEL ON" : "PANEL OFF"}
+        {showControls ? t('constellation.panelOn') : t('constellation.panelOff')}
       </button>
     </HudFrame>
   </div>
@@ -501,7 +501,7 @@
     <div class="absolute bottom-12 left-12 z-5" style="pointer-events: none;">
       <div class="hud-drag-card">
         <span class="hud-drag-prefix">&gt;</span>
-        AWAITING TARGET — DRAG TO ORIENT
+        {t('constellation.dragInstructions')}
       </div>
     </div>
   {/if}
