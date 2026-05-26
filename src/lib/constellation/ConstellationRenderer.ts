@@ -14,6 +14,7 @@ export class ConstellationRenderer {
     private renderer: THREE.WebGLRenderer;
     private canvas: HTMLCanvasElement;
     private starPoints: THREE.Points | null = null;
+    private _stars: Star[] = []; // Stored for star hover raycasting lookup
     private constellationLines: THREE.Group | null = null;
     private labelSprites: THREE.Group | null = null;
     private constellationLabels: THREE.Group | null = null;
@@ -67,7 +68,20 @@ export class ConstellationRenderer {
     private raycaster: THREE.Raycaster = new THREE.Raycaster();
     private mouseNDC: { x: number; y: number } = { x: 0, y: 0 };
     private lastHoverEmit: number = 0;
+    private _rafId: number | null = null;
+    private _disposed: boolean = false;
+
+    // Bound handler references for proper addEventListener/removeEventListener
     private _clickHandler: (event: MouseEvent) => void = () => {};
+    private _boundResize: () => void = () => {};
+    private _boundMouseDown: (event: MouseEvent) => void = () => {};
+    private _boundMouseMove: (event: MouseEvent) => void = () => {};
+    private _boundMouseUp: () => void = () => {};
+    private _boundMouseWheel: (event: WheelEvent) => void = () => {};
+    private _boundContextMenu: (event: Event) => void = () => {};
+    private _boundTouchStart: (event: TouchEvent) => void = () => {};
+    private _boundTouchMove: (event: TouchEvent) => void = () => {};
+    private _boundTouchEnd: () => void = () => {};
 
     constructor(
         container: HTMLElement,
@@ -120,15 +134,26 @@ export class ConstellationRenderer {
         ambientLight.castShadow = false;
         this.scene.add(ambientLight);
 
+        // Bind and store handler references for proper cleanup in dispose()
+        this._boundResize = this.handleResize.bind(this);
+        this._boundMouseDown = this.onMouseDown.bind(this);
+        this._boundMouseMove = this.onMouseMove.bind(this);
+        this._boundMouseUp = this.onMouseUp.bind(this);
+        this._boundMouseWheel = this.onMouseWheel.bind(this);
+        this._boundContextMenu = (e: Event) => e.preventDefault();
+        this._boundTouchStart = this._createTouchStartHandler();
+        this._boundTouchMove = this._createTouchMoveHandler();
+        this._boundTouchEnd = this._createTouchEndHandler();
+        this._clickHandler = this.handleCanvasClick.bind(this);
+
         // Handle window resize
-        window.addEventListener("resize", this.handleResize.bind(this));
+        window.addEventListener("resize", this._boundResize);
 
         // Setup mouse and touch controls for 360-degree viewing
         this.setupMouseControls();
         this.setupTouchControls();
 
         // Register click handler for raycasting
-        this._clickHandler = this.handleCanvasClick.bind(this);
         this.canvas.addEventListener("click", this._clickHandler);
     }
 
@@ -219,93 +244,98 @@ export class ConstellationRenderer {
      * Setup mouse controls for 360-degree camera rotation
      */
     private setupMouseControls(): void {
-        this.canvas.addEventListener("mousedown", this.onMouseDown.bind(this));
-        this.canvas.addEventListener("mousemove", this.onMouseMove.bind(this));
-        this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this));
-        this.canvas.addEventListener("wheel", this.onMouseWheel.bind(this), {
+        this.canvas.addEventListener("mousedown", this._boundMouseDown);
+        this.canvas.addEventListener("mousemove", this._boundMouseMove);
+        this.canvas.addEventListener("mouseup", this._boundMouseUp);
+        this.canvas.addEventListener("wheel", this._boundMouseWheel, {
             passive: false,
         });
 
         // Prevent context menu on right click
-        this.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+        this.canvas.addEventListener("contextmenu", this._boundContextMenu);
     }
+
+    // Touch tracking state (shared by touch handlers)
+    private _touchStartX: number = 0;
+    private _touchStartY: number = 0;
+    private _lastTouchX: number = 0;
+    private _lastTouchY: number = 0;
 
     /**
      * Setup touch controls for mobile devices
      */
     private setupTouchControls(): void {
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let lastTouchX = 0;
-        let lastTouchY = 0;
+        this.canvas.addEventListener("touchstart", this._boundTouchStart, {
+            passive: true,
+        });
+        this.canvas.addEventListener("touchmove", this._boundTouchMove, {
+            passive: false,
+        });
+        this.canvas.addEventListener("touchend", this._boundTouchEnd, {
+            passive: true,
+        });
+    }
 
-        this.canvas.addEventListener(
-            "touchstart",
-            (event) => {
-                if (event.touches.length === 1) {
-                    const touch = event.touches[0];
-                    touchStartX = touch.clientX;
-                    touchStartY = touch.clientY;
-                    lastTouchX = touch.clientX;
-                    lastTouchY = touch.clientY;
+    private _createTouchStartHandler(): (event: TouchEvent) => void {
+        return (event: TouchEvent): void => {
+            if (event.touches.length === 1) {
+                const touch = event.touches[0];
+                this._touchStartX = touch.clientX;
+                this._touchStartY = touch.clientY;
+                this._lastTouchX = touch.clientX;
+                this._lastTouchY = touch.clientY;
 
-                    this.isMouseDown = true;
-                    this.isDragging = true;
-                    this.canvas.style.cursor = "grabbing";
-                }
-            },
-            { passive: true },
-        );
+                this.isMouseDown = true;
+                this.isDragging = true;
+                this.canvas.style.cursor = "grabbing";
+            }
+        };
+    }
 
-        this.canvas.addEventListener(
-            "touchmove",
-            (event) => {
-                if (event.touches.length === 1 && this.isMouseDown) {
-                    const touch = event.touches[0];
-                    const deltaX = touch.clientX - touchStartX;
-                    const deltaY = touch.clientY - touchStartY;
+    private _createTouchMoveHandler(): (event: TouchEvent) => void {
+        return (event: TouchEvent): void => {
+            if (event.touches.length === 1 && this.isMouseDown) {
+                const touch = event.touches[0];
+                const deltaX = touch.clientX - this._touchStartX;
+                const deltaY = touch.clientY - this._touchStartY;
 
-                    // Calculate velocity for momentum
-                    this.dragVelocityX = touch.clientX - lastTouchX;
-                    this.dragVelocityY = touch.clientY - lastTouchY;
+                // Calculate velocity for momentum
+                this.dragVelocityX = touch.clientX - this._lastTouchX;
+                this.dragVelocityY = touch.clientY - this._lastTouchY;
 
-                    // Update camera rotation
-                    this.cameraRotationY -= deltaX * 0.008;
-                    this.cameraRotationX -= deltaY * 0.008;
+                // Update camera rotation
+                this.cameraRotationY -= deltaX * 0.008;
+                this.cameraRotationX -= deltaY * 0.008;
 
-                    // Limit vertical rotation
-                    this.cameraRotationX = Math.max(
-                        -Math.PI / 2.2,
-                        Math.min(Math.PI / 2.2, this.cameraRotationX),
-                    );
+                // Limit vertical rotation
+                this.cameraRotationX = Math.max(
+                    -Math.PI / 2.2,
+                    Math.min(Math.PI / 2.2, this.cameraRotationX),
+                );
 
-                    this.updateCameraRotation();
+                this.updateCameraRotation();
 
-                    touchStartX = touch.clientX;
-                    touchStartY = touch.clientY;
-                    lastTouchX = touch.clientX;
-                    lastTouchY = touch.clientY;
-                }
-            },
-            { passive: false },
-        );
+                this._touchStartX = touch.clientX;
+                this._touchStartY = touch.clientY;
+                this._lastTouchX = touch.clientX;
+                this._lastTouchY = touch.clientY;
+            }
+        };
+    }
 
-        this.canvas.addEventListener(
-            "touchend",
-            () => {
-                this.isMouseDown = false;
-                this.canvas.style.cursor = "grab";
+    private _createTouchEndHandler(): () => void {
+        return (): void => {
+            this.isMouseDown = false;
+            this.canvas.style.cursor = "grab";
 
-                // Start momentum animation if there was significant movement
-                if (
-                    Math.abs(this.dragVelocityX) > 0.5 ||
-                    Math.abs(this.dragVelocityY) > 0.5
-                ) {
-                    this.startMomentumAnimation();
-                }
-            },
-            { passive: true },
-        );
+            // Start momentum animation if there was significant movement
+            if (
+                Math.abs(this.dragVelocityX) > 0.5 ||
+                Math.abs(this.dragVelocityY) > 0.5
+            ) {
+                this.startMomentumAnimation();
+            }
+        };
     }
 
     /**
@@ -388,18 +418,34 @@ export class ConstellationRenderer {
                         ).constellationId ?? null;
                 }
             }
+            const screen = {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top,
+            };
             if (this.callbacks.onConstellationHover) {
-                const rect2 = this.canvas.getBoundingClientRect();
-                const screen = {
-                    x: event.clientX - rect2.left,
-                    y: event.clientY - rect2.top,
-                };
                 this.callbacks.onConstellationHover(
                     hoveredId,
                     hoveredId ? screen : null,
                 );
             }
             this.setHovered(hoveredId);
+
+            // Star hover raycasting
+            if (this.callbacks.onStarHover && this.starPoints) {
+                // Set threshold for point raycasting (larger threshold = easier to hover)
+                this.raycaster.params.Points = { threshold: 2 };
+                const starHits = this.raycaster.intersectObject(
+                    this.starPoints,
+                    false,
+                );
+                if (starHits.length > 0 && starHits[0].index !== undefined) {
+                    const starIdx = starHits[0].index;
+                    const star = this._stars[starIdx] ?? null;
+                    this.callbacks.onStarHover(star, star ? screen : null);
+                } else {
+                    this.callbacks.onStarHover(null, null);
+                }
+            }
         }
     }
 
@@ -541,6 +587,7 @@ export class ConstellationRenderer {
         const starPositions: number[] = [];
         const starColors: number[] = [];
         const starSizes: number[] = [];
+        const filteredStars: Star[] = [];
 
         stars.forEach((star) => {
             // Skip stars dimmer than minimum magnitude
@@ -567,7 +614,12 @@ export class ConstellationRenderer {
             // Calculate size based on magnitude - make brighter stars more visible
             const size = magnitudeToSize(star.magnitude) * 3; // Triple the size for better visibility
             starSizes.push(size);
+
+            filteredStars.push(star);
         });
+
+        // Store filtered stars for star hover raycasting lookup
+        this._stars = filteredStars;
 
         // If very few stars were created, add some procedural background stars for ambiance
         if (starPositions.length < 300) {
@@ -942,14 +994,16 @@ export class ConstellationRenderer {
         visible: boolean;
     } {
         const vec = new THREE.Vector3(point.x, point.y, point.z);
-        // Compute the forward vector from current camera rotation angles.
-        const { x: fwdX, y: fwdY, z: fwdZ } = this._getCameraForward();
+        // Use the camera's actual world-space forward direction so visibility
+        // checks stay in sync with the transform used by vec.project(this.camera).
+        const forward = new THREE.Vector3();
+        this.camera.getWorldDirection(forward);
         // Compute the vector from the camera position to the point so that
         // behind-camera detection is correct even when the camera has moved.
         const rel = new THREE.Vector3(point.x, point.y, point.z).sub(
             this.camera.position,
         );
-        const dot = rel.x * fwdX + rel.y * fwdY + rel.z * fwdZ;
+        const dot = rel.dot(forward);
         if (dot <= 0) return { x: 0, y: 0, visible: false };
 
         vec.project(this.camera);
@@ -1088,7 +1142,11 @@ export class ConstellationRenderer {
     }
 
     private prefersReducedMotion(): boolean {
-        return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        return (
+            typeof window !== "undefined" &&
+            window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ===
+                true
+        );
     }
 
     private maybeSpawnShootingStar(now: number): void {
@@ -1167,7 +1225,8 @@ export class ConstellationRenderer {
      * Animation loop
      */
     private animate(): void {
-        requestAnimationFrame(this.animate.bind(this));
+        if (this._disposed) return;
+        this._rafId = requestAnimationFrame(() => this.animate());
 
         // Update camera rotation if mouse is being dragged
         if (this.isMouseDown) {
@@ -1316,32 +1375,34 @@ export class ConstellationRenderer {
      * Dispose of resources
      */
     dispose(): void {
+        this._disposed = true;
         this.tweenState.active = false;
-        this.clearScene();
-        window.removeEventListener("resize", this.handleResize.bind(this));
 
-        // Remove mouse event listeners
-        this.canvas.removeEventListener(
-            "mousedown",
-            this.onMouseDown.bind(this),
-        );
-        this.canvas.removeEventListener(
-            "mousemove",
-            this.onMouseMove.bind(this),
-        );
-        this.canvas.removeEventListener("mouseup", this.onMouseUp.bind(this));
-        this.canvas.removeEventListener("wheel", this.onMouseWheel.bind(this));
-        this.canvas.removeEventListener("contextmenu", (e) =>
-            e.preventDefault(),
-        );
+        // Cancel the render loop
+        if (this._rafId !== null) {
+            cancelAnimationFrame(this._rafId);
+            this._rafId = null;
+        }
+
+        this.clearScene();
+
+        // Remove window resize listener using stored reference
+        window.removeEventListener("resize", this._boundResize);
+
+        // Remove mouse event listeners using stored references
+        this.canvas.removeEventListener("mousedown", this._boundMouseDown);
+        this.canvas.removeEventListener("mousemove", this._boundMouseMove);
+        this.canvas.removeEventListener("mouseup", this._boundMouseUp);
+        this.canvas.removeEventListener("wheel", this._boundMouseWheel);
+        this.canvas.removeEventListener("contextmenu", this._boundContextMenu);
 
         // Remove click (raycasting) listener
         this.canvas.removeEventListener("click", this._clickHandler);
 
-        // Remove touch event listeners
-        this.canvas.removeEventListener("touchstart", () => {});
-        this.canvas.removeEventListener("touchmove", () => {});
-        this.canvas.removeEventListener("touchend", () => {});
+        // Remove touch event listeners using stored references
+        this.canvas.removeEventListener("touchstart", this._boundTouchStart);
+        this.canvas.removeEventListener("touchmove", this._boundTouchMove);
+        this.canvas.removeEventListener("touchend", this._boundTouchEnd);
 
         if (this.canvas.parentElement) {
             this.canvas.parentElement.removeChild(this.canvas);

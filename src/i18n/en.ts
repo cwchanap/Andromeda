@@ -207,6 +207,10 @@ export const en = {
     "constellation.magnitude": "Magnitude",
     "constellation.coordinates": "Coordinates",
     "constellation.backToMenu": "← Back to Menu",
+    "constellation.return": "RETURN",
+    "constellation.panelOn": "PANEL ON",
+    "constellation.panelOff": "PANEL OFF",
+    "constellation.dragInstructions": "AWAITING TARGET — DRAG TO ORIENT",
 
     // Common actions
     "action.start": "Start",

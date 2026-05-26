@@ -183,6 +183,10 @@ export const zh = {
     "constellation.magnitude": "星等",
     "constellation.coordinates": "坐标",
     "constellation.backToMenu": "← 返回菜单",
+    "constellation.return": "返回",
+    "constellation.panelOn": "面板 开",
+    "constellation.panelOff": "面板 关",
+    "constellation.dragInstructions": "等待目标 — 拖拽以定位",
 
     // Common actions
     "action.start": "开始",

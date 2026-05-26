@@ -180,6 +180,9 @@ const enhanceVector3 = (v: any) => {
         const dz = v.z - (o.z ?? 0);
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     });
+    v.dot = vi.fn((o: any) => {
+        return v.x * (o.x ?? 0) + v.y * (o.y ?? 0) + v.z * (o.z ?? 0);
+    });
     // Add length method for camera.position.length()
     v.length = () => Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
     v.project = vi.fn((_camera: any) => {
@@ -622,6 +625,13 @@ class MockGroup extends (THREE as any).Group {
             up: enhanceVector3({ x: 0, y: 1, z: 0 }),
             updateProjectionMatrix: vi.fn(),
             lookAt: vi.fn(),
+            getWorldDirection: vi.fn((target: any) => {
+                // Default forward matches _getCameraForward() at rotation (0,0): +Z axis
+                target.x = 0;
+                target.y = 0;
+                target.z = 1;
+                return target;
+            }),
         }),
     );
 
@@ -771,6 +781,8 @@ declare global {
     intersectObjects: vi.fn(
         (_objs: any[]) => globalThis.__threeRaycasterIntersects ?? [],
     ),
+    intersectObject: vi.fn(() => []),
+    params: { Points: { threshold: 1 } },
 }));
 
 // Mock OrbitControls and thick line modules from three/examples

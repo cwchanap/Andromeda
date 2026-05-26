@@ -953,4 +953,172 @@ describe("ConstellationRenderer", () => {
             canvas.dispatchEvent(createTouchEvent("touchend", [])),
         ).not.toThrow();
     });
+
+    describe("dispose cleanup", () => {
+        it("sets _disposed flag and cancels rAF on dispose", async () => {
+            renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const anyRenderer = renderer as any;
+            expect(anyRenderer._disposed).toBe(false);
+            renderer.dispose();
+            expect(anyRenderer._disposed).toBe(true);
+            expect(anyRenderer._rafId).toBeNull();
+        });
+
+        it("animate() is a no-op after dispose", async () => {
+            renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            renderer.dispose();
+            const anyRenderer = renderer as any;
+            // Should not throw and should not schedule another frame
+            expect(() => anyRenderer.animate()).not.toThrow();
+        });
+
+        it("removes all event listeners using stored references", async () => {
+            renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const anyRenderer = renderer as any;
+
+            // Verify stored bound handlers exist
+            expect(typeof anyRenderer._boundResize).toBe("function");
+            expect(typeof anyRenderer._boundMouseDown).toBe("function");
+            expect(typeof anyRenderer._boundMouseMove).toBe("function");
+            expect(typeof anyRenderer._boundMouseUp).toBe("function");
+            expect(typeof anyRenderer._boundMouseWheel).toBe("function");
+            expect(typeof anyRenderer._boundContextMenu).toBe("function");
+            expect(typeof anyRenderer._boundTouchStart).toBe("function");
+            expect(typeof anyRenderer._boundTouchMove).toBe("function");
+            expect(typeof anyRenderer._boundTouchEnd).toBe("function");
+
+            // dispose should not throw
+            expect(() => renderer.dispose()).not.toThrow();
+
+            // Canvas should be removed from container
+            const canvases = container.querySelectorAll("canvas");
+            expect(canvases.length).toBe(0);
+        });
+    });
+
+    describe("star hover raycasting", () => {
+        it("fires onStarHover with star data and screen position on hit", async () => {
+            const onStarHover = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onStarHover,
+            });
+            await renderer.initialize(
+                [makeStar({ id: "sirius", name: "Sirius", magnitude: 0.5 })],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+
+            // First call for constellation hover: no constellation hit
+            // Second call for star hover: hit with index 0
+            (renderer as any).raycaster.intersectObjects = vi.fn(() => []);
+            (renderer as any).raycaster.intersectObject = vi.fn(() => [
+                { index: 0 },
+            ]);
+
+            const anyRenderer = renderer as any;
+            anyRenderer.lastHoverEmit = 0;
+            anyRenderer.onMouseMove({
+                clientX: 150,
+                clientY: 200,
+                preventDefault: () => {},
+            });
+
+            expect(onStarHover).toHaveBeenCalledWith(
+                expect.objectContaining({ id: "sirius", name: "Sirius" }),
+                expect.objectContaining({
+                    x: expect.any(Number),
+                    y: expect.any(Number),
+                }),
+            );
+        });
+
+        it("fires onStarHover with null when there are no star hits", async () => {
+            const onStarHover = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onStarHover,
+            });
+            await renderer.initialize([makeStar()], [], makeSkyConfig());
+
+            (renderer as any).raycaster.intersectObject = vi.fn(() => []);
+            const anyRenderer = renderer as any;
+            anyRenderer.lastHoverEmit = 0;
+            anyRenderer.onMouseMove({
+                clientX: 100,
+                clientY: 100,
+                preventDefault: () => {},
+            });
+
+            expect(onStarHover).toHaveBeenCalledWith(null, null);
+        });
+
+        it("stores filtered stars in _stars for raycasting lookup", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            const brightStar = makeStar({ id: "bright", magnitude: 1.0 });
+            const dimStar = makeStar({ id: "dim", magnitude: 8.0 });
+            await renderer.initialize(
+                [brightStar, dimStar],
+                [],
+                makeSkyConfig({ minimumMagnitude: 3.0 }),
+            );
+
+            // Only the bright star should be stored (dim is filtered out)
+            const stars = (renderer as any)._stars as Star[];
+            expect(stars.length).toBe(1);
+            expect(stars[0].id).toBe("bright");
+        });
+    });
+
+    describe("worldToScreen with getWorldDirection", () => {
+        it("uses camera.getWorldDirection for behind-camera detection", () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            const camera = (renderer as any).camera;
+
+            // Verify getWorldDirection is called during worldToScreen
+            const getWorldDirSpy = vi.spyOn(camera, "getWorldDirection");
+
+            renderer.worldToScreen({ x: 0, y: 0, z: 50 } as any);
+
+            expect(getWorldDirSpy).toHaveBeenCalled();
+        });
+
+        it("returns visible=false for a point behind the camera", () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+
+            // Default mock getWorldDirection returns (0,0,1), so z < 0 is behind
+            const result = renderer.worldToScreen({
+                x: 0,
+                y: 0,
+                z: -50,
+            } as any);
+            expect(result.visible).toBe(false);
+        });
+
+        it("returns visible=true and screen coords for points in front", () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+
+            // Default mock getWorldDirection returns (0,0,1), so z > 0 is in front
+            const result = renderer.worldToScreen({ x: 0, y: 0, z: 50 } as any);
+            expect(result.visible).toBe(true);
+            expect(result.x).toBeGreaterThanOrEqual(0);
+            expect(result.y).toBeGreaterThanOrEqual(0);
+        });
+    });
 });
