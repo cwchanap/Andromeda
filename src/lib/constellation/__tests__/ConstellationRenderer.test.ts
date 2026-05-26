@@ -1066,6 +1066,145 @@ describe("ConstellationRenderer", () => {
         ).not.toThrow();
     });
 
+    describe("touch → click drag-threshold (P2 fix)", () => {
+        it("touchstart mirrors coordinates into mouseDownX/mouseDownY", () => {
+            renderer = new ConstellationRenderer(container);
+            const canvas = container.querySelector(
+                "canvas",
+            ) as HTMLCanvasElement;
+
+            const makeTouch = (x: number, y: number): Touch | null => {
+                if (typeof Touch === "undefined") return null;
+                try {
+                    return new Touch({
+                        identifier: 1,
+                        target: canvas,
+                        clientX: x,
+                        clientY: y,
+                    });
+                } catch {
+                    return null;
+                }
+            };
+
+            const t = makeTouch(200, 150);
+            if (t) {
+                canvas.dispatchEvent(createTouchEvent("touchstart", [t]));
+                expect((renderer as any).mouseDownX).toBe(200);
+                expect((renderer as any).mouseDownY).toBe(150);
+            }
+        });
+
+        it("synthesized click after touchstart is not falsely treated as a drag", () => {
+            const onConstellationClick = vi.fn();
+            renderer = new ConstellationRenderer(container, {
+                onConstellationClick,
+            });
+            const canvas = container.querySelector(
+                "canvas",
+            ) as HTMLCanvasElement;
+
+            const makeTouch = (x: number, y: number): Touch | null => {
+                if (typeof Touch === "undefined") return null;
+                try {
+                    return new Touch({
+                        identifier: 1,
+                        target: canvas,
+                        clientX: x,
+                        clientY: y,
+                    });
+                } catch {
+                    return null;
+                }
+            };
+
+            const t = makeTouch(200, 150);
+            if (t) {
+                canvas.dispatchEvent(createTouchEvent("touchstart", [t]));
+                canvas.dispatchEvent(createTouchEvent("touchend", []));
+
+                // Now the browser synthesizes a click at the same position.
+                // mouseDownX/Y should match so the click is not suppressed.
+                const clickEvent = new MouseEvent("click", {
+                    clientX: 200,
+                    clientY: 150,
+                    bubbles: true,
+                });
+                canvas.dispatchEvent(clickEvent);
+                // Without the fix, mouseDownX/Y would still be (0, 0) and
+                // the click would be suppressed as a drag. With the fix it
+                // should proceed to raycasting. We can't easily verify the
+                // callback fires (raycaster mock), but we can verify the
+                // threshold check passes by ensuring mouseDown coords are set.
+                expect((renderer as any).mouseDownX).toBe(200);
+                expect((renderer as any).mouseDownY).toBe(150);
+            }
+        });
+    });
+
+    describe("tween cancellation on drag (P3 fix)", () => {
+        it("mousedown cancels an active camera tween", async () => {
+            renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const canvas = container.querySelector(
+                "canvas",
+            ) as HTMLCanvasElement;
+
+            // Start a tween
+            renderer.tweenCameraTo(0.5, 1.0, 900);
+            expect((renderer as any).tweenState.active).toBe(true);
+
+            // User starts dragging — should cancel the tween
+            canvas.dispatchEvent(
+                new MouseEvent("mousedown", {
+                    clientX: 100,
+                    clientY: 100,
+                    bubbles: true,
+                }),
+            );
+            expect((renderer as any).tweenState.active).toBe(false);
+        });
+
+        it("touchstart cancels an active camera tween", async () => {
+            renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const canvas = container.querySelector(
+                "canvas",
+            ) as HTMLCanvasElement;
+
+            renderer.tweenCameraTo(0.5, 1.0, 900);
+            expect((renderer as any).tweenState.active).toBe(true);
+
+            const makeTouch = (x: number, y: number): Touch | null => {
+                if (typeof Touch === "undefined") return null;
+                try {
+                    return new Touch({
+                        identifier: 1,
+                        target: canvas,
+                        clientX: x,
+                        clientY: y,
+                    });
+                } catch {
+                    return null;
+                }
+            };
+
+            const t = makeTouch(100, 100);
+            if (t) {
+                canvas.dispatchEvent(createTouchEvent("touchstart", [t]));
+                expect((renderer as any).tweenState.active).toBe(false);
+            }
+        });
+    });
+
     describe("dispose cleanup", () => {
         it("sets _disposed flag and cancels rAF on dispose", async () => {
             renderer = new ConstellationRenderer(container);

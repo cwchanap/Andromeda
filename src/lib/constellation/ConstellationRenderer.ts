@@ -288,6 +288,15 @@ export class ConstellationRenderer {
                 this._lastTouchX = touch.clientX;
                 this._lastTouchY = touch.clientY;
 
+                // Mirror into click-threshold state so that a synthesized
+                // "click" event (emitted after touchend without a preceding
+                // mousedown) compares against the correct origin coordinates.
+                this.mouseDownX = touch.clientX;
+                this.mouseDownY = touch.clientY;
+
+                // Cancel any in-flight tween so the drag isn't overwritten by tickTween.
+                this.tweenState.active = false;
+
                 this.isMouseDown = true;
                 this.isDragging = true;
                 this.canvas.style.cursor = "grabbing";
@@ -345,6 +354,9 @@ export class ConstellationRenderer {
      * Handle mouse down event
      */
     private onMouseDown(event: MouseEvent): void {
+        // Cancel any in-flight tween so the drag isn't overwritten by tickTween.
+        this.tweenState.active = false;
+
         this.isMouseDown = true;
         this.isDragging = true;
         this.mouseX = event.clientX;
