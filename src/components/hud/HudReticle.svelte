@@ -9,8 +9,9 @@
   class="hud-reticle"
   data-state={state}
   style="transform: translate(-50%, -50%) translate({x}px, {y}px);"
-  role="img"
-  aria-label={label ?? undefined}
+  role={label ? "img" : undefined}
+  aria-label={label || undefined}
+  aria-hidden={label ? undefined : "true"}
 >
   <svg class="reticle-svg" viewBox="-40 -40 80 80" width="80" height="80" aria-hidden="true">
     <circle class="ring" cx="0" cy="0" r="22" fill="none" stroke-width="1" />

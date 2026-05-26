@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/svelte";
-import ScanLines from "../ScanLines.svelte";
+import ScanLines from "@/components/hud/ScanLines.svelte";
 
 describe("ScanLines", () => {
     it("renders the overlay with both gradient layers", () => {

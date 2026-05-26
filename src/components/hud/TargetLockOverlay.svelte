@@ -1,5 +1,5 @@
 <script lang="ts">
-  import HudReticle from "./HudReticle.svelte";
+  import HudReticle from "@/components/hud/HudReticle.svelte";
   export let visible: boolean = false;
   export let x: number = 0;
   export let y: number = 0;

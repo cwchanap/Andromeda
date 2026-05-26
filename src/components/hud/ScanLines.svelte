@@ -48,4 +48,10 @@
     from { transform: translateY(0); }
     to   { transform: translateY(100%); }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .scan-lines-fine,
+    .scan-lines-coarse {
+      animation: none;
+    }
+  }
 </style>

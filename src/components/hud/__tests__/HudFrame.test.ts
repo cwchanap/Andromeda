@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/svelte";
-import HudFrame from "../HudFrame.svelte";
+import HudFrame from "@/components/hud/HudFrame.svelte";
 
 describe("HudFrame", () => {
     it("renders four corner brackets", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/svelte";
-import HudCallout from "../HudCallout.svelte";
+import HudCallout from "@/components/hud/HudCallout.svelte";
 
 describe("HudCallout", () => {
     it("positions the card next to the anchor point", () => {

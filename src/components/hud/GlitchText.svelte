@@ -53,8 +53,8 @@
     }, 50);
   }
 
-  // Reactive statement runs on every text change (including initial render)
-  $: text, startAnimation();
+  // Reactive statement runs on every text or durationMs change (including initial render)
+  $: text, durationMs, startAnimation();
 
   onDestroy(() => {
     if (timer) clearInterval(timer);

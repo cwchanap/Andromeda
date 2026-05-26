@@ -25,6 +25,7 @@ vi.mock("three", () => ({
         add: vi.fn(),
         remove: vi.fn(),
         children: [],
+        getObjectByName: vi.fn(() => null),
     })),
     PerspectiveCamera: vi.fn().mockImplementation(() => ({
         position: { set: vi.fn(), copy: vi.fn() },
@@ -608,6 +609,10 @@ class MockGroup extends (THREE as any).Group {
         clear: vi.fn(function () {
             scene.children.length = 0;
         }),
+        getObjectByName: vi.fn(
+            (name: string) =>
+                scene.children.find((c: any) => c.name === name) ?? null,
+        ),
     };
     return scene;
 });

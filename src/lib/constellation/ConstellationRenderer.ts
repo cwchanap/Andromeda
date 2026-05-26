@@ -845,15 +845,20 @@ export class ConstellationRenderer {
             if (constellation.stars.length === 0) return;
 
             // Calculate the center position of the constellation
-            let avgRA = 0;
+            // Use circular mean for RA to handle 0h/24h wrap-around
+            let sinSum = 0;
+            let cosSum = 0;
             let avgDec = 0;
 
             constellation.stars.forEach((star) => {
-                avgRA += star.rightAscension;
+                const rad = (star.rightAscension / 24) * 2 * Math.PI;
+                sinSum += Math.sin(rad);
+                cosSum += Math.cos(rad);
                 avgDec += star.declination;
             });
 
-            avgRA /= constellation.stars.length;
+            const avgRA =
+                ((Math.atan2(sinSum, cosSum) / (2 * Math.PI) + 1) % 1) * 24;
             avgDec /= constellation.stars.length;
 
             // Convert to 3D position
@@ -1272,6 +1277,18 @@ export class ConstellationRenderer {
         }
         this.nextShootingStarAt = 0;
         this.shootingStarStarted = 0;
+
+        // Dispose starfield background mesh
+        const starfieldBg = this.scene.getObjectByName("starfield-background");
+        if (starfieldBg) {
+            this.scene.remove(starfieldBg);
+            if (starfieldBg instanceof THREE.Mesh) {
+                starfieldBg.geometry.dispose();
+                if (starfieldBg.material instanceof THREE.Material) {
+                    starfieldBg.material.dispose();
+                }
+            }
+        }
 
         if (this.starPoints) {
             this.scene.remove(this.starPoints);
