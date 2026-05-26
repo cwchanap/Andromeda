@@ -218,6 +218,23 @@ describe("ConstellationRenderer", () => {
         ).resolves.toBeUndefined();
     });
 
+    it("preserves starfield-background mesh across initialize() calls", async () => {
+        renderer = new ConstellationRenderer(container);
+        const anyRenderer = renderer as any;
+        const scene = anyRenderer.scene as THREE.Scene;
+
+        // The constructor creates a starfield-background mesh
+        const bg = scene.getObjectByName("starfield-background");
+        expect(bg).toBeTruthy();
+
+        // initialize() calls clearScene() but should NOT remove it
+        await renderer.initialize([makeStar()], [], makeSkyConfig());
+
+        const bgAfter = scene.getObjectByName("starfield-background");
+        expect(bgAfter).toBeTruthy();
+        expect(bgAfter).toBe(bg);
+    });
+
     it("updateSky calls initialize again without throwing", async () => {
         renderer = new ConstellationRenderer(container);
         await renderer.initialize([makeStar()], [], makeSkyConfig());
@@ -810,6 +827,10 @@ describe("ConstellationRenderer", () => {
                 { object: group.children[0] },
             ];
 
+            // Set mouseDown position same as click position (no drag)
+            (renderer as any).mouseDownX = 100;
+            (renderer as any).mouseDownY = 100;
+
             // Simulate click
             (renderer as any).handleCanvasClick({
                 clientX: 100,
@@ -838,6 +859,62 @@ describe("ConstellationRenderer", () => {
                 preventDefault: () => {},
             });
             expect(onConstellationClick).not.toHaveBeenCalled();
+        });
+
+        it("suppresses onConstellationClick when mouse moved more than drag threshold", async () => {
+            const onConstellationClick = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onConstellationClick,
+            });
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const group = (renderer as any).constellationLines;
+            globalThis.__threeRaycasterIntersects = [
+                { object: group.children[0] },
+            ];
+
+            // Simulate mousedown at (0, 0) then click at (100, 0) — far apart = drag
+            (renderer as any).mouseDownX = 0;
+            (renderer as any).mouseDownY = 0;
+            (renderer as any).handleCanvasClick({
+                clientX: 100,
+                clientY: 0,
+                preventDefault: () => {},
+            });
+
+            expect(onConstellationClick).not.toHaveBeenCalled();
+            globalThis.__threeRaycasterIntersects = undefined;
+        });
+
+        it("fires onConstellationClick when mouse barely moved (within threshold)", async () => {
+            const onConstellationClick = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onConstellationClick,
+            });
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const group = (renderer as any).constellationLines;
+            globalThis.__threeRaycasterIntersects = [
+                { object: group.children[0] },
+            ];
+
+            // Simulate mousedown at (100, 100) then click at (102, 101) — within threshold
+            (renderer as any).mouseDownX = 100;
+            (renderer as any).mouseDownY = 100;
+            (renderer as any).handleCanvasClick({
+                clientX: 102,
+                clientY: 101,
+                preventDefault: () => {},
+            });
+
+            expect(onConstellationClick).toHaveBeenCalledWith("orion");
+            globalThis.__threeRaycasterIntersects = undefined;
         });
 
         it("fires onConstellationHover with id and screen position on hit", async () => {

@@ -21,6 +21,9 @@ export class ConstellationRenderer {
     private isMouseDown: boolean = false;
     private mouseX: number = 0;
     private mouseY: number = 0;
+    private mouseDownX: number = 0;
+    private mouseDownY: number = 0;
+    private static readonly CLICK_DRAG_THRESHOLD = 5; // px — ignore click if mouse moved more
     private cameraRotationX: number = 0;
     private cameraRotationY: number = 0;
     private selectedId: string | null = null;
@@ -346,6 +349,8 @@ export class ConstellationRenderer {
         this.isDragging = true;
         this.mouseX = event.clientX;
         this.mouseY = event.clientY;
+        this.mouseDownX = event.clientX;
+        this.mouseDownY = event.clientY;
         this.lastMouseX = event.clientX;
         this.lastMouseY = event.clientY;
         this.dragVelocityX = 0;
@@ -1278,17 +1283,9 @@ export class ConstellationRenderer {
         this.nextShootingStarAt = 0;
         this.shootingStarStarted = 0;
 
-        // Dispose starfield background mesh
-        const starfieldBg = this.scene.getObjectByName("starfield-background");
-        if (starfieldBg) {
-            this.scene.remove(starfieldBg);
-            if (starfieldBg instanceof THREE.Mesh) {
-                starfieldBg.geometry.dispose();
-                if (starfieldBg.material instanceof THREE.Material) {
-                    starfieldBg.material.dispose();
-                }
-            }
-        }
+        // NOTE: The "starfield-background" mesh is a persistent background
+        // created in the constructor and intentionally kept across reinitializations.
+        // Do NOT remove it here — initialize() does not recreate it.
 
         if (this.starPoints) {
             this.scene.remove(this.starPoints);
@@ -1366,6 +1363,17 @@ export class ConstellationRenderer {
      */
     private handleCanvasClick(event: MouseEvent): void {
         if (!this.callbacks.onConstellationClick) return;
+
+        // Suppress click if the mouse moved significantly since mousedown (drag)
+        const dx = event.clientX - this.mouseDownX;
+        const dy = event.clientY - this.mouseDownY;
+        if (
+            dx * dx + dy * dy >
+            ConstellationRenderer.CLICK_DRAG_THRESHOLD ** 2
+        ) {
+            return;
+        }
+
         const rect = this.canvas.getBoundingClientRect();
         this.mouseNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         this.mouseNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;

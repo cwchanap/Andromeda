@@ -82,13 +82,25 @@ describe("ConstellationWrapper", () => {
 
     it("shows an overlay when loading or error state is active", () => {
         const { container } = render(ConstellationWrapper);
-        // In jsdom, WebGL is unavailable so onMount resolves to error state;
-        // the error overlay uses bg-black/80. If loading were still true the
-        // BootSequence (.boot-sequence) would be rendered instead.
-        const errorOverlay = container.querySelector(".bg-black\\/80");
+        // In jsdom, WebGL is unavailable so onMount sets webglSupported=false
+        // and the WebGL fallback overlay renders (pointer-events-none).
+        // If loading were still true the BootSequence would render instead.
+        const webglFallback = container.querySelector(".pointer-events-none");
         const bootSequence = container.querySelector(".boot-sequence");
         // At least one overlay should be present
-        expect(errorOverlay !== null || bootSequence !== null).toBe(true);
+        expect(webglFallback !== null || bootSequence !== null).toBe(true);
+    });
+
+    it("prioritizes WebGL fallback over generic error when WebGL is unsupported", () => {
+        const { container } = render(ConstellationWrapper);
+        // In jsdom, both webglSupported=false and error may be set.
+        // The WebGL fallback (with amber ⚠️) should take precedence over
+        // the generic error overlay (with red ❌).
+        const webglHeading = container.querySelector(".text-amber-400");
+        const errorHeading = container.querySelector(".text-red-400");
+        // WebGL fallback should be shown, generic error should NOT
+        expect(webglHeading).not.toBeNull();
+        expect(errorHeading).toBeNull();
     });
 
     it("unmounts cleanly", () => {
