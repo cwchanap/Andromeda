@@ -456,24 +456,6 @@
     <div class="absolute inset-0 z-30">
       <BootSequence debugInfo={debugInfo} />
     </div>
-  {:else if error}
-    <div class="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
-      <div class="text-center text-white max-w-md mx-auto px-4">
-        <div class="mb-4">
-          <div class="text-red-400 text-4xl">❌</div>
-        </div>
-        <h2 class="text-xl font-semibold mb-2 text-red-400">{t('constellation.error')}</h2>
-        <p class="text-sm text-gray-300 mb-4">{error}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          on:click={() => window.location.reload()}
-          className="text-white border-white/30 hover:bg-white/10"
-        >
-          Retry
-        </Button>
-      </div>
-    </div>
   {:else if !webglSupported}
     <div class="absolute inset-0 z-30 pointer-events-none" style="background: transparent;">
       <div class="flex items-center justify-center h-full">
@@ -502,6 +484,24 @@
             Back to Menu
           </Button>
         </div>
+      </div>
+    </div>
+  {:else if error}
+    <div class="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
+      <div class="text-center text-white max-w-md mx-auto px-4">
+        <div class="mb-4">
+          <div class="text-red-400 text-4xl">❌</div>
+        </div>
+        <h2 class="text-xl font-semibold mb-2 text-red-400">{t('constellation.error')}</h2>
+        <p class="text-sm text-gray-300 mb-4">{error}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          on:click={() => window.location.reload()}
+          className="text-white border-white/30 hover:bg-white/10"
+        >
+          Retry
+        </Button>
       </div>
     </div>
   {/if}
@@ -540,6 +540,7 @@
             </div>
             <div class="readout-row">
               <span class="readout-label">UTC</span>
+              <span></span>
               <span class="readout-value">{utcReadout}</span>
             </div>
           </div>
