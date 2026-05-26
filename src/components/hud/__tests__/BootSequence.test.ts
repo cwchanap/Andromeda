@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/svelte";
 import { tick } from "svelte";
-import BootSequence from "../BootSequence.svelte";
+import BootSequence from "@/components/hud/BootSequence.svelte";
 
 describe("BootSequence", () => {
     it("prints all lines after total duration", async () => {

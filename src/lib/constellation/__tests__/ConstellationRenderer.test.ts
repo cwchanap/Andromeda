@@ -478,44 +478,79 @@ describe("ConstellationRenderer", () => {
 
     describe("worldToScreen", () => {
         it("returns visible=false when point is behind the camera", () => {
-            const renderer = new ConstellationRenderer(makeContainer());
-            // Camera at origin looking +Z (default). A point behind us has z < 0 (in camera space).
-            const result = renderer.worldToScreen({
-                x: 0,
-                y: 0,
-                z: -50,
-            } as any);
-            expect(result.visible).toBe(false);
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                // Camera at origin looking +Z (default). A point behind us has z < 0 (in camera space).
+                const result = renderer.worldToScreen({
+                    x: 0,
+                    y: 0,
+                    z: -50,
+                } as any);
+                expect(result.visible).toBe(false);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
         });
 
         it("returns visible=true and screen x/y inside viewport for points in front", () => {
             const container = makeContainer();
             const renderer = new ConstellationRenderer(container);
-            const result = renderer.worldToScreen({ x: 0, y: 0, z: 50 } as any);
-            expect(result.visible).toBe(true);
-            expect(result.x).toBeGreaterThanOrEqual(0);
-            expect(result.x).toBeLessThanOrEqual(container.clientWidth);
-            expect(result.y).toBeGreaterThanOrEqual(0);
-            expect(result.y).toBeLessThanOrEqual(container.clientHeight);
+            try {
+                const result = renderer.worldToScreen({
+                    x: 0,
+                    y: 0,
+                    z: 50,
+                } as any);
+                expect(result.visible).toBe(true);
+                expect(result.x).toBeGreaterThanOrEqual(0);
+                expect(result.x).toBeLessThanOrEqual(container.clientWidth);
+                expect(result.y).toBeGreaterThanOrEqual(0);
+                expect(result.y).toBeLessThanOrEqual(container.clientHeight);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
         });
 
         it("returns visible=false for a point on the camera plane (dot === 0)", () => {
-            const renderer = new ConstellationRenderer(makeContainer());
-            // Default camera rotation is (0, 0), forward vector is (0, 0, 1).
-            // Camera position is (0, 0, 0). Point at (1, 1, 0): rel = (1,1,0), dot = 0.
-            const result = renderer.worldToScreen({ x: 1, y: 1, z: 0 } as any);
-            expect(result.visible).toBe(false);
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                // Default camera rotation is (0, 0), forward vector is (0, 0, 1).
+                // Camera position is (0, 0, 0). Point at (1, 1, 0): rel = (1,1,0), dot = 0.
+                const result = renderer.worldToScreen({
+                    x: 1,
+                    y: 1,
+                    z: 0,
+                } as any);
+                expect(result.visible).toBe(false);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
         });
 
         it("respects camera position when classifying behind-camera points", () => {
-            const renderer = new ConstellationRenderer(makeContainer());
-            // Move camera forward so a point at z=50 is now behind us.
-            (renderer as any).camera.position.x = 0;
-            (renderer as any).camera.position.y = 0;
-            (renderer as any).camera.position.z = 100;
-            // rel = (0-0, 0-0, 50-100) = (0, 0, -50); forward = (0,0,1); dot = -50 → behind.
-            const result = renderer.worldToScreen({ x: 0, y: 0, z: 50 } as any);
-            expect(result.visible).toBe(false);
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                // Move camera forward so a point at z=50 is now behind us.
+                (renderer as any).camera.position.x = 0;
+                (renderer as any).camera.position.y = 0;
+                (renderer as any).camera.position.z = 100;
+                // rel = (0-0, 0-0, 50-100) = (0, 0, -50); forward = (0,0,1); dot = -50 → behind.
+                const result = renderer.worldToScreen({
+                    x: 0,
+                    y: 0,
+                    z: 50,
+                } as any);
+                expect(result.visible).toBe(false);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
         });
     });
 

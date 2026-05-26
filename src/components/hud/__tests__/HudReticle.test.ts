@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/svelte";
-import HudReticle from "../HudReticle.svelte";
+import HudReticle from "@/components/hud/HudReticle.svelte";
 
 describe("HudReticle", () => {
     it("positions itself at the given screen coordinates", () => {
@@ -58,5 +58,17 @@ describe("HudReticle", () => {
         });
         const wrapper = container.querySelector(".hud-reticle");
         expect(wrapper?.getAttribute("aria-label")).toBe("Andromeda");
+        expect(wrapper?.getAttribute("role")).toBe("img");
+        expect(wrapper?.getAttribute("aria-hidden")).toBeNull();
+    });
+
+    it("hides from accessibility tree when no label is provided", () => {
+        const { container } = render(HudReticle, {
+            props: { x: 0, y: 0, state: "hover" },
+        });
+        const wrapper = container.querySelector(".hud-reticle");
+        expect(wrapper?.getAttribute("aria-hidden")).toBe("true");
+        expect(wrapper?.getAttribute("role")).toBeNull();
+        expect(wrapper?.getAttribute("aria-label")).toBeNull();
     });
 });

@@ -1,20 +1,20 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { gameState } from "../stores/gameStore";
-  import { getLangFromUrl, useTranslations } from "../i18n/utils";
-  import { routes, type AppLocale } from "../i18n/routes";
-  import Button from "./ui/Button.svelte";
-  import { ConstellationRenderer } from "../lib/constellation/ConstellationRenderer";
-  import { constellations, getVisibleConstellations } from "../data/constellations";
-  import { getCurrentLocation, isConstellationVisible, formatCoordinates, celestialToSphere } from "../utils/astronomy";
-  import type { ConstellationViewState, SkyConfiguration, LocationData } from "../types/constellation";
-  import ScanLines from "./hud/ScanLines.svelte";
-  import HudReticle from "./hud/HudReticle.svelte";
-  import HudCallout from "./hud/HudCallout.svelte";
-  import TargetLockOverlay from "./hud/TargetLockOverlay.svelte";
-  import BootSequence from "./hud/BootSequence.svelte";
-  import HudFrame from "./hud/HudFrame.svelte";
-  import GlitchText from "./hud/GlitchText.svelte";
+  import { gameState } from "@/stores/gameStore";
+  import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+  import { routes, type AppLocale } from "@/i18n/routes";
+  import Button from "@/components/ui/Button.svelte";
+  import { ConstellationRenderer } from "@/lib/constellation/ConstellationRenderer";
+  import { constellations, getVisibleConstellations } from "@/data/constellations";
+  import { getCurrentLocation, isConstellationVisible, formatCoordinates, celestialToSphere } from "@/utils/astronomy";
+  import type { ConstellationViewState, SkyConfiguration, LocationData } from "@/types/constellation";
+  import ScanLines from "@/components/hud/ScanLines.svelte";
+  import HudReticle from "@/components/hud/HudReticle.svelte";
+  import HudCallout from "@/components/hud/HudCallout.svelte";
+  import TargetLockOverlay from "@/components/hud/TargetLockOverlay.svelte";
+  import BootSequence from "@/components/hud/BootSequence.svelte";
+  import HudFrame from "@/components/hud/HudFrame.svelte";
+  import GlitchText from "@/components/hud/GlitchText.svelte";
 
   export let lang: AppLocale = "en";
 
@@ -253,9 +253,17 @@
       selectedCenter = null;
       return;
     }
-    let avgRA = 0, avgDec = 0;
-    c.stars.forEach(s => { avgRA += s.rightAscension; avgDec += s.declination; });
-    avgRA /= c.stars.length; avgDec /= c.stars.length;
+    // Circular mean for RA to handle 0h/24h wrap-around
+    let sinSum = 0, cosSum = 0;
+    let avgDec = 0;
+    c.stars.forEach(s => {
+      const rad = (s.rightAscension / 24) * 2 * Math.PI;
+      sinSum += Math.sin(rad);
+      cosSum += Math.cos(rad);
+      avgDec += s.declination;
+    });
+    const avgRA = (Math.atan2(sinSum, cosSum) / (2 * Math.PI) + 1) * 24;
+    avgDec /= c.stars.length;
 
     const p = celestialToSphere(avgRA, avgDec, viewState.skyConfig.location, viewState.skyConfig.dateTime, 100);
     // Cache the center for the HUD tick loop
@@ -467,31 +475,33 @@
       </div>
     </div>
   {:else if !webglSupported}
-    <div class="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
-      <div class="text-center text-white max-w-md mx-auto px-4">
-        <div class="mb-4">
-          <div class="text-amber-400 text-4xl">⚠️</div>
+    <div class="absolute inset-0 z-30 pointer-events-none" style="background: transparent;">
+      <div class="flex items-center justify-center h-full">
+        <div class="text-center text-white max-w-md mx-auto px-4 pointer-events-auto">
+          <div class="mb-4">
+            <div class="text-amber-400 text-4xl">⚠️</div>
+          </div>
+          <h2 class="text-xl font-semibold mb-2 text-amber-400">3D Graphics Not Available</h2>
+          <p class="text-sm text-gray-300 mb-4">
+            Your browser doesn't support WebGL, which is required for the constellation view.
+          </p>
+          <div class="text-xs text-gray-400 mb-4">
+            <p class="mb-2">Try these solutions:</p>
+            <ul class="text-left list-disc list-inside space-y-1">
+              <li>Update to the latest browser version</li>
+              <li>Enable hardware acceleration in settings</li>
+              <li>Try a different browser (Chrome, Firefox, Edge)</li>
+            </ul>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            on:click={handleBackToMenu}
+            className="text-white border-white/30 hover:bg-white/10"
+          >
+            Back to Menu
+          </Button>
         </div>
-        <h2 class="text-xl font-semibold mb-2 text-amber-400">3D Graphics Not Available</h2>
-        <p class="text-sm text-gray-300 mb-4">
-          Your browser doesn't support WebGL, which is required for the constellation view.
-        </p>
-        <div class="text-xs text-gray-400 mb-4">
-          <p class="mb-2">Try these solutions:</p>
-          <ul class="text-left list-disc list-inside space-y-1">
-            <li>Update to the latest browser version</li>
-            <li>Enable hardware acceleration in settings</li>
-            <li>Try a different browser (Chrome, Firefox, Edge)</li>
-          </ul>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          on:click={handleBackToMenu}
-          className="text-white border-white/30 hover:bg-white/10"
-        >
-          Back to Menu
-        </Button>
       </div>
     </div>
   {/if}
