@@ -25,6 +25,9 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
+# local claude settings
+.claude/
+
 coverage/
 .playwright-mcp/
 test-results/
