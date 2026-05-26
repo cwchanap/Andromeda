@@ -45,7 +45,6 @@
 
   // UI state
   let showControls = true;
-  let showLocationInfo = true;
   let showDragInstructions = true;
 
   // HUD state
@@ -246,10 +245,6 @@
 
   const handleToggleControls = () => {
     showControls = !showControls;
-  };
-
-  const handleToggleLocationInfo = () => {
-    showLocationInfo = !showLocationInfo;
   };
 
   const handleSelectConstellation = (constellationId: string) => {
