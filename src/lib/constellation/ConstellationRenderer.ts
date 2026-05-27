@@ -56,7 +56,7 @@ export class ConstellationRenderer {
     private nextShootingStarAt: number = 0;
     private shootingStarStarted: number = 0;
 
-    public callbacks: {
+    public readonly callbacks: {
         onStarHover?: (
             star: Star | null,
             screenPos: { x: number; y: number } | null,
@@ -73,6 +73,12 @@ export class ConstellationRenderer {
     private lastHoverEmit: number = 0;
     private _rafId: number | null = null;
     private _disposed: boolean = false;
+    private _momentumRafId: number | null = null;
+
+    // Reusable Vector3 instances to avoid per-frame allocations in worldToScreen
+    private _wtsVec = new THREE.Vector3();
+    private _wtsForward = new THREE.Vector3();
+    private _wtsRel = new THREE.Vector3();
 
     // Bound handler references for proper addEventListener/removeEventListener
     private _clickHandler: (event: MouseEvent) => void = () => {};
@@ -518,11 +524,14 @@ export class ConstellationRenderer {
         const minVelocity = 0.1;
 
         const animateMomentum = () => {
+            if (this._disposed) return;
+
             if (
                 Math.abs(this.dragVelocityX) < minVelocity &&
                 Math.abs(this.dragVelocityY) < minVelocity
             ) {
                 this.isDragging = false;
+                this._momentumRafId = null;
                 return;
             }
 
@@ -542,10 +551,10 @@ export class ConstellationRenderer {
             this.dragVelocityX *= friction;
             this.dragVelocityY *= friction;
 
-            requestAnimationFrame(animateMomentum);
+            this._momentumRafId = requestAnimationFrame(animateMomentum);
         };
 
-        requestAnimationFrame(animateMomentum);
+        this._momentumRafId = requestAnimationFrame(animateMomentum);
     }
 
     /**
@@ -666,7 +675,7 @@ export class ConstellationRenderer {
 
         // If very few stars were created, add some procedural background stars for ambiance
         if (starPositions.length < 300) {
-            // Less than 100 stars
+            // Fewer than 100 stars (3 floats per star) — add procedural background stars
             for (let i = 0; i < 500; i++) {
                 // Create random stars distributed evenly across the celestial sphere
                 const theta = Math.random() * Math.PI * 2; // Azimuth (0 to 2π)
@@ -1041,16 +1050,16 @@ export class ConstellationRenderer {
         y: number;
         visible: boolean;
     } {
-        const vec = new THREE.Vector3(point.x, point.y, point.z);
+        const vec = this._wtsVec.set(point.x, point.y, point.z);
         // Use the camera's actual world-space forward direction so visibility
         // checks stay in sync with the transform used by vec.project(this.camera).
-        const forward = new THREE.Vector3();
+        const forward = this._wtsForward;
         this.camera.getWorldDirection(forward);
         // Compute the vector from the camera position to the point so that
         // behind-camera detection is correct even when the camera has moved.
-        const rel = new THREE.Vector3(point.x, point.y, point.z).sub(
-            this.camera.position,
-        );
+        const rel = this._wtsRel
+            .set(point.x, point.y, point.z)
+            .sub(this.camera.position);
         const dot = rel.dot(forward);
         if (dot <= 0) return { x: 0, y: 0, visible: false };
 
@@ -1085,7 +1094,7 @@ export class ConstellationRenderer {
 
     /**
      * Set the hovered constellation by id (or null to clear hover).
-     * Stored for future overlay-driven hover effects.
+     * Used for visual feedback and selection dimming.
      */
     public setHovered(id: string | null): void {
         this.hoveredId = id;
@@ -1455,31 +1464,83 @@ export class ConstellationRenderer {
             this._rafId = null;
         }
 
-        this.clearScene();
-
-        // Remove window resize listener using stored reference
-        window.removeEventListener("resize", this._boundResize);
-
-        // Remove mouse event listeners using stored references
-        this.canvas.removeEventListener("mousedown", this._boundMouseDown);
-        this.canvas.removeEventListener("mousemove", this._boundMouseMove);
-        this.canvas.removeEventListener("mouseup", this._boundMouseUp);
-        this.canvas.removeEventListener("mouseleave", this._boundMouseLeave);
-        this.canvas.removeEventListener("wheel", this._boundMouseWheel);
-        this.canvas.removeEventListener("contextmenu", this._boundContextMenu);
-
-        // Remove click (raycasting) listener
-        this.canvas.removeEventListener("click", this._clickHandler);
-
-        // Remove touch event listeners using stored references
-        this.canvas.removeEventListener("touchstart", this._boundTouchStart);
-        this.canvas.removeEventListener("touchmove", this._boundTouchMove);
-        this.canvas.removeEventListener("touchend", this._boundTouchEnd);
-
-        if (this.canvas.parentElement) {
-            this.canvas.parentElement.removeChild(this.canvas);
+        // Cancel momentum animation
+        if (this._momentumRafId !== null) {
+            cancelAnimationFrame(this._momentumRafId);
+            this._momentumRafId = null;
         }
 
-        this.renderer.dispose();
+        // Phase 1: Clear scene objects (including starfield-background on final dispose)
+        try {
+            this.clearScene();
+
+            // Dispose starfield-background (intentionally kept across re-inits but must be cleaned up on final dispose)
+            const starfieldBg = this.scene.getObjectByName(
+                "starfield-background",
+            );
+            if (starfieldBg instanceof THREE.Mesh) {
+                starfieldBg.geometry.dispose();
+                if (starfieldBg.material instanceof THREE.Material) {
+                    starfieldBg.material.dispose();
+                }
+                this.scene.remove(starfieldBg);
+            }
+        } catch (e) {
+            console.error(
+                "ConstellationRenderer dispose: clearScene failed",
+                e,
+            );
+        }
+
+        // Phase 2: Remove event listeners
+        try {
+            window.removeEventListener("resize", this._boundResize);
+            this.canvas.removeEventListener("mousedown", this._boundMouseDown);
+            this.canvas.removeEventListener("mousemove", this._boundMouseMove);
+            this.canvas.removeEventListener("mouseup", this._boundMouseUp);
+            this.canvas.removeEventListener(
+                "mouseleave",
+                this._boundMouseLeave,
+            );
+            this.canvas.removeEventListener("wheel", this._boundMouseWheel);
+            this.canvas.removeEventListener(
+                "contextmenu",
+                this._boundContextMenu,
+            );
+            this.canvas.removeEventListener("click", this._clickHandler);
+            this.canvas.removeEventListener(
+                "touchstart",
+                this._boundTouchStart,
+            );
+            this.canvas.removeEventListener("touchmove", this._boundTouchMove);
+            this.canvas.removeEventListener("touchend", this._boundTouchEnd);
+        } catch (e) {
+            console.error(
+                "ConstellationRenderer dispose: event listener cleanup failed",
+                e,
+            );
+        }
+
+        // Phase 3: Remove canvas from DOM
+        try {
+            if (this.canvas.parentElement) {
+                this.canvas.parentElement.removeChild(this.canvas);
+            }
+        } catch (e) {
+            console.error(
+                "ConstellationRenderer dispose: canvas removal failed",
+                e,
+            );
+        }
+
+        // Phase 4: Dispose WebGL renderer
+        try {
+            this.renderer.dispose();
+        } catch (e) {
+            console.error(
+                "ConstellationRenderer dispose: renderer.dispose failed",
+                e,
+            );
+        }
     }
 }

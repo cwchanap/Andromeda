@@ -63,7 +63,7 @@
   }
   t = useTranslations(currentLang);
 
-  onMount(async () => {
+  async function initConstellationView(): Promise<void> {
     try {
       // Check WebGL support first
       webglSupported = checkWebGLSupport();
@@ -88,7 +88,6 @@
       // Get user's current location
       let location: LocationData;
       try {
-        // For testing/demo purposes, use a shorter timeout and fallback quickly
         const locationPromise = getCurrentLocation();
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("Location timeout")), 3000)
@@ -155,9 +154,8 @@
 
         await renderer.initialize(allStars, visibleConstellations, skyConfig);
       } catch (rendererError) {
-        console.warn('WebGL renderer failed, falling back to text display:', rendererError);
+        console.warn('WebGL renderer failed, falling back to 2D canvas:', rendererError);
         webglSupported = false;
-        // Don't re-throw, just continue with text display
       }
 
       // Only create 2D canvas if WebGL failed
@@ -218,12 +216,15 @@
             viewState.error = null;
             loading = true;
             viewState.loading = true;
-            // Re-run onMount logic
-            onMount(() => {});
+            initConstellationView();
           }
         }, 3000);
       }
     }
+  }
+
+  onMount(() => {
+    initConstellationView();
   });
 
   onDestroy(() => {
@@ -315,6 +316,7 @@
 
       return true;
     } catch (e) {
+      console.warn("WebGL support check failed:", e);
       return false;
     }
   }
