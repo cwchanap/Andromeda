@@ -782,6 +782,42 @@ describe("ConstellationRenderer", () => {
             expect((renderer as any).tweenState.targetX).toBeCloseTo(limit, 5);
         });
 
+        it("normalizes targetRotY to the shortest arc relative to startY", async () => {
+            vi.useFakeTimers();
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            // Simulate several full horizontal rotations (accumulated yaw)
+            const twoPi = 2 * Math.PI;
+            (renderer as any).cameraRotationY = 4 * twoPi; // ~25.13 rad
+
+            // atan2 would give a value in [-π, π], e.g. 1.0
+            renderer.tweenCameraTo(0, 1.0, 100);
+
+            // targetY should be normalized so the tween travels the shortest
+            // path, i.e. within ±π of startY
+            const targetY = (renderer as any).tweenState.targetY;
+            const startY = (renderer as any).tweenState.startY;
+            expect(Math.abs(targetY - startY)).toBeLessThanOrEqual(
+                Math.PI + 1e-10,
+            );
+
+            // After tween completes, camera should end at the correct angle
+            for (let i = 0; i < 12; i++) {
+                (renderer as any).tickTween(performance.now() + i * 16);
+            }
+            // The final Y should be equivalent to 1.0 modulo 2π
+            const finalY = (renderer as any).cameraRotationY;
+            expect(((finalY % twoPi) + twoPi) % twoPi).toBeCloseTo(
+                ((1.0 % twoPi) + twoPi) % twoPi,
+                1,
+            );
+            vi.useRealTimers();
+        });
+
         it("snaps to target when reduced-motion is preferred", async () => {
             const mqlSpy = vi.spyOn(window, "matchMedia").mockReturnValue({
                 matches: true,
