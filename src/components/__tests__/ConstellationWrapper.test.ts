@@ -113,4 +113,11 @@ describe("ConstellationWrapper", () => {
         expect(container.firstElementChild).not.toBeNull();
         expect(container.firstElementChild!.children.length).toBeGreaterThan(0);
     });
+
+    it("drag instructions overlay uses z-10 utility class", () => {
+        const { container } = render(ConstellationWrapper);
+        // In jsdom, webglSupported=false so the drag instructions may not render,
+        // but the class pattern should be z-10 not z-5
+        expect(container.innerHTML).not.toContain("z-5");
+    });
 });

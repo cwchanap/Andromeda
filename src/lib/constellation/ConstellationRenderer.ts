@@ -85,6 +85,7 @@ export class ConstellationRenderer {
     private _boundTouchStart: (event: TouchEvent) => void = () => {};
     private _boundTouchMove: (event: TouchEvent) => void = () => {};
     private _boundTouchEnd: () => void = () => {};
+    private _boundMouseLeave: () => void = () => {};
 
     constructor(
         container: HTMLElement,
@@ -147,6 +148,7 @@ export class ConstellationRenderer {
         this._boundTouchStart = this._createTouchStartHandler();
         this._boundTouchMove = this._createTouchMoveHandler();
         this._boundTouchEnd = this._createTouchEndHandler();
+        this._boundMouseLeave = this.onMouseLeave.bind(this);
         this._clickHandler = this.handleCanvasClick.bind(this);
 
         // Handle window resize
@@ -250,6 +252,7 @@ export class ConstellationRenderer {
         this.canvas.addEventListener("mousedown", this._boundMouseDown);
         this.canvas.addEventListener("mousemove", this._boundMouseMove);
         this.canvas.addEventListener("mouseup", this._boundMouseUp);
+        this.canvas.addEventListener("mouseleave", this._boundMouseLeave);
         this.canvas.addEventListener("wheel", this._boundMouseWheel, {
             passive: false,
         });
@@ -368,6 +371,15 @@ export class ConstellationRenderer {
         this.dragVelocityX = 0;
         this.dragVelocityY = 0;
 
+        // Clear hover state while dragging so the HUD doesn't stay stuck
+        this.setHovered(null);
+        if (this.callbacks.onConstellationHover) {
+            this.callbacks.onConstellationHover(null, null);
+        }
+        if (this.callbacks.onStarHover) {
+            this.callbacks.onStarHover(null, null);
+        }
+
         // Add cursor style for better UX
         this.canvas.style.cursor = "grabbing";
     }
@@ -481,6 +493,20 @@ export class ConstellationRenderer {
             Math.abs(this.dragVelocityY) > 0.5
         ) {
             this.startMomentumAnimation();
+        }
+    }
+
+    /**
+     * Handle mouse leave event — clear hover state so the HUD
+     * doesn't stay stuck when the pointer exits the canvas.
+     */
+    private onMouseLeave(): void {
+        this.setHovered(null);
+        if (this.callbacks.onConstellationHover) {
+            this.callbacks.onConstellationHover(null, null);
+        }
+        if (this.callbacks.onStarHover) {
+            this.callbacks.onStarHover(null, null);
         }
     }
 
@@ -1430,6 +1456,7 @@ export class ConstellationRenderer {
         this.canvas.removeEventListener("mousedown", this._boundMouseDown);
         this.canvas.removeEventListener("mousemove", this._boundMouseMove);
         this.canvas.removeEventListener("mouseup", this._boundMouseUp);
+        this.canvas.removeEventListener("mouseleave", this._boundMouseLeave);
         this.canvas.removeEventListener("wheel", this._boundMouseWheel);
         this.canvas.removeEventListener("contextmenu", this._boundContextMenu);
 

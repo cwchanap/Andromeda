@@ -508,7 +508,7 @@
 
   <!-- Drag Instructions Overlay -->
   {#if !loading && !error && webglSupported && showDragInstructions}
-    <div class="absolute bottom-12 left-12 z-5" style="pointer-events: none;">
+    <div class="absolute bottom-12 left-12 z-10" style="pointer-events: none;">
       <div class="hud-drag-card">
         <span class="hud-drag-prefix">&gt;</span>
         {t('constellation.dragInstructions')}
@@ -582,7 +582,8 @@
                 {#if constellation.mythology}
                   <p class="hud-details-myth">// {constellation.mythology}</p>
                 {/if}
-                <div class="hud-month-strip" aria-label="Best viewing months">
+                <div class="hud-month-strip" aria-label="Best viewing months: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
+                  <span class="sr-only">Best viewing months: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}</span>
                   {#each Array(12) as _, m}
                     <div
                       class="month-cell"
@@ -949,6 +950,18 @@
     background: var(--hud-cyan);
     border-color: var(--hud-cyan);
     box-shadow: 0 0 4px var(--hud-cyan);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .hud-readout {

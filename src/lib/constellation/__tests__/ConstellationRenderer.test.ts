@@ -989,6 +989,61 @@ describe("ConstellationRenderer", () => {
                 }),
             ).not.toThrow();
         });
+
+        it("mouseleave fires onConstellationHover and onStarHover with null", async () => {
+            const onConstellationHover = vi.fn();
+            const onStarHover = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onConstellationHover,
+                onStarHover,
+            });
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+
+            const canvas = (renderer as any).canvas as HTMLCanvasElement;
+            canvas.dispatchEvent(
+                new MouseEvent("mouseleave", { bubbles: true }),
+            );
+
+            expect(onConstellationHover).toHaveBeenCalledWith(null, null);
+            expect(onStarHover).toHaveBeenCalledWith(null, null);
+            expect(renderer.getHoveredId()).toBeNull();
+        });
+
+        it("mousedown clears hover state", async () => {
+            const onConstellationHover = vi.fn();
+            const onStarHover = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onConstellationHover,
+                onStarHover,
+            });
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+
+            // Simulate a hover first
+            renderer.setHovered("orion");
+            expect(renderer.getHoveredId()).toBe("orion");
+
+            // Mousedown should clear it
+            const canvas = (renderer as any).canvas as HTMLCanvasElement;
+            canvas.dispatchEvent(
+                new MouseEvent("mousedown", {
+                    clientX: 100,
+                    clientY: 100,
+                    bubbles: true,
+                }),
+            );
+
+            expect(renderer.getHoveredId()).toBeNull();
+            expect(onConstellationHover).toHaveBeenCalledWith(null, null);
+            expect(onStarHover).toHaveBeenCalledWith(null, null);
+        });
     });
 
     describe("shooting stars", () => {
@@ -1252,6 +1307,7 @@ describe("ConstellationRenderer", () => {
             expect(typeof anyRenderer._boundTouchStart).toBe("function");
             expect(typeof anyRenderer._boundTouchMove).toBe("function");
             expect(typeof anyRenderer._boundTouchEnd).toBe("function");
+            expect(typeof anyRenderer._boundMouseLeave).toBe("function");
 
             // dispose should not throw
             expect(() => renderer.dispose()).not.toThrow();
