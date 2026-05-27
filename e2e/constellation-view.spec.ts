@@ -220,7 +220,9 @@ test.describe("Constellation Data and Selection", () => {
 });
 
 test.describe("Constellation View UI Controls", () => {
-    test("should toggle location information display", async ({ page }) => {
+    test("should toggle control panel including location readout", async ({
+        page,
+    }) => {
         await page.goto("/constellation");
 
         // Wait for controls to load
@@ -230,30 +232,31 @@ test.describe("Constellation View UI Controls", () => {
             timeout: 30000,
         });
 
-        // Toggle button should exist and be interactive
+        // Panel toggle button should exist and be interactive
         const toggleButton = page.getByRole("button", {
-            name: /Location Info/i,
+            name: /PANEL OFF/i,
         });
         await expect(toggleButton).toBeVisible({ timeout: 5000 });
 
-        // Location info should be visible by default
-        const locationInfo = page.getByText(/Current Location/i);
-        await expect(locationInfo).toBeVisible({ timeout: 10000 });
+        // Location readout (GEO-LOCK) should be visible inside the panel
+        const geoLabel = page.getByText(/GEO-LOCK/);
+        await expect(geoLabel).toBeVisible({ timeout: 10000 });
 
-        // Hide location info
+        // Hide the panel
         await toggleButton.click();
-        await expect(locationInfo).toHaveCount(0);
-        await expect(toggleButton).toContainText(/Show/i);
+        await expect(geoLabel).toHaveCount(0);
 
-        // Show location info again and verify content returns
-        await toggleButton.click();
-        await expect(page.getByText(/Current Location/i)).toBeVisible({
+        // Show the panel again and verify content returns
+        const showButton = page.getByRole("button", {
+            name: /PANEL ON/i,
+        });
+        await showButton.click();
+        await expect(page.getByText(/GEO-LOCK/)).toBeVisible({
             timeout: 5000,
         });
-        await expect(page.getByText(/Current Time/i)).toBeVisible({
+        await expect(page.getByText(/UTC/)).toBeVisible({
             timeout: 5000,
         });
-        await expect(toggleButton).toContainText(/Hide/i);
     });
 
     test("should show Back button", async ({ page }) => {
