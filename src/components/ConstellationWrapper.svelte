@@ -209,18 +209,20 @@
       viewState.error = error;
       loading = false;
       
-      // Retry after 3 seconds
-      retryTimeout = setTimeout(() => {
-        if (!renderer) {
-          attemptCount = 0;
-          error = null;
-          viewState.error = null;
-          loading = true;
-          viewState.loading = true;
-          // Re-run onMount logic
-          onMount(() => {});
-        }
-      }, 3000);
+      // Retry after 3 seconds (skip if WebGL is fundamentally unsupported)
+      if (webglSupported) {
+        retryTimeout = setTimeout(() => {
+          if (!renderer) {
+            attemptCount = 0;
+            error = null;
+            viewState.error = null;
+            loading = true;
+            viewState.loading = true;
+            // Re-run onMount logic
+            onMount(() => {});
+          }
+        }, 3000);
+      }
     }
   });
 
@@ -430,6 +432,7 @@
       <button
         type="button"
         class="hud-btn"
+        aria-label="Back to Menu"
         on:click={handleBackToMenu}
       >
         <span class="hud-btn-bracket">&lt;</span> {t('constellation.return')}
@@ -561,7 +564,7 @@
                     <span class="row-abbr">[{constellation.abbreviation}]</span>
                     <span class="row-name">{constellation.name}</span>
                     <span class="row-leader"></span>
-                    <span class="row-count">{constellation.stars.length}★</span>
+                    <span class="row-count">{constellation.stars.length}★ <span class="sr-only">stars</span></span>
                   </button>
                 {/each}
               {/each}
