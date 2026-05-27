@@ -1009,6 +1009,51 @@ describe("ConstellationRenderer", () => {
             expect(onConstellationHover).toHaveBeenCalledWith(null, null);
         });
 
+        it("suppresses hover callback within 16ms throttle window", async () => {
+            const onConstellationHover = vi.fn();
+            const renderer = new ConstellationRenderer(makeContainer(), {
+                onConstellationHover,
+            });
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            globalThis.__threeRaycasterIntersects = [];
+            const anyRenderer = renderer as any;
+
+            // First call — set lastHoverEmit to a recent timestamp
+            anyRenderer.lastHoverEmit = 0;
+            anyRenderer.onMouseMove({
+                clientX: 100,
+                clientY: 100,
+                preventDefault: () => {},
+            });
+            expect(onConstellationHover).toHaveBeenCalledTimes(1);
+
+            // Second call within 16ms — should be suppressed
+            const recentTime = performance.now() - 5; // 5ms ago
+            anyRenderer.lastHoverEmit = recentTime;
+            anyRenderer.onMouseMove({
+                clientX: 200,
+                clientY: 200,
+                preventDefault: () => {},
+            });
+            expect(onConstellationHover).toHaveBeenCalledTimes(1); // still 1
+
+            // Third call after 16ms — should fire
+            anyRenderer.lastHoverEmit = performance.now() - 20; // 20ms ago
+            anyRenderer.onMouseMove({
+                clientX: 300,
+                clientY: 300,
+                preventDefault: () => {},
+            });
+            expect(onConstellationHover).toHaveBeenCalledTimes(2);
+
+            globalThis.__threeRaycasterIntersects = undefined;
+            renderer.dispose();
+        });
+
         it("does not crash when handleCanvasClick is called with no callbacks configured", async () => {
             const renderer = new ConstellationRenderer(makeContainer());
             await renderer.initialize(
@@ -1119,6 +1164,37 @@ describe("ConstellationRenderer", () => {
             (renderer as any).spawnShootingStar(2000);
             expect((renderer as any).activeShootingStar).not.toBeNull();
             expect((renderer as any).shootingStarCount).toBe(1);
+            renderer.dispose();
+        });
+
+        it("removes and disposes shooting star when t >= 1", async () => {
+            const renderer = new ConstellationRenderer(makeContainer());
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const anyRenderer = renderer as any;
+
+            // Force-spawn a shooting star
+            anyRenderer.spawnShootingStar(1000);
+            expect(anyRenderer.activeShootingStar).not.toBeNull();
+            expect(anyRenderer.shootingStarCount).toBe(1);
+
+            // Spy on the geometry/material dispose methods
+            const line = anyRenderer.activeShootingStar as THREE.LineSegments;
+            const geomSpy = vi.spyOn(line.geometry, "dispose");
+            const matSpy = vi.spyOn(line.material as THREE.Material, "dispose");
+
+            // Advance well past the 700ms lifetime
+            anyRenderer.tickShootingStar(1000 + 800);
+
+            expect(anyRenderer.activeShootingStar).toBeNull();
+            expect(anyRenderer.shootingStarCount).toBe(0);
+            expect(geomSpy).toHaveBeenCalled();
+            expect(matSpy).toHaveBeenCalled();
+
+            renderer.dispose();
         });
     });
 
@@ -1349,6 +1425,89 @@ describe("ConstellationRenderer", () => {
             expect(() => renderer.dispose()).not.toThrow();
 
             // Canvas should be removed from container
+            const canvases = container.querySelectorAll("canvas");
+            expect(canvases.length).toBe(0);
+        });
+
+        it("disposes starfield-background geometry and material on dispose", async () => {
+            renderer = new ConstellationRenderer(container);
+            const anyRenderer = renderer as any;
+            const scene = anyRenderer.scene as THREE.Scene;
+
+            const bg = scene.getObjectByName(
+                "starfield-background",
+            ) as THREE.Mesh | null;
+            expect(bg).toBeTruthy();
+
+            const geometrySpy = vi.spyOn(bg!.geometry, "dispose");
+            const materialSpy = vi.spyOn(
+                bg!.material as THREE.Material,
+                "dispose",
+            );
+
+            renderer.dispose();
+
+            expect(geometrySpy).toHaveBeenCalled();
+            expect(materialSpy).toHaveBeenCalled();
+            expect(scene.getObjectByName("starfield-background")).toBeNull();
+        });
+
+        it("cancels momentum rAF on dispose", async () => {
+            renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const anyRenderer = renderer as any;
+            const canvas = container.querySelector(
+                "canvas",
+            ) as HTMLCanvasElement;
+
+            // Start a drag with velocity to trigger momentum animation
+            canvas.dispatchEvent(
+                new MouseEvent("mousedown", {
+                    clientX: 0,
+                    clientY: 0,
+                    bubbles: true,
+                }),
+            );
+            canvas.dispatchEvent(
+                new MouseEvent("mousemove", {
+                    clientX: 100,
+                    clientY: 0,
+                    bubbles: true,
+                }),
+            );
+            canvas.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+
+            // If momentum rAF was scheduled, dispose should cancel it
+            renderer.dispose();
+            expect(anyRenderer._momentumRafId).toBeNull();
+        });
+
+        it("continues cleanup when clearScene throws", async () => {
+            renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const anyRenderer = renderer as any;
+
+            // Make clearScene throw by nuking the activeShootingStar
+            Object.defineProperty(anyRenderer, "clearScene", {
+                value: () => {
+                    throw new Error("simulated clearScene failure");
+                },
+                configurable: true,
+            });
+
+            // dispose should not throw — each phase is wrapped in try/catch
+            expect(() => renderer.dispose()).not.toThrow();
+
+            // The WebGL renderer should still be disposed
+            // (we can verify the canvas was removed from the container)
             const canvases = container.querySelectorAll("canvas");
             expect(canvases.length).toBe(0);
         });
