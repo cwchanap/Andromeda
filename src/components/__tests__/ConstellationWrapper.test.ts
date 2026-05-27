@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/svelte";
+import { render, waitFor } from "@testing-library/svelte";
 import ConstellationWrapper from "@/components/ConstellationWrapper.svelte";
 
 // Mock ConstellationRenderer
@@ -114,10 +114,24 @@ describe("ConstellationWrapper", () => {
         expect(container.firstElementChild!.children.length).toBeGreaterThan(0);
     });
 
-    it("drag instructions overlay uses z-10 utility class", () => {
-        const { container } = render(ConstellationWrapper);
-        // In jsdom, webglSupported=false so the drag instructions may not render,
-        // but the class pattern should be z-10 not z-5
-        expect(container.innerHTML).not.toContain("z-5");
+    it("drag instructions overlay uses z-10 utility class", async () => {
+        // Mock canvas.getContext so checkWebGLSupport() returns true,
+        // allowing the drag instructions overlay to render.
+        const mockShader = {};
+        const origGetContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+            createShader: () => mockShader,
+        }) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+
+        try {
+            const { container } = render(ConstellationWrapper);
+
+            // Wait for the async init flow to complete (location → renderer → loading=false)
+            await waitFor(() => {
+                expect(container.innerHTML).toContain("z-10");
+            });
+        } finally {
+            HTMLCanvasElement.prototype.getContext = origGetContext;
+        }
     });
 });

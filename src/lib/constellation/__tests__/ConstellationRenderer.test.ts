@@ -1587,8 +1587,8 @@ describe("ConstellationRenderer", () => {
 
     describe("worldToScreen with getWorldDirection", () => {
         it("uses camera.getWorldDirection for behind-camera detection", () => {
-            const container = makeContainer();
-            const renderer = new ConstellationRenderer(container);
+            container = makeContainer();
+            renderer = new ConstellationRenderer(container);
             const camera = (renderer as any).camera;
 
             // Verify getWorldDirection is called during worldToScreen
@@ -1600,8 +1600,8 @@ describe("ConstellationRenderer", () => {
         });
 
         it("returns visible=false for a point behind the camera", () => {
-            const container = makeContainer();
-            const renderer = new ConstellationRenderer(container);
+            container = makeContainer();
+            renderer = new ConstellationRenderer(container);
 
             // Default mock getWorldDirection returns (0,0,1), so z < 0 is behind
             const result = renderer.worldToScreen({
@@ -1613,8 +1613,8 @@ describe("ConstellationRenderer", () => {
         });
 
         it("returns visible=true and screen coords for points in front", () => {
-            const container = makeContainer();
-            const renderer = new ConstellationRenderer(container);
+            container = makeContainer();
+            renderer = new ConstellationRenderer(container);
 
             // Default mock getWorldDirection returns (0,0,1), so z > 0 is in front
             const result = renderer.worldToScreen({ x: 0, y: 0, z: 50 } as any);
