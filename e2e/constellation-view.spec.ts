@@ -57,7 +57,7 @@ test.describe("Constellation View Navigation", () => {
         ).toBeVisible({ timeout: 30000 });
 
         // Click back to menu
-        await page.getByRole("button", { name: /Back to Menu/i }).click();
+        await page.getByRole("button", { name: /RETURN/i }).click();
 
         // Wait for navigation to complete
         await page.waitForURL(/\/($|\?)/, { timeout: 10000 });
@@ -270,7 +270,9 @@ test.describe("Constellation View UI Controls", () => {
         });
 
         // Back button should be visible
-        await expect(page.getByRole("button", { name: /Back/i })).toBeVisible();
+        await expect(
+            page.getByRole("button", { name: /RETURN/i }),
+        ).toBeVisible();
     });
 
     test("should display proper constellation count and details", async ({
@@ -350,7 +352,7 @@ test.describe("Constellation View Accessibility", () => {
 
         // Check button roles
         await expect(
-            page.getByRole("button", { name: /Back/i }),
+            page.getByRole("button", { name: /RETURN/i }),
         ).toHaveAttribute("type", "button");
     });
 });
@@ -368,7 +370,9 @@ test.describe("Constellation View Responsive Design", () => {
         });
 
         // Back button should be visible
-        await expect(page.getByRole("button", { name: /Back/i })).toBeVisible();
+        await expect(
+            page.getByRole("button", { name: /RETURN/i }),
+        ).toBeVisible();
     });
 
     test("should work on tablet viewport", async ({ page }) => {
@@ -383,7 +387,9 @@ test.describe("Constellation View Responsive Design", () => {
         });
 
         // All elements should be properly sized
-        await expect(page.getByRole("button", { name: /Back/i })).toBeVisible();
+        await expect(
+            page.getByRole("button", { name: /RETURN/i }),
+        ).toBeVisible();
     });
 
     test("should handle different screen orientations", async ({ page }) => {
@@ -397,7 +403,9 @@ test.describe("Constellation View Responsive Design", () => {
         ).toBeVisible({
             timeout: 30000,
         });
-        await expect(page.getByRole("button", { name: /Back/i })).toBeVisible();
+        await expect(
+            page.getByRole("button", { name: /RETURN/i }),
+        ).toBeVisible();
     });
 });
 
@@ -546,7 +554,7 @@ test.describe("Constellation View Integration", () => {
         });
 
         // Go back to main menu
-        await page.getByRole("button", { name: /Back/i }).click();
+        await page.getByRole("button", { name: /RETURN/i }).click();
         await expect(
             page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
         ).toBeVisible({ timeout: 10000 });
