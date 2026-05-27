@@ -432,7 +432,6 @@
       <button
         type="button"
         class="hud-btn"
-        aria-label="Back to Menu"
         on:click={handleBackToMenu}
       >
         <span class="hud-btn-bracket">&lt;</span> {t('constellation.return')}
@@ -449,7 +448,7 @@
         aria-pressed={showControls}
         on:click={handleToggleControls}
       >
-        {showControls ? t('constellation.panelOn') : t('constellation.panelOff')}
+        {showControls ? t('constellation.panelOff') : t('constellation.panelOn')}
       </button>
     </HudFrame>
   </div>

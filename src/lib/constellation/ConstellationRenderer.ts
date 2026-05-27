@@ -1115,14 +1115,22 @@ export class ConstellationRenderer {
             this.tweenState.active = false;
             return;
         }
+        // Normalize targetRotY to the nearest equivalent angle to startY
+        // so the tween always follows the shortest arc instead of
+        // spinning through accumulated full revolutions from dragging.
+        const twoPi = 2 * Math.PI;
+        const startY = this.cameraRotationY;
+        const normalizedTargetY =
+            targetRotY - twoPi * Math.round((targetRotY - startY) / twoPi);
+
         this.tweenState = {
             startX: this.cameraRotationX,
-            startY: this.cameraRotationY,
+            startY: startY,
             targetX: Math.max(
                 -Math.PI / 2.2,
                 Math.min(Math.PI / 2.2, targetRotX),
             ),
-            targetY: targetRotY,
+            targetY: normalizedTargetY,
             startedAt: performance.now(),
             duration: durationMs,
             active: true,
