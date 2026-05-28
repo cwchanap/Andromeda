@@ -442,7 +442,7 @@
   </div>
 
   <!-- Controls toggle -->
-  <div class="absolute top-4 right-4 z-20">
+  <div class="absolute top-16 right-4 z-20">
     <HudFrame color="var(--hud-cyan)" bracketLength={12}>
       <button
         type="button"
@@ -522,7 +522,7 @@
 
   <!-- Controls panel -->
   {#if showControls && !loading && !error}
-    <div class="absolute top-20 right-4 z-20 w-80 hud-panel-anim">
+    <div class="absolute top-28 right-4 z-20 w-80 hud-panel-anim">
       <HudFrame color="var(--hud-cyan)" bracketLength={18} glow={true}>
         <div class="hud-panel">
           <div class="hud-panel-header">
