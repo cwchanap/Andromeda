@@ -59,6 +59,7 @@ vi.mock("@/lib/planetary-system", () => {
             resetView: vi.fn(),
         })),
         hasOrbitAnchors: vi.fn(() => true),
+        isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
         setBarycenterOverlayVisible: vi.fn(),
         getSystemData: vi.fn(() => mockSystemData),
     };
@@ -284,6 +285,7 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
                         resetView: vi.fn(),
                     })),
                     hasOrbitAnchors: vi.fn(() => true),
+                    isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
                     setBarycenterOverlayVisible: vi.fn(),
                     getSystemData: vi.fn(() => mockSystemData),
                 };
@@ -318,6 +320,7 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
                         resetView: vi.fn(),
                     })),
                     hasOrbitAnchors: vi.fn(() => true),
+                    isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
                     setBarycenterOverlayVisible: vi.fn(),
                     getSystemData: vi.fn(() => mockSystemData),
                 };
@@ -358,6 +361,7 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
                         resetView: vi.fn(),
                     })),
                     hasOrbitAnchors: vi.fn(() => true),
+                    isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
                     setBarycenterOverlayVisible: vi.fn(),
                     getSystemData: vi.fn(() => mockSystemData),
                 };
