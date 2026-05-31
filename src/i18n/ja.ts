@@ -32,6 +32,8 @@ export const ja = {
     "controls.paused": "一時停止",
     "controls.normal": "通常",
     "controls.speed100x": "100倍",
+    "controls.showBarycenters": "バリセンターを表示",
+    "controls.hideBarycenters": "バリセンターを非表示",
 
     // Modal content
     "modal.celestialData": "天体データ",

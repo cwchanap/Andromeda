@@ -415,15 +415,15 @@ export class CelestialBodyManager {
             return;
         }
 
-        const center = this.orbitResolver.getCenterPosition(
+        const resolvedCenter = this.orbitResolver.getCenterPosition(
             data.orbit.centerId,
         );
-        if (!center) {
+        if (!resolvedCenter) {
             console.warn(
-                `Orbit center '${data.orbit.centerId}' not found for '${data.id}' during orbit line creation. Orbit line will be skipped.`,
+                `Orbit center '${data.orbit.centerId}' not found for '${data.id}' during orbit line creation. Orbit line will be positioned at origin until the center resolves.`,
             );
-            return;
         }
+        const center = resolvedCenter ?? new THREE.Vector3(0, 0, 0);
 
         const orbitPoints = this.orbitResolver.getOrbitLinePositions(data.id);
         if (orbitPoints.length === 0) {

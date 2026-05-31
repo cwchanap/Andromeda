@@ -32,6 +32,8 @@ export const zh = {
     "controls.paused": "暂停",
     "controls.normal": "正常",
     "controls.speed100x": "100倍",
+    "controls.showBarycenters": "显示质心",
+    "controls.hideBarycenters": "隐藏质心",
 
     // Modal content
     "modal.celestialData": "天体数据",
