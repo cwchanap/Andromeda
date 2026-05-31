@@ -139,6 +139,7 @@ export class UniverseManager {
             systemScale: planetarySystem.systemScale,
             systemCenter: planetarySystem.systemCenter,
             systemType: planetarySystem.systemType,
+            orbitAnchors: planetarySystem.orbitAnchors,
             metadata: planetarySystem.metadata || {
                 discoveredBy: "Ancient civilizations",
                 discoveryDate: "Prehistoric",
