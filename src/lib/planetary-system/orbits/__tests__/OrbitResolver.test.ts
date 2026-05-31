@@ -82,10 +82,11 @@ describe("OrbitResolver", () => {
             },
         });
 
+        group.position.copy(makeVector(11, 0, 13));
         resolver.registerBody(body, group);
 
-        expect(group.position.x).toBe(3);
-        expect(group.position.z).toBe(7);
+        expect(group.position.x).toBe(11);
+        expect(group.position.z).toBe(13);
         expect(warnSpy).not.toHaveBeenCalled();
     });
 
@@ -204,9 +205,10 @@ describe("OrbitResolver", () => {
         );
     });
 
-    it("does not overwrite registered non-orbital body positions on update", () => {
+    it("does not overwrite registered non-orbital body positions", () => {
         const resolver = new OrbitResolver();
         const legacyGroup = makeObject();
+        legacyGroup.position.copy(makeVector(9, 0, 3));
         resolver.registerBody(
             makeBody({
                 id: "legacy",
@@ -214,7 +216,9 @@ describe("OrbitResolver", () => {
             }),
             legacyGroup,
         );
-        legacyGroup.position.copy(makeVector(9, 0, 3));
+
+        expect(legacyGroup.position.x).toBe(9);
+        expect(legacyGroup.position.z).toBe(3);
 
         resolver.update(10, 1);
 
