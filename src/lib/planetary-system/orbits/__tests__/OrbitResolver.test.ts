@@ -204,6 +204,56 @@ describe("OrbitResolver", () => {
         );
     });
 
+    it("does not overwrite registered non-orbital body positions on update", () => {
+        const resolver = new OrbitResolver();
+        const legacyGroup = makeObject();
+        resolver.registerBody(
+            makeBody({
+                id: "legacy",
+                position: makeVector(1, 0, 1),
+            }),
+            legacyGroup,
+        );
+        legacyGroup.position.copy(makeVector(9, 0, 3));
+
+        resolver.update(10, 1);
+
+        expect(legacyGroup.position.x).toBe(9);
+        expect(legacyGroup.position.z).toBe(3);
+    });
+
+    it("resolves orbital bodies around a non-orbital body's current position", () => {
+        const resolver = new OrbitResolver();
+        const legacyGroup = makeObject();
+        const planetGroup = makeObject();
+        resolver.registerBody(
+            makeBody({
+                id: "legacy",
+                position: makeVector(0, 0, 0),
+            }),
+            legacyGroup,
+        );
+        resolver.registerBody(
+            makeBody({
+                id: "planet",
+                orbit: {
+                    centerId: "legacy",
+                    semiMajorAxis: 2,
+                    visualPeriodSeconds: 20,
+                },
+            }),
+            planetGroup,
+        );
+        legacyGroup.position.copy(makeVector(10, 0, 3));
+
+        resolver.update(5, 1);
+
+        expect(legacyGroup.position.x).toBe(10);
+        expect(legacyGroup.position.z).toBe(3);
+        expect(planetGroup.position.x).toBeCloseTo(10, 5);
+        expect(planetGroup.position.z).toBeCloseTo(5, 5);
+    });
+
     it("warns and keeps fallback position for missing centers", () => {
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
         const resolver = new OrbitResolver();
@@ -247,6 +297,32 @@ describe("OrbitResolver", () => {
         resolver.update(10, 1);
 
         expect(warnSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("warns once and keeps fallback position for orbit cycles", () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const resolver = new OrbitResolver();
+        const group = makeObject();
+        resolver.registerBody(
+            makeBody({
+                id: "loop",
+                position: makeVector(3, 0, 7),
+                orbit: {
+                    centerId: "loop",
+                    semiMajorAxis: 4,
+                    visualPeriodSeconds: 40,
+                },
+            }),
+            group,
+        );
+
+        resolver.update(10, 1);
+        resolver.update(10, 1);
+
+        expect(group.position.x).toBe(3);
+        expect(group.position.z).toBe(7);
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("cycle"));
     });
 
     it("returns sampled orbit-line points for registered orbital bodies", () => {
