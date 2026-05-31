@@ -1241,4 +1241,128 @@ describe("CelestialBodyManager", () => {
             5,
         );
     });
+
+    it("replaces stale barycenter markers when registering anchors again", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        manager.registerOrbitAnchors([
+            {
+                id: "barycenter",
+                name: "Barycenter",
+                type: "barycenter",
+                position: new THREE.Vector3(0, 0, 0),
+            },
+        ]);
+        const firstMarker = scene.children.find(
+            (child) => child.name === "barycenter_anchor",
+        );
+
+        manager.registerOrbitAnchors([
+            {
+                id: "barycenter",
+                name: "Updated Barycenter",
+                type: "barycenter",
+                position: new THREE.Vector3(5, 0, 0),
+            },
+        ]);
+
+        const markers = scene.children.filter(
+            (child) => child.name === "barycenter_anchor",
+        );
+        expect(markers).toHaveLength(1);
+        expect(markers[0]).not.toBe(firstMarker);
+        expect(markers[0].position.x).toBe(5);
+    });
+
+    it("dispose removes anchor markers and disposes marker mesh resources", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        manager.registerOrbitAnchors([
+            {
+                id: "barycenter",
+                name: "Barycenter",
+                type: "barycenter",
+                position: new THREE.Vector3(0, 0, 0),
+            },
+        ]);
+
+        const marker = scene.children.find(
+            (child) => child.name === "barycenter_anchor",
+        ) as any;
+        const markerMesh = marker.getObjectByName("barycenter_anchor_marker");
+
+        manager.dispose();
+
+        expect(scene.children).not.toContain(marker);
+        expect(markerMesh.geometry.dispose).toHaveBeenCalled();
+        expect(markerMesh.material.dispose).toHaveBeenCalled();
+    });
+
+    it("updateOrbitLineOpacity uses orbital element radius and configured base opacity", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        manager.registerOrbitAnchors([
+            {
+                id: "barycenter",
+                name: "Barycenter",
+                type: "barycenter",
+                position: new THREE.Vector3(0, 0, 0),
+            },
+        ]);
+        await manager.createCelestialBody(
+            makeBodyData({
+                id: "orbit-only",
+                orbit: {
+                    centerId: "barycenter",
+                    semiMajorAxis: 10,
+                    visualPeriodSeconds: 100,
+                    line: {
+                        opacity: 0.6,
+                    },
+                },
+                orbitRadius: undefined,
+                orbitSpeed: undefined,
+            }),
+        );
+
+        manager.updateOrbitLineOpacity(new THREE.Vector3(20, 0, 0));
+
+        const orbitLine = scene.children.find(
+            (child) => child.name === "orbit-only_orbit",
+        ) as any;
+        expect(orbitLine.material.opacity).toBe(0.6);
+    });
+
+    it("does not leave an orbit line when orbital element center is missing", async () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        await manager.createCelestialBody(
+            makeBodyData({
+                id: "unresolved-line-body",
+                orbit: {
+                    centerId: "missing-center",
+                    semiMajorAxis: 10,
+                    visualPeriodSeconds: 100,
+                },
+                orbitRadius: undefined,
+                orbitSpeed: undefined,
+            }),
+        );
+
+        expect(
+            scene.children.some(
+                (child) => child.name === "unresolved-line-body_orbit",
+            ),
+        ).toBe(false);
+        warnSpy.mockRestore();
+    });
 });

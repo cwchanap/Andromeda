@@ -18,6 +18,7 @@ export class CelestialBodyManager {
     private orbitAngles = new Map<string, number>(); // Track accumulated orbital angles
     private visualOrbitRadii = new Map<string, number>();
     private orbitResolver = new OrbitResolver();
+    private anchorMarkers = new Map<string, THREE.Object3D>();
     private performanceManager: PerformanceManager;
     private assetLoader: AssetLoader;
 
@@ -39,6 +40,7 @@ export class CelestialBodyManager {
     }
 
     registerOrbitAnchors(anchors: OrbitAnchorData[] = []): void {
+        this.clearAnchorMarkers();
         this.orbitResolver.registerAnchors(anchors);
 
         anchors.forEach((anchor) => {
@@ -58,6 +60,7 @@ export class CelestialBodyManager {
             marker.add(markerMesh);
 
             this.scene.add(marker);
+            this.anchorMarkers.set(anchor.id, marker);
             this.orbitResolver.registerAnchorMarker(anchor.id, marker);
         });
     }
@@ -68,6 +71,31 @@ export class CelestialBodyManager {
 
     setBarycenterOverlayVisible(visible: boolean): void {
         this.orbitResolver.setAnchorOverlayVisible(visible);
+    }
+
+    private clearAnchorMarkers(): void {
+        this.anchorMarkers.forEach((marker) => {
+            this.scene.remove(marker);
+            this.disposeObjectResources(marker);
+        });
+        this.anchorMarkers.clear();
+    }
+
+    private disposeObjectResources(object: THREE.Object3D): void {
+        object.traverse((child) => {
+            const disposable = child as THREE.Object3D & {
+                geometry?: { dispose: () => void };
+                material?: THREE.Material | THREE.Material[];
+            };
+
+            disposable.geometry?.dispose();
+
+            if (Array.isArray(disposable.material)) {
+                disposable.material.forEach((material) => material.dispose());
+            } else {
+                disposable.material?.dispose();
+            }
+        });
     }
 
     /**
@@ -387,6 +415,16 @@ export class CelestialBodyManager {
             return;
         }
 
+        const center = this.orbitResolver.getCenterPosition(
+            data.orbit.centerId,
+        );
+        if (!center) {
+            console.warn(
+                `Orbit center '${data.orbit.centerId}' not found for '${data.id}' during orbit line creation. Orbit line will be skipped.`,
+            );
+            return;
+        }
+
         const orbitPoints = this.orbitResolver.getOrbitLinePositions(data.id);
         if (orbitPoints.length === 0) {
             return;
@@ -404,16 +442,6 @@ export class CelestialBodyManager {
 
         const orbitLine = new Line2(orbitGeometry, orbitMaterial);
         orbitLine.name = `${data.id}_orbit`;
-
-        const center = this.orbitResolver.getCenterPosition(
-            data.orbit.centerId,
-        );
-        if (!center) {
-            console.warn(
-                `Orbit center '${data.orbit.centerId}' not found for '${data.id}' during orbit line creation. Orbit line will be skipped.`,
-            );
-            return;
-        }
 
         orbitLine.position.copy(center);
         this.orbitLines.set(data.id, orbitLine);
@@ -523,23 +551,28 @@ export class CelestialBodyManager {
     updateOrbitLineOpacity(cameraPosition: THREE.Vector3): void {
         this.orbitLines.forEach((line, id) => {
             const data = this.bodyData.get(id);
-            if (!data || !data.orbitRadius) return;
+            if (!data) return;
 
             // Use the same resolved radius as orbit-line geometry and body
             // positioning so opacity thresholds stay consistent when a moon's
             // visual radius is expanded beyond its authored value.
-            const orbitRadius =
-                this.visualOrbitRadii.get(id) ?? data.orbitRadius;
+            const orbitRadius = data.orbit
+                ? data.orbit.semiMajorAxis
+                : data.orbitRadius
+                  ? (this.visualOrbitRadii.get(id) ?? data.orbitRadius)
+                  : 0;
+            if (orbitRadius <= 0) return;
 
             // Calculate distance from camera to orbit center
             const distance = cameraPosition.length();
 
             // Adjust opacity based on distance - closer = more visible
-            let opacity = 0.3;
+            const baseOpacity = data.orbit?.line?.opacity ?? 0.3;
+            let opacity = baseOpacity;
             if (distance > orbitRadius * 3) {
                 opacity = Math.max(
                     0.1,
-                    0.3 - (distance - orbitRadius * 3) * 0.01,
+                    baseOpacity - (distance - orbitRadius * 3) * 0.01,
                 );
             }
 
@@ -837,9 +870,7 @@ export class CelestialBodyManager {
             }
         });
 
-        this.scene.children
-            .filter((child) => child.name.endsWith("_anchor"))
-            .forEach((child) => this.scene.remove(child));
+        this.clearAnchorMarkers();
 
         // Clear collections
         this.bodies.clear();
