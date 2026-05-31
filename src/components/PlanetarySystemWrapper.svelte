@@ -289,7 +289,9 @@
           class="barycenter-toggle"
           aria-pressed={showBarycenterOverlay}
         >
-          {showBarycenterOverlay ? 'Hide barycenters' : 'Show barycenters'}
+          {showBarycenterOverlay
+            ? (t ? t('controls.hideBarycenters') : 'Hide barycenters')
+            : (t ? t('controls.showBarycenters') : 'Show barycenters')}
         </button>
       {/if}
     </div>

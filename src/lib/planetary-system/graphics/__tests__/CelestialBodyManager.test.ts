@@ -1339,7 +1339,7 @@ describe("CelestialBodyManager", () => {
         expect(orbitLine.material.opacity).toBe(0.6);
     });
 
-    it("does not leave an orbit line when orbital element center is missing", async () => {
+    it("positions orbit line at origin when orbital element center is missing, update loop fixes it later", async () => {
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
@@ -1358,11 +1358,14 @@ describe("CelestialBodyManager", () => {
             }),
         );
 
-        expect(
-            scene.children.some(
-                (child) => child.name === "unresolved-line-body_orbit",
-            ),
-        ).toBe(false);
+        const orbitLine = scene.children.find(
+            (child) => child.name === "unresolved-line-body_orbit",
+        );
+        expect(orbitLine).toBeTruthy();
+        expect(orbitLine?.position.x).toBe(0);
+        expect(orbitLine?.position.y).toBe(0);
+        expect(orbitLine?.position.z).toBe(0);
+        expect(warnSpy).toHaveBeenCalled();
         warnSpy.mockRestore();
     });
 });

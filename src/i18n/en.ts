@@ -33,6 +33,8 @@ export const en = {
     "controls.paused": "Paused",
     "controls.normal": "Normal",
     "controls.speed100x": "100x",
+    "controls.showBarycenters": "Show barycenters",
+    "controls.hideBarycenters": "Hide barycenters",
 
     // Modal content
     "modal.celestialData": "Celestial Data",
