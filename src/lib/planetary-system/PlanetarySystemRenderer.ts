@@ -164,4 +164,14 @@ export class PlanetarySystemRenderer {
             controls?.focusOnPlanet(bodyId);
         }
     }
+
+    hasOrbitAnchors(): boolean {
+        const controls = this.solarSystemRenderer?.getControls();
+        return controls?.hasOrbitAnchors() ?? false;
+    }
+
+    setBarycenterOverlayVisible(visible: boolean): void {
+        const controls = this.solarSystemRenderer?.getControls();
+        controls?.setBarycenterOverlayVisible(visible);
+    }
 }

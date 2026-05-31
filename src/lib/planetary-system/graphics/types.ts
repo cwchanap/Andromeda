@@ -55,5 +55,7 @@ export interface SolarSystemControls {
         target?: THREE.Vector3,
     ) => void;
     enableControls: (enabled: boolean) => void;
+    hasOrbitAnchors: () => boolean;
+    setBarycenterOverlayVisible: (visible: boolean) => void;
     dispose: () => void;
 }

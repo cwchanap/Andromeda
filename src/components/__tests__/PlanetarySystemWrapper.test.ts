@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, waitFor } from "@testing-library/svelte";
+import { fireEvent, render, waitFor } from "@testing-library/svelte";
 import PlanetarySystemWrapper from "@/components/PlanetarySystemWrapper.svelte";
 import { PlanetarySystemRenderer } from "@/lib/planetary-system";
 import { gameActions } from "@/stores/gameStore";
@@ -12,6 +12,14 @@ const mockSystemData = {
     systemType: "multiple",
     systemScale: 1.2,
     systemCenter: { x: 0, y: 0, z: 0 },
+    orbitAnchors: [
+        {
+            id: "alpha-centauri-ab-barycenter",
+            name: "Alpha Centauri AB Barycenter",
+            type: "barycenter",
+            position: { x: 0, y: 0, z: 0 },
+        },
+    ],
     star: {
         id: "alpha-centauri-a",
         name: "Alpha Centauri A",
@@ -50,6 +58,8 @@ vi.mock("@/lib/planetary-system", () => {
             zoomOut: vi.fn(),
             resetView: vi.fn(),
         })),
+        hasOrbitAnchors: vi.fn(() => true),
+        setBarycenterOverlayVisible: vi.fn(),
         getSystemData: vi.fn(() => mockSystemData),
     };
 
@@ -205,6 +215,43 @@ describe("PlanetarySystemWrapper", () => {
         unmount();
         await waitFor(() => expect(mockInstance?.cleanup).toHaveBeenCalled());
     });
+
+    it("shows a barycenter overlay toggle for systems with orbit anchors", async () => {
+        const { getByRole } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+
+        await waitFor(() =>
+            expect(
+                getByRole("button", { name: "Show barycenters" }),
+            ).toBeTruthy(),
+        );
+    });
+
+    it("toggles barycenter overlay visibility through the renderer", async () => {
+        const { getByRole } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+
+        await waitFor(() =>
+            expect(
+                getByRole("button", { name: "Show barycenters" }),
+            ).toBeTruthy(),
+        );
+
+        const mockInstance = (
+            PlanetarySystemRenderer as ReturnType<typeof vi.fn>
+        ).mock.results[0]?.value;
+
+        await fireEvent.click(
+            getByRole("button", { name: "Show barycenters" }),
+        );
+
+        expect(mockInstance.setBarycenterOverlayVisible).toHaveBeenCalledWith(
+            true,
+        );
+        expect(getByRole("button", { name: "Hide barycenters" })).toBeTruthy();
+    });
 });
 
 describe("PlanetarySystemWrapper – event callbacks", () => {
@@ -236,6 +283,8 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
                         zoomOut: vi.fn(),
                         resetView: vi.fn(),
                     })),
+                    hasOrbitAnchors: vi.fn(() => true),
+                    setBarycenterOverlayVisible: vi.fn(),
                     getSystemData: vi.fn(() => mockSystemData),
                 };
             },
@@ -268,6 +317,8 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
                         zoomOut: vi.fn(),
                         resetView: vi.fn(),
                     })),
+                    hasOrbitAnchors: vi.fn(() => true),
+                    setBarycenterOverlayVisible: vi.fn(),
                     getSystemData: vi.fn(() => mockSystemData),
                 };
             },
@@ -306,6 +357,8 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
                         zoomOut: vi.fn(),
                         resetView: vi.fn(),
                     })),
+                    hasOrbitAnchors: vi.fn(() => true),
+                    setBarycenterOverlayVisible: vi.fn(),
                     getSystemData: vi.fn(() => mockSystemData),
                 };
             },
