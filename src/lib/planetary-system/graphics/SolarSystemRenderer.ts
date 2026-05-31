@@ -171,6 +171,10 @@ export class SolarSystemRenderer {
                 this.celestialBodyManager.createCelestialBody(bodyData);
             });
 
+            // Resolve initial orbital positions so bodies with orbital elements
+            // appear at their t=0 location even when animations are disabled.
+            this.celestialBodyManager.resolveOrbitPositions();
+
             // Setup initial Line2 resolution for thick orbit lines
             const container = this.renderer.domElement.parentElement;
             if (container) {

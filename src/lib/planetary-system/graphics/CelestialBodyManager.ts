@@ -707,6 +707,29 @@ export class CelestialBodyManager {
     }
 
     /**
+     * Resolve orbital-element positions once at t=0 so bodies appear in the
+     * correct location even when animations are disabled on first render.
+     */
+    resolveOrbitPositions(): void {
+        this.orbitResolver.update(0, 0);
+
+        this.bodies.forEach((_body, id) => {
+            const data = this.bodyData.get(id);
+            if (!data) return;
+
+            if (data.orbit) {
+                const orbitLine = this.orbitLines.get(id);
+                const center = this.orbitResolver.getCenterPosition(
+                    data.orbit.centerId,
+                );
+                if (orbitLine && center) {
+                    orbitLine.position.copy(center);
+                }
+            }
+        });
+    }
+
+    /**
      * Update celestial body animations (rotation, orbit)
      */
     updateAnimations(
