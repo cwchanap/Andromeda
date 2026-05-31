@@ -1,6 +1,6 @@
 // Simplified types for planetary system routing architecture
 import type { Vector3 } from "three";
-import type { CelestialBodyData, OrbitalElementsData } from "../../types/game";
+import type { CelestialBodyData, OrbitalElementsData } from "@/types/game";
 
 export interface OrbitAnchorData {
     id: string;

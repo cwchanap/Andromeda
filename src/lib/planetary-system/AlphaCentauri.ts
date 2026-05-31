@@ -62,7 +62,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
             keyFacts: {
                 diameter: "1,713,400 km",
                 distanceFromSun: "0 km",
-                orbitalPeriod: "N/A",
+                orbitalPeriod: `${ALPHA_CENTAURI_AB_PERIOD_YEARS} years`,
                 composition: [
                     "Hydrogen (73%)",
                     "Helium (25%)",

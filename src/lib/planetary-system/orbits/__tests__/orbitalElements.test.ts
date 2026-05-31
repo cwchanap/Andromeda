@@ -5,7 +5,7 @@ import {
     getVisualPeriodSeconds,
     positionFromOrbitalElements,
     sampleOrbitLinePositions,
-} from "../orbitalElements";
+} from "@/lib/planetary-system/orbits/orbitalElements";
 import type { OrbitalElementsData } from "@/types/game";
 
 describe("orbitalElements", () => {

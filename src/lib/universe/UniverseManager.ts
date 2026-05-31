@@ -11,7 +11,7 @@ import type {
     PluginLogger,
     PluginStorage,
 } from "../../types/universe";
-import type { OrbitalElementsData } from "../../types/game";
+import type { OrbitalElementsData } from "@/types/game";
 import type { PlanetarySystemData } from "../planetary-system/types";
 
 /**
@@ -403,13 +403,14 @@ class DefaultSystemValidator implements SystemValidator {
                         field: `systems.${systemId}.${e.field}`,
                     })),
                 );
-                warnings.push(
-                    ...systemValidation.warnings.map((w) => ({
-                        ...w,
-                        field: `systems.${systemId}.${w.field}`,
-                    })),
-                );
             }
+            // Always forward warnings regardless of validity
+            warnings.push(
+                ...systemValidation.warnings.map((w) => ({
+                    ...w,
+                    field: `systems.${systemId}.${w.field}`,
+                })),
+            );
         }
 
         return {

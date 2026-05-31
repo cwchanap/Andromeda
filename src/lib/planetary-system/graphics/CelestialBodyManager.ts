@@ -2,9 +2,9 @@ import * as THREE from "three";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
-import type { CelestialBodyData } from "../../../types/game";
-import type { OrbitAnchorData } from "../types";
-import { OrbitResolver } from "../orbits/OrbitResolver";
+import type { CelestialBodyData } from "@/types/game";
+import type { OrbitAnchorData } from "@/lib/planetary-system/types";
+import { OrbitResolver } from "@/lib/planetary-system/orbits/OrbitResolver";
 import { PerformanceManager } from "./PerformanceManager";
 import { AssetLoader } from "./AssetLoader";
 
@@ -563,8 +563,22 @@ export class CelestialBodyManager {
                   : 0;
             if (orbitRadius <= 0) return;
 
-            // Calculate distance from camera to orbit center
-            const distance = cameraPosition.length();
+            // Calculate distance from camera to orbit center (not world origin)
+            let distance: number;
+            if (data.orbit) {
+                const resolvedCenter = this.orbitResolver.getCenterPosition(
+                    data.orbit.centerId,
+                );
+                const center = resolvedCenter ?? new THREE.Vector3(0, 0, 0);
+                distance = cameraPosition.distanceTo(center);
+            } else {
+                const orbitLine = this.orbitLines.get(id);
+                if (orbitLine) {
+                    distance = cameraPosition.distanceTo(orbitLine.position);
+                } else {
+                    distance = cameraPosition.length();
+                }
+            }
 
             // Adjust opacity based on distance - closer = more visible
             const baseOpacity = data.orbit?.line?.opacity ?? 0.3;
