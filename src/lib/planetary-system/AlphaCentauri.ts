@@ -200,7 +200,7 @@ export const alphaCentauriSystem: PlanetarySystem = {
                 },
                 orbit: {
                     centerId: "proxima-centauri",
-                    semiMajorAxis: 2,
+                    semiMajorAxis: 3,
                     eccentricity: 0.02,
                     periodDays: 11.2,
                     visualPeriodSeconds: 12,
