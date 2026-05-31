@@ -1033,4 +1033,212 @@ describe("CelestialBodyManager", () => {
         randSpy.mockRestore();
         expect(group).toBeTruthy();
     });
+
+    it("orbits a body around an invisible barycenter anchor", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        manager.registerOrbitAnchors([
+            {
+                id: "barycenter",
+                name: "Barycenter",
+                type: "barycenter",
+                position: new THREE.Vector3(10, 0, 0),
+            },
+        ]);
+
+        const body = await manager.createCelestialBody(
+            makeBodyData({
+                id: "orbiting-star",
+                type: "star",
+                position: new THREE.Vector3(14, 0, 0),
+                orbit: {
+                    centerId: "barycenter",
+                    semiMajorAxis: 4,
+                    visualPeriodSeconds: 40,
+                },
+                orbitRadius: undefined,
+                orbitSpeed: undefined,
+            }),
+        );
+
+        manager.updateAnimations(10, 1);
+
+        expect(body.position.x).toBeCloseTo(10, 5);
+        expect(body.position.z).toBeCloseTo(4, 5);
+    });
+
+    it("orbits a body around another moving visible body with orbital elements", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        manager.registerOrbitAnchors([
+            {
+                id: "barycenter",
+                name: "Barycenter",
+                type: "barycenter",
+                position: new THREE.Vector3(0, 0, 0),
+            },
+        ]);
+
+        const star = await manager.createCelestialBody(
+            makeBodyData({
+                id: "proxima",
+                type: "star",
+                orbit: {
+                    centerId: "barycenter",
+                    semiMajorAxis: 10,
+                    visualPeriodSeconds: 100,
+                },
+                orbitRadius: undefined,
+                orbitSpeed: undefined,
+            }),
+        );
+        const planet = await manager.createCelestialBody(
+            makeBodyData({
+                id: "proxima-b",
+                orbit: {
+                    centerId: "proxima",
+                    semiMajorAxis: 2,
+                    visualPeriodSeconds: 20,
+                },
+                orbitRadius: undefined,
+                orbitSpeed: undefined,
+                parentId: undefined,
+            }),
+        );
+
+        manager.updateAnimations(5, 1);
+
+        expect(planet.position.distanceTo(star.position)).toBeCloseTo(2, 5);
+    });
+
+    it("creates elliptical orbit-line geometry for orbital elements", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        manager.registerOrbitAnchors([
+            {
+                id: "barycenter",
+                name: "Barycenter",
+                type: "barycenter",
+                position: new THREE.Vector3(0, 0, 0),
+            },
+        ]);
+
+        await manager.createCelestialBody(
+            makeBodyData({
+                id: "eccentric",
+                orbit: {
+                    centerId: "barycenter",
+                    semiMajorAxis: 10,
+                    eccentricity: 0.5,
+                    visualPeriodSeconds: 100,
+                },
+                orbitRadius: undefined,
+                orbitSpeed: undefined,
+            }),
+        );
+
+        const orbitLine = scene.children.find(
+            (child) => child.name === "eccentric_orbit",
+        ) as any;
+
+        expect(orbitLine).toBeTruthy();
+        expect(orbitLine.geometry.positions[0]).toBeCloseTo(5, 5);
+        expect(orbitLine.geometry.positions[192]).toBeCloseTo(-15, 5);
+    });
+
+    it("keeps barycenter overlay markers hidden until toggled", () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        manager.registerOrbitAnchors([
+            {
+                id: "barycenter",
+                name: "Barycenter",
+                type: "barycenter",
+                position: new THREE.Vector3(0, 0, 0),
+            },
+        ]);
+
+        const marker = scene.children.find(
+            (child) => child.name === "barycenter_anchor",
+        ) as any;
+
+        expect(marker).toBeTruthy();
+        expect(marker.visible).toBe(false);
+        manager.setBarycenterOverlayVisible(true);
+        expect(marker.visible).toBe(true);
+    });
+
+    it("warns and keeps authored position when orbital element center is missing", async () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const body = await manager.createCelestialBody(
+            makeBodyData({
+                id: "missing-center-body",
+                position: new THREE.Vector3(3, 0, 7),
+                orbit: {
+                    centerId: "missing-center",
+                    semiMajorAxis: 4,
+                    visualPeriodSeconds: 40,
+                },
+                orbitRadius: undefined,
+                orbitSpeed: undefined,
+            }),
+        );
+
+        manager.updateAnimations(10, 1);
+
+        expect(body.position.x).toBe(3);
+        expect(body.position.z).toBe(7);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining("missing-center"),
+        );
+        warnSpy.mockRestore();
+    });
+
+    it("updates legacy bodies before resolving orbital-element children", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const legacyParent = await manager.createCelestialBody(
+            makeBodyData({
+                id: "legacy-parent",
+                position: new THREE.Vector3(10, 0, 0),
+                orbitRadius: 10,
+                orbitSpeed: 1,
+            }),
+        );
+        const child = await manager.createCelestialBody(
+            makeBodyData({
+                id: "element-child",
+                position: new THREE.Vector3(12, 0, 0),
+                orbit: {
+                    centerId: "legacy-parent",
+                    semiMajorAxis: 2,
+                    visualPeriodSeconds: 20,
+                },
+                orbitRadius: undefined,
+                orbitSpeed: undefined,
+                parentId: undefined,
+            }),
+        );
+
+        manager.updateAnimations(1, 1);
+
+        expect(child.position.distanceTo(legacyParent.position)).toBeCloseTo(
+            2,
+            5,
+        );
+    });
 });

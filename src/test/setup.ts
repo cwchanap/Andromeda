@@ -814,7 +814,10 @@ vi.mock("three/examples/jsm/controls/OrbitControls.js", () => {
 
 vi.mock("three/examples/jsm/lines/LineGeometry.js", () => {
     class LineGeometry {
-        setPositions = vi.fn((_arr: number[]) => {});
+        positions: number[] = [];
+        setPositions = vi.fn((arr: number[]) => {
+            this.positions = arr;
+        });
         dispose = vi.fn();
     }
     return { LineGeometry };
