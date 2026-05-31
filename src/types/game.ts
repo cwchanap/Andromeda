@@ -3,6 +3,25 @@ import type { Vector3 } from "three";
 import type { GamePlugin } from "./universe";
 import type { TerrainConfig } from "../lib/planetary-system/graphics/TerrainRenderer";
 
+export interface OrbitalElementsData {
+    centerId: string;
+    semiMajorAxis: number;
+    eccentricity?: number;
+    inclinationDeg?: number;
+    longitudeOfAscendingNodeDeg?: number;
+    argumentOfPeriapsisDeg?: number;
+    phaseDeg?: number;
+    periodDays?: number;
+    periodYears?: number;
+    visualPeriodSeconds?: number;
+    clockwise?: boolean;
+    line?: {
+        visible?: boolean;
+        color?: string;
+        opacity?: number;
+    };
+}
+
 export interface ModalTheme {
     primary: string;
     secondary: string;
@@ -66,6 +85,7 @@ export interface CelestialBodyData {
      * - The 'position' field is used to calculate initial orbital angle relative to parent
      */
     parentId?: string;
+    orbit?: OrbitalElementsData;
     // 3D terrain configuration for planets
     terrain?: TerrainConfig;
     rings?: {

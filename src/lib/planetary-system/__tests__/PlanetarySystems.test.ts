@@ -41,6 +41,78 @@ describe("alphaCentauriSystem", () => {
     it("cleanup() resolves without error", async () => {
         await expect(alphaCentauriSystem.cleanup?.()).resolves.toBeUndefined();
     });
+
+    const findAlphaBody = (id: string) =>
+        [
+            alphaCentauriSystem.systemData.star,
+            ...alphaCentauriSystem.systemData.celestialBodies,
+        ].find((body) => body.id === id);
+
+    it("declares the Alpha Centauri AB barycenter anchor", () => {
+        expect(alphaCentauriSystem.systemData.orbitAnchors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: "alpha-centauri-ab-barycenter",
+                    name: "Alpha Centauri AB Barycenter",
+                    type: "barycenter",
+                }),
+            ]),
+        );
+    });
+
+    it("models Alpha Centauri A and B around the AB barycenter", () => {
+        const starA = alphaCentauriSystem.systemData.star;
+        const starB = findAlphaBody("alpha-centauri-b");
+
+        expect(starA.orbit).toMatchObject({
+            centerId: "alpha-centauri-ab-barycenter",
+            eccentricity: 0.519,
+            periodYears: 79.91,
+            phaseDeg: 0,
+        });
+        expect(starB?.orbit).toMatchObject({
+            centerId: "alpha-centauri-ab-barycenter",
+            eccentricity: 0.519,
+            periodYears: 79.91,
+            phaseDeg: 180,
+        });
+        expect(starB?.orbit?.semiMajorAxis).toBeGreaterThan(
+            starA.orbit?.semiMajorAxis ?? 0,
+        );
+    });
+
+    it("keeps Alpha Centauri AB orbit radii in the expected mass ratio", () => {
+        const starA = alphaCentauriSystem.systemData.star;
+        const starB = findAlphaBody("alpha-centauri-b");
+        const expectedRatio = 1.1055 / 0.9373;
+        const actualRatio =
+            (starB?.orbit?.semiMajorAxis ?? 0) /
+            (starA.orbit?.semiMajorAxis ?? 1);
+
+        expect(actualRatio).toBeCloseTo(expectedRatio, 2);
+    });
+
+    it("models Proxima and its planets with orbital elements", () => {
+        const proxima = findAlphaBody("proxima-centauri");
+        const proximaB = findAlphaBody("proxima-b");
+        const proximaC = findAlphaBody("proxima-c");
+
+        expect(proxima?.orbit).toMatchObject({
+            centerId: "alpha-centauri-ab-barycenter",
+            periodYears: 547000,
+        });
+        expect(proxima?.orbit?.visualPeriodSeconds).toBeGreaterThan(0);
+        expect(proximaB?.orbit).toMatchObject({
+            centerId: "proxima-centauri",
+            periodDays: 11.2,
+        });
+        expect(proximaC?.orbit).toMatchObject({
+            centerId: "proxima-centauri",
+            periodYears: 5.2,
+        });
+        expect(proximaB?.orbit?.visualPeriodSeconds).toBeGreaterThan(0);
+        expect(proximaC?.orbit?.visualPeriodSeconds).toBeGreaterThan(0);
+    });
 });
 
 // ─── KeplerSystems ────────────────────────────────────────────────────────────

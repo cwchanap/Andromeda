@@ -2,6 +2,20 @@
 import type { PlanetarySystem } from "./types";
 import * as THREE from "three";
 
+const ALPHA_CENTAURI_AB_BARYCENTER_ID = "alpha-centauri-ab-barycenter";
+const ALPHA_CENTAURI_AB_RELATIVE_AXIS = 25;
+const ALPHA_CENTAURI_A_MASS = 1.1055;
+const ALPHA_CENTAURI_B_MASS = 0.9373;
+const ALPHA_CENTAURI_TOTAL_MASS = ALPHA_CENTAURI_A_MASS + ALPHA_CENTAURI_B_MASS;
+const ALPHA_CENTAURI_A_AXIS =
+    (ALPHA_CENTAURI_AB_RELATIVE_AXIS * ALPHA_CENTAURI_B_MASS) /
+    ALPHA_CENTAURI_TOTAL_MASS;
+const ALPHA_CENTAURI_B_AXIS =
+    (ALPHA_CENTAURI_AB_RELATIVE_AXIS * ALPHA_CENTAURI_A_MASS) /
+    ALPHA_CENTAURI_TOTAL_MASS;
+const ALPHA_CENTAURI_AB_PERIOD_YEARS = 79.91;
+const ALPHA_CENTAURI_AB_ECCENTRICITY = 0.519;
+
 /**
  * Alpha Centauri System
  * Adds the closest star system to our solar system
@@ -22,6 +36,21 @@ export const alphaCentauriSystem: PlanetarySystem = {
         systemType: "multiple",
         systemScale: 1.2,
         systemCenter: new THREE.Vector3(0, 0, 0),
+        orbitAnchors: [
+            {
+                id: ALPHA_CENTAURI_AB_BARYCENTER_ID,
+                name: "Alpha Centauri AB Barycenter",
+                type: "barycenter",
+                description:
+                    "The common center of mass shared by Alpha Centauri A and B.",
+                position: new THREE.Vector3(0, 0, 0),
+                overlay: {
+                    visibleByDefault: false,
+                    color: "#7dd3fc",
+                    label: "AB barycenter",
+                },
+            },
+        ],
 
         // Primary star (Alpha Centauri A)
         star: {
@@ -49,6 +78,17 @@ export const alphaCentauriSystem: PlanetarySystem = {
             material: {
                 color: "#FDB813",
                 emissive: "#FFA500",
+            },
+            orbit: {
+                centerId: ALPHA_CENTAURI_AB_BARYCENTER_ID,
+                semiMajorAxis: ALPHA_CENTAURI_A_AXIS,
+                eccentricity: ALPHA_CENTAURI_AB_ECCENTRICITY,
+                periodYears: ALPHA_CENTAURI_AB_PERIOD_YEARS,
+                visualPeriodSeconds: 80,
+                phaseDeg: 0,
+                inclinationDeg: 79.2,
+                longitudeOfAscendingNodeDeg: 204.9,
+                argumentOfPeriapsisDeg: 231.6,
             },
         },
 
@@ -79,6 +119,17 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     color: "#FFA500",
                     emissive: "#FF8C00",
                 },
+                orbit: {
+                    centerId: ALPHA_CENTAURI_AB_BARYCENTER_ID,
+                    semiMajorAxis: ALPHA_CENTAURI_B_AXIS,
+                    eccentricity: ALPHA_CENTAURI_AB_ECCENTRICITY,
+                    periodYears: ALPHA_CENTAURI_AB_PERIOD_YEARS,
+                    visualPeriodSeconds: 80,
+                    phaseDeg: 180,
+                    inclinationDeg: 79.2,
+                    longitudeOfAscendingNodeDeg: 204.9,
+                    argumentOfPeriapsisDeg: 231.6,
+                },
                 orbitRadius: 25,
                 orbitSpeed: 0.004,
             },
@@ -107,6 +158,17 @@ export const alphaCentauriSystem: PlanetarySystem = {
                 material: {
                     color: "#FF6B47",
                     emissive: "#FF4500",
+                },
+                orbit: {
+                    centerId: ALPHA_CENTAURI_AB_BARYCENTER_ID,
+                    semiMajorAxis: 150,
+                    eccentricity: 0.5,
+                    periodYears: 547000,
+                    visualPeriodSeconds: 240,
+                    phaseDeg: 35,
+                    inclinationDeg: 107.6,
+                    longitudeOfAscendingNodeDeg: 126,
+                    argumentOfPeriapsisDeg: 72,
                 },
                 orbitRadius: 150,
                 orbitSpeed: 0.001,
@@ -141,6 +203,14 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     atmosphereColor: "#87CEEB",
                 },
                 parentId: "proxima-centauri", // Orbits Proxima Centauri
+                orbit: {
+                    centerId: "proxima-centauri",
+                    semiMajorAxis: 2,
+                    eccentricity: 0.02,
+                    periodDays: 11.2,
+                    visualPeriodSeconds: 12,
+                    phaseDeg: 20,
+                },
                 orbitRadius: 2,
                 orbitSpeed: 0.2,
             },
@@ -175,6 +245,14 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     opacity: 0.9,
                 },
                 parentId: "proxima-centauri", // Orbits Proxima Centauri
+                orbit: {
+                    centerId: "proxima-centauri",
+                    semiMajorAxis: 5,
+                    eccentricity: 0.04,
+                    periodYears: 5.2,
+                    visualPeriodSeconds: 36,
+                    phaseDeg: 130,
+                },
                 orbitRadius: 5,
                 orbitSpeed: 0.05,
             },

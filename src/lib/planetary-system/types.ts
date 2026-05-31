@@ -1,6 +1,20 @@
 // Simplified types for planetary system routing architecture
 import type { Vector3 } from "three";
-import type { CelestialBodyData } from "../../types/game";
+import type { CelestialBodyData, OrbitalElementsData } from "../../types/game";
+
+export interface OrbitAnchorData {
+    id: string;
+    name: string;
+    type: "barycenter";
+    description?: string;
+    position?: Vector3;
+    orbit?: OrbitalElementsData;
+    overlay?: {
+        visibleByDefault?: boolean;
+        color?: string;
+        label?: string;
+    };
+}
 
 /**
  * Simplified planetary system interface for router-based rendering
@@ -14,6 +28,7 @@ export interface PlanetarySystemData {
     systemScale: number;
     systemCenter: Vector3;
     systemType: "solar" | "binary" | "multiple" | "exotic";
+    orbitAnchors?: OrbitAnchorData[];
     metadata?: {
         discoveredBy?: string;
         discoveryDate?: string;
