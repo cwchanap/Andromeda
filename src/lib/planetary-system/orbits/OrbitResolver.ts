@@ -4,7 +4,7 @@ import type { OrbitAnchorData } from "@/lib/planetary-system/types";
 import {
     positionFromOrbitalElements,
     sampleOrbitLinePositions,
-} from "./orbitalElements";
+} from "@/lib/planetary-system/orbits/orbitalElements";
 
 interface RegisteredBody {
     data: CelestialBodyData;

@@ -170,6 +170,17 @@ export class PlanetarySystemRenderer {
         return controls?.hasOrbitAnchors() ?? false;
     }
 
+    /**
+     * Returns true if any orbit anchor has overlay.visibleByDefault set to true
+     */
+    isBarycenterOverlayVisibleByDefault(): boolean {
+        return (
+            this.systemData?.orbitAnchors?.some(
+                (a) => a.overlay?.visibleByDefault === true,
+            ) ?? false
+        );
+    }
+
     setBarycenterOverlayVisible(visible: boolean): void {
         const controls = this.solarSystemRenderer?.getControls();
         controls?.setBarycenterOverlayVisible(visible);

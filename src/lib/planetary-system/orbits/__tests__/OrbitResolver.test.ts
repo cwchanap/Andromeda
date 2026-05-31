@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
-import { OrbitResolver } from "../OrbitResolver";
+import { OrbitResolver } from "@/lib/planetary-system/orbits/OrbitResolver";
 import type { CelestialBodyData } from "@/types/game";
 import type { OrbitAnchorData } from "@/lib/planetary-system/types";
 

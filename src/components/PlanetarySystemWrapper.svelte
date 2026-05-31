@@ -193,6 +193,7 @@
       }
 
       hasBarycenterOverlay = planetarySystemRenderer?.hasOrbitAnchors() ?? false;
+      showBarycenterOverlay = planetarySystemRenderer?.isBarycenterOverlayVisibleByDefault() ?? false;
       
       loadingProgress = 100;
       loadingMessage = "Ready!";
@@ -286,7 +287,7 @@
       {#if hasBarycenterOverlay}
         <button
           on:click={toggleBarycenterOverlay}
-          class="barycenter-toggle"
+          class="bg-[rgba(12,74,110,0.75)] hover:bg-[rgba(12,74,110,0.95)] text-white border border-[rgba(125,211,252,0.6)] px-3 py-2 rounded cursor-pointer text-sm backdrop-blur-md"
           aria-pressed={showBarycenterOverlay}
         >
           {showBarycenterOverlay
@@ -414,18 +415,4 @@
     background: rgba(0, 0, 0, 0.9);
   }
 
-  .barycenter-toggle {
-    background: rgba(12, 74, 110, 0.75);
-    color: white;
-    border: 1px solid rgba(125, 211, 252, 0.6);
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
-    backdrop-filter: blur(10px);
-  }
-
-  .barycenter-toggle:hover {
-    background: rgba(12, 74, 110, 0.95);
-  }
 </style>

@@ -123,6 +123,65 @@ describe("UniverseManager", () => {
                     await universeManager.switchToSystem("non-existent");
                 expect(result).toBe(false);
             });
+
+            it("propagates warnings from valid systems in validateUniverse", () => {
+                const manager = new UniverseManager();
+                const star = {
+                    id: "s",
+                    name: "S",
+                    type: "star" as const,
+                    description: "",
+                    keyFacts: {
+                        diameter: "",
+                        distanceFromSun: "",
+                        orbitalPeriod: "",
+                        composition: [],
+                        temperature: "",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(),
+                    scale: 1,
+                    material: { color: "#fff" },
+                };
+
+                // A valid system (no errors) that has a warning (orbitRadius <= 0)
+                const result = manager.importUniverse({
+                    systems: new Map([
+                        [
+                            "valid-with-warnings",
+                            {
+                                id: "valid-with-warnings",
+                                name: "Valid System",
+                                description: "A valid system",
+                                star,
+                                celestialBodies: [
+                                    {
+                                        ...star,
+                                        id: "body",
+                                        name: "Body",
+                                        type: "planet" as const,
+                                        orbitRadius: -1,
+                                        orbitSpeed: 0,
+                                    },
+                                ],
+                                systemScale: 1,
+                                systemCenter: new THREE.Vector3(),
+                                systemType: "solar",
+                            },
+                        ],
+                    ]),
+                    currentSystemId: "valid-with-warnings",
+                    metadata: {
+                        name: "U",
+                        description: "D",
+                        version: "1",
+                        lastUpdated: new Date(),
+                    },
+                });
+
+                // System is valid so import succeeds
+                expect(result).toBe(true);
+            });
         });
 
         describe("getSystem", () => {

@@ -1,6 +1,6 @@
 // Extensible type definitions for multi-system universe architecture
 import type { Vector3 } from "three";
-import type { OrbitAnchorData } from "../lib/planetary-system/types";
+import type { OrbitAnchorData } from "@/lib/planetary-system/types";
 import type { CelestialBodyData } from "./game";
 
 /**
