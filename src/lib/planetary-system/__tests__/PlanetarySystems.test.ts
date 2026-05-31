@@ -74,8 +74,14 @@ describe("alphaCentauriSystem", () => {
             centerId: "alpha-centauri-ab-barycenter",
             eccentricity: 0.519,
             periodYears: 79.91,
-            phaseDeg: 180,
+            phaseDeg: 0,
         });
+        expect(starA.orbit?.argumentOfPeriapsisDeg).toBeDefined();
+        expect(starB?.orbit?.argumentOfPeriapsisDeg).toBeDefined();
+        expect(
+            (starB?.orbit?.argumentOfPeriapsisDeg ?? 0) -
+                (starA.orbit?.argumentOfPeriapsisDeg ?? 0),
+        ).toBeCloseTo(180, 5);
         expect(starB?.orbit?.semiMajorAxis).toBeGreaterThan(
             starA.orbit?.semiMajorAxis ?? 0,
         );
