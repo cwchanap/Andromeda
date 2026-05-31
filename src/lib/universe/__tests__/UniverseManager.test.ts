@@ -183,6 +183,23 @@ describe("UniverseManager", () => {
             );
         });
 
+        it("should preserve orbit anchors when converting planetary system data", () => {
+            const orbitAnchors = [
+                {
+                    id: "test-barycenter",
+                    name: "Test Barycenter",
+                    type: "barycenter" as const,
+                    position: new THREE.Vector3(1, 2, 3),
+                },
+            ];
+            const converted = UniverseManager.convertPlanetarySystemData({
+                ...mockPlanetarySystemData,
+                orbitAnchors,
+            });
+
+            expect(converted.orbitAnchors).toBe(orbitAnchors);
+        });
+
         it("should initialize with planetary system data", () => {
             universeManager.initializeWithPlanetarySystem(
                 mockPlanetarySystemData,
