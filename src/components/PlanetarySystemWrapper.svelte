@@ -47,6 +47,8 @@
   let currentZoom = 50;
   let loadingMessage = "Loading planetary system...";
   let debugInfo = "";
+  let hasBarycenterOverlay = false;
+  let showBarycenterOverlay = false;
   let zoomControls: {
     zoomIn: () => void;
     zoomOut: () => void;
@@ -91,6 +93,11 @@
   
   const handleZoomChange = (zoom: number) => {
     currentZoom = zoom;
+  };
+
+  const toggleBarycenterOverlay = () => {
+    showBarycenterOverlay = !showBarycenterOverlay;
+    planetarySystemRenderer?.setBarycenterOverlayVisible(showBarycenterOverlay);
   };
   
   const onKeyboardNavigate = (direction: 'next' | 'previous') => {
@@ -176,7 +183,7 @@
       loadingMessage = "Setting up controls...";
       
       // Get zoom controls
-      const controls = planetarySystemRenderer.getControls();
+      const controls = planetarySystemRenderer?.getControls();
       if (controls) {
         zoomControls = {
           zoomIn: () => controls.zoomIn(),
@@ -184,6 +191,8 @@
           resetView: () => controls.resetView()
         };
       }
+
+      hasBarycenterOverlay = planetarySystemRenderer?.hasOrbitAnchors() ?? false;
       
       loadingProgress = 100;
       loadingMessage = "Ready!";
@@ -272,6 +281,16 @@
           <button on:click={zoomControls.zoomOut}>{t ? t('controls.zoomOut') : 'Zoom Out'}</button>
           <button on:click={zoomControls.resetView}>{t ? t('controls.resetView') : 'Reset View'}</button>
         </div>
+      {/if}
+
+      {#if hasBarycenterOverlay}
+        <button
+          on:click={toggleBarycenterOverlay}
+          class="barycenter-toggle"
+          aria-pressed={showBarycenterOverlay}
+        >
+          {showBarycenterOverlay ? 'Hide barycenters' : 'Show barycenters'}
+        </button>
       {/if}
     </div>
     
@@ -391,5 +410,20 @@
   
   .zoom-controls button:hover {
     background: rgba(0, 0, 0, 0.9);
+  }
+
+  .barycenter-toggle {
+    background: rgba(12, 74, 110, 0.75);
+    color: white;
+    border: 1px solid rgba(125, 211, 252, 0.6);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    backdrop-filter: blur(10px);
+  }
+
+  .barycenter-toggle:hover {
+    background: rgba(12, 74, 110, 0.95);
   }
 </style>

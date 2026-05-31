@@ -162,6 +162,10 @@ export class SolarSystemRenderer {
             // Setup scene environment
             await this.sceneManager.initialize();
 
+            this.celestialBodyManager.registerOrbitAnchors(
+                systemData?.orbitAnchors ?? [],
+            );
+
             // Create celestial bodies
             celestialBodies.forEach((bodyData) => {
                 this.celestialBodyManager.createCelestialBody(bodyData);
@@ -301,6 +305,10 @@ export class SolarSystemRenderer {
             },
             enableControls: (enabled: boolean) => {
                 this.cameraController.enableControls(enabled);
+            },
+            hasOrbitAnchors: () => this.celestialBodyManager.hasOrbitAnchors(),
+            setBarycenterOverlayVisible: (visible: boolean) => {
+                this.celestialBodyManager.setBarycenterOverlayVisible(visible);
             },
             dispose: () => this.dispose(),
         };

@@ -210,6 +210,42 @@ describe("PlanetarySystemRenderer", () => {
         expect(() => renderer.focusOnBody("some-id")).not.toThrow();
     });
 
+    it("reports whether the loaded system has orbit anchors", async () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        await renderer.initialize(
+            makeSystemData({
+                orbitAnchors: [
+                    {
+                        id: "barycenter",
+                        name: "Barycenter",
+                        type: "barycenter",
+                        position: new THREE.Vector3(0, 0, 0),
+                    },
+                ],
+            }),
+        );
+
+        expect(renderer.hasOrbitAnchors()).toBe(true);
+    });
+
+    it("forwards barycenter overlay visibility to the underlying renderer", async () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        await renderer.initialize(
+            makeSystemData({
+                orbitAnchors: [
+                    {
+                        id: "barycenter",
+                        name: "Barycenter",
+                        type: "barycenter",
+                        position: new THREE.Vector3(0, 0, 0),
+                    },
+                ],
+            }),
+        );
+
+        expect(() => renderer.setBarycenterOverlayVisible(true)).not.toThrow();
+    });
+
     it("cleanup sets systemData to null", async () => {
         renderer = new PlanetarySystemRenderer(container, makeConfig());
         await renderer.initialize(makeSystemData());
