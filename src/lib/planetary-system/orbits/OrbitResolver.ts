@@ -68,7 +68,6 @@ export class OrbitResolver {
             object,
             fallbackPosition,
         });
-        object.position.copy(fallbackPosition);
     }
 
     hasAnchors(): boolean {
