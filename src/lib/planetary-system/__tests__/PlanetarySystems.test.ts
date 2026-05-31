@@ -119,6 +119,23 @@ describe("alphaCentauriSystem", () => {
         expect(proximaB?.orbit?.visualPeriodSeconds).toBeGreaterThan(0);
         expect(proximaC?.orbit?.visualPeriodSeconds).toBeGreaterThan(0);
     });
+
+    it("does not rely on legacy orbit fields for migrated Alpha Centauri bodies", () => {
+        const migratedBodyIds = [
+            "alpha-centauri-b",
+            "proxima-centauri",
+            "proxima-b",
+            "proxima-c",
+        ];
+
+        migratedBodyIds.forEach((id) => {
+            const body = findAlphaBody(id);
+            expect(body?.orbit).toBeDefined();
+            expect(body?.orbitRadius).toBeUndefined();
+            expect(body?.orbitSpeed).toBeUndefined();
+            expect(body?.parentId).toBeUndefined();
+        });
+    });
 });
 
 // ─── KeplerSystems ────────────────────────────────────────────────────────────
