@@ -11,6 +11,7 @@ import type {
     PluginLogger,
     PluginStorage,
 } from "../../types/universe";
+import type { OrbitalElementsData } from "../../types/game";
 import type { PlanetarySystemData } from "../planetary-system/types";
 
 /**
@@ -45,6 +46,10 @@ export class UniverseManager {
         if (!validation.isValid) {
             console.error("System validation failed:", validation.errors);
             return false;
+        }
+
+        if (validation.warnings.length > 0) {
+            console.warn("System validation warnings:", validation.warnings);
         }
 
         this.universe.systems.set(system.id, system);
@@ -263,6 +268,95 @@ class DefaultSystemValidator implements SystemValidator {
                         severity: "warning",
                     });
                 }
+            });
+        }
+
+        const knownCenterIds = new Set<string>();
+        if (system.star?.id) {
+            knownCenterIds.add(system.star.id);
+        }
+        if (Array.isArray(system.celestialBodies)) {
+            system.celestialBodies.forEach((body) => {
+                if (body.id) {
+                    knownCenterIds.add(body.id);
+                }
+            });
+        }
+        system.orbitAnchors?.forEach((anchor) => {
+            if (anchor.id) {
+                knownCenterIds.add(anchor.id);
+            }
+        });
+
+        const validateOrbit = (
+            orbit: OrbitalElementsData | undefined,
+            fieldPrefix: string,
+        ) => {
+            if (!orbit) return;
+
+            if (!knownCenterIds.has(orbit.centerId)) {
+                warnings.push({
+                    field: `${fieldPrefix}.centerId`,
+                    message: `Orbit center '${orbit.centerId}' does not exist in this system`,
+                    severity: "warning",
+                });
+            }
+
+            if (orbit.semiMajorAxis <= 0) {
+                warnings.push({
+                    field: `${fieldPrefix}.semiMajorAxis`,
+                    message: "Semi-major axis should be positive",
+                    severity: "warning",
+                });
+            }
+
+            if (
+                orbit.eccentricity !== undefined &&
+                (orbit.eccentricity < 0 || orbit.eccentricity >= 1)
+            ) {
+                warnings.push({
+                    field: `${fieldPrefix}.eccentricity`,
+                    message:
+                        "Eccentricity should be greater than or equal to 0 and less than 1",
+                    severity: "warning",
+                });
+            }
+
+            if (orbit.periodDays !== undefined && orbit.periodDays <= 0) {
+                warnings.push({
+                    field: `${fieldPrefix}.periodDays`,
+                    message: "Period in days should be positive",
+                    severity: "warning",
+                });
+            }
+
+            if (orbit.periodYears !== undefined && orbit.periodYears <= 0) {
+                warnings.push({
+                    field: `${fieldPrefix}.periodYears`,
+                    message: "Period in years should be positive",
+                    severity: "warning",
+                });
+            }
+
+            if (
+                orbit.visualPeriodSeconds !== undefined &&
+                orbit.visualPeriodSeconds <= 0
+            ) {
+                warnings.push({
+                    field: `${fieldPrefix}.visualPeriodSeconds`,
+                    message: "Visual period should be positive",
+                    severity: "warning",
+                });
+            }
+        };
+
+        validateOrbit(system.star?.orbit, "star.orbit");
+        system.orbitAnchors?.forEach((anchor, index) => {
+            validateOrbit(anchor.orbit, `orbitAnchors[${index}].orbit`);
+        });
+        if (Array.isArray(system.celestialBodies)) {
+            system.celestialBodies.forEach((body, index) => {
+                validateOrbit(body.orbit, `celestialBodies[${index}].orbit`);
             });
         }
 

@@ -380,6 +380,8 @@ describe("DefaultSystemValidator (via UniverseManager)", () => {
     });
 
     it("warns but succeeds for bodies with non-positive orbitRadius", () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
         const result = manager.addSystem({
             id: "x",
             name: "X",
@@ -392,7 +394,94 @@ describe("DefaultSystemValidator (via UniverseManager)", () => {
             systemCenter: new THREE.Vector3(0, 0, 0),
             systemType: "solar",
         });
+
         expect(result).toBe(true);
+        expect(warnSpy).toHaveBeenCalledWith(
+            "System validation warnings:",
+            expect.arrayContaining([
+                expect.objectContaining({
+                    field: "celestialBodies[0].orbitRadius",
+                }),
+            ]),
+        );
+        warnSpy.mockRestore();
+    });
+
+    it("warns but succeeds when an orbit references a missing center", () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        const result = manager.addSystem({
+            id: "x",
+            name: "X",
+            description: "",
+            star: {
+                ...validStar,
+                orbit: {
+                    centerId: "missing-center",
+                    semiMajorAxis: 5,
+                    visualPeriodSeconds: 20,
+                },
+            },
+            celestialBodies: [],
+            systemScale: 1,
+            systemCenter: new THREE.Vector3(0, 0, 0),
+            systemType: "multiple",
+        });
+
+        expect(result).toBe(true);
+        expect(warnSpy).toHaveBeenCalledWith(
+            "System validation warnings:",
+            expect.arrayContaining([
+                expect.objectContaining({
+                    field: "star.orbit.centerId",
+                }),
+            ]),
+        );
+        warnSpy.mockRestore();
+    });
+
+    it("warns but succeeds for invalid orbital element values", () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        const result = manager.addSystem({
+            id: "x",
+            name: "X",
+            description: "",
+            star: validStar,
+            celestialBodies: [
+                {
+                    ...validStar,
+                    id: "planet",
+                    type: "planet" as const,
+                    orbit: {
+                        centerId: "star-1",
+                        semiMajorAxis: -1,
+                        eccentricity: 1.2,
+                        visualPeriodSeconds: -20,
+                    },
+                },
+            ],
+            systemScale: 1,
+            systemCenter: new THREE.Vector3(0, 0, 0),
+            systemType: "solar",
+        });
+
+        expect(result).toBe(true);
+        expect(warnSpy).toHaveBeenCalledWith(
+            "System validation warnings:",
+            expect.arrayContaining([
+                expect.objectContaining({
+                    field: "celestialBodies[0].orbit.semiMajorAxis",
+                }),
+                expect.objectContaining({
+                    field: "celestialBodies[0].orbit.eccentricity",
+                }),
+                expect.objectContaining({
+                    field: "celestialBodies[0].orbit.visualPeriodSeconds",
+                }),
+            ]),
+        );
+        warnSpy.mockRestore();
     });
 
     it("rejects universe import when currentSystemId is not in systems", () => {
