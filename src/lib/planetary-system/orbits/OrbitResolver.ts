@@ -109,6 +109,7 @@ export class OrbitResolver {
         });
 
         this.bodies.forEach((body) => {
+            if (!body.data.orbit) return;
             const resolved = context.bodies.get(body.data.id);
             body.object.position.copy(
                 resolved?.position ?? body.fallbackPosition,
@@ -218,10 +219,10 @@ export class OrbitResolver {
         }
 
         if (!body.data.orbit) {
-            const resolved = this.fallbackResolution(
-                body.fallbackPosition,
-                true,
-            );
+            const resolved = {
+                position: body.object.position.clone(),
+                valid: true,
+            };
             context.bodies.set(bodyId, resolved);
             return resolved;
         }
