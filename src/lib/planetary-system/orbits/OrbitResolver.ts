@@ -39,6 +39,7 @@ export class OrbitResolver {
     private anchorOverlayVisibleOverride: boolean | null = null;
 
     registerAnchors(anchors: OrbitAnchorData[] = []): void {
+        this.anchors.clear();
         anchors.forEach((anchor) => {
             const fallbackPosition =
                 anchor.position?.clone() ?? new THREE.Vector3(0, 0, 0);
