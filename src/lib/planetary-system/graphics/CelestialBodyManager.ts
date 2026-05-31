@@ -3,6 +3,8 @@ import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import type { CelestialBodyData } from "../../../types/game";
+import type { OrbitAnchorData } from "../types";
+import { OrbitResolver } from "../orbits/OrbitResolver";
 import { PerformanceManager } from "./PerformanceManager";
 import { AssetLoader } from "./AssetLoader";
 
@@ -15,6 +17,7 @@ export class CelestialBodyManager {
     private bodyData = new Map<string, CelestialBodyData>();
     private orbitAngles = new Map<string, number>(); // Track accumulated orbital angles
     private visualOrbitRadii = new Map<string, number>();
+    private orbitResolver = new OrbitResolver();
     private performanceManager: PerformanceManager;
     private assetLoader: AssetLoader;
 
@@ -33,6 +36,38 @@ export class CelestialBodyManager {
      */
     async preloadAssets(celestialBodies: CelestialBodyData[]): Promise<void> {
         await this.assetLoader.preloadCelestialBodyAssets(celestialBodies);
+    }
+
+    registerOrbitAnchors(anchors: OrbitAnchorData[] = []): void {
+        this.orbitResolver.registerAnchors(anchors);
+
+        anchors.forEach((anchor) => {
+            const marker = new THREE.Group();
+            marker.name = `${anchor.id}_anchor`;
+            marker.visible = anchor.overlay?.visibleByDefault ?? false;
+            marker.position.copy(anchor.position ?? new THREE.Vector3(0, 0, 0));
+            marker.userData = { orbitAnchorData: anchor };
+
+            const markerMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.35, 12, 12),
+                new THREE.MeshBasicMaterial({
+                    color: anchor.overlay?.color ?? "#7dd3fc",
+                }),
+            );
+            markerMesh.name = `${anchor.id}_anchor_marker`;
+            marker.add(markerMesh);
+
+            this.scene.add(marker);
+            this.orbitResolver.registerAnchorMarker(anchor.id, marker);
+        });
+    }
+
+    hasOrbitAnchors(): boolean {
+        return this.orbitResolver.hasAnchors();
+    }
+
+    setBarycenterOverlayVisible(visible: boolean): void {
+        this.orbitResolver.setAnchorOverlayVisible(visible);
     }
 
     /**
@@ -71,15 +106,20 @@ export class CelestialBodyManager {
         // Store references before orbit calculations so children can inspect parent data.
         this.bodies.set(data.id, celestialGroup);
         this.bodyData.set(data.id, data);
+        this.orbitResolver.registerBody(data, celestialGroup);
 
-        const visualOrbitRadius = this.getVisualOrbitRadius(data);
-        if (visualOrbitRadius > 0) {
-            this.visualOrbitRadii.set(data.id, visualOrbitRadius);
-            this.createOrbitLine(data, visualOrbitRadius);
+        if (data.orbit) {
+            this.createOrbitalElementsOrbitLine(data);
+        } else {
+            const visualOrbitRadius = this.getVisualOrbitRadius(data);
+            if (visualOrbitRadius > 0) {
+                this.visualOrbitRadii.set(data.id, visualOrbitRadius);
+                this.createOrbitLine(data, visualOrbitRadius);
+            }
         }
 
         // Initialize orbital angle based on current position if orbiting
-        if (data.orbitRadius && data.orbitSpeed) {
+        if (!data.orbit && data.orbitRadius && data.orbitSpeed) {
             // Calculate initial orbital angle from current position
             let relativeX = data.position.x;
             let relativeZ = data.position.z;
@@ -340,6 +380,44 @@ export class CelestialBodyManager {
         );
 
         return Math.max(data.orbitRadius, minimumRadius);
+    }
+
+    private createOrbitalElementsOrbitLine(data: CelestialBodyData): void {
+        if (!data.orbit || data.orbit.line?.visible === false) {
+            return;
+        }
+
+        const orbitPoints = this.orbitResolver.getOrbitLinePositions(data.id);
+        if (orbitPoints.length === 0) {
+            return;
+        }
+
+        const orbitGeometry = new LineGeometry();
+        orbitGeometry.setPositions(orbitPoints);
+
+        const orbitMaterial = new LineMaterial({
+            color: data.orbit.line?.color ?? 0x444444,
+            transparent: true,
+            opacity: data.orbit.line?.opacity ?? 0.3,
+            linewidth: 5,
+        });
+
+        const orbitLine = new Line2(orbitGeometry, orbitMaterial);
+        orbitLine.name = `${data.id}_orbit`;
+
+        const center = this.orbitResolver.getCenterPosition(
+            data.orbit.centerId,
+        );
+        if (!center) {
+            console.warn(
+                `Orbit center '${data.orbit.centerId}' not found for '${data.id}' during orbit line creation. Orbit line will be skipped.`,
+            );
+            return;
+        }
+
+        orbitLine.position.copy(center);
+        this.orbitLines.set(data.id, orbitLine);
+        this.scene.add(orbitLine);
     }
 
     private getMinimumParentRelativeOrbitRadius(
@@ -603,7 +681,7 @@ export class CelestialBodyManager {
             }
 
             // Apply orbital motion if defined
-            if (data.orbitRadius && data.orbitSpeed) {
+            if (!data.orbit && data.orbitRadius && data.orbitSpeed) {
                 // Get the current accumulated angle for this body
                 let currentAngle = this.orbitAngles.get(id) || 0;
 
@@ -650,6 +728,23 @@ export class CelestialBodyManager {
                 body.position.y = orbitCenterY; // Inherit parent's Y offset
                 body.position.z =
                     orbitCenterZ + Math.sin(currentAngle) * orbitRadius;
+            }
+        });
+
+        this.orbitResolver.update(deltaTime, orbitSpeedMultiplier);
+
+        this.bodies.forEach((body, id) => {
+            const data = this.bodyData.get(id);
+            if (!data) return;
+
+            if (data.orbit) {
+                const orbitLine = this.orbitLines.get(id);
+                const center = this.orbitResolver.getCenterPosition(
+                    data.orbit.centerId,
+                );
+                if (orbitLine && center) {
+                    orbitLine.position.copy(center);
+                }
             }
 
             // Rotate rings slowly for visual effect (Saturn's rings)
@@ -741,6 +836,10 @@ export class CelestialBodyManager {
                 line.material.dispose();
             }
         });
+
+        this.scene.children
+            .filter((child) => child.name.endsWith("_anchor"))
+            .forEach((child) => this.scene.remove(child));
 
         // Clear collections
         this.bodies.clear();
