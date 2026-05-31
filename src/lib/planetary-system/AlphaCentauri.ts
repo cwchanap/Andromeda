@@ -130,8 +130,6 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     longitudeOfAscendingNodeDeg: 204.9,
                     argumentOfPeriapsisDeg: 411.6,
                 },
-                orbitRadius: 25,
-                orbitSpeed: 0.004,
             },
 
             // Proxima Centauri (red dwarf)
@@ -170,8 +168,6 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     longitudeOfAscendingNodeDeg: 126,
                     argumentOfPeriapsisDeg: 72,
                 },
-                orbitRadius: 150,
-                orbitSpeed: 0.001,
             },
 
             // Proxima Centauri b (potentially habitable exoplanet)
@@ -202,7 +198,6 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     metalness: 0.2,
                     atmosphereColor: "#87CEEB",
                 },
-                parentId: "proxima-centauri", // Orbits Proxima Centauri
                 orbit: {
                     centerId: "proxima-centauri",
                     semiMajorAxis: 2,
@@ -211,8 +206,6 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     visualPeriodSeconds: 12,
                     phaseDeg: 20,
                 },
-                orbitRadius: 2,
-                orbitSpeed: 0.2,
             },
 
             // Proxima Centauri c (outer exoplanet)
@@ -244,7 +237,6 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     transparent: true,
                     opacity: 0.9,
                 },
-                parentId: "proxima-centauri", // Orbits Proxima Centauri
                 orbit: {
                     centerId: "proxima-centauri",
                     semiMajorAxis: 5,
@@ -253,8 +245,6 @@ export const alphaCentauriSystem: PlanetarySystem = {
                     visualPeriodSeconds: 36,
                     phaseDeg: 130,
                 },
-                orbitRadius: 5,
-                orbitSpeed: 0.05,
             },
         ],
 
