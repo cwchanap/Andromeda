@@ -1,5 +1,6 @@
 // Extensible type definitions for multi-system universe architecture
 import type { Vector3 } from "three";
+import type { OrbitAnchorData } from "../lib/planetary-system/types";
 import type { CelestialBodyData } from "./game";
 
 /**
@@ -14,6 +15,7 @@ export interface StarSystemData {
     systemScale: number;
     systemCenter: Vector3;
     systemType: "solar" | "binary" | "multiple" | "exotic";
+    orbitAnchors?: OrbitAnchorData[];
     metadata?: {
         discoveredBy?: string;
         discoveryDate?: string;
