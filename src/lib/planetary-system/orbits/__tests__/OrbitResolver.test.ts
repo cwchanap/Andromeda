@@ -115,6 +115,22 @@ describe("OrbitResolver", () => {
         expect(group.position.z).toBeCloseTo(4, 5);
     });
 
+    it("replaces the registered anchor set", () => {
+        const resolver = new OrbitResolver();
+
+        resolver.registerAnchors([
+            {
+                id: "barycenter",
+                name: "Barycenter",
+                type: "barycenter",
+                position: makeVector(0, 0, 0),
+            },
+        ]);
+        resolver.registerAnchors([]);
+
+        expect(resolver.hasAnchors()).toBe(false);
+    });
+
     it("updates a body around a moving visible body", () => {
         const resolver = new OrbitResolver();
         const starGroup = makeObject();
