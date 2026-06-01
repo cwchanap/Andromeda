@@ -106,13 +106,6 @@
 
 <style>
   .orbit-speed-control {
-    /* CSS custom properties for maintainable positioning */
-    --controls-panel-height: 180px; /* Height to clear back button + zoom controls */
-    --horizontal-offset: 20px;
-
-    position: absolute;
-    top: var(--controls-panel-height, 180px);
-    right: var(--horizontal-offset, 20px);
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -121,7 +114,6 @@
     color: white;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     min-width: 200px;
-    z-index: 1000;
     user-select: none;
   }
   
@@ -210,11 +202,6 @@
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     .orbit-speed-control {
-      --controls-panel-height: 160px; /* Adjusted for mobile layout */
-      --horizontal-offset: 10px;
-
-      top: var(--controls-panel-height, 160px);
-      right: var(--horizontal-offset, 10px);
       min-width: 160px;
       padding: 12px;
     }

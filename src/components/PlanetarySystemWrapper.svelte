@@ -295,6 +295,10 @@
             : (t ? t('controls.showBarycenters') : 'Show barycenters')}
         </button>
       {/if}
+
+      {#if isSceneReady}
+        <OrbitSpeedControl {lang} {translations} />
+      {/if}
     </div>
     
     <!-- Keyboard Navigation -->
@@ -326,11 +330,6 @@
     {translations}
   />
 
-  <!-- Orbit Speed Control -->
-  {#if isSceneReady}
-    <OrbitSpeedControl {lang} {translations} />
-  {/if}
-  
   <!-- Accessibility Manager -->
   <AccessibilityManager />
 </div>
@@ -373,11 +372,12 @@
   
   .controls-panel {
     position: absolute;
-    top: 20px;
+    top: 68px;
     right: 20px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    z-index: 10;
   }
   
   .back-button {
