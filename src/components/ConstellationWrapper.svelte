@@ -467,16 +467,16 @@
           <div class="mb-4">
             <div class="text-amber-400 text-4xl">⚠️</div>
           </div>
-          <h2 class="text-xl font-semibold mb-2 text-amber-400">3D Graphics Not Available</h2>
+          <h2 class="text-xl font-semibold mb-2 text-amber-400">{t('constellation.webglNotAvailable')}</h2>
           <p class="text-sm text-gray-300 mb-4">
-            Your browser doesn't support WebGL, which is required for the constellation view.
+            {t('constellation.webglDescription')}
           </p>
           <div class="text-xs text-gray-400 mb-4">
-            <p class="mb-2">Try these solutions:</p>
+            <p class="mb-2">{t('constellation.trySolutions')}</p>
             <ul class="text-left list-disc list-inside space-y-1">
-              <li>Update to the latest browser version</li>
-              <li>Enable hardware acceleration in settings</li>
-              <li>Try a different browser (Chrome, Firefox, Edge)</li>
+              <li>{t('constellation.solutionUpdateBrowser')}</li>
+              <li>{t('constellation.solutionEnableHardwareAcceleration')}</li>
+              <li>{t('constellation.solutionTryDifferentBrowser')}</li>
             </ul>
           </div>
           <Button

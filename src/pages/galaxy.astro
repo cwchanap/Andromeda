@@ -3,9 +3,11 @@ import GalaxyWrapper from "../components/GalaxyWrapper.svelte";
 import GlobalStyles from "../components/GlobalStyles.astro";
 import GlobalLanguageSelector from "../components/GlobalLanguageSelector.svelte";
 import { getLangFromUrl, useTranslations } from "../i18n/utils";
+import { ui } from "../i18n/ui";
 
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
+const translations = ui[lang] || ui.en;
 ---
 
 <html lang={lang}>
@@ -23,7 +25,7 @@ const t = useTranslations(lang);
     <GlobalLanguageSelector client:load />
 
     <div id="galaxy-container">
-      <GalaxyWrapper {lang} client:only="svelte" />
+      <GalaxyWrapper {lang} {translations} client:only="svelte" />
     </div>
 
     <style>

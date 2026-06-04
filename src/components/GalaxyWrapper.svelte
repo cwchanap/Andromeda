@@ -8,7 +8,17 @@
     import AccessibilityManager from './AccessibilityManager.svelte';
 
     export let lang: AppLocale = 'en';
-    
+    export let translations: Record<string, string> = {};
+
+    // Translation function
+    const t = (key: string) => translations[key] || key;
+
+    // Translate system type raw value
+    const getSystemTypeLabel = (type: string) => {
+        const key = `galaxy.systemType.${type}`;
+        return t(key) !== key ? t(key) : type;
+    };
+
     // Component state
     let container: HTMLElement;
     let renderer: GalaxyRenderer | null = null;
@@ -16,7 +26,7 @@
     let loadingProgress = 0;
     let error: string | null = null;
     let isSceneReady = false;
-    let loadingMessage = "Loading galaxy...";
+    let loadingMessage = t('galaxy.loading');
     
     // UI state
     let showHamburgerMenu = false;
@@ -79,12 +89,12 @@
         try {
             isLoading = true;
             error = null;
-            loadingMessage = "Initializing 3D renderer...";
+            loadingMessage = t('galaxy.initializing');
             loadingProgress = 20;
-            
+
             renderer = new GalaxyRenderer(container, defaultConfig, events);
-            
-            loadingMessage = "Loading star systems...";
+
+            loadingMessage = t('galaxy.loadingSystems');
             loadingProgress = 60;
             
             await renderer.initialize(localGalaxyData);
@@ -101,7 +111,7 @@
             };
             
         } catch (err) {
-            error = err instanceof Error ? err.message : 'Unknown error occurred';
+            error = err instanceof Error ? err.message : t('error.unknown');
             isLoading = false;
             console.error('Failed to initialize galaxy renderer:', err);
         }
@@ -246,26 +256,26 @@
         {#if error}
             <div class="error-overlay">
                 <div class="error-content">
-                    <h3>Failed to load galaxy</h3>
+                    <h3>{t('galaxy.loadFailed')}</h3>
                     <p>{error}</p>
                     <button on:click={() => initializeRenderer()}>
-                        Retry
+                        {t('action.retry')}
                     </button>
                 </div>
             </div>
         {/if}
     </div>
-    
+
     {#if isSceneReady}
         <!-- Hamburger Menu Button -->
-        <button class="hamburger-button" on:click={toggleHamburgerMenu} aria-label="Menu">
+        <button class="hamburger-button" on:click={toggleHamburgerMenu} aria-label={t('nav.menu')}>
             <div class="hamburger-line" class:active={showHamburgerMenu}></div>
             <div class="hamburger-line" class:active={showHamburgerMenu}></div>
             <div class="hamburger-line" class:active={showHamburgerMenu}></div>
         </button>
         
         <!-- Controls Button -->
-        <button class="controls-button" on:click={toggleControls} aria-label="Controls">
+        <button class="controls-button" on:click={toggleControls} aria-label={t('nav.controls')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
             </svg>
@@ -273,32 +283,32 @@
         
         <!-- Back Button -->
         <button class="back-button" on:click={handleBackToMenu}>
-            ← Back to Menu
+            {t('controls.backToMenu')}
         </button>
         
         <!-- Hamburger Menu -->
         {#if showHamburgerMenu}
             <div class="hamburger-menu">
                 <div class="menu-section">
-                    <h3>About Local Galaxy</h3>
-                    <p>This 3D visualization shows the nearest star systems to Earth within 10 light-years.</p>
-                    
-                    <h4>Star Systems</h4>
+                    <h3>{t('galaxy.aboutTitle')}</h3>
+                    <p>{t('galaxy.aboutDescription')}</p>
+
+                    <h4>{t('galaxy.starSystems')}</h4>
                     <div class="system-list">
                         {#each localGalaxyData.starSystems as system}
                             <button class="system-item" on:click={() => handleSystemSelect(system.id)}>
                                 <span class="system-name">{system.name}</span>
-                                <span class="system-distance">{system.distanceFromEarth.toFixed(2)} ly</span>
+                                <span class="system-distance">{system.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
                             </button>
                         {/each}
                     </div>
-                    
-                    <h4>Navigation Tips</h4>
+
+                    <h4>{t('galaxy.navigationTips')}</h4>
                     <ul class="tips-list">
-                        <li><strong>Mouse/Touch:</strong> Drag to rotate the view</li>
-                        <li><strong>Scroll/Pinch:</strong> Zoom in and out</li>
-                        <li><strong>Star Systems:</strong> Click on systems above to focus</li>
-                        <li><strong>Controls:</strong> Use the settings panel to adjust visuals</li>
+                        <li><strong>{t('galaxy.mouseTouch')}:</strong> {t('galaxy.dragToRotate')}</li>
+                        <li><strong>{t('galaxy.scrollPinch')}:</strong> {t('galaxy.zoomInOut')}</li>
+                        <li><strong>{t('galaxy.starSystems')}:</strong> {t('galaxy.clickToFocus')}</li>
+                        <li><strong>{t('nav.controls')}:</strong> {t('galaxy.useSettingsPanel')}</li>
                     </ul>
                 </div>
             </div>
@@ -307,39 +317,39 @@
         <!-- Controls Panel -->
         {#if showControls}
             <div class="controls-panel">
-                <h3>Galaxy Controls</h3>
-                
+                <h3>{t('galaxy.controlsTitle')}</h3>
+
                 <div class="control-group">
                     <label>
                         <input type="checkbox" bind:checked={enableAnimations}>
-                        Enable Animations
+                        {t('settings.enableAnimations')}
                     </label>
                 </div>
-                
+
                 <div class="control-group">
                     <label>
                         <input type="checkbox" bind:checked={enableStarGlow}>
-                        Star Glow Effects
+                        {t('galaxy.starGlowEffects')}
                     </label>
                 </div>
-                
+
                 <div class="control-group">
                     <label>
                         <input type="checkbox" bind:checked={enableStarLabels}>
-                        Star System Labels
+                        {t('galaxy.starSystemLabels')}
                     </label>
                 </div>
-                
+
                 <div class="control-group">
-                    <label for="distance-slider">Max Render Distance:</label>
-                    <input 
-                        type="range" 
+                    <label for="distance-slider">{t('galaxy.maxRenderDistance')}</label>
+                    <input
+                        type="range"
                         id="distance-slider"
-                        min="10" 
-                        max="100" 
+                        min="10"
+                        max="100"
                         bind:value={maxRenderDistance}
                     >
-                    <span class="distance-value">{maxRenderDistance} ly</span>
+                    <span class="distance-value">{maxRenderDistance} {t('unit.lightYears')}</span>
                 </div>
             </div>
         {/if}
@@ -353,27 +363,27 @@
                 
                 <div class="system-details">
                     <div class="detail-item">
-                        <strong>Distance:</strong> {selectedSystemData.distanceFromEarth.toFixed(2)} light-years
+                        <strong>{t('galaxy.distance')}:</strong> {selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}
                     </div>
                     <div class="detail-item">
-                        <strong>System Type:</strong> {selectedSystemData.systemType}
+                        <strong>{t('galaxy.systemType')}:</strong> {getSystemTypeLabel(selectedSystemData.systemType)}
                     </div>
                     {#if selectedSystemData.metadata.spectralClass}
                         <div class="detail-item">
-                            <strong>Spectral Class:</strong> {selectedSystemData.metadata.spectralClass}
+                            <strong>{t('galaxy.spectralClass')}:</strong> {selectedSystemData.metadata.spectralClass}
                         </div>
                     {/if}
                     {#if selectedSystemData.metadata.constellation}
                         <div class="detail-item">
-                            <strong>Constellation:</strong> {selectedSystemData.metadata.constellation}
+                            <strong>{t('galaxy.constellation')}:</strong> {selectedSystemData.metadata.constellation}
                         </div>
                     {/if}
                     <div class="detail-item">
-                        <strong>Stars:</strong> {selectedSystemData.stars.length}
+                        <strong>{t('galaxy.stars')}:</strong> {selectedSystemData.stars.length}
                     </div>
                     {#if selectedSystemData.metadata.hasExoplanets}
                         <div class="detail-item">
-                            <strong>Known Exoplanets:</strong> {selectedSystemData.metadata.numberOfPlanets || 'Yes'}
+                            <strong>{t('galaxy.knownExoplanets')}:</strong> {selectedSystemData.metadata.numberOfPlanets || t('common.yes')}
                         </div>
                     {/if}
                 </div>
@@ -396,67 +406,67 @@
                         
                         <div class="system-stats-grid">
                             <div class="stat-card">
-                                <div class="stat-label">Distance from Earth</div>
-                                <div class="stat-value">{selectedSystemData.distanceFromEarth.toFixed(2)} light-years</div>
+                                <div class="stat-label">{t('galaxy.distanceFromEarth')}</div>
+                                <div class="stat-value">{selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</div>
                             </div>
-                            
+
                             <div class="stat-card">
-                                <div class="stat-label">System Type</div>
-                                <div class="stat-value">{selectedSystemData.systemType}</div>
+                                <div class="stat-label">{t('galaxy.systemType')}</div>
+                                <div class="stat-value">{getSystemTypeLabel(selectedSystemData.systemType)}</div>
                             </div>
-                            
+
                             <div class="stat-card">
-                                <div class="stat-label">Number of Stars</div>
+                                <div class="stat-label">{t('galaxy.numberOfStars')}</div>
                                 <div class="stat-value">{selectedSystemData.stars.length}</div>
                             </div>
-                            
+
                             {#if selectedSystemData.metadata.hasExoplanets}
                                 <div class="stat-card">
-                                    <div class="stat-label">Known Exoplanets</div>
-                                    <div class="stat-value">{selectedSystemData.metadata.numberOfPlanets || 'Yes'}</div>
+                                    <div class="stat-label">{t('galaxy.knownExoplanets')}</div>
+                                    <div class="stat-value">{selectedSystemData.metadata.numberOfPlanets || t('common.yes')}</div>
                                 </div>
                             {/if}
                         </div>
-                        
+
                         {#if selectedSystemData.metadata.spectralClass}
                             <div class="additional-info">
-                                <h4>Spectral Classification</h4>
+                                <h4>{t('galaxy.spectralClassification')}</h4>
                                 <p>{selectedSystemData.metadata.spectralClass}</p>
                             </div>
                         {/if}
-                        
+
                         {#if selectedSystemData.metadata.constellation}
                             <div class="additional-info">
-                                <h4>Constellation</h4>
+                                <h4>{t('galaxy.constellation')}</h4>
                                 <p>{selectedSystemData.metadata.constellation}</p>
                             </div>
                         {/if}
-                        
+
                         <div class="star-details">
-                            <h4>Star Information</h4>
+                            <h4>{t('galaxy.starInformation')}</h4>
                             <div class="stars-grid">
                                 {#each selectedSystemData.stars as star, index}
                                     <div class="star-card">
-                                        <div class="star-name">Star {index + 1}</div>
-                                        <div class="star-type">Type: {star.stellarType}</div>
+                                        <div class="star-name">{t('galaxy.star')} {index + 1}</div>
+                                        <div class="star-type">{t('galaxy.starType')}: {star.stellarType}</div>
                                         {#if star.temperature}
-                                            <div class="star-temp">Temperature: {star.temperature}K</div>
+                                            <div class="star-temp">{t('modal.temperature')}: {star.temperature}{t('unit.kelvin')}</div>
                                         {/if}
                                         {#if star.mass}
-                                            <div class="star-mass">Mass: {star.mass} M☉</div>
+                                            <div class="star-mass">{t('galaxy.mass')}: {star.mass} M☉</div>
                                         {/if}
                                     </div>
                                 {/each}
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="dialog-actions">
                         <button class="action-button secondary" on:click={closeSystemDialog}>
-                            Close
+                            {t('action.close')}
                         </button>
                         <button class="action-button primary" on:click={() => navigateToSystem(selectedSystemId)}>
-                            {(selectedSystemId === 'solar-system' || selectedSystemId === 'alpha-centauri') ? 'Explore System' : 'Coming Soon'}
+                            {(selectedSystemId === 'solar-system' || selectedSystemId === 'alpha-centauri') ? t('action.explore') : t('common.comingSoon')}
                         </button>
                     </div>
                 </div>

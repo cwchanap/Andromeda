@@ -299,6 +299,8 @@
     on:close={handleCloseSettings}
     on:save={(event) => handleSaveSettings(event.detail)}
     currentSettings={$settings}
+    {lang}
+    {translations}
   />
 
   <!-- System Selector Modal -->

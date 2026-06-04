@@ -280,4 +280,104 @@ export const ja = {
         "メインメニューが読み込まれました。Tabキーでボタン間を移動するか、矢印キーで素早くナビゲートしてください。",
     "sr.loading": "読み込み中...",
     "sr.error": "エラーが発生しました",
+
+    // Galaxy
+    "galaxy.loading": "銀河を読み込み中...",
+    "galaxy.initializing": "3Dレンダラーを初期化中...",
+    "galaxy.loadingSystems": "恒星系を読み込み中...",
+    "galaxy.loadFailed": "銀河の読み込みに失敗しました",
+    "galaxy.aboutTitle": "ローカル銀河について",
+    "galaxy.aboutDescription":
+        "この3Dビジュアライゼーションは、地球から10光年以内の最近の恒星系を示しています。",
+    "galaxy.starSystems": "恒星系",
+    "galaxy.navigationTips": "ナビゲーションのヒント",
+    "galaxy.mouseTouch": "マウス/タッチ",
+    "galaxy.dragToRotate": "ドラッグして視点を回転",
+    "galaxy.scrollPinch": "スクロール/ピンチ",
+    "galaxy.zoomInOut": "ズームイン/アウト",
+    "galaxy.clickToFocus": "上のシステムをクリックしてフォーカス",
+    "galaxy.useSettingsPanel": "設定パネルを使用して視覚効果を調整",
+    "galaxy.controlsTitle": "銀河のコントロール",
+    "galaxy.starGlowEffects": "星のグロー効果",
+    "galaxy.starSystemLabels": "恒星系ラベル",
+    "galaxy.maxRenderDistance": "最大レンダリング距離:",
+    "galaxy.distance": "距離",
+    "galaxy.systemType": "システムタイプ",
+    "galaxy.spectralClass": "スペクトル型",
+    "galaxy.constellation": "星座",
+    "galaxy.stars": "恒星",
+    "galaxy.knownExoplanets": "既知の系外惑星",
+    "galaxy.distanceFromEarth": "地球からの距離",
+    "galaxy.numberOfStars": "恒星の数",
+    "galaxy.spectralClassification": "スペクトル分類",
+    "galaxy.starInformation": "恒星情報",
+    "galaxy.star": "恒星",
+    "galaxy.starType": "タイプ",
+    "galaxy.mass": "質量",
+    "galaxy.systemType.solar": "単一",
+    "galaxy.systemType.binary": "連星",
+    "galaxy.systemType.multiple": "多重",
+    "galaxy.systemType.exotic": "特殊",
+
+    // Terrain
+    "terrain.loading": "地形を読み込み中...",
+    "terrain.initializing": "3Dシーンを初期化中...",
+    "terrain.loadingData": "惑星データを読み込み中...",
+    "terrain.generating": "地形を生成中...",
+    "terrain.settingUpLighting": "照明を設定中...",
+    "terrain.ready": "準備完了！",
+    "terrain.suffix": "地形",
+    "terrain.descriptionPrefix": "詳細な3D地形を探索",
+    "terrain.descriptionSuffix":
+        "。マウスでナビゲートして、地表の特徴、クレーター、山脈、谷を調べることができます。",
+    "terrain.surfaceFeatures": "地表の特徴",
+
+    // Settings
+    "settings.title": "ゲーム設定",
+    "settings.configuration": "設定",
+    "settings.visual": "視覚設定",
+    "settings.enableAnimationsDesc":
+        "惑星の自転と軌道アニメーションを有効にする",
+    "settings.graphicsQualityDesc":
+        "パフォーマンスのためにレンダリング品質を調整",
+    "settings.qualityLow": "低",
+    "settings.qualityMedium": "中",
+    "settings.qualityHigh": "高",
+    "settings.showControlHintsDesc": "ゲーム内で役立つコントロールヒントを表示",
+    "settings.audio": "音声設定",
+    "settings.enableAudioDesc": "BGMと効果音を有効にする",
+    "settings.control": "コントロール設定",
+    "settings.mouseSensitivity": "マウス感度",
+    "settings.sensitivitySlow": "遅い (0.1x)",
+    "settings.sensitivityFast": "速い (2.0x)",
+    "settings.accessibility": "アクセシビリティ設定",
+    "settings.highContrastDesc":
+        "視認性を高めるために高コントラスト色を有効にする",
+    "settings.reducedMotionDesc":
+        "アニメーションとトランジションを最小限にする",
+    "settings.keyboardNavigationDesc":
+        "3Dナビゲーションのキーボードコントロールを有効にする",
+    "settings.announceSceneChangesDesc": "天体が選択されたときに通知する",
+    "settings.screenReaderModeDesc":
+        "スクリーンリーダー用にインターフェースを最適化",
+    "settings.resetDefaults": "デフォルトにリセット",
+    "settings.save": "設定を保存",
+
+    // Constellation
+    "constellation.webglNotAvailable": "3Dグラフィックスは使用できません",
+    "constellation.webglDescription":
+        "お使いのブラウザはWebGLをサポートしていません。これは星座ビューに必要です。",
+    "constellation.trySolutions": "以下の解決策をお試しください：",
+    "constellation.solutionUpdateBrowser": "最新のブラウザバージョンに更新する",
+    "constellation.solutionEnableHardwareAcceleration":
+        "設定でハードウェアアクセラレーションを有効にする",
+    "constellation.solutionTryDifferentBrowser":
+        "別のブラウザを試す（Chrome、Firefox、Edge）",
+
+    // Common
+    "common.yes": "はい",
+    "common.comingSoon": "近日公開",
+
+    // Units
+    "unit.lightYears": "光年",
 } as const;
