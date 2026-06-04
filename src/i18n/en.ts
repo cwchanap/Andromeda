@@ -296,4 +296,104 @@ export const en = {
         "Main menu loaded. Use Tab key to navigate between buttons, or arrow keys for quick navigation.",
     "sr.loading": "Loading...",
     "sr.error": "An error occurred",
+
+    // Galaxy
+    "galaxy.loading": "Loading galaxy...",
+    "galaxy.initializing": "Initializing 3D renderer...",
+    "galaxy.loadingSystems": "Loading star systems...",
+    "galaxy.loadFailed": "Failed to load galaxy",
+    "galaxy.aboutTitle": "About Local Galaxy",
+    "galaxy.aboutDescription":
+        "This 3D visualization shows the nearest star systems to Earth within 10 light-years.",
+    "galaxy.starSystems": "Star Systems",
+    "galaxy.navigationTips": "Navigation Tips",
+    "galaxy.mouseTouch": "Mouse/Touch",
+    "galaxy.dragToRotate": "Drag to rotate the view",
+    "galaxy.scrollPinch": "Scroll/Pinch",
+    "galaxy.zoomInOut": "Zoom in and out",
+    "galaxy.clickToFocus": "Click on systems above to focus",
+    "galaxy.useSettingsPanel": "Use the settings panel to adjust visuals",
+    "galaxy.controlsTitle": "Galaxy Controls",
+    "galaxy.starGlowEffects": "Star Glow Effects",
+    "galaxy.starSystemLabels": "Star System Labels",
+    "galaxy.maxRenderDistance": "Max Render Distance:",
+    "galaxy.distance": "Distance",
+    "galaxy.systemType": "System Type",
+    "galaxy.spectralClass": "Spectral Class",
+    "galaxy.constellation": "Constellation",
+    "galaxy.stars": "Stars",
+    "galaxy.knownExoplanets": "Known Exoplanets",
+    "galaxy.distanceFromEarth": "Distance from Earth",
+    "galaxy.numberOfStars": "Number of Stars",
+    "galaxy.spectralClassification": "Spectral Classification",
+    "galaxy.starInformation": "Star Information",
+    "galaxy.star": "Star",
+    "galaxy.starType": "Type",
+    "galaxy.mass": "Mass",
+    "galaxy.systemType.solar": "Solar",
+    "galaxy.systemType.binary": "Binary",
+    "galaxy.systemType.multiple": "Multiple",
+    "galaxy.systemType.exotic": "Exotic",
+
+    // Terrain
+    "terrain.loading": "Loading terrain...",
+    "terrain.initializing": "Initializing 3D scene...",
+    "terrain.loadingData": "Loading planet data...",
+    "terrain.generating": "Generating terrain...",
+    "terrain.settingUpLighting": "Setting up lighting...",
+    "terrain.ready": "Ready!",
+    "terrain.suffix": "Terrain",
+    "terrain.descriptionPrefix": "Explore the detailed 3D terrain of",
+    "terrain.descriptionSuffix":
+        ". Navigate with your mouse to examine surface features, craters, mountains, and valleys.",
+    "terrain.surfaceFeatures": "Surface Features",
+
+    // Settings
+    "settings.title": "Game Settings",
+    "settings.configuration": "Configuration",
+    "settings.visual": "Visual Settings",
+    "settings.enableAnimationsDesc":
+        "Enable planet rotation and orbital animations",
+    "settings.graphicsQualityDesc": "Adjust rendering quality for performance",
+    "settings.qualityLow": "Low",
+    "settings.qualityMedium": "Medium",
+    "settings.qualityHigh": "High",
+    "settings.showControlHintsDesc":
+        "Display helpful control hints in the game",
+    "settings.audio": "Audio Settings",
+    "settings.enableAudioDesc": "Enable background music and sound effects",
+    "settings.control": "Control Settings",
+    "settings.mouseSensitivity": "Mouse Sensitivity",
+    "settings.sensitivitySlow": "Slow (0.1x)",
+    "settings.sensitivityFast": "Fast (2.0x)",
+    "settings.accessibility": "Accessibility Settings",
+    "settings.highContrastDesc":
+        "Enable high contrast colors for better visibility",
+    "settings.reducedMotionDesc": "Minimize animations and transitions",
+    "settings.keyboardNavigationDesc":
+        "Enable keyboard controls for 3D navigation",
+    "settings.announceSceneChangesDesc":
+        "Announce when celestial bodies are selected",
+    "settings.screenReaderModeDesc": "Optimize interface for screen readers",
+    "settings.resetDefaults": "Reset to Defaults",
+    "settings.save": "Save Settings",
+
+    // Constellation
+    "constellation.webglNotAvailable": "3D Graphics Not Available",
+    "constellation.webglDescription":
+        "Your browser doesn't support WebGL, which is required for the constellation view.",
+    "constellation.trySolutions": "Try these solutions:",
+    "constellation.solutionUpdateBrowser":
+        "Update to the latest browser version",
+    "constellation.solutionEnableHardwareAcceleration":
+        "Enable hardware acceleration in settings",
+    "constellation.solutionTryDifferentBrowser":
+        "Try a different browser (Chrome, Firefox, Edge)",
+
+    // Common
+    "common.yes": "Yes",
+    "common.comingSoon": "Coming Soon",
+
+    // Units
+    "unit.lightYears": "ly",
 } as const;

@@ -14,13 +14,13 @@
   export let translations: Record<string, string> = {};
   
   // Translation function
-  $: t = (key: string) => translations[key] || key;
+  const t = (key: string) => translations[key] || key;
   
   // Component state
   let isLoading = true;
   let loadingProgress = 0;
   let isSceneReady = false;
-  let loadingMessage = "Loading terrain...";
+  let loadingMessage = t('terrain.loading');
   let errorMessage = "";
   
   // 3D scene components
@@ -58,7 +58,7 @@
     if (!container) return;
     
     try {
-      loadingMessage = "Initializing 3D scene...";
+      loadingMessage = t('terrain.initializing');
       loadingProgress = 20;
       
       // Create scene
@@ -82,7 +82,7 @@
       container.appendChild(renderer.domElement);
       
       loadingProgress = 40;
-      loadingMessage = "Loading planet data...";
+      loadingMessage = t('terrain.loadingData');
       
       // Get planet data
       planetData = await getPlanetData();
@@ -91,7 +91,7 @@
       }
       
       loadingProgress = 60;
-      loadingMessage = "Generating terrain...";
+      loadingMessage = t('terrain.generating');
       
       // Create detailed terrain geometry for close viewing
       const terrainConfig = planetData.terrain;
@@ -132,7 +132,7 @@
       terrainMesh.rotation.x = -Math.PI / 2; // Make it horizontal
       scene.add(terrainMesh);
       loadingProgress = 80;
-      loadingMessage = "Setting up lighting...";
+      loadingMessage = t('terrain.settingUpLighting');
       
       // Add lighting optimized for terrain viewing
       setupLighting();
@@ -157,7 +157,7 @@
       };
       
       loadingProgress = 100;
-      loadingMessage = "Ready!";
+      loadingMessage = t('terrain.ready');
       
       // Start render loop
       startRenderLoop();
@@ -329,20 +329,20 @@
     <div class="planet-info-panel">
       <div class="planet-header">
         <h1 class="planet-name">
-          {t(`planet.${planetId}.name`) !== `planet.${planetId}.name` 
-            ? t(`planet.${planetId}.name`) 
-            : planetData.name} Terrain
+          {t(`planet.${planetId}.name`) !== `planet.${planetId}.name`
+            ? t(`planet.${planetId}.name`)
+            : planetData.name} {t('terrain.suffix')}
         </h1>
         <span class="planet-type">{planetData.type.toUpperCase()}</span>
       </div>
       <p class="planet-description">
-        Explore the detailed 3D terrain of {planetData.name}. Navigate with your mouse to examine surface features, craters, mountains, and valleys.
+        {t('terrain.descriptionPrefix')} {planetData.name}{t('terrain.descriptionSuffix')}
       </p>
-      
+
       <!-- Terrain Features -->
       {#if planetData.terrain}
         <div class="terrain-features">
-          <h3>Surface Features</h3>
+          <h3>{t('terrain.surfaceFeatures')}</h3>
           <div class="feature-tags">
             {#each planetData.terrain.features as feature}
               <span class="feature-tag">{feature.type}</span>
@@ -351,7 +351,7 @@
         </div>
       {/if}
     </div>
-    
+
     <!-- Control Panel -->
     <div class="control-panel">
       <button on:click={handleBackToSolar} class="control-button back-button">
@@ -359,7 +359,7 @@
           <path d="m12 19-7-7 7-7"/>
           <path d="M19 12H5"/>
         </svg>
-        Back to Solar System
+        {t('controls.backToMenu')}
       </button>
       
       <div class="view-controls">

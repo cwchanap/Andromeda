@@ -17,6 +17,49 @@ const defaultSettings: GameSettings = {
     screenReaderMode: false,
 };
 
+const testTranslations: Record<string, string> = {
+    "settings.title": "Game Settings",
+    "settings.configuration": "Configuration",
+    "settings.visual": "Visual Settings",
+    "settings.enableAnimations": "Enable Animations",
+    "settings.enableAnimationsDesc":
+        "Enable planet rotation and orbital animations",
+    "settings.graphicsQuality": "Graphics Quality",
+    "settings.graphicsQualityDesc": "Adjust rendering quality for performance",
+    "settings.qualityLow": "Low",
+    "settings.qualityMedium": "Medium",
+    "settings.qualityHigh": "High",
+    "settings.showControlHints": "Show Control Hints",
+    "settings.showControlHintsDesc":
+        "Display helpful control hints in the game",
+    "settings.audio": "Audio Settings",
+    "settings.enableAudio": "Enable Audio",
+    "settings.enableAudioDesc": "Enable background music and sound effects",
+    "settings.control": "Control Settings",
+    "settings.mouseSensitivity": "Mouse Sensitivity",
+    "settings.sensitivitySlow": "Slow (0.1x)",
+    "settings.sensitivityFast": "Fast (2.0x)",
+    "settings.accessibility": "Accessibility Settings",
+    "settings.highContrast": "High Contrast Mode",
+    "settings.highContrastDesc":
+        "Enable high contrast colors for better visibility",
+    "settings.reducedMotion": "Reduced Motion",
+    "settings.reducedMotionDesc": "Minimize animations and transitions",
+    "settings.keyboardNavigation": "Keyboard Navigation",
+    "settings.keyboardNavigationDesc":
+        "Enable keyboard controls for 3D navigation",
+    "settings.announceSceneChanges": "Announce Scene Changes",
+    "settings.announceSceneChangesDesc":
+        "Announce when celestial bodies are selected",
+    "settings.screenReaderMode": "Screen Reader Mode",
+    "settings.screenReaderModeDesc": "Optimize interface for screen readers",
+    "settings.resetDefaults": "Reset to Defaults",
+    "settings.save": "Save Settings",
+    "action.cancel": "Cancel",
+    "action.close": "Close",
+    "action.save": "Save",
+};
+
 describe("SettingsModal", () => {
     afterEach(() => {
         cleanup();
@@ -26,7 +69,11 @@ describe("SettingsModal", () => {
     describe("Closed State", () => {
         it("should not show settings content when closed", () => {
             const { queryByText } = render(SettingsModal, {
-                props: { isOpen: false, currentSettings: defaultSettings },
+                props: {
+                    isOpen: false,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             expect(queryByText("Game Settings")).toBeNull();
         });
@@ -35,35 +82,55 @@ describe("SettingsModal", () => {
     describe("Open State", () => {
         it("should render without crashing when open", () => {
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             expect(container).toBeTruthy();
         });
 
         it("should show Game Settings header when open", () => {
             const { getByText } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             expect(getByText("Game Settings")).toBeTruthy();
         });
 
         it("should show Visual Settings section", () => {
             const { getByText } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             expect(getByText("Visual Settings")).toBeTruthy();
         });
 
         it("should show Accessibility Settings section", () => {
             const { getByText } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             expect(getByText("Accessibility Settings")).toBeTruthy();
         });
 
         it("should show Save Settings button", () => {
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             const buttons = Array.from(container.querySelectorAll("button"));
             const saveBtn = buttons.find((b) =>
@@ -74,7 +141,11 @@ describe("SettingsModal", () => {
 
         it("should show Reset to Defaults button", () => {
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             const buttons = Array.from(container.querySelectorAll("button"));
             const resetBtn = buttons.find((b) =>
@@ -85,7 +156,11 @@ describe("SettingsModal", () => {
 
         it("should show graphics quality options", () => {
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             expect(container.textContent?.toLowerCase()).toContain("quality");
         });
@@ -99,7 +174,11 @@ describe("SettingsModal", () => {
                 enableAnimations: false,
             };
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: modifiedSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: modifiedSettings,
+                    translations: testTranslations,
+                },
             });
             const buttons = Array.from(container.querySelectorAll("button"));
             const resetBtn = buttons.find((b) =>
@@ -116,7 +195,11 @@ describe("SettingsModal", () => {
 
         it("should toggle checkboxes without throwing", async () => {
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             const checkboxes = container.querySelectorAll(
                 "input[type='checkbox']",
@@ -128,7 +211,11 @@ describe("SettingsModal", () => {
 
         it("should update graphicsQuality select value when changed", async () => {
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             const select = container.querySelector(
                 "select",
@@ -140,7 +227,11 @@ describe("SettingsModal", () => {
 
         it("should update range inputs without throwing", async () => {
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: defaultSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
             });
             const ranges = container.querySelectorAll("input[type='range']");
             for (const range of Array.from(ranges)) {
@@ -158,7 +249,11 @@ describe("SettingsModal", () => {
                 highContrastMode: true,
             };
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: highContrastSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: highContrastSettings,
+                    translations: testTranslations,
+                },
             });
             const highContrastCheckbox = container.querySelector(
                 "input[aria-label='High Contrast Mode']",
@@ -173,7 +268,11 @@ describe("SettingsModal", () => {
                 graphicsQuality: "low" as const,
             };
             const { container } = render(SettingsModal, {
-                props: { isOpen: true, currentSettings: lowSettings },
+                props: {
+                    isOpen: true,
+                    currentSettings: lowSettings,
+                    translations: testTranslations,
+                },
             });
             const select = container.querySelector(
                 "select",

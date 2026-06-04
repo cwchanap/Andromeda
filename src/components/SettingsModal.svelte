@@ -8,6 +8,7 @@
   import Separator from "./ui/Separator.svelte";
   import Badge from "./ui/Badge.svelte";
   import type { GameSettings } from "../stores/gameStore";
+  import type { AppLocale } from "../i18n/routes";
 
   interface SettingsModalProps {
     isOpen: boolean;
@@ -16,6 +17,11 @@
 
   export let isOpen: boolean;
   export let currentSettings: GameSettings;
+  export let lang: AppLocale = "en";
+  export let translations: Record<string, string> = {};
+
+  // Translation function
+  const t = (key: string) => translations[key] || key;
 
   let settings: GameSettings = { ...currentSettings };
 
@@ -65,29 +71,29 @@
   <div class="space-y-4">
     <!-- Header -->
     <div class="flex items-center gap-3 pb-4">
-      <h2 class="text-lg font-semibold">Game Settings</h2>
-      <Badge variant="secondary">Configuration</Badge>
+      <h2 class="text-lg font-semibold">{t('settings.title')}</h2>
+      <Badge variant="secondary">{t('settings.configuration')}</Badge>
     </div>
 
     <div class="space-y-6">
       <!-- Visual Settings -->
       <Card>
         <CardHeader>
-          <CardTitle>Visual Settings</CardTitle>
+          <CardTitle>{t('settings.visual')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-semibold">Enable Animations</h4>
+              <h4 class="text-sm font-semibold">{t('settings.enableAnimations')}</h4>
               <p class="text-muted-foreground text-sm">
-                Enable planet rotation and orbital animations
+                {t('settings.enableAnimationsDesc')}
               </p>
             </div>
             <input
               type="checkbox"
               bind:checked={settings.enableAnimations}
               class="h-4 w-4"
-              aria-label="Enable Animations"
+              aria-label={t('settings.enableAnimations')}
             />
           </div>
 
@@ -95,18 +101,18 @@
 
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-semibold">Graphics Quality</h4>
+              <h4 class="text-sm font-semibold">{t('settings.graphicsQuality')}</h4>
               <p class="text-muted-foreground text-sm">
-                Adjust rendering quality for performance
+                {t('settings.graphicsQualityDesc')}
               </p>
             </div>
             <select
               bind:value={settings.graphicsQuality}
               class="rounded border px-2 py-1"
             >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              <option value="low">{t('settings.qualityLow')}</option>
+              <option value="medium">{t('settings.qualityMedium')}</option>
+              <option value="high">{t('settings.qualityHigh')}</option>
             </select>
           </div>
 
@@ -114,16 +120,16 @@
 
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-semibold">Show Control Hints</h4>
+              <h4 class="text-sm font-semibold">{t('settings.showControlHints')}</h4>
               <p class="text-muted-foreground text-sm">
-                Display helpful control hints in the game
+                {t('settings.showControlHintsDesc')}
               </p>
             </div>
             <input
               type="checkbox"
               bind:checked={settings.showControlHints}
               class="h-4 w-4"
-              aria-label="Show Control Hints"
+              aria-label={t('settings.showControlHints')}
             />
           </div>
         </CardContent>
@@ -132,21 +138,21 @@
       <!-- Audio Settings -->
       <Card>
         <CardHeader>
-          <CardTitle>Audio Settings</CardTitle>
+          <CardTitle>{t('settings.audio')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-semibold">Enable Audio</h4>
+              <h4 class="text-sm font-semibold">{t('settings.enableAudio')}</h4>
               <p class="text-muted-foreground text-sm">
-                Enable background music and sound effects
+                {t('settings.enableAudioDesc')}
               </p>
             </div>
             <input
               type="checkbox"
               bind:checked={settings.audioEnabled}
               class="h-4 w-4"
-              aria-label="Enable Audio"
+              aria-label={t('settings.enableAudio')}
             />
           </div>
         </CardContent>
@@ -155,12 +161,12 @@
       <!-- Control Settings -->
       <Card>
         <CardHeader>
-          <CardTitle>Control Settings</CardTitle>
+          <CardTitle>{t('settings.control')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <div class="mb-2 flex items-center justify-between">
-              <h4 class="text-sm font-semibold">Mouse Sensitivity</h4>
+              <h4 class="text-sm font-semibold">{t('settings.mouseSensitivity')}</h4>
               <span class="text-muted-foreground text-sm">
                 {settings.controlSensitivity.toFixed(1)}x
               </span>
@@ -174,8 +180,8 @@
               class="w-full"
             />
             <div class="text-muted-foreground mt-1 flex justify-between text-xs">
-              <span>Slow (0.1x)</span>
-              <span>Fast (2.0x)</span>
+              <span>{t('settings.sensitivitySlow')}</span>
+              <span>{t('settings.sensitivityFast')}</span>
             </div>
           </div>
         </CardContent>
@@ -184,21 +190,21 @@
       <!-- Accessibility Settings -->
       <Card>
         <CardHeader>
-          <CardTitle>Accessibility Settings</CardTitle>
+          <CardTitle>{t('settings.accessibility')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-semibold">High Contrast Mode</h4>
+              <h4 class="text-sm font-semibold">{t('settings.highContrast')}</h4>
               <p class="text-muted-foreground text-sm">
-                Enable high contrast colors for better visibility
+                {t('settings.highContrastDesc')}
               </p>
             </div>
             <input
               type="checkbox"
               bind:checked={settings.highContrastMode}
               class="h-4 w-4"
-              aria-label="High Contrast Mode"
+              aria-label={t('settings.highContrast')}
               aria-describedby="high-contrast-desc"
             />
           </div>
@@ -207,16 +213,16 @@
 
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-semibold">Reduced Motion</h4>
+              <h4 class="text-sm font-semibold">{t('settings.reducedMotion')}</h4>
               <p class="text-muted-foreground text-sm">
-                Minimize animations and transitions
+                {t('settings.reducedMotionDesc')}
               </p>
             </div>
             <input
               type="checkbox"
               bind:checked={settings.reducedMotion}
               class="h-4 w-4"
-              aria-label="Reduced Motion"
+              aria-label={t('settings.reducedMotion')}
               aria-describedby="reduced-motion-desc"
             />
           </div>
@@ -225,16 +231,16 @@
 
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-semibold">Keyboard Navigation</h4>
+              <h4 class="text-sm font-semibold">{t('settings.keyboardNavigation')}</h4>
               <p class="text-muted-foreground text-sm">
-                Enable keyboard controls for 3D navigation
+                {t('settings.keyboardNavigationDesc')}
               </p>
             </div>
             <input
               type="checkbox"
               bind:checked={settings.enableKeyboardNavigation}
               class="h-4 w-4"
-              aria-label="Keyboard Navigation"
+              aria-label={t('settings.keyboardNavigation')}
               aria-describedby="keyboard-nav-desc"
             />
           </div>
@@ -243,16 +249,16 @@
 
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-semibold">Announce Scene Changes</h4>
+              <h4 class="text-sm font-semibold">{t('settings.announceSceneChanges')}</h4>
               <p class="text-muted-foreground text-sm">
-                Announce when celestial bodies are selected
+                {t('settings.announceSceneChangesDesc')}
               </p>
             </div>
             <input
               type="checkbox"
               bind:checked={settings.announceSceneChanges}
               class="h-4 w-4"
-              aria-label="Announce Scene Changes"
+              aria-label={t('settings.announceSceneChanges')}
               aria-describedby="announce-changes-desc"
             />
           </div>
@@ -261,16 +267,16 @@
 
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-semibold">Screen Reader Mode</h4>
+              <h4 class="text-sm font-semibold">{t('settings.screenReaderMode')}</h4>
               <p class="text-muted-foreground text-sm">
-                Optimize interface for screen readers
+                {t('settings.screenReaderModeDesc')}
               </p>
             </div>
             <input
               type="checkbox"
               bind:checked={settings.screenReaderMode}
               class="h-4 w-4"
-              aria-label="Screen Reader Mode"
+              aria-label={t('settings.screenReaderMode')}
               aria-describedby="screen-reader-desc"
             />
           </div>
@@ -280,13 +286,13 @@
       <!-- Action Buttons -->
       <div class="flex justify-between gap-3">
         <Button variant="outline" on:click={handleReset}>
-          Reset to Defaults
+          {t('settings.resetDefaults')}
         </Button>
         <div class="flex gap-3">
           <Button variant="outline" on:click={onClose}>
-            Cancel
+            {t('action.cancel')}
           </Button>
-          <Button on:click={handleSave}>Save Settings</Button>
+          <Button on:click={handleSave}>{t('settings.save')}</Button>
         </div>
       </div>
     </div>
