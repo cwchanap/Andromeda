@@ -152,6 +152,74 @@ export const en = {
     "element.elements": "elements",
     "element.metals": "metals",
 
+    // Composition descriptions (without percentages)
+    "element.ironcore": "Iron core",
+    "element.silicatemantle": "Silicate mantle",
+    "element.rockycrust": "Rocky crust",
+    "element.thincrust": "Thin crust",
+    "element.silicaterocks": "Silicate rocks",
+    "element.regolithsurface": "Regolith surface",
+    "element.carbonrichrock": "Carbon-rich rock",
+    "element.silicaterock": "Silicate rock",
+    "element.sulfurcompounds": "Sulfur compounds",
+    "element.watericeshell": "Water ice shell",
+    "element.subsurfaceocean": "Subsurface ocean",
+    "element.waterice": "Water ice",
+    "element.rockycore": "Rocky core",
+    "element.methanelakes": "Methane lakes",
+    "element.carbondioxideice": "Carbon dioxide ice",
+
+    // Measurement units
+    "unit.km": "km",
+    "unit.days": "days",
+    "unit.years": "years",
+    "unit.hours": "hours",
+    "unit.million": "million",
+    "unit.billion": "billion",
+    "unit.kelvin": "K",
+    "unit.celsius": "°C",
+    "unit.na": "N/A",
+    "unit.surface": "surface",
+    "unit.core": "core",
+    "unit.average": "average",
+    "unit.day": "day",
+    "unit.night": "night",
+    "unit.volcanoes": "volcanoes",
+    "unit.from": "from",
+
+    // Alpha Centauri celestial bodies
+    "planet.alpha-centauri-a.name": "Alpha Centauri A",
+    "planet.alpha-centauri-a.description":
+        "The larger and more luminous of the two main stars in the Alpha Centauri system, similar to our Sun but slightly older",
+    "planet.alpha-centauri-b.name": "Alpha Centauri B",
+    "planet.alpha-centauri-b.description":
+        "The smaller companion star to Alpha Centauri A, slightly cooler and orange in color",
+    "planet.proxima-centauri.name": "Proxima Centauri",
+    "planet.proxima-centauri.description":
+        "A small red dwarf star, the closest known star to the Solar System",
+    "planet.proxima-b.name": "Proxima Centauri b",
+    "planet.proxima-b.description":
+        "An Earth-mass exoplanet orbiting in the habitable zone of Proxima Centauri",
+    "planet.proxima-c.name": "Proxima Centauri c",
+    "planet.proxima-c.description":
+        "A super-Earth exoplanet orbiting Proxima Centauri",
+
+    // Kepler-438 celestial bodies
+    "planet.kepler-438.name": "Kepler-438",
+    "planet.kepler-438.description":
+        "A red dwarf star hosting potentially habitable exoplanets",
+    "planet.kepler-438b.name": "Kepler-438b",
+    "planet.kepler-438b.description":
+        "A potentially habitable Earth-sized exoplanet in the Kepler-438 system",
+
+    // Kepler-442 celestial bodies
+    "planet.kepler-442.name": "Kepler-442",
+    "planet.kepler-442.description":
+        "A K-type star with a promising habitable-zone exoplanet",
+    "planet.kepler-442b.name": "Kepler-442b",
+    "planet.kepler-442b.description":
+        "A super-Earth exoplanet in the habitable zone of Kepler-442",
+
     // Systems
     "systems.unknown": "Unknown System",
     "systems.solar.name": "Solar System",

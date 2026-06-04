@@ -142,6 +142,73 @@ export const ja = {
     "element.elements": "元素",
     "element.metals": "金属",
 
+    // Composition descriptions (without percentages)
+    "element.ironcore": "鉄核",
+    "element.silicatemantle": "ケイ酸塩マントル",
+    "element.rockycrust": "岩石地殻",
+    "element.thincrust": "薄い地殻",
+    "element.silicaterocks": "ケイ酸塩岩石",
+    "element.regolithsurface": "レゴリス表面",
+    "element.carbonrichrock": "炭素豊富な岩石",
+    "element.silicaterock": "ケイ酸塩岩石",
+    "element.sulfurcompounds": "硫黄化合物",
+    "element.watericeshell": "水氷の殻",
+    "element.subsurfaceocean": "地下海洋",
+    "element.waterice": "水氷",
+    "element.rockycore": "岩石核",
+    "element.methanelakes": "メタン湖",
+    "element.carbondioxideice": "二酸化炭素の氷",
+
+    // Measurement units
+    "unit.km": "km",
+    "unit.days": "日",
+    "unit.years": "年",
+    "unit.hours": "時間",
+    "unit.million": "百万",
+    "unit.billion": "10億",
+    "unit.kelvin": "K",
+    "unit.celsius": "°C",
+    "unit.na": "該当なし",
+    "unit.surface": "表面",
+    "unit.core": "核心",
+    "unit.average": "平均",
+    "unit.day": "昼",
+    "unit.night": "夜",
+    "unit.volcanoes": "火山",
+    "unit.from": "から",
+
+    // Alpha Centauri celestial bodies
+    "planet.alpha-centauri-a.name": "ケンタウルス座アルファ星A",
+    "planet.alpha-centauri-a.description":
+        "ケンタウルス座アルファ星系の2つの主星のうち、より大きく明るい方。太陽に似ているがやや古い",
+    "planet.alpha-centauri-b.name": "ケンタウルス座アルファ星B",
+    "planet.alpha-centauri-b.description":
+        "ケンタウルス座アルファ星Aの小さな伴星。やや低温でオレンジ色",
+    "planet.proxima-centauri.name": "プロキシマ・ケンタウリ",
+    "planet.proxima-centauri.description":
+        "小さな赤色矮星。太陽系に最も近い既知の恒星",
+    "planet.proxima-b.name": "プロキシマ・ケンタウリb",
+    "planet.proxima-b.description":
+        "プロキシマ・ケンタウリの居住可能ゾーンを公転する地球質量の系外惑星",
+    "planet.proxima-c.name": "プロキシマ・ケンタウリc",
+    "planet.proxima-c.description":
+        "プロキシマ・ケンタウリを公転するスーパーアース系外惑星",
+
+    // Kepler-438 celestial bodies
+    "planet.kepler-438.name": "ケプラー438",
+    "planet.kepler-438.description": "潜在的に居住可能な系外惑星を持つ赤色矮星",
+    "planet.kepler-438b.name": "ケプラー438b",
+    "planet.kepler-438b.description":
+        "ケプラー438系に存在する潜在的に居住可能な地球サイズの系外惑星",
+
+    // Kepler-442 celestial bodies
+    "planet.kepler-442.name": "ケプラー442",
+    "planet.kepler-442.description":
+        "有望な居住可能ゾーンの系外惑星を持つK型星",
+    "planet.kepler-442b.name": "ケプラー442b",
+    "planet.kepler-442b.description":
+        "ケプラー442の居住可能ゾーンを公転するスーパーアース系外惑星",
+
     // Systems
     "systems.unknown": "不明なシステム",
     "systems.solar.name": "太陽系",
