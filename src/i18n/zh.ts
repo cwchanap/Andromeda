@@ -136,6 +136,72 @@ export const zh = {
     "element.elements": "元素",
     "element.metals": "金属",
 
+    // Composition descriptions (without percentages)
+    "element.ironcore": "铁核",
+    "element.silicatemantle": "硅酸盐地幔",
+    "element.rockycrust": "岩石地壳",
+    "element.thincrust": "薄地壳",
+    "element.silicaterocks": "硅酸盐岩石",
+    "element.regolithsurface": "风化层表面",
+    "element.carbonrichrock": "富碳岩石",
+    "element.silicaterock": "硅酸盐岩石",
+    "element.sulfurcompounds": "硫化合物",
+    "element.watericeshell": "水冰壳层",
+    "element.subsurfaceocean": "地下海洋",
+    "element.waterice": "水冰",
+    "element.rockycore": "岩石核心",
+    "element.methanelakes": "甲烷湖",
+    "element.carbondioxideice": "二氧化碳冰",
+
+    // Measurement units
+    "unit.km": "公里",
+    "unit.days": "天",
+    "unit.years": "年",
+    "unit.hours": "小时",
+    "unit.million": "百万",
+    "unit.billion": "十亿",
+    "unit.kelvin": "K",
+    "unit.celsius": "°C",
+    "unit.na": "不适用",
+    "unit.surface": "表面",
+    "unit.core": "核心",
+    "unit.average": "平均",
+    "unit.day": "白天",
+    "unit.night": "夜晚",
+    "unit.volcanoes": "火山",
+    "unit.from": "来自",
+
+    // Alpha Centauri celestial bodies
+    "planet.alpha-centauri-a.name": "半人马座阿尔法星A",
+    "planet.alpha-centauri-a.description":
+        "半人马座阿尔法星系中两颗主星中较大且更明亮的一颗，与太阳类似但略为古老",
+    "planet.alpha-centauri-b.name": "半人马座阿尔法星B",
+    "planet.alpha-centauri-b.description":
+        "半人马座阿尔法星A的较小伴星，温度稍低，呈橙色",
+    "planet.proxima-centauri.name": "比邻星",
+    "planet.proxima-centauri.description":
+        "一颗小型红矮星，是已知距离太阳系最近的恒星",
+    "planet.proxima-b.name": "比邻星b",
+    "planet.proxima-b.description":
+        "一颗地球质量的系外行星，位于比邻星的宜居带内",
+    "planet.proxima-c.name": "比邻星c",
+    "planet.proxima-c.description": "一颗超级地球系外行星，围绕比邻星运行",
+
+    // Kepler-438 celestial bodies
+    "planet.kepler-438.name": "开普勒-438",
+    "planet.kepler-438.description": "一颗红矮星，拥有潜在宜居的系外行星",
+    "planet.kepler-438b.name": "开普勒-438b",
+    "planet.kepler-438b.description":
+        "一颗潜在宜居的地球大小系外行星，位于开普勒-438系统中",
+
+    // Kepler-442 celestial bodies
+    "planet.kepler-442.name": "开普勒-442",
+    "planet.kepler-442.description":
+        "一颗K型恒星，拥有一颗有希望的宜居带系外行星",
+    "planet.kepler-442b.name": "开普勒-442b",
+    "planet.kepler-442b.description":
+        "一颗超级地球系外行星，位于开普勒-442的宜居带内",
+
     // Systems
     "systems.unknown": "未知系统",
     "systems.solar.name": "太阳系",

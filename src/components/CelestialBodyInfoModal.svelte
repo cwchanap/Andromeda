@@ -33,12 +33,20 @@
   
   // Translate composition elements
   $: translateComposition = (composition: string) => {
+    // First, try to translate the entire normalized string (for compound entries without percentages)
+    const normalizedFull = composition.toLowerCase().replace(/\s+/g, '');
+    const fullKey = `element.${normalizedFull}`;
+    const translatedFull = t(fullKey);
+    if (translatedFull !== fullKey) {
+      return translatedFull;
+    }
+
     // Extract element name and percentage/description
     const match = composition.match(/^(.+?)\s*\((.+)\)$/);
     if (match) {
       const elementName = match[1].trim();
       const percentage = match[2].trim();
-      
+
       // Handle specific cases first
       if (elementName.toLowerCase() === 'trace metals') {
         return `${t('element.trace')} ${t('element.metals')} (${percentage})`;
@@ -46,16 +54,16 @@
       if (elementName.toLowerCase().includes('other elements')) {
         return `${t('element.other')} ${t('element.elements')} (${percentage})`;
       }
-      
+
       // Try to translate the element name directly
       const normalizedElement = elementName.toLowerCase().replace(/\s+/g, '');
       const translationKey = `element.${normalizedElement}`;
       const translatedElement = t(translationKey);
-      
+
       if (translatedElement !== translationKey) {
         return `${translatedElement} (${percentage})`;
       }
-      
+
       // Try common patterns for fallback
       if (elementName.toLowerCase().includes('trace')) {
         return `${t('element.trace')} ${t('element.metals')} (${percentage})`;
@@ -64,9 +72,77 @@
         return `${t('element.other')} ${t('element.elements')} (${percentage})`;
       }
     }
-    
+
     // Fallback to original text
     return composition;
+  };
+
+  // Translate measurement values (diameter, distance, period, temperature)
+  function translateFactValue(value: string): string {
+    if (!value || !t) return value;
+
+    // Helper: return translated value if key exists, otherwise fallback
+    const tr = (key: string, fallback: string) => {
+      const translated = t(key);
+      return translated !== key ? translated : fallback;
+    };
+
+    // Step 1: Handle temperature with modifiers + optional million/billion scale.
+    // This must run before generic million/billion replacement so the number-K
+    // pattern is still intact (e.g. "15 million K (core)").
+    const tempReplacements: [RegExp, (...args: string[]) => string][] = [
+      [/([\d,.-]+)(?:\s+(million|billion))?\s+K\s*\((surface|core|average|day|night|volcanoes)\)/g,
+        (_, num, scale, modifier) => {
+          const scaleStr = scale ? `${tr(`unit.${scale}`, scale)} ` : '';
+          return `${num} ${scaleStr}${tr('unit.kelvin', 'K')} (${tr(`unit.${modifier}`, modifier)})`;
+        }],
+    ];
+    let result = value;
+    for (const [pattern, replacer] of tempReplacements) {
+      result = result.replace(pattern, replacer);
+    }
+
+    // Step 2: Generic replacements
+    const genericReplacements: [RegExp, (...args: string[]) => string][] = [
+      // Generic Kelvin (only when not already handled above)
+      [/([\d,.-]+)\s+K\b/g, (_, num) => `${num} ${tr('unit.kelvin', 'K')}`],
+      // Celsius with optional modifier
+      [/([\d,.-]+)\s*°C\s*\((surface|core|average|day|night|volcanoes)\)/g,
+        (_, num, modifier) => `${num}${tr('unit.celsius', '°C')} (${tr(`unit.${modifier}`, modifier)})`],
+      // Standalone Celsius
+      [/°C/g, () => tr('unit.celsius', '°C')],
+      // Distance scale (only when followed by km or K to avoid false matches)
+      [/\bmillion\b(?=\s*(km|K))/g, () => tr('unit.million', 'million')],
+      [/\bbillion\b(?=\s*(km|K))/g, () => tr('unit.billion', 'billion')],
+      // Distance unit
+      [/([\d,.-]+)\s*km\b/g, (_, num) => `${num} ${tr('unit.km', 'km')}`],
+      // Time units
+      [/\bdays\b/g, () => tr('unit.days', 'days')],
+      [/\byears\b/g, () => tr('unit.years', 'years')],
+      [/\bhours\b/g, () => tr('unit.hours', 'hours')],
+      // Special
+      [/\bN\/A\b/g, () => tr('unit.na', 'N/A')],
+      // Distance from parent ("from Earth", "from Mars", etc.)
+      [/\bfrom\b/g, () => tr('unit.from', 'from')],
+    ];
+
+    for (const [pattern, replacer] of genericReplacements) {
+      result = result.replace(pattern, replacer);
+    }
+    return result;
+  }
+
+  // Helper to get translated fact with fallback
+  $: getTranslatedFact = (body: CelestialBodyData | null, factName: string, rawValue: string | undefined) => {
+    if (!body || rawValue === undefined) return rawValue ?? '-';
+    // Try full fact translation first
+    const fullKey = `facts.${body.id}.${factName}`;
+    const fullTranslation = t(fullKey);
+    if (fullTranslation !== fullKey) {
+      return fullTranslation;
+    }
+    // Fall back to unit translation
+    return translateFactValue(rawValue);
   };
   
   // Handle keyboard and click events
@@ -240,31 +316,33 @@
                 <div class="fact-icon">🌍</div>
                 <div class="fact-content">
                   <span class="fact-label">{t('modal.diameter')}</span>
-                  <span class="fact-value">{celestialBody.keyFacts.diameter}</span>
+                  <span class="fact-value">{getTranslatedFact(celestialBody, 'diameter', celestialBody.keyFacts.diameter)}</span>
                 </div>
               </div>
-              
+
               <div class="fact-item">
                 <div class="fact-icon">📏</div>
                 <div class="fact-content">
                   <span class="fact-label">{celestialBody.type === 'moon' ? t('modal.distanceFromParent') : t('modal.distanceFromSun')}</span>
-                  <span class="fact-value">{celestialBody.type === 'moon' ? (celestialBody.distanceFromParent?.formattedString ?? '-') : (celestialBody.keyFacts.distanceFromSun ?? '-')}</span>
+                  <span class="fact-value">{celestialBody.type === 'moon'
+                    ? getTranslatedFact(celestialBody, 'distanceFromParent', celestialBody.distanceFromParent?.formattedString ?? '-')
+                    : getTranslatedFact(celestialBody, 'distanceFromSun', celestialBody.keyFacts.distanceFromSun ?? '-')}</span>
                 </div>
               </div>
-              
+
               <div class="fact-item">
                 <div class="fact-icon">🔄</div>
                 <div class="fact-content">
                   <span class="fact-label">{t('modal.orbitalPeriod')}</span>
-                  <span class="fact-value">{celestialBody.keyFacts.orbitalPeriod}</span>
+                  <span class="fact-value">{getTranslatedFact(celestialBody, 'orbitalPeriod', celestialBody.keyFacts.orbitalPeriod)}</span>
                 </div>
               </div>
-              
+
               <div class="fact-item">
                 <div class="fact-icon">🌡️</div>
                 <div class="fact-content">
                   <span class="fact-label">{t('modal.temperature')}</span>
-                  <span class="fact-value">{celestialBody.keyFacts.temperature}</span>
+                  <span class="fact-value">{getTranslatedFact(celestialBody, 'temperature', celestialBody.keyFacts.temperature)}</span>
                 </div>
               </div>
               
