@@ -23,6 +23,7 @@ export const ja = {
 
     // Controls
     "controls.backToMenu": "← メニューに戻る",
+    "controls.backToSolarSystem": "← 太陽系に戻る",
     "controls.zoomIn": "ズームイン",
     "controls.zoomOut": "ズームアウト",
     "controls.resetView": "ビューをリセット",

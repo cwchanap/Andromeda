@@ -331,7 +331,7 @@
         <h2>Error Loading Terrain</h2>
         <p>{errorMessage}</p>
         <button on:click={handleBackToSolar} class="error-button">
-          Back to Solar System
+          {t('controls.backToSolarSystem')}
         </button>
       </div>
     </ErrorBoundary>
@@ -375,7 +375,7 @@
           <path d="m12 19-7-7 7-7"/>
           <path d="M19 12H5"/>
         </svg>
-        {t('controls.backToMenu')}
+        {t('controls.backToSolarSystem')}
       </button>
       
       <div class="view-controls">
