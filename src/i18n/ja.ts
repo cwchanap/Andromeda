@@ -286,6 +286,10 @@ export const ja = {
     "galaxy.initializing": "3Dレンダラーを初期化中...",
     "galaxy.loadingSystems": "恒星系を読み込み中...",
     "galaxy.loadFailed": "銀河の読み込みに失敗しました",
+    "action.retry": "再試行",
+    "nav.menu": "メニュー",
+    "nav.controls": "コントロール",
+    "error.unknown": "不明なエラーが発生しました",
     "galaxy.aboutTitle": "ローカル銀河について",
     "galaxy.aboutDescription":
         "この3Dビジュアライゼーションは、地球から10光年以内の最近の恒星系を示しています。",
@@ -316,6 +320,7 @@ export const ja = {
     "galaxy.mass": "質量",
     "galaxy.systemType.solar": "単一",
     "galaxy.systemType.binary": "連星",
+    "galaxy.systemType.trinary": "三重",
     "galaxy.systemType.multiple": "多重",
     "galaxy.systemType.exotic": "特殊",
 
@@ -336,13 +341,16 @@ export const ja = {
     "settings.title": "ゲーム設定",
     "settings.configuration": "設定",
     "settings.visual": "視覚設定",
+    "settings.enableAnimations": "アニメーションを有効にする",
     "settings.enableAnimationsDesc":
         "惑星の自転と軌道アニメーションを有効にする",
+    "settings.graphicsQuality": "グラフィック品質",
     "settings.graphicsQualityDesc":
         "パフォーマンスのためにレンダリング品質を調整",
     "settings.qualityLow": "低",
     "settings.qualityMedium": "中",
     "settings.qualityHigh": "高",
+    "settings.showControlHints": "コントロールヒントを表示",
     "settings.showControlHintsDesc": "ゲーム内で役立つコントロールヒントを表示",
     "settings.audio": "音声設定",
     "settings.enableAudioDesc": "BGMと効果音を有効にする",
@@ -355,9 +363,12 @@ export const ja = {
         "視認性を高めるために高コントラスト色を有効にする",
     "settings.reducedMotionDesc":
         "アニメーションとトランジションを最小限にする",
+    "settings.keyboardNavigation": "キーボードナビゲーション",
     "settings.keyboardNavigationDesc":
         "3Dナビゲーションのキーボードコントロールを有効にする",
+    "settings.announceSceneChanges": "シーン変更を通知",
     "settings.announceSceneChangesDesc": "天体が選択されたときに通知する",
+    "settings.screenReaderMode": "スクリーンリーダーモード",
     "settings.screenReaderModeDesc":
         "スクリーンリーダー用にインターフェースを最適化",
     "settings.resetDefaults": "デフォルトにリセット",
