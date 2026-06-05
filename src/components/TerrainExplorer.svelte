@@ -31,6 +31,10 @@
   let controls: any; // OrbitControls
   let animationFrameId: number;
   let planetData: CelestialBodyData | null = null;
+  // Track GPU resources for explicit disposal in onDestroy (scene.clear() does
+  // not free GPU memory). See AGENTS.md "Three.js memory" guidance.
+  let terrainGeometry: THREE.PlaneGeometry | null = null;
+  let terrainMaterial: THREE.MeshStandardMaterial | null = null;
   
   // Camera and interaction state
   let currentZoom = 5; // Start closer for terrain viewing
@@ -104,7 +108,7 @@
       const size = 100; // 100x100 units
       const segments = 200; // 200x200 grid for detail
       // Create a plane geometry
-      const terrainGeometry = new THREE.PlaneGeometry(size, size, segments, segments);
+      terrainGeometry = new THREE.PlaneGeometry(size, size, segments, segments);
       // Generate heightmap using simple noise
       function perlin(x, y) {
         // Simple pseudo-random noise for demo (replace with real Perlin/Simplex for realism)
@@ -120,14 +124,15 @@
       }
       terrainGeometry.computeVertexNormals();
       // Material
-      const terrainMaterial = new THREE.MeshStandardMaterial({
+      terrainMaterial = new THREE.MeshStandardMaterial({
         color: 0x888866,
         flatShading: true,
         wireframe: false,
       });
       // Mesh
       const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
-      terrainMesh.receiveShadow = true;
+      // Shadows are permanently disabled project-wide (see AGENTS.md).
+      terrainMesh.receiveShadow = false;
       terrainMesh.castShadow = false;
       terrainMesh.rotation.x = -Math.PI / 2; // Make it horizontal
       scene.add(terrainMesh);
@@ -287,7 +292,18 @@
     if (controls) {
       controls.dispose();
     }
-    
+
+    // Free GPU memory before tearing down the scene. scene.clear() only removes
+    // references; it does not release buffer/textures held by the GPU.
+    if (terrainGeometry) {
+      terrainGeometry.dispose();
+      terrainGeometry = null;
+    }
+    if (terrainMaterial) {
+      terrainMaterial.dispose();
+      terrainMaterial = null;
+    }
+
     if (renderer) {
       renderer.dispose();
       if (container && renderer.domElement) {

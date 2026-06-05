@@ -79,7 +79,7 @@
 
   // Translate measurement values (diameter, distance, period, temperature)
   function translateFactValue(value: string): string {
-    if (!value || !t) return value;
+    if (!value) return value;
 
     // Helper: return translated value if key exists, otherwise fallback
     const tr = (key: string, fallback: string) => {
@@ -96,6 +96,11 @@
           const scaleStr = scale ? `${tr(`unit.${scale}`, scale)} ` : '';
           return `${num} ${scaleStr}${tr('unit.kelvin', 'K')} (${tr(`unit.${modifier}`, modifier)})`;
         }],
+      // Composite: number + (million|billion) + km — handled atomically so the
+      // scale word between the number and "km" doesn't break km translation
+      // (e.g. "149.6 million km" → "149.6 百万 公里" in zh, not "149.6 百万 km").
+      [/([\d,.-]+)\s+(million|billion)\s+km\b/g,
+        (_, num, scale) => `${num} ${tr(`unit.${scale}`, scale)} ${tr('unit.km', 'km')}`],
     ];
     let result = value;
     for (const [pattern, replacer] of tempReplacements) {
@@ -111,10 +116,13 @@
         (_, num, modifier) => `${num}${tr('unit.celsius', '°C')} (${tr(`unit.${modifier}`, modifier)})`],
       // Standalone Celsius
       [/°C/g, () => tr('unit.celsius', '°C')],
-      // Distance scale (only when followed by km or K to avoid false matches)
-      [/\bmillion\b(?=\s*(km|K))/g, () => tr('unit.million', 'million')],
-      [/\bbillion\b(?=\s*(km|K))/g, () => tr('unit.billion', 'billion')],
-      // Distance unit
+      // Distance scale (only when followed by km or K to avoid false matches).
+      // Composite "N million km" patterns are handled in tempReplacements above;
+      // these patterns still cover standalone cases like "15 million K" without km.
+      [/\bmillion\b(?=\s*K)/g, () => tr('unit.million', 'million')],
+      [/\bbillion\b(?=\s*K)/g, () => tr('unit.billion', 'billion')],
+      // Distance unit (only matches when number is immediately before km;
+      // "X million km" was already consumed atomically above)
       [/([\d,.-]+)\s*km\b/g, (_, num) => `${num} ${tr('unit.km', 'km')}`],
       // Time units
       [/\bdays\b/g, () => tr('unit.days', 'days')],

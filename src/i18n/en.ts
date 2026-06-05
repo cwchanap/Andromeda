@@ -369,14 +369,17 @@ export const en = {
     "settings.showControlHintsDesc":
         "Display helpful control hints in the game",
     "settings.audio": "Audio Settings",
+    "settings.enableAudio": "Enable Audio",
     "settings.enableAudioDesc": "Enable background music and sound effects",
     "settings.control": "Control Settings",
     "settings.mouseSensitivity": "Mouse Sensitivity",
     "settings.sensitivitySlow": "Slow (0.1x)",
     "settings.sensitivityFast": "Fast (2.0x)",
     "settings.accessibility": "Accessibility Settings",
+    "settings.highContrast": "High Contrast Mode",
     "settings.highContrastDesc":
         "Enable high contrast colors for better visibility",
+    "settings.reducedMotion": "Reduced Motion",
     "settings.reducedMotionDesc": "Minimize animations and transitions",
     "settings.keyboardNavigation": "Keyboard Navigation",
     "settings.keyboardNavigationDesc":
