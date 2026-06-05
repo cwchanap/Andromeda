@@ -24,6 +24,7 @@ export const zh = {
     // Controls
     "controls.backToMenu": "← 返回菜单",
     "controls.backToSolarSystem": "← 返回太阳系",
+    "controls.backToSolarSystemLabel": "返回太阳系",
     "controls.zoomIn": "放大",
     "controls.zoomOut": "缩小",
     "controls.resetView": "重置视图",
