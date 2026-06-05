@@ -34,7 +34,7 @@
   // Translate composition elements
   $: translateComposition = (composition: string) => {
     // First, try to translate the entire normalized string (for compound entries without percentages)
-    const normalizedFull = composition.toLowerCase().replace(/\s+/g, '');
+    const normalizedFull = composition.toLowerCase().replace(/[^a-z0-9]/g, '');
     const fullKey = `element.${normalizedFull}`;
     const translatedFull = t(fullKey);
     if (translatedFull !== fullKey) {
@@ -56,7 +56,7 @@
       }
 
       // Try to translate the element name directly
-      const normalizedElement = elementName.toLowerCase().replace(/\s+/g, '');
+      const normalizedElement = elementName.toLowerCase().replace(/[^a-z0-9]/g, '');
       const translationKey = `element.${normalizedElement}`;
       const translatedElement = t(translationKey);
 
