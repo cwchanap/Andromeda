@@ -24,6 +24,7 @@ export const en = {
 
     // Controls
     "controls.backToMenu": "← Back to Menu",
+    "controls.backToSolarSystem": "← Back to Solar System",
     "controls.zoomIn": "Zoom In",
     "controls.zoomOut": "Zoom Out",
     "controls.resetView": "Reset View",
