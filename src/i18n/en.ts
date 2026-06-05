@@ -141,6 +141,14 @@ export const en = {
     "facts.callisto.distanceFromParent": "1,882,700 km from Jupiter",
     "facts.titan.distanceFromParent": "1,221,870 km from Saturn",
 
+    // Alpha Centauri distance-from-parent-star facts (full-phrase overrides
+    // because "from" cannot be token-translated without breaking word order).
+    "facts.alpha-centauri-b.distanceFromSun": "23 AU from Alpha Centauri A",
+    "facts.proxima-centauri.distanceFromSun":
+        "13,000 AU from Alpha Centauri AB",
+    "facts.proxima-b.distanceFromSun": "0.05 AU from Proxima Centauri",
+    "facts.proxima-c.distanceFromSun": "1.5 AU from Proxima Centauri",
+
     // Chemical elements and composition
     "element.hydrogen": "Hydrogen",
     "element.helium": "Helium",
@@ -217,7 +225,6 @@ export const en = {
     "unit.day": "day",
     "unit.night": "night",
     "unit.volcanoes": "volcanoes",
-    "unit.from": "from",
 
     // Alpha Centauri celestial bodies
     "planet.alpha-centauri-a.name": "Alpha Centauri A",

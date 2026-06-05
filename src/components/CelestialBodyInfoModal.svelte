@@ -135,8 +135,12 @@
       [/\bhours\b/g, () => tr('unit.hours', 'hours')],
       // Special
       [/\bN\/A\b/g, () => tr('unit.na', 'N/A')],
-      // Distance from parent ("from Earth", "from Mars", etc.)
-      [/\bfrom\b/g, () => tr('unit.from', 'from')],
+      // NOTE: bare "from" is intentionally NOT translated here.
+      // Word order differs per locale (zh: "距离 X N AU", ja: "X から N AU"),
+      // so translating only the token produces broken mixed-language strings
+      // like "0.05 AU 来自 Proxima Centauri". Phrases containing "from" must
+      // be localized via full facts.<id>.distanceFromSun/distanceFromParent
+      // overrides instead.
     ];
 
     for (const [pattern, replacer] of genericReplacements) {

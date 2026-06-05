@@ -130,6 +130,14 @@ export const ja = {
     "facts.callisto.distanceFromParent": "木星から 1,882,700 km",
     "facts.titan.distanceFromParent": "土星から 1,221,870 km",
 
+    // ケンタウルス座アルファ星系の母星からの距離（"from" はトークン単位で翻訳できないため、全体を上書き）
+    "facts.alpha-centauri-b.distanceFromSun":
+        "ケンタウルス座アルファ星Aから 23 AU",
+    "facts.proxima-centauri.distanceFromSun":
+        "ケンタウルス座アルファ星ABから 13,000 AU",
+    "facts.proxima-b.distanceFromSun": "プロキシマ・ケンタウリから 0.05 AU",
+    "facts.proxima-c.distanceFromSun": "プロキシマ・ケンタウリから 1.5 AU",
+
     // Chemical elements and composition
     "element.hydrogen": "水素",
     "element.helium": "ヘリウム",
@@ -206,7 +214,6 @@ export const ja = {
     "unit.day": "昼",
     "unit.night": "夜",
     "unit.volcanoes": "火山",
-    "unit.from": "から",
 
     // Alpha Centauri celestial bodies
     "planet.alpha-centauri-a.name": "ケンタウルス座アルファ星A",
