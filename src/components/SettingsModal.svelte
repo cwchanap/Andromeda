@@ -8,7 +8,6 @@
   import Separator from "./ui/Separator.svelte";
   import Badge from "./ui/Badge.svelte";
   import type { GameSettings } from "../stores/gameStore";
-  import type { AppLocale } from "../i18n/routes";
 
   interface SettingsModalProps {
     isOpen: boolean;
@@ -17,7 +16,6 @@
 
   export let isOpen: boolean;
   export let currentSettings: GameSettings;
-  export let lang: AppLocale = "en";
   export let translations: Record<string, string> = {};
 
   // Translation function

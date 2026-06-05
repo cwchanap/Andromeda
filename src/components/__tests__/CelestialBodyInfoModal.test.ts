@@ -294,4 +294,267 @@ describe("CelestialBodyInfoModal", () => {
             expect(container.textContent).not.toContain("十亿 km");
         });
     });
+
+    describe("Composition Translation", () => {
+        it("translates percentage elements via element.<name> key", () => {
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    composition: ["Iron (32%)", "Oxygen (30%)"],
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "element.iron": "铁",
+                "element.oxygen": "氧",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("铁 (32%)");
+            expect(container.textContent).toContain("氧 (30%)");
+        });
+
+        it("translates full-string normalized composition (no percentage)", () => {
+            // Regression for "Regolith" → previously normalized to "regolith"
+            // which had no key (only element.regolithsurface existed).
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    composition: ["Regolith"],
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "element.regolith": "风化层",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("风化层");
+            expect(container.textContent).not.toContain("Regolith");
+        });
+
+        it("translates exoplanet compound composition atomically", () => {
+            // Regression: 'No atmosphere (likely)' previously routed to the
+            // percentage branch and emitted raw English 'likely' inside parens.
+            // The full-string normalized key element.noatmospherelikely now
+            // handles the entire phrase.
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    composition: [
+                        "Rocky/icy",
+                        "Possible ice caps",
+                        "No atmosphere (likely)",
+                    ],
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "element.rockyicy": "岩石/冰",
+                "element.possibleicecaps": "可能存在冰冠",
+                "element.noatmospherelikely": "可能无大气层",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("岩石/冰");
+            expect(container.textContent).toContain("可能存在冰冠");
+            expect(container.textContent).toContain("可能无大气层");
+            expect(container.textContent).not.toContain("Rocky/icy");
+            expect(container.textContent).not.toContain("No atmosphere");
+        });
+
+        it("handles 'trace metals (X%)' as a special case", () => {
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    composition: ["Trace metals (1%)"],
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "element.trace": "微量",
+                "element.metals": "金属",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("微量 金属 (1%)");
+        });
+
+        it("falls back to raw composition when no key matches", () => {
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    composition: ["Totally Unknown Material"],
+                },
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                    translations: {},
+                },
+            });
+            expect(container.textContent).toContain("Totally Unknown Material");
+        });
+    });
+
+    describe("Fact Value Translation — Temperature & Units", () => {
+        it("translates Kelvin with modifier and million-scaled core temperature", () => {
+            // Regression: '15 million K (core)' must keep number-scale-unit
+            // ordering intact. If genericReplacements ran first, the 'million'
+            // could be replaced before the K-modifier pattern consumed the
+            // number-K pair, scrambling the output.
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                id: "sun",
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    temperature: "5,778 K (surface), 15 million K (core)",
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "unit.kelvin": "K",
+                "unit.million": "百万",
+                "unit.surface": "表面",
+                "unit.core": "核心",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("5,778 K (表面)");
+            expect(container.textContent).toContain("15 百万 K (核心)");
+            // The modifier word must remain untranslated as a standalone
+            // token — it should only appear inside the translated phrase.
+            expect(container.textContent).not.toContain("15 million K");
+        });
+
+        it("translates Celsius with day/night modifiers", () => {
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    temperature: "427°C (day), -173°C (night)",
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "unit.celsius": "°C",
+                "unit.day": "白天",
+                "unit.night": "夜晚",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("427°C (白天)");
+            expect(container.textContent).toContain("-173°C (夜晚)");
+        });
+
+        it("translates standalone 'X°C average' without modifier", () => {
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    temperature: "15°C average",
+                },
+            };
+            const jaTranslations: Record<string, string> = {
+                "unit.celsius": "℃",
+                "unit.average": "平均",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                    translations: jaTranslations,
+                },
+            });
+            expect(container.textContent).toContain("15℃");
+        });
+    });
+
+    describe("Moon Distance Fact Overrides", () => {
+        it("uses facts.<id>.distanceFromParent to localize parent name", () => {
+            // Regression for mixed-language distance string:
+            //   "384,400 km from Earth" → "384,400 公里 从 Earth" (English parent)
+            // The fact-level key now localizes the entire phrase so the
+            // parent body name is also translated.
+            const luna: CelestialBodyData = {
+                id: "luna",
+                name: "Moon",
+                description: "Earth's moon",
+                type: "moon",
+                scale: 0.27,
+                images: [],
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                } as unknown as import("three").Vector3,
+                material: { color: "#cccccc" },
+                keyFacts: {
+                    diameter: "3,474 km",
+                    orbitalPeriod: "27.3 days",
+                    composition: ["Rocky crust"],
+                    temperature: "-23°C average",
+                    moons: 0,
+                },
+                distanceFromParent: {
+                    kilometers: 384400,
+                    formattedString: "384,400 km from Earth",
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "planet.luna.name": "月球",
+                "planet.type.moon": "卫星",
+                "facts.luna.distanceFromParent": "距离地球 384,400 公里",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: luna,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("距离地球 384,400 公里");
+            // English fragments from the raw fact must NOT leak through.
+            expect(container.textContent).not.toContain("from Earth");
+        });
+    });
 });

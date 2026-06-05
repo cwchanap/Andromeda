@@ -114,6 +114,16 @@ export const zh = {
     "planet.titan.name": "土卫六",
     "planet.titan.description": "土星最大的卫星，唯一拥有浓密大气层的卫星",
 
+    // 卫星距母行星距离（覆盖 token 替换，使母行星名称与整体结构本地化）
+    "facts.luna.distanceFromParent": "距离地球 384,400 公里",
+    "facts.phobos.distanceFromParent": "距离火星 9,377 公里",
+    "facts.deimos.distanceFromParent": "距离火星 23,460 公里",
+    "facts.io.distanceFromParent": "距离木星 421,700 公里",
+    "facts.europa.distanceFromParent": "距离木星 670,900 公里",
+    "facts.ganymede.distanceFromParent": "距离木星 1,070,400 公里",
+    "facts.callisto.distanceFromParent": "距离木星 1,882,700 公里",
+    "facts.titan.distanceFromParent": "距离土星 1,221,870 公里",
+
     // Chemical elements and composition
     "element.hydrogen": "氢",
     "element.helium": "氦",
@@ -154,6 +164,25 @@ export const zh = {
     "element.rockycore": "岩石核心",
     "element.methanelakes": "甲烷湖",
     "element.carbondioxideice": "二氧化碳冰",
+
+    // 系外行星成分描述（原子化 — 完整字符串归一化匹配）
+    "element.rocky": "岩石质",
+    "element.regolith": "风化层",
+    "element.rockyicy": "岩石/冰",
+    "element.rockymetallic": "岩石/金属",
+    "element.possibleatmosphere": "可能存在大气层",
+    "element.possiblethinatmosphere": "可能存在稀薄大气层",
+    "element.possiblethickatmosphere": "可能存在浓厚大气层",
+    "element.possibleatmosphereandwater": "可能存在大气层和水",
+    "element.possibleicecaps": "可能存在冰冠",
+    "element.possibleicesurface": "可能为冰质表面",
+    "element.noatmospherelikely": "可能无大气层",
+    "element.nitrogenatmosphere": "氮气大气层",
+    "element.unknownsurfaceconditions": "未知表面条件",
+    "element.coldsurfaceconditions": "寒冷表面条件",
+    "element.rockyestimated": "岩石质（估计）",
+    "element.rockycompositionestimated": "岩石质成分（估计）",
+    "element.rockyicycoreestimated": "岩石/冰核（估计）",
 
     // Measurement units
     "unit.km": "公里",
@@ -328,6 +357,9 @@ export const zh = {
     "terrain.descriptionSuffix":
         "的详细3D地形。使用鼠标导航以检查地表特征、陨石坑、山脉和山谷。",
     "terrain.surfaceFeatures": "地表特征",
+    "terrain.errorLoading": "地形加载失败",
+    "terrain.loadFailed": "无法加载地形",
+    "terrain.containerNotFound": "未找到地形容器",
 
     // Settings
     "settings.title": "游戏设置",

@@ -172,7 +172,7 @@
       
     } catch (error) {
       console.error('Error initializing terrain scene:', error);
-      errorMessage = `Failed to load terrain: ${error.message}`;
+      errorMessage = `${t('terrain.loadFailed')}: ${error.message}`;
       isLoading = false;
     }
   };
@@ -272,7 +272,7 @@
     }
     
     if (!container) {
-      errorMessage = 'Terrain container not found';
+      errorMessage = t('terrain.containerNotFound');
       isLoading = false;
       return;
     }
@@ -328,7 +328,7 @@
   {:else if errorMessage}
     <ErrorBoundary>
       <div class="error-container">
-        <h2>Error Loading Terrain</h2>
+        <h2>{t('terrain.errorLoading')}</h2>
         <p>{errorMessage}</p>
         <button on:click={handleBackToSolar} class="error-button">
           {t('controls.backToSolarSystem')}

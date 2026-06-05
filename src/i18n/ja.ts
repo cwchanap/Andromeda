@@ -120,6 +120,16 @@ export const ja = {
     "planet.titan.name": "タイタン",
     "planet.titan.description": "土星最大の衛星、濃い大気を持つ唯一の衛星",
 
+    // 母天体からの距離（トークン置換を上書きし、母天体名と構造全体を自然にローカライズ）
+    "facts.luna.distanceFromParent": "地球から 384,400 km",
+    "facts.phobos.distanceFromParent": "火星から 9,377 km",
+    "facts.deimos.distanceFromParent": "火星から 23,460 km",
+    "facts.io.distanceFromParent": "木星から 421,700 km",
+    "facts.europa.distanceFromParent": "木星から 670,900 km",
+    "facts.ganymede.distanceFromParent": "木星から 1,070,400 km",
+    "facts.callisto.distanceFromParent": "木星から 1,882,700 km",
+    "facts.titan.distanceFromParent": "土星から 1,221,870 km",
+
     // Chemical elements and composition
     "element.hydrogen": "水素",
     "element.helium": "ヘリウム",
@@ -160,6 +170,25 @@ export const ja = {
     "element.rockycore": "岩石核",
     "element.methanelakes": "メタン湖",
     "element.carbondioxideice": "二酸化炭素の氷",
+
+    // 系外惑星の組成記述（アトミック — 全体文字列正規化マッチ）
+    "element.rocky": "岩石質",
+    "element.regolith": "レゴリス",
+    "element.rockyicy": "岩石/氷",
+    "element.rockymetallic": "岩石/金属",
+    "element.possibleatmosphere": "大気の可能性あり",
+    "element.possiblethinatmosphere": "希薄な大気の可能性あり",
+    "element.possiblethickatmosphere": "厚い大気の可能性あり",
+    "element.possibleatmosphereandwater": "大気と水の可能性あり",
+    "element.possibleicecaps": "極冠の氷の可能性あり",
+    "element.possibleicesurface": "氷の表面の可能性あり",
+    "element.noatmospherelikely": "大気なし（おそらく）",
+    "element.nitrogenatmosphere": "窒素大気",
+    "element.unknownsurfaceconditions": "未知の表面条件",
+    "element.coldsurfaceconditions": "低温の表面条件",
+    "element.rockyestimated": "岩石質（推定）",
+    "element.rockycompositionestimated": "岩石質構成（推定）",
+    "element.rockyicycoreestimated": "岩石/氷核（推定）",
 
     // Measurement units
     "unit.km": "km",
@@ -338,6 +367,9 @@ export const ja = {
     "terrain.descriptionSuffix":
         "。マウスでナビゲートして、地表の特徴、クレーター、山脈、谷を調べることができます。",
     "terrain.surfaceFeatures": "地表の特徴",
+    "terrain.errorLoading": "地形の読み込みエラー",
+    "terrain.loadFailed": "地形を読み込めませんでした",
+    "terrain.containerNotFound": "地形容器が見つかりません",
 
     // Settings
     "settings.title": "ゲーム設定",

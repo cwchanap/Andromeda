@@ -383,7 +383,7 @@
                     </div>
                     {#if selectedSystemData.metadata.hasExoplanets}
                         <div class="detail-item">
-                            <strong>{t('galaxy.knownExoplanets')}:</strong> {selectedSystemData.metadata.numberOfPlanets || t('common.yes')}
+                            <strong>{t('galaxy.knownExoplanets')}:</strong> {selectedSystemData.metadata.numberOfPlanets ?? t('common.yes')}
                         </div>
                     {/if}
                 </div>
@@ -423,7 +423,7 @@
                             {#if selectedSystemData.metadata.hasExoplanets}
                                 <div class="stat-card">
                                     <div class="stat-label">{t('galaxy.knownExoplanets')}</div>
-                                    <div class="stat-value">{selectedSystemData.metadata.numberOfPlanets || t('common.yes')}</div>
+                                    <div class="stat-value">{selectedSystemData.metadata.numberOfPlanets ?? t('common.yes')}</div>
                                 </div>
                             {/if}
                         </div>
