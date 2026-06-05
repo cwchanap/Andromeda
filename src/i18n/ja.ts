@@ -353,14 +353,17 @@ export const ja = {
     "settings.showControlHints": "コントロールヒントを表示",
     "settings.showControlHintsDesc": "ゲーム内で役立つコントロールヒントを表示",
     "settings.audio": "音声設定",
+    "settings.enableAudio": "オーディオを有効にする",
     "settings.enableAudioDesc": "BGMと効果音を有効にする",
     "settings.control": "コントロール設定",
     "settings.mouseSensitivity": "マウス感度",
     "settings.sensitivitySlow": "遅い (0.1x)",
     "settings.sensitivityFast": "速い (2.0x)",
     "settings.accessibility": "アクセシビリティ設定",
+    "settings.highContrast": "ハイコントラストモード",
     "settings.highContrastDesc":
         "視認性を高めるために高コントラスト色を有効にする",
+    "settings.reducedMotion": "モーションを減らす",
     "settings.reducedMotionDesc":
         "アニメーションとトランジションを最小限にする",
     "settings.keyboardNavigation": "キーボードナビゲーション",

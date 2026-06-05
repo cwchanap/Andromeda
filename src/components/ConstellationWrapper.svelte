@@ -485,7 +485,7 @@
             on:click={handleBackToMenu}
             className="text-white border-white/30 hover:bg-white/10"
           >
-            Back to Menu
+            {t('constellation.return')}
           </Button>
         </div>
       </div>
@@ -504,7 +504,7 @@
           on:click={() => window.location.reload()}
           className="text-white border-white/30 hover:bg-white/10"
         >
-          Retry
+          {t('action.retry')}
         </Button>
       </div>
     </div>

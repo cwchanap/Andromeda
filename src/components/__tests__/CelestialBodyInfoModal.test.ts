@@ -236,5 +236,62 @@ describe("CelestialBodyInfoModal", () => {
             });
             expect(getByText("Earth")).toBeTruthy();
         });
+
+        it("translates 'million km' atomically so km is also translated", () => {
+            // Regression: previously "149.6 million km" with zh translations
+            // became "149.6 百万 km" — the km was never translated to "公里"
+            // because the scale word "百万" sat between the number and km.
+            const earthWithMillionKm: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    distanceFromSun: "149.6 million km",
+                    diameter: "12,742 km",
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "unit.km": "公里",
+                "unit.million": "百万",
+                "unit.billion": "十亿",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: earthWithMillionKm,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("149.6 百万 公里");
+            expect(container.textContent).toContain("12,742 公里");
+            // Ensure the untranslated "km" no longer appears next to the
+            // million-scaled distance.
+            expect(container.textContent).not.toContain("百万 km");
+        });
+
+        it("translates 'billion km' atomically so km is also translated", () => {
+            const bodyWithBillionKm: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    distanceFromSun: "1.434 billion km",
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "unit.km": "公里",
+                "unit.million": "百万",
+                "unit.billion": "十亿",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: bodyWithBillionKm,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("1.434 十亿 公里");
+            expect(container.textContent).not.toContain("十亿 km");
+        });
     });
 });

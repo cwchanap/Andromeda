@@ -450,7 +450,7 @@
                                         <div class="star-name">{t('galaxy.star')} {index + 1}</div>
                                         <div class="star-type">{t('galaxy.starType')}: {star.stellarType}</div>
                                         {#if star.temperature}
-                                            <div class="star-temp">{t('modal.temperature')}: {star.temperature}{t('unit.kelvin')}</div>
+                                            <div class="star-temp">{t('modal.temperature')}: {star.temperature} {t('unit.kelvin')}</div>
                                         {/if}
                                         {#if star.mass}
                                             <div class="star-mass">{t('galaxy.mass')}: {star.mass} M☉</div>
