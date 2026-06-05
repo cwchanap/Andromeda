@@ -302,6 +302,10 @@ export const en = {
     "galaxy.initializing": "Initializing 3D renderer...",
     "galaxy.loadingSystems": "Loading star systems...",
     "galaxy.loadFailed": "Failed to load galaxy",
+    "action.retry": "Retry",
+    "nav.menu": "Menu",
+    "nav.controls": "Controls",
+    "error.unknown": "Unknown error occurred",
     "galaxy.aboutTitle": "About Local Galaxy",
     "galaxy.aboutDescription":
         "This 3D visualization shows the nearest star systems to Earth within 10 light-years.",
@@ -332,6 +336,7 @@ export const en = {
     "galaxy.mass": "Mass",
     "galaxy.systemType.solar": "Solar",
     "galaxy.systemType.binary": "Binary",
+    "galaxy.systemType.trinary": "Trinary",
     "galaxy.systemType.multiple": "Multiple",
     "galaxy.systemType.exotic": "Exotic",
 
@@ -352,12 +357,15 @@ export const en = {
     "settings.title": "Game Settings",
     "settings.configuration": "Configuration",
     "settings.visual": "Visual Settings",
+    "settings.enableAnimations": "Enable Animations",
     "settings.enableAnimationsDesc":
         "Enable planet rotation and orbital animations",
+    "settings.graphicsQuality": "Graphics Quality",
     "settings.graphicsQualityDesc": "Adjust rendering quality for performance",
     "settings.qualityLow": "Low",
     "settings.qualityMedium": "Medium",
     "settings.qualityHigh": "High",
+    "settings.showControlHints": "Show Control Hints",
     "settings.showControlHintsDesc":
         "Display helpful control hints in the game",
     "settings.audio": "Audio Settings",
@@ -370,10 +378,13 @@ export const en = {
     "settings.highContrastDesc":
         "Enable high contrast colors for better visibility",
     "settings.reducedMotionDesc": "Minimize animations and transitions",
+    "settings.keyboardNavigation": "Keyboard Navigation",
     "settings.keyboardNavigationDesc":
         "Enable keyboard controls for 3D navigation",
+    "settings.announceSceneChanges": "Announce Scene Changes",
     "settings.announceSceneChangesDesc":
         "Announce when celestial bodies are selected",
+    "settings.screenReaderMode": "Screen Reader Mode",
     "settings.screenReaderModeDesc": "Optimize interface for screen readers",
     "settings.resetDefaults": "Reset to Defaults",
     "settings.save": "Save Settings",
