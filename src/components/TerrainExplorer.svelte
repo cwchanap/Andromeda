@@ -352,7 +352,7 @@
         <span class="planet-type">{planetData.type.toUpperCase()}</span>
       </div>
       <p class="planet-description">
-        {t('terrain.descriptionPrefix')} {planetData.name}{t('terrain.descriptionSuffix')}
+        {t('terrain.descriptionPrefix')} {t(`planet.${planetId}.name`) !== `planet.${planetId}.name` ? t(`planet.${planetId}.name`) : planetData.name}{t('terrain.descriptionSuffix')}
       </p>
 
       <!-- Terrain Features -->
@@ -375,7 +375,7 @@
           <path d="m12 19-7-7 7-7"/>
           <path d="M19 12H5"/>
         </svg>
-        {t('controls.backToSolarSystem')}
+        {t('controls.backToSolarSystemLabel')}
       </button>
       
       <div class="view-controls">
