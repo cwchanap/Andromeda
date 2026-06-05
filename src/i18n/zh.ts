@@ -124,6 +124,13 @@ export const zh = {
     "facts.callisto.distanceFromParent": "距离木星 1,882,700 公里",
     "facts.titan.distanceFromParent": "距离土星 1,221,870 公里",
 
+    // 半人马座阿尔法星距母恒星距离（"from" 不能按 token 本地化，须整句重排）
+    "facts.alpha-centauri-b.distanceFromSun": "距离半人马座阿尔法星A 23 AU",
+    "facts.proxima-centauri.distanceFromSun":
+        "距离半人马座阿尔法星AB 13,000 AU",
+    "facts.proxima-b.distanceFromSun": "距离比邻星 0.05 AU",
+    "facts.proxima-c.distanceFromSun": "距离比邻星 1.5 AU",
+
     // Chemical elements and composition
     "element.hydrogen": "氢",
     "element.helium": "氦",
@@ -200,7 +207,6 @@ export const zh = {
     "unit.day": "白天",
     "unit.night": "夜晚",
     "unit.volcanoes": "火山",
-    "unit.from": "来自",
 
     // Alpha Centauri celestial bodies
     "planet.alpha-centauri-a.name": "半人马座阿尔法星A",

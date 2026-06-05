@@ -557,4 +557,110 @@ describe("CelestialBodyInfoModal", () => {
             expect(container.textContent).not.toContain("from Earth");
         });
     });
+
+    describe("Alpha Centauri Distance Fact Overrides", () => {
+        it("uses facts.<id>.distanceFromSun so 'from' is not token-translated", () => {
+            // Regression: previously, "0.05 AU from Proxima Centauri" with
+            // zh translations fell through to translateFactValue(), which
+            // translated only the bare word "from" → "来自", producing
+            // the broken mixed-language string "0.05 AU 来自 Proxima Centauri"
+            // (wrong word order in Chinese). The fact-level key now
+            // localizes the entire phrase so the parent body name and
+            // structure are also reordered.
+            const proximaB: CelestialBodyData = {
+                ...mockEarth,
+                id: "proxima-b",
+                name: "Proxima Centauri b",
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    distanceFromSun: "0.05 AU from Proxima Centauri",
+                },
+            };
+            const zhTranslations: Record<string, string> = {
+                "facts.proxima-b.distanceFromSun": "距离比邻星 0.05 AU",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: proximaB,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            expect(container.textContent).toContain("距离比邻星 0.05 AU");
+            // The broken mixed-language output must NOT appear.
+            expect(container.textContent).not.toContain("来自");
+            // English fragments must NOT leak through.
+            expect(container.textContent).not.toContain("from Proxima");
+        });
+
+        it("does not fall back to bare 'from' token translation when no override exists", () => {
+            // Without a facts.<id>.distanceFromSun override, the raw English
+            // fact is shown unchanged (no broken "0.05 AU 来自 ...").
+            // This guards against re-introducing the bare /\\bfrom\\b/g
+            // token replacement.
+            const proximaC: CelestialBodyData = {
+                ...mockEarth,
+                id: "proxima-c",
+                name: "Proxima Centauri c",
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    distanceFromSun: "1.5 AU from Proxima Centauri",
+                },
+            };
+            // Translations include a unit.from key but no full-phrase override.
+            const zhTranslations: Record<string, string> = {
+                "unit.from": "来自",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: proximaC,
+                    onClose: defaultOnClose,
+                    translations: zhTranslations,
+                },
+            });
+            // The raw English string is preserved (no broken mixed output).
+            expect(container.textContent).toContain(
+                "1.5 AU from Proxima Centauri",
+            );
+            // Crucially, the bare "来自" token must NOT be substituted in.
+            expect(container.textContent).not.toContain("来自");
+        });
+
+        it("uses facts.<id>.distanceFromSun for Japanese word-order reorder", () => {
+            // Japanese requires "X から N AU" (parent first, then distance),
+            // which differs from English "N AU from X". The fact-level
+            // override reorders the entire phrase.
+            const alphaCentauriB: CelestialBodyData = {
+                ...mockEarth,
+                id: "alpha-centauri-b",
+                name: "Alpha Centauri B",
+                type: "star",
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    distanceFromSun: "23 AU from Alpha Centauri A",
+                },
+            };
+            const jaTranslations: Record<string, string> = {
+                "facts.alpha-centauri-b.distanceFromSun":
+                    "ケンタウルス座アルファ星Aから 23 AU",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: alphaCentauriB,
+                    onClose: defaultOnClose,
+                    translations: jaTranslations,
+                },
+            });
+            expect(container.textContent).toContain(
+                "ケンタウルス座アルファ星Aから 23 AU",
+            );
+            // English fragments must NOT leak through.
+            expect(container.textContent).not.toContain("from Alpha");
+            // Bare "から" substitution in the wrong position must not occur.
+            expect(container.textContent).not.toContain("23 AU から");
+        });
+    });
 });
