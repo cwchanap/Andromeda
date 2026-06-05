@@ -87,10 +87,13 @@
       return translated !== key ? translated : fallback;
     };
 
-    // Step 1: Handle temperature with modifiers + optional million/billion scale.
-    // This must run before generic million/billion replacement so the number-K
-    // pattern is still intact (e.g. "15 million K (core)").
-    const tempReplacements: [RegExp, (...args: string[]) => string][] = [
+    // Step 1: Handle atomic patterns that span multiple tokens so the
+    // scale word between the number and unit doesn't break translation.
+    // This covers temperature-with-modifier (e.g. "15 million K (core)")
+    // and composite distance (e.g. "149.6 million km"). Must run before
+    // generic single-token replacements so the number-K / number-km pair
+    // is still intact.
+    const atomicReplacements: [RegExp, (...args: string[]) => string][] = [
       [/([\d,.-]+)(?:\s+(million|billion))?\s+K\s*\((surface|core|average|day|night|volcanoes)\)/g,
         (_, num, scale, modifier) => {
           const scaleStr = scale ? `${tr(`unit.${scale}`, scale)} ` : '';
@@ -103,7 +106,7 @@
         (_, num, scale) => `${num} ${tr(`unit.${scale}`, scale)} ${tr('unit.km', 'km')}`],
     ];
     let result = value;
-    for (const [pattern, replacer] of tempReplacements) {
+    for (const [pattern, replacer] of atomicReplacements) {
       result = result.replace(pattern, replacer);
     }
 
@@ -116,9 +119,11 @@
         (_, num, modifier) => `${num}${tr('unit.celsius', '°C')} (${tr(`unit.${modifier}`, modifier)})`],
       // Standalone Celsius
       [/°C/g, () => tr('unit.celsius', '°C')],
-      // Distance scale (only when followed by km or K to avoid false matches).
-      // Composite "N million km" patterns are handled in tempReplacements above;
-      // these patterns still cover standalone cases like "15 million K" without km.
+      // Distance scale (million/billion) when followed by K. Composite
+      // "N million km" was already consumed atomically above. The K-only
+      // case here is defensive — current data always pairs "million K" with
+      // a (modifier) which is matched in Step 1, but this branch keeps a
+      // bare "N million K" (no modifier) translatable if introduced later.
       [/\bmillion\b(?=\s*K)/g, () => tr('unit.million', 'million')],
       [/\bbillion\b(?=\s*K)/g, () => tr('unit.billion', 'billion')],
       // Distance unit (only matches when number is immediately before km;

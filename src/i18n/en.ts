@@ -130,6 +130,17 @@ export const en = {
     "planet.titan.description":
         "Saturn's largest moon, the only moon with a dense atmosphere",
 
+    // Moon distance-from-parent facts (override token-substitution so the
+    // parent-body name and overall structure localize cleanly).
+    "facts.luna.distanceFromParent": "384,400 km from Earth",
+    "facts.phobos.distanceFromParent": "9,377 km from Mars",
+    "facts.deimos.distanceFromParent": "23,460 km from Mars",
+    "facts.io.distanceFromParent": "421,700 km from Jupiter",
+    "facts.europa.distanceFromParent": "670,900 km from Jupiter",
+    "facts.ganymede.distanceFromParent": "1,070,400 km from Jupiter",
+    "facts.callisto.distanceFromParent": "1,882,700 km from Jupiter",
+    "facts.titan.distanceFromParent": "1,221,870 km from Saturn",
+
     // Chemical elements and composition
     "element.hydrogen": "Hydrogen",
     "element.helium": "Helium",
@@ -170,6 +181,25 @@ export const en = {
     "element.rockycore": "Rocky core",
     "element.methanelakes": "Methane lakes",
     "element.carbondioxideice": "Carbon dioxide ice",
+
+    // Exoplanet composition descriptors (atomic — full-string normalized)
+    "element.rocky": "Rocky",
+    "element.regolith": "Regolith",
+    "element.rockyicy": "Rocky/icy",
+    "element.rockymetallic": "Rocky/metallic",
+    "element.possibleatmosphere": "Possible atmosphere",
+    "element.possiblethinatmosphere": "Possible thin atmosphere",
+    "element.possiblethickatmosphere": "Possible thick atmosphere",
+    "element.possibleatmosphereandwater": "Possible atmosphere and water",
+    "element.possibleicecaps": "Possible ice caps",
+    "element.possibleicesurface": "Possible ice surface",
+    "element.noatmospherelikely": "No atmosphere (likely)",
+    "element.nitrogenatmosphere": "Nitrogen atmosphere",
+    "element.unknownsurfaceconditions": "Unknown surface conditions",
+    "element.coldsurfaceconditions": "Cold surface conditions",
+    "element.rockyestimated": "Rocky (estimated)",
+    "element.rockycompositionestimated": "Rocky composition (estimated)",
+    "element.rockyicycoreestimated": "Rocky/icy core (estimated)",
 
     // Measurement units
     "unit.km": "km",
@@ -354,6 +384,9 @@ export const en = {
     "terrain.descriptionSuffix":
         ". Navigate with your mouse to examine surface features, craters, mountains, and valleys.",
     "terrain.surfaceFeatures": "Surface Features",
+    "terrain.errorLoading": "Error Loading Terrain",
+    "terrain.loadFailed": "Failed to load terrain",
+    "terrain.containerNotFound": "Terrain container not found",
 
     // Settings
     "settings.title": "Game Settings",
