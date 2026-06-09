@@ -3,6 +3,7 @@
 @import "tw-animate-css";
 @import "./high-contrast.css";
 @import "./reduced-motion.css";
+@import "./hud.css";
 
 @custom-variant dark (&:is(.dark *));
 
