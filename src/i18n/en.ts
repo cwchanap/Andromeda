@@ -38,6 +38,28 @@ export const en = {
     "controls.showBarycenters": "Show barycenters",
     "controls.hideBarycenters": "Hide barycenters",
 
+    // HUD search / explore / finder
+    "explore.title": "Star Systems",
+    "explore.searchPlaceholder": "SEARCH SYSTEMS…",
+    "explore.empty": "NO SYSTEMS MATCH QUERY",
+    "explore.bodies": "Bodies",
+    "explore.distance": "Distance",
+    "explore.action": "Explore",
+    "explore.current": "Current System",
+    "explore.prev": "Prev",
+    "explore.next": "Next",
+    "explore.page": "Page",
+    "finder.open": "Jump to body",
+    "finder.title": "Jump To",
+    "finder.placeholder": "SEARCH BODIES…",
+    "finder.empty": "NO BODIES MATCH QUERY",
+    "finder.pinned": "Pinned",
+    "finder.unpin": "Unpin",
+    "finder.close": "Close",
+    "type.star": "Stars",
+    "type.planet": "Planets",
+    "type.moon": "Moons",
+
     // Modal content
     "modal.celestialData": "Celestial Data",
     "modal.composition": "Composition",

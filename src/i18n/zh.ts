@@ -37,6 +37,28 @@ export const zh = {
     "controls.showBarycenters": "显示质心",
     "controls.hideBarycenters": "隐藏质心",
 
+    // HUD search / explore / finder
+    "explore.title": "恒星系统",
+    "explore.searchPlaceholder": "搜索系统…",
+    "explore.empty": "没有匹配的系统",
+    "explore.bodies": "天体",
+    "explore.distance": "距离",
+    "explore.action": "探索",
+    "explore.current": "当前系统",
+    "explore.prev": "上一页",
+    "explore.next": "下一页",
+    "explore.page": "页",
+    "finder.open": "跳转到天体",
+    "finder.title": "跳转到",
+    "finder.placeholder": "搜索天体…",
+    "finder.empty": "没有匹配的天体",
+    "finder.pinned": "已固定",
+    "finder.unpin": "取消固定",
+    "finder.close": "关闭",
+    "type.star": "恒星",
+    "type.planet": "行星",
+    "type.moon": "卫星",
+
     // Modal content
     "modal.celestialData": "天体数据",
     "modal.composition": "组成成分",

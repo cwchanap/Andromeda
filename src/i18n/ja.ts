@@ -37,6 +37,28 @@ export const ja = {
     "controls.showBarycenters": "バリセンターを表示",
     "controls.hideBarycenters": "バリセンターを非表示",
 
+    // HUD search / explore / finder
+    "explore.title": "恒星系",
+    "explore.searchPlaceholder": "システムを検索…",
+    "explore.empty": "一致するシステムがありません",
+    "explore.bodies": "天体",
+    "explore.distance": "距離",
+    "explore.action": "探索",
+    "explore.current": "現在のシステム",
+    "explore.prev": "前へ",
+    "explore.next": "次へ",
+    "explore.page": "ページ",
+    "finder.open": "天体へジャンプ",
+    "finder.title": "ジャンプ先",
+    "finder.placeholder": "天体を検索…",
+    "finder.empty": "一致する天体がありません",
+    "finder.pinned": "固定中",
+    "finder.unpin": "固定解除",
+    "finder.close": "閉じる",
+    "type.star": "恒星",
+    "type.planet": "惑星",
+    "type.moon": "衛星",
+
     // Modal content
     "modal.celestialData": "天体データ",
     "modal.composition": "組成",
