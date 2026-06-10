@@ -305,4 +305,58 @@ describe("SolarSystemRenderer", () => {
         const controls = renderer.getControls();
         expect(() => controls.focusOnPlanet("mars")).not.toThrow();
     });
+
+    it("getBodyWorldPosition returns position for known body", async () => {
+        renderer = new SolarSystemRenderer(container);
+        await renderer.initialize([makeStar({ id: "sol" })]);
+        const pos = renderer.getBodyWorldPosition("sol");
+        expect(pos).not.toBeNull();
+        expect(pos).toHaveProperty("x");
+        expect(pos).toHaveProperty("y");
+        expect(pos).toHaveProperty("z");
+    });
+
+    it("getBodyWorldPosition returns null for unknown body", async () => {
+        renderer = new SolarSystemRenderer(container);
+        await renderer.initialize([makeStar()]);
+        expect(renderer.getBodyWorldPosition("nonexistent")).toBeNull();
+    });
+
+    it("worldToScreen returns a result with x, y, visible for point in front of camera", async () => {
+        renderer = new SolarSystemRenderer(container);
+        await renderer.initialize([makeStar()]);
+        const result = renderer.worldToScreen(new THREE.Vector3(0, 0, 0));
+        expect(typeof result.x).toBe("number");
+        expect(typeof result.y).toBe("number");
+        expect(result).toHaveProperty("visible");
+    });
+
+    it("worldToScreen returns visible:false for point behind camera", async () => {
+        renderer = new SolarSystemRenderer(container);
+        await renderer.initialize([makeStar()]);
+        const behind = new THREE.Vector3(0, 0, -500);
+        const result = renderer.worldToScreen(behind);
+        expect(result).toEqual({ x: 0, y: 0, visible: false });
+    });
+
+    it("getControls getBodyWorldPosition delegates to renderer method", async () => {
+        renderer = new SolarSystemRenderer(container);
+        await renderer.initialize([makeStar({ id: "sol" })]);
+        const controls = renderer.getControls();
+        const pos = controls.getBodyWorldPosition("sol");
+        expect(pos).not.toBeNull();
+        expect(pos).toHaveProperty("x");
+        expect(pos).toHaveProperty("y");
+        expect(pos).toHaveProperty("z");
+    });
+
+    it("getControls worldToScreen delegates to renderer method", async () => {
+        renderer = new SolarSystemRenderer(container);
+        await renderer.initialize([makeStar()]);
+        const controls = renderer.getControls();
+        const result = controls.worldToScreen(new THREE.Vector3(0, 0, 0));
+        expect(result).toHaveProperty("visible");
+        expect(typeof result.x).toBe("number");
+        expect(typeof result.y).toBe("number");
+    });
 });
