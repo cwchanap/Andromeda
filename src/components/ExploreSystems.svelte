@@ -30,7 +30,6 @@
     ]),
   );
   $: pageResult = paginate(filtered, page, PER_PAGE);
-  $: page = pageResult.page; // keep clamped value in sync
 
   function bodyCount(s: PlanetarySystem): number {
     return s.systemData?.celestialBodies?.length ?? 0;
@@ -90,9 +89,9 @@
 
         {#if pageResult.totalPages > 1}
           <div class="hud-pager">
-            <HudButton ariaLabel={t("explore.prev")} disabled={page <= 1} on:click={() => (page = page - 1)}>{t("explore.prev")}</HudButton>
-            <span class="hud-pager-label">{pageLabel(page, pageResult.totalPages)}</span>
-            <HudButton ariaLabel={t("explore.next")} disabled={page >= pageResult.totalPages} on:click={() => (page = page + 1)}>{t("explore.next")}</HudButton>
+            <HudButton ariaLabel={t("explore.prev")} disabled={pageResult.page <= 1} on:click={() => (page = pageResult.page - 1)}>{t("explore.prev")}</HudButton>
+            <span class="hud-pager-label">{pageLabel(pageResult.page, pageResult.totalPages)}</span>
+            <HudButton ariaLabel={t("explore.next")} disabled={pageResult.page >= pageResult.totalPages} on:click={() => (page = pageResult.page + 1)}>{t("explore.next")}</HudButton>
           </div>
         {/if}
       {/if}

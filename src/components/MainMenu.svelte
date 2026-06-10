@@ -2,8 +2,8 @@
   import Button from "./ui/Button.svelte";
   import SettingsModal from "./SettingsModal.svelte";
   import AccessibilityManager from "./AccessibilityManager.svelte";
+  import ExploreSystems from "./ExploreSystems.svelte";
   import { gameState, settings, gameActions } from "../stores/gameStore";
-  import { planetarySystemRegistry } from "../lib/planetary-system";
   import { onMount, onDestroy } from "svelte";
   import { getLangFromUrl, useTranslations } from "../i18n/utils";
   import { routes, type AppLocale } from "../i18n/routes";
@@ -18,9 +18,6 @@
   let focusedIndex = 0; // Track which button is focused for keyboard navigation
   let currentLang: AppLocale = lang;
   let t: (key: any, replacements?: Record<string, string>) => string;
-  
-  // Get all available planetary systems
-  const availableSystems = planetarySystemRegistry.getAllSystems();
 
   // Initialize translations immediately with props or fallback
   $: {
@@ -304,55 +301,11 @@
 
   <!-- System Selector Modal -->
   {#if showSystemSelector}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div class="w-full max-w-2xl rounded-lg bg-gray-900 p-6 shadow-2xl">
-        <div class="mb-6 flex items-center justify-between">
-          <h2 class="text-2xl font-bold text-white">{t ? t('systems.title') : 'Choose a Planetary System'}</h2>
-          <button
-            on:click={handleCloseSystemSelector}
-            class="text-gray-400 hover:text-white"
-            aria-label={t ? t('aria.close') : 'Close system selector'}
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div class="grid gap-4 md:grid-cols-2">
-          {#each availableSystems as system}
-            <button
-              on:click={() => handleSelectSystem(system.id)}
-              class="group rounded-lg border border-white/20 bg-white/5 p-4 text-left transition-all duration-300 hover:border-white/40 hover:bg-white/10"
-            >
-              <h3 class="mb-2 text-lg font-semibold text-white group-hover:text-blue-300">
-                {system.name}
-              </h3>
-              <p class="text-sm text-gray-300 line-clamp-3">
-                {system.description}
-              </p>
-              <div class="mt-3 flex items-center justify-between">
-                <span class="text-xs uppercase tracking-wide text-blue-400">
-                  {system.systemData.systemType} {t ? t('systems.system') : 'System'}
-                </span>
-                {#if system.systemData.metadata?.distance}
-                  <span class="text-xs text-gray-400">
-                    {system.systemData.metadata.distance}
-                  </span>
-                {/if}
-              </div>
-            </button>
-          {/each}
-        </div>
-        
-        <div class="mt-6 text-center">
-          <button
-            on:click={handleCloseSystemSelector}
-            class="rounded bg-gray-700 px-4 py-2 text-white hover:bg-gray-600"
-          >
-            {t ? t('action.cancel') : 'Cancel'}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ExploreSystems
+      {t}
+      onSelect={handleSelectSystem}
+      onClose={handleCloseSystemSelector}
+    />
   {/if}
 
   <!-- Screen Reader Instructions -->
@@ -376,14 +329,6 @@
     border: 0;
   }
   
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
   /* Enhanced Cosmic Background */
   .stars-container {
     background: transparent;
