@@ -57,5 +57,11 @@ export interface SolarSystemControls {
     enableControls: (enabled: boolean) => void;
     hasOrbitAnchors: () => boolean;
     setBarycenterOverlayVisible: (visible: boolean) => void;
+    getBodyWorldPosition: (bodyId: string) => THREE.Vector3 | null;
+    worldToScreen: (point: THREE.Vector3) => {
+        x: number;
+        y: number;
+        visible: boolean;
+    };
     dispose: () => void;
 }

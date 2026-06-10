@@ -165,6 +165,24 @@ export class PlanetarySystemRenderer {
         }
     }
 
+    getBodyWorldPosition(bodyId: string) {
+        return (
+            this.solarSystemRenderer
+                ?.getControls()
+                ?.getBodyWorldPosition(bodyId) ?? null
+        );
+    }
+
+    worldToScreen(point: import("three").Vector3) {
+        return (
+            this.solarSystemRenderer?.getControls()?.worldToScreen(point) ?? {
+                x: 0,
+                y: 0,
+                visible: false,
+            }
+        );
+    }
+
     hasOrbitAnchors(): boolean {
         const controls = this.solarSystemRenderer?.getControls();
         return controls?.hasOrbitAnchors() ?? false;
