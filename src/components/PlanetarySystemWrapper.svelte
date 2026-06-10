@@ -8,6 +8,10 @@
   import OrbitSpeedControl from './OrbitSpeedControl.svelte';
   import HudPanel from './hud/HudPanel.svelte';
   import HudButton from './hud/HudButton.svelte';
+  import HudSearch from './hud/HudSearch.svelte';
+  import TargetLockOverlay from './hud/TargetLockOverlay.svelte';
+  import { matchesQuery } from '../lib/hud/list';
+  import { Vector3 } from 'three';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { PlanetarySystemRenderer, planetarySystemRegistry } from '../lib/planetary-system';
@@ -48,6 +52,11 @@
   let isSceneReady = false;
   let currentZoom = 50;
   let showFinder = false;
+  let finderQuery = "";
+  let pinnedBodyId: string | null = null;
+  let pinnedName = "";
+  let lockPos: { x: number; y: number; visible: boolean } | null = null;
+  let lockRafId = 0;
   let loadingMessage = "Loading planetary system...";
   let debugInfo = "";
   let hasBarycenterOverlay = false;
@@ -231,6 +240,7 @@
   });
   
   onDestroy(async () => {
+    cancelAnimationFrame(lockRafId);
     if (planetarySystemRenderer) {
       await planetarySystemRenderer.cleanup();
       planetarySystemRenderer = null;
@@ -245,14 +255,70 @@
   
   // Synchronize all settings with renderer in a single reactive statement
   $: if (planetarySystemRenderer) {
-    planetarySystemRenderer.updateConfig({ 
+    planetarySystemRenderer.updateConfig({
       enableAnimations,
-      orbitSpeedMultiplier: $settings.orbitSpeedMultiplier 
+      orbitSpeedMultiplier: $settings.orbitSpeedMultiplier
     });
+  }
+
+  // All selectable bodies in the active system (star + planets + moons present in data).
+  $: allBodies = (() => {
+    const data = planetarySystemRenderer?.getSystemData();
+    if (!data) return [] as CelestialBodyData[];
+    return [data.star, ...data.celestialBodies];
+  })();
+
+  $: finderResults = allBodies.filter((b) =>
+    matchesQuery(finderQuery, [b.name, b.type]),
+  );
+
+  const bodyTypeKey = (type: string) =>
+    type === "star" ? "type.star" : type === "moon" ? "type.moon" : "type.planet";
+
+  function startLockLoop() {
+    cancelAnimationFrame(lockRafId);
+    const tick = () => {
+      if (!pinnedBodyId || !planetarySystemRenderer) {
+        lockPos = null;
+        return;
+      }
+      const world = planetarySystemRenderer.getBodyWorldPosition(pinnedBodyId);
+      lockPos = world ? planetarySystemRenderer.worldToScreen(world as Vector3) : null;
+      lockRafId = requestAnimationFrame(tick);
+    };
+    lockRafId = requestAnimationFrame(tick);
+  }
+
+  function pinBody(body: CelestialBodyData) {
+    if (!planetarySystemRenderer) return;
+    pinnedBodyId = body.id;
+    pinnedName = body.name;
+    planetarySystemRenderer.focusOnBody(body.id);
+    showFinder = false;
+    finderQuery = "";
+    startLockLoop();
+  }
+
+  function unpin() {
+    pinnedBodyId = null;
+    pinnedName = "";
+    cancelAnimationFrame(lockRafId);
+    lockPos = null;
+  }
+
+  function handleFinderHotkeys(event: KeyboardEvent) {
+    if (event.key === "/" && !showFinder) {
+      const tag = (event.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      event.preventDefault();
+      showFinder = true;
+    } else if (event.key === "Escape" && showFinder) {
+      showFinder = false;
+    }
   }
 </script>
 
-<svelte:window on:resize={handleResize} />
+<svelte:window on:resize={handleResize} on:keydown={handleFinderHotkeys} />
 
 <div class="planetary-system-wrapper">
   <div id="planetary-system-renderer" class="system-container">
@@ -294,6 +360,57 @@
         <OrbitSpeedControl {lang} {translations} />
       {/if}
     </div>
+
+    <!-- JUMP TO finder (toggle-open) -->
+    {#if showFinder}
+      <div class="hud-finder">
+        <HudPanel title={t ? t('finder.title') : 'Jump To'}>
+          <HudSearch
+            bind:value={finderQuery}
+            autofocus={true}
+            placeholder={t ? t('finder.placeholder') : 'Search bodies…'}
+            ariaLabel={t ? t('finder.placeholder') : 'Search bodies…'}
+            on:keydown={(e) => { if (e.key === 'Enter' && finderResults[0]) pinBody(finderResults[0]); }}
+          />
+          {#if finderResults.length === 0}
+            <div class="hud-section-label" style="text-align:center; padding:1rem 0;">{t ? t('finder.empty') : 'No bodies match query'}</div>
+          {:else}
+            <div class="hud-list" style="margin-top:8px;">
+              {#each finderResults as body (body.id)}
+                <button
+                  type="button"
+                  class="hud-list-row"
+                  class:is-selected={body.id === pinnedBodyId}
+                  on:click={() => pinBody(body)}
+                >
+                  <span class="row-abbr">[{t ? t(bodyTypeKey(body.type)) : body.type}]</span>
+                  <span class="row-name">{body.name}</span>
+                  <span class="row-leader"></span>
+                  <span class="row-count"></span>
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </HudPanel>
+      </div>
+    {/if}
+
+    <!-- Pinned chip -->
+    {#if pinnedBodyId}
+      <div class="hud-pinned">
+        <span class="hud-chip">
+          {t ? t('finder.pinned') : 'Pinned'}: {pinnedName}
+          <button class="hud-chip-x" aria-label={t ? t('finder.unpin') : 'Unpin'} on:click={unpin}>✕</button>
+        </span>
+      </div>
+    {/if}
+
+    <!-- Target-lock reticle overlay -->
+    {#if pinnedBodyId && lockPos && lockPos.visible}
+      <div class="hud-lock-layer" aria-hidden="true">
+        <TargetLockOverlay visible={true} x={lockPos.x} y={lockPos.y} name={pinnedName} />
+      </div>
+    {/if}
 
     <!-- Keyboard Navigation -->
     {#if enableKeyboardNav}
@@ -353,5 +470,25 @@
     top: 20px;
     right: 20px;
     z-index: 10;
+  }
+  .hud-finder {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(420px, 90vw);
+    z-index: 20;
+  }
+  .hud-pinned {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 20;
+  }
+  .hud-lock-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 15;
   }
 </style>
