@@ -339,7 +339,7 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         );
     });
 
-    it("onCameraChange callback triggers scene-ready UI (system-info-panel visible)", async () => {
+    it("onCameraChange callback triggers scene-ready UI (hud-info visible)", async () => {
         (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mockImplementationOnce(
@@ -371,12 +371,10 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         const { container } = render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        // onSystemLoad sets isSceneReady=true, making system-info-panel visible;
+        // onSystemLoad sets isSceneReady=true, making the hud-info panel visible;
         // onCameraChange must not crash for this to complete successfully
         await waitFor(() =>
-            expect(
-                container.querySelector(".system-info-panel"),
-            ).not.toBeNull(),
+            expect(container.querySelector(".hud-info")).not.toBeNull(),
         );
     });
 });
