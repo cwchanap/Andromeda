@@ -40,6 +40,10 @@ export class SolarSystemRenderer {
     // Store bound handler for proper cleanup
     private boundHandleResize = this.handleResize.bind(this);
 
+    // Scratch vectors to avoid per-frame allocations in worldToScreen.
+    private _wtsForward = new THREE.Vector3();
+    private _wtsRel = new THREE.Vector3();
+
     constructor(
         container: HTMLElement,
         config: SolarSystemConfig = {},
@@ -314,6 +318,9 @@ export class SolarSystemRenderer {
             setBarycenterOverlayVisible: (visible: boolean) => {
                 this.celestialBodyManager.setBarycenterOverlayVisible(visible);
             },
+            getBodyWorldPosition: (bodyId: string) =>
+                this.getBodyWorldPosition(bodyId),
+            worldToScreen: (point: THREE.Vector3) => this.worldToScreen(point),
             dispose: () => this.dispose(),
         };
     }
@@ -333,6 +340,34 @@ export class SolarSystemRenderer {
             newCameraPosition,
             planetPosition,
         );
+    }
+
+    /** World-space position of a body's mesh, or null if unknown. */
+    public getBodyWorldPosition(bodyId: string): THREE.Vector3 | null {
+        const mesh = this.celestialBodyManager.getCelestialBody(bodyId);
+        return mesh ? mesh.position.clone() : null;
+    }
+
+    /** Project a world point to canvas pixels. `visible:false` if behind camera. */
+    public worldToScreen(point: THREE.Vector3): {
+        x: number;
+        y: number;
+        visible: boolean;
+    } {
+        const canvas = this.renderer.domElement;
+        const forward = this._wtsForward;
+        this.camera.getWorldDirection(forward);
+        const rel = this._wtsRel.copy(point).sub(this.camera.position);
+        if (rel.dot(forward) <= 0) return { x: 0, y: 0, visible: false };
+
+        const projected = point.clone().project(this.camera);
+        const width = canvas.clientWidth || canvas.width;
+        const height = canvas.clientHeight || canvas.height;
+        return {
+            x: (projected.x * 0.5 + 0.5) * width,
+            y: (1 - (projected.y * 0.5 + 0.5)) * height,
+            visible: true,
+        };
     }
 
     /**
