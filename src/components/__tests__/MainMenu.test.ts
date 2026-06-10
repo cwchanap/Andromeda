@@ -193,9 +193,16 @@ describe("MainMenu", () => {
             );
             expect(exploreBtn).toBeTruthy();
             await fireEvent.click(exploreBtn!);
-            // System selector with mock systems should appear
-            expect(container.textContent).toContain("Solar System");
-            expect(container.textContent).toContain("Alpha Centauri");
+            // ExploreSystems modal should appear with the mocked systems.
+            // System names are rendered via GlitchText, which animates the
+            // visible text but always keeps the real name in aria-label.
+            const dialog = container.querySelector('[role="dialog"]');
+            expect(dialog).toBeTruthy();
+            const systemNames = Array.from(
+                container.querySelectorAll('[data-testid="glitch-text"]'),
+            ).map((el) => el.getAttribute("aria-label"));
+            expect(systemNames).toContain("SOLAR SYSTEM");
+            expect(systemNames).toContain("ALPHA CENTAURI");
         });
     });
 
