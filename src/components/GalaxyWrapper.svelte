@@ -6,6 +6,8 @@
     import LoadingAnimation from './LoadingAnimation.svelte';
     import ErrorBoundary from './ErrorBoundary.svelte';
     import AccessibilityManager from './AccessibilityManager.svelte';
+    import HudButton from './hud/HudButton.svelte';
+    import HudPanel from './hud/HudPanel.svelte';
 
     export let lang: AppLocale = 'en';
     export let translations: Record<string, string> = {};
@@ -282,9 +284,9 @@
         </button>
         
         <!-- Back Button -->
-        <button class="back-button" on:click={handleBackToMenu}>
-            {t('controls.backToMenu')}
-        </button>
+        <div class="galaxy-back">
+            <HudButton bracket on:click={handleBackToMenu}>{t('controls.backToMenu')}</HudButton>
+        </div>
         
         <!-- Hamburger Menu -->
         {#if showHamburgerMenu}
@@ -317,76 +319,77 @@
         <!-- Controls Panel -->
         {#if showControls}
             <div class="controls-panel">
-                <h3>{t('galaxy.controlsTitle')}</h3>
+                <HudPanel title={t('galaxy.controlsTitle')}>
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" bind:checked={enableAnimations}>
+                            {t('settings.enableAnimations')}
+                        </label>
+                    </div>
 
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" bind:checked={enableAnimations}>
-                        {t('settings.enableAnimations')}
-                    </label>
-                </div>
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" bind:checked={enableStarGlow}>
+                            {t('galaxy.starGlowEffects')}
+                        </label>
+                    </div>
 
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" bind:checked={enableStarGlow}>
-                        {t('galaxy.starGlowEffects')}
-                    </label>
-                </div>
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" bind:checked={enableStarLabels}>
+                            {t('galaxy.starSystemLabels')}
+                        </label>
+                    </div>
 
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" bind:checked={enableStarLabels}>
-                        {t('galaxy.starSystemLabels')}
-                    </label>
-                </div>
-
-                <div class="control-group">
-                    <label for="distance-slider">{t('galaxy.maxRenderDistance')}</label>
-                    <input
-                        type="range"
-                        id="distance-slider"
-                        min="10"
-                        max="100"
-                        bind:value={maxRenderDistance}
-                    >
-                    <span class="distance-value">{maxRenderDistance} {t('unit.lightYears')}</span>
-                </div>
+                    <div class="control-group">
+                        <label for="distance-slider">{t('galaxy.maxRenderDistance')}</label>
+                        <input
+                            type="range"
+                            id="distance-slider"
+                            min="10"
+                            max="100"
+                            bind:value={maxRenderDistance}
+                        >
+                        <span class="distance-value">{maxRenderDistance} {t('unit.lightYears')}</span>
+                    </div>
+                </HudPanel>
             </div>
         {/if}
         
         <!-- System Info Tooltip -->
         {#if showSystemInfo && selectedSystemData}
             <div class="system-info-tooltip">
-                <button class="close-button" on:click={closeSystemInfo}>×</button>
-                <h3>{selectedSystemData.name}</h3>
-                <p class="system-description">{selectedSystemData.description}</p>
-                
-                <div class="system-details">
-                    <div class="detail-item">
-                        <strong>{t('galaxy.distance')}:</strong> {selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}
-                    </div>
-                    <div class="detail-item">
-                        <strong>{t('galaxy.systemType')}:</strong> {getSystemTypeLabel(selectedSystemData.systemType)}
-                    </div>
-                    {#if selectedSystemData.metadata.spectralClass}
+                <HudPanel title={selectedSystemData.name}>
+                    <button class="close-button" on:click={closeSystemInfo} aria-label={t('action.close')}>×</button>
+                    <p class="system-description">{selectedSystemData.description}</p>
+
+                    <div class="system-details">
                         <div class="detail-item">
-                            <strong>{t('galaxy.spectralClass')}:</strong> {selectedSystemData.metadata.spectralClass}
+                            <strong>{t('galaxy.distance')}:</strong> {selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}
                         </div>
-                    {/if}
-                    {#if selectedSystemData.metadata.constellation}
                         <div class="detail-item">
-                            <strong>{t('galaxy.constellation')}:</strong> {selectedSystemData.metadata.constellation}
+                            <strong>{t('galaxy.systemType')}:</strong> {getSystemTypeLabel(selectedSystemData.systemType)}
                         </div>
-                    {/if}
-                    <div class="detail-item">
-                        <strong>{t('galaxy.stars')}:</strong> {selectedSystemData.stars.length}
+                        {#if selectedSystemData.metadata.spectralClass}
+                            <div class="detail-item">
+                                <strong>{t('galaxy.spectralClass')}:</strong> {selectedSystemData.metadata.spectralClass}
+                            </div>
+                        {/if}
+                        {#if selectedSystemData.metadata.constellation}
+                            <div class="detail-item">
+                                <strong>{t('galaxy.constellation')}:</strong> {selectedSystemData.metadata.constellation}
+                            </div>
+                        {/if}
+                        <div class="detail-item">
+                            <strong>{t('galaxy.stars')}:</strong> {selectedSystemData.stars.length}
+                        </div>
+                        {#if selectedSystemData.metadata.hasExoplanets}
+                            <div class="detail-item">
+                                <strong>{t('galaxy.knownExoplanets')}:</strong> {selectedSystemData.metadata.numberOfPlanets ?? t('common.yes')}
+                            </div>
+                        {/if}
                     </div>
-                    {#if selectedSystemData.metadata.hasExoplanets}
-                        <div class="detail-item">
-                            <strong>{t('galaxy.knownExoplanets')}:</strong> {selectedSystemData.metadata.numberOfPlanets ?? t('common.yes')}
-                        </div>
-                    {/if}
-                </div>
+                </HudPanel>
             </div>
         {/if}
         
@@ -536,9 +539,10 @@
         left: 20px;
         width: 50px;
         height: 50px;
-        background: rgba(0, 0, 0, 0.7);
-        border: 2px solid rgba(100, 181, 246, 0.3);
-        border-radius: 8px;
+        background: color-mix(in srgb, var(--hud-void) 65%, transparent);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        border: 1px solid var(--hud-cyan-dim);
         cursor: pointer;
         display: flex;
         flex-direction: column;
@@ -548,73 +552,66 @@
         transition: all 0.3s ease;
         z-index: 1000;
     }
-    
+
     .hamburger-button:hover {
-        background: rgba(100, 181, 246, 0.2);
-        border-color: #64b5f6;
+        background: color-mix(in srgb, var(--hud-cyan) 12%, transparent);
+        border-color: var(--hud-cyan);
+        box-shadow: 0 0 8px color-mix(in srgb, var(--hud-cyan) 35%, transparent);
     }
-    
+
     .hamburger-line {
         width: 20px;
         height: 2px;
-        background: white;
+        background: var(--hud-cyan);
+        box-shadow: 0 0 4px var(--hud-cyan);
         transition: all 0.3s ease;
     }
-    
+
     .hamburger-line.active:nth-child(1) {
         transform: rotate(45deg) translate(5px, 5px);
     }
-    
+
     .hamburger-line.active:nth-child(2) {
         opacity: 0;
     }
-    
+
     .hamburger-line.active:nth-child(3) {
         transform: rotate(-45deg) translate(7px, -6px);
     }
-    
+
     .controls-button {
         position: absolute;
         top: 20px;
         right: 20px;
         width: 50px;
         height: 50px;
-        background: rgba(0, 0, 0, 0.7);
-        border: 2px solid rgba(100, 181, 246, 0.3);
-        border-radius: 8px;
+        background: color-mix(in srgb, var(--hud-void) 65%, transparent);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        border: 1px solid var(--hud-cyan-dim);
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
+        color: var(--hud-cyan);
+        text-shadow: 0 0 4px var(--hud-cyan);
         transition: all 0.3s ease;
         z-index: 1000;
     }
-    
+
     .controls-button:hover {
-        background: rgba(100, 181, 246, 0.2);
-        border-color: #64b5f6;
+        background: color-mix(in srgb, var(--hud-cyan) 12%, transparent);
+        border-color: var(--hud-cyan);
+        box-shadow: 0 0 8px color-mix(in srgb, var(--hud-cyan) 35%, transparent);
     }
-    
-    .back-button {
+
+    .galaxy-back {
         position: absolute;
         bottom: 20px;
         left: 20px;
-        background: rgba(0, 0, 0, 0.7);
-        border: 2px solid rgba(100, 181, 246, 0.3);
-        border-radius: 8px;
-        color: white;
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
         z-index: 1000;
     }
-    
-    .back-button:hover {
-        background: rgba(100, 181, 246, 0.2);
-        border-color: #64b5f6;
-    }
-    
+
     /* Hamburger Menu */
     .hamburger-menu {
         position: absolute;
@@ -704,21 +701,10 @@
         top: 80px;
         right: 20px;
         width: 280px;
-        background: rgba(0, 0, 0, 0.9);
-        border: 2px solid rgba(100, 181, 246, 0.3);
-        border-radius: 12px;
-        padding: 1.5rem;
         z-index: 999;
         color: white;
     }
-    
-    .controls-panel h3 {
-        color: #64b5f6;
-        margin-top: 0;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
-    }
-    
+
     .control-group {
         margin-bottom: 1rem;
     }
@@ -754,21 +740,17 @@
         top: 20px;
         right: 80px;
         width: 320px;
-        background: rgba(0, 0, 0, 0.9);
-        border: 2px solid rgba(100, 181, 246, 0.5);
-        border-radius: 12px;
-        padding: 1.5rem;
         z-index: 1001;
         color: white;
     }
-    
+
     .close-button {
         position: absolute;
         top: 10px;
         right: 15px;
         background: none;
         border: none;
-        color: #999;
+        color: var(--hud-cyan-dim);
         font-size: 1.5rem;
         cursor: pointer;
         padding: 0;
@@ -777,20 +759,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 1;
     }
-    
+
     .close-button:hover {
-        color: #64b5f6;
+        color: var(--hud-cyan);
+        text-shadow: 0 0 4px var(--hud-cyan);
     }
-    
-    .system-info-tooltip h3 {
-        color: #64b5f6;
-        margin-top: 0;
-        margin-bottom: 0.75rem;
-        font-size: 1.3rem;
-        padding-right: 30px;
-    }
-    
+
     .system-description {
         color: #d0d0d0;
         line-height: 1.5;
