@@ -6,6 +6,8 @@
   import CelestialBodyInfoModal from './CelestialBodyInfoModal.svelte';
   import ComparisonModal from './ComparisonModal.svelte';
   import OrbitSpeedControl from './OrbitSpeedControl.svelte';
+  import HudPanel from './hud/HudPanel.svelte';
+  import HudButton from './hud/HudButton.svelte';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { PlanetarySystemRenderer, planetarySystemRegistry } from '../lib/planetary-system';
@@ -45,6 +47,7 @@
   let loadingProgress = 0;
   let isSceneReady = false;
   let currentZoom = 50;
+  let showFinder = false;
   let loadingMessage = "Loading planetary system...";
   let debugInfo = "";
   let hasBarycenterOverlay = false;
@@ -262,45 +265,36 @@
   </div>
   
   {#if isSceneReady}
-    <!-- System Info Panel -->
-    <div class="system-info-panel">
-      <h2>
-        {t ? t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown') : 'Unknown System'}
-      </h2>
-      <p>{t ? t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || '' : ''}</p>
+    <!-- System readout (top-left) -->
+    <div class="hud-info">
+      <HudPanel title={t ? (t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')) : 'Unknown System'}>
+        <p class="hud-details-desc" style="margin:0;">
+          {t ? (t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || '') : ''}
+        </p>
+      </HudPanel>
     </div>
-    
-    <!-- Navigation Controls -->
-    <div class="controls-panel">
-      <button on:click={handleBackToMenu} class="back-button">
-        {t ? t('controls.backToMenu') : '← Back to Menu'}
-      </button>
-      
-      {#if zoomControls}
-        <div class="zoom-controls">
-          <button on:click={zoomControls.zoomIn}>{t ? t('controls.zoomIn') : 'Zoom In'}</button>
-          <button on:click={zoomControls.zoomOut}>{t ? t('controls.zoomOut') : 'Zoom Out'}</button>
-          <button on:click={zoomControls.resetView}>{t ? t('controls.resetView') : 'Reset View'}</button>
-        </div>
-      {/if}
 
+    <!-- Command rail (top-right) -->
+    <div class="hud-controls hud-rail">
+      <HudButton bracket on:click={handleBackToMenu}>{t ? t('controls.backToMenu') : 'Back to Menu'}</HudButton>
+      <HudButton ariaLabel={t ? t('finder.open') : 'Jump to body'} on:click={() => (showFinder = true)}>{t ? t('finder.title') : 'Jump To'}</HudButton>
+      {#if zoomControls}
+        <HudButton on:click={zoomControls.zoomIn}>{t ? t('controls.zoomIn') : 'Zoom In'}</HudButton>
+        <HudButton on:click={zoomControls.zoomOut}>{t ? t('controls.zoomOut') : 'Zoom Out'}</HudButton>
+        <HudButton on:click={zoomControls.resetView}>{t ? t('controls.resetView') : 'Reset View'}</HudButton>
+      {/if}
       {#if hasBarycenterOverlay}
-        <button
-          on:click={toggleBarycenterOverlay}
-          class="bg-[rgba(12,74,110,0.75)] hover:bg-[rgba(12,74,110,0.95)] text-white border border-[rgba(125,211,252,0.6)] px-3 py-2 rounded cursor-pointer text-sm backdrop-blur-md"
-          aria-pressed={showBarycenterOverlay}
-        >
+        <HudButton ariaPressed={showBarycenterOverlay} on:click={toggleBarycenterOverlay}>
           {showBarycenterOverlay
             ? (t ? t('controls.hideBarycenters') : 'Hide barycenters')
             : (t ? t('controls.showBarycenters') : 'Show barycenters')}
-        </button>
+        </HudButton>
       {/if}
-
       {#if isSceneReady}
         <OrbitSpeedControl {lang} {translations} />
       {/if}
     </div>
-    
+
     <!-- Keyboard Navigation -->
     {#if enableKeyboardNav}
       <KeyboardNavigation 
@@ -347,72 +341,17 @@
     height: 100%;
   }
   
-  .system-info-panel {
+  .hud-info {
     position: absolute;
     top: 20px;
     left: 20px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 15px;
-    border-radius: 8px;
-    max-width: 300px;
-    backdrop-filter: blur(10px);
-  }
-  
-  .system-info-panel h2 {
-    margin: 0 0 10px 0;
-    font-size: 1.2em;
-  }
-  
-  .system-info-panel p {
-    margin: 0;
-    font-size: 0.9em;
-    line-height: 1.4;
-  }
-  
-  .controls-panel {
-    position: absolute;
-    top: 68px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    max-width: 320px;
     z-index: 10;
   }
-  
-  .back-button {
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
+  .hud-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
   }
-  
-  .back-button:hover {
-    background: rgba(0, 0, 0, 0.9);
-  }
-  
-  .zoom-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-  
-  .zoom-controls button {
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
-    backdrop-filter: blur(10px);
-  }
-  
-  .zoom-controls button:hover {
-    background: rgba(0, 0, 0, 0.9);
-  }
-
 </style>
