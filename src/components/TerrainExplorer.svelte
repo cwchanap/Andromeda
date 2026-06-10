@@ -6,6 +6,8 @@
   import type { CelestialBodyData } from '../types/game';
   import { planetarySystemRegistry } from '../lib/planetary-system';
   import { routes, type AppLocale } from '../i18n/routes';
+  import HudButton from './hud/HudButton.svelte';
+  import HudPanel from './hud/HudPanel.svelte';
   import * as THREE from 'three';
   
   // Props
@@ -343,41 +345,36 @@
   {#if isSceneReady && planetData}
     <!-- Planet Info Panel -->
     <div class="planet-info-panel">
-      <div class="planet-header">
-        <h1 class="planet-name">
-          {t(`planet.${planetId}.name`) !== `planet.${planetId}.name`
-            ? t(`planet.${planetId}.name`)
-            : planetData.name} {t('terrain.suffix')}
-        </h1>
-        <span class="planet-type">{planetData.type.toUpperCase()}</span>
-      </div>
-      <p class="planet-description">
-        {t('terrain.descriptionPrefix')} {t(`planet.${planetId}.name`) !== `planet.${planetId}.name` ? t(`planet.${planetId}.name`) : planetData.name}{t('terrain.descriptionSuffix')}
-      </p>
-
-      <!-- Terrain Features -->
-      {#if planetData.terrain}
-        <div class="terrain-features">
-          <h3>{t('terrain.surfaceFeatures')}</h3>
-          <div class="feature-tags">
-            {#each planetData.terrain.features as feature}
-              <span class="feature-tag">{feature.type}</span>
-            {/each}
-          </div>
+      <HudPanel
+        title={`${t(`planet.${planetId}.name`) !== `planet.${planetId}.name`
+          ? t(`planet.${planetId}.name`)
+          : planetData.name} ${t('terrain.suffix')}`}
+      >
+        <div class="planet-header">
+          <span class="planet-type">{planetData.type.toUpperCase()}</span>
         </div>
-      {/if}
+        <p class="planet-description">
+          {t('terrain.descriptionPrefix')} {t(`planet.${planetId}.name`) !== `planet.${planetId}.name` ? t(`planet.${planetId}.name`) : planetData.name}{t('terrain.descriptionSuffix')}
+        </p>
+
+        <!-- Terrain Features -->
+        {#if planetData.terrain}
+          <div class="terrain-features">
+            <h3>{t('terrain.surfaceFeatures')}</h3>
+            <div class="feature-tags">
+              {#each planetData.terrain.features as feature}
+                <span class="feature-tag">{feature.type}</span>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </HudPanel>
     </div>
 
     <!-- Control Panel -->
     <div class="control-panel">
-      <button on:click={handleBackToSolar} class="control-button back-button">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="m12 19-7-7 7-7"/>
-          <path d="M19 12H5"/>
-        </svg>
-        {t('controls.backToSolarSystemLabel')}
-      </button>
-      
+      <HudButton bracket on:click={handleBackToSolar}>{t('controls.backToSolarSystemLabel')}</HudButton>
+
       <div class="view-controls">
         <button on:click={handleResetView} class="control-button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -466,29 +463,14 @@
     top: 20px;
     left: 20px;
     max-width: 320px;
-    background: rgba(0, 0, 17, 0.9);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 20px;
     color: white;
     z-index: 10;
   }
-  
+
   .planet-header {
     margin-bottom: 15px;
   }
-  
-  .planet-name {
-    margin: 0 0 8px 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-    background: linear-gradient(45deg, #60a5fa, #a855f7);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
+
   .planet-type {
     display: inline-block;
     background: rgba(96, 165, 250, 0.2);
@@ -567,17 +549,7 @@
     border-color: rgba(96, 165, 250, 0.5);
     transform: translateY(-1px);
   }
-  
-  .back-button {
-    background: rgba(239, 68, 68, 0.9);
-    border-color: rgba(239, 68, 68, 0.5);
-  }
-  
-  .back-button:hover {
-    background: rgba(220, 38, 38, 0.95);
-    border-color: rgba(239, 68, 68, 0.7);
-  }
-  
+
   .instructions-panel {
     position: absolute;
     bottom: 20px;
@@ -620,11 +592,7 @@
       max-width: calc(100vw - 40px);
       font-size: 0.875rem;
     }
-    
-    .planet-name {
-      font-size: 1.25rem;
-    }
-    
+
     .control-panel {
       right: 10px;
       top: 10px;
