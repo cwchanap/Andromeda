@@ -55,9 +55,6 @@ export const zh = {
     "finder.pinned": "已固定",
     "finder.unpin": "取消固定",
     "finder.close": "关闭",
-    "type.star": "恒星",
-    "type.planet": "行星",
-    "type.moon": "卫星",
 
     // Modal content
     "modal.celestialData": "天体数据",
