@@ -11,7 +11,6 @@
   import HudSearch from './hud/HudSearch.svelte';
   import TargetLockOverlay from './hud/TargetLockOverlay.svelte';
   import { matchesQuery } from '../lib/hud/list';
-  import { Vector3 } from 'three';
   import { gameState, gameActions, settings } from '../stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { PlanetarySystemRenderer, planetarySystemRegistry } from '../lib/planetary-system';
@@ -272,8 +271,7 @@
     matchesQuery(finderQuery, [b.name, b.type]),
   );
 
-  const bodyTypeKey = (type: string) =>
-    type === "star" ? "type.star" : type === "moon" ? "type.moon" : "type.planet";
+  const bodyTypeKey = (type: string) => `planet.type.${type}`;
 
   function startLockLoop() {
     cancelAnimationFrame(lockRafId);
@@ -283,7 +281,7 @@
         return;
       }
       const world = planetarySystemRenderer.getBodyWorldPosition(pinnedBodyId);
-      lockPos = world ? planetarySystemRenderer.worldToScreen(world as Vector3) : null;
+      lockPos = world ? planetarySystemRenderer.worldToScreen(world) : null;
       lockRafId = requestAnimationFrame(tick);
     };
     lockRafId = requestAnimationFrame(tick);

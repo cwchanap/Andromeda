@@ -56,9 +56,6 @@ export const en = {
     "finder.pinned": "Pinned",
     "finder.unpin": "Unpin",
     "finder.close": "Close",
-    "type.star": "Stars",
-    "type.planet": "Planets",
-    "type.moon": "Moons",
 
     // Modal content
     "modal.celestialData": "Celestial Data",

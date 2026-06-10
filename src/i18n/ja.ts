@@ -55,9 +55,6 @@ export const ja = {
     "finder.pinned": "固定中",
     "finder.unpin": "固定解除",
     "finder.close": "閉じる",
-    "type.star": "恒星",
-    "type.planet": "惑星",
-    "type.moon": "衛星",
 
     // Modal content
     "modal.celestialData": "天体データ",
