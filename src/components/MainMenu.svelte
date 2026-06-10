@@ -1,13 +1,13 @@
 <script lang="ts">
-  import Button from "./ui/Button.svelte";
-  import SettingsModal from "./SettingsModal.svelte";
-  import AccessibilityManager from "./AccessibilityManager.svelte";
-  import ExploreSystems from "./ExploreSystems.svelte";
-  import { gameState, settings, gameActions } from "../stores/gameStore";
+  import Button from "@/components/ui/Button.svelte";
+  import SettingsModal from "@/components/SettingsModal.svelte";
+  import AccessibilityManager from "@/components/AccessibilityManager.svelte";
+  import ExploreSystems from "@/components/ExploreSystems.svelte";
+  import { gameState, settings, gameActions } from "@/stores/gameStore";
   import { onMount, onDestroy } from "svelte";
-  import { getLangFromUrl, useTranslations } from "../i18n/utils";
-  import { routes, type AppLocale } from "../i18n/routes";
-  import type { GameSettings } from "../stores/gameStore";
+  import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+  import { routes, type AppLocale } from "@/i18n/routes";
+  import type { GameSettings } from "@/stores/gameStore";
 
   // Accept language as prop and pre-computed translations
   export let lang: AppLocale = 'en';

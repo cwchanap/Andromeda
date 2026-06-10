@@ -1,13 +1,13 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
-    import { GalaxyRenderer, localGalaxyData, type GalaxyConfig, type GalaxyEvents } from '../lib/galaxy';
-    import { planetarySystemRegistry } from '../lib/planetary-system';
-    import { routes, type AppLocale } from '../i18n/routes';
-    import LoadingAnimation from './LoadingAnimation.svelte';
-    import ErrorBoundary from './ErrorBoundary.svelte';
-    import AccessibilityManager from './AccessibilityManager.svelte';
-    import HudButton from './hud/HudButton.svelte';
-    import HudPanel from './hud/HudPanel.svelte';
+    import { GalaxyRenderer, localGalaxyData, type GalaxyConfig, type GalaxyEvents } from '@/lib/galaxy';
+    import { planetarySystemRegistry } from '@/lib/planetary-system';
+    import { routes, type AppLocale } from '@/i18n/routes';
+    import LoadingAnimation from '@/components/LoadingAnimation.svelte';
+    import ErrorBoundary from '@/components/ErrorBoundary.svelte';
+    import AccessibilityManager from '@/components/AccessibilityManager.svelte';
+    import HudButton from '@/components/hud/HudButton.svelte';
+    import HudPanel from '@/components/hud/HudPanel.svelte';
 
     export let lang: AppLocale = 'en';
     export let translations: Record<string, string> = {};

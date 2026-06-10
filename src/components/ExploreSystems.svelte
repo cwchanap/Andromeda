@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { planetarySystemRegistry } from "../lib/planetary-system";
-  import type { PlanetarySystem } from "../lib/planetary-system";
-  import { matchesQuery, paginate, pageLabel } from "../lib/hud/list";
-  import HudPanel from "./hud/HudPanel.svelte";
-  import HudButton from "./hud/HudButton.svelte";
-  import HudSearch from "./hud/HudSearch.svelte";
-  import GlitchText from "./hud/GlitchText.svelte";
+  import { planetarySystemRegistry } from "@/lib/planetary-system";
+  import type { PlanetarySystem } from "@/lib/planetary-system";
+  import { matchesQuery, paginate, pageLabel } from "@/lib/hud/list";
+  import HudPanel from "@/components/hud/HudPanel.svelte";
+  import HudButton from "@/components/hud/HudButton.svelte";
+  import HudSearch from "@/components/hud/HudSearch.svelte";
+  import GlitchText from "@/components/hud/GlitchText.svelte";
 
   export let t: (key: string) => string;
   export let currentSystemId: string | null = null;
@@ -19,7 +19,7 @@
   let page = 1;
 
   // Reset to page 1 whenever the query changes.
-  $: query, (page = 1);
+  $: { query; page = 1; }
 
   $: filtered = allSystems.filter((s) =>
     matchesQuery(query, [

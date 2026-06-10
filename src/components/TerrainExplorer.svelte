@@ -1,13 +1,13 @@
 <script lang="ts">
-  import LoadingAnimation from './LoadingAnimation.svelte';
-  import ErrorBoundary from './ErrorBoundary.svelte';
+  import LoadingAnimation from '@/components/LoadingAnimation.svelte';
+  import ErrorBoundary from '@/components/ErrorBoundary.svelte';
   import { onMount, onDestroy } from 'svelte';
-  import { gameState, gameActions } from '../stores/gameStore';
-  import type { CelestialBodyData } from '../types/game';
-  import { planetarySystemRegistry } from '../lib/planetary-system';
-  import { routes, type AppLocale } from '../i18n/routes';
-  import HudButton from './hud/HudButton.svelte';
-  import HudPanel from './hud/HudPanel.svelte';
+  import { gameState, gameActions } from '@/stores/gameStore';
+  import type { CelestialBodyData } from '@/types/game';
+  import { planetarySystemRegistry } from '@/lib/planetary-system';
+  import { routes, type AppLocale } from '@/i18n/routes';
+  import HudButton from '@/components/hud/HudButton.svelte';
+  import HudPanel from '@/components/hud/HudPanel.svelte';
   import * as THREE from 'three';
   
   // Props
@@ -37,6 +37,11 @@
   // not free GPU memory). See AGENTS.md "Three.js memory" guidance.
   let terrainGeometry: THREE.PlaneGeometry | null = null;
   let terrainMaterial: THREE.MeshStandardMaterial | null = null;
+  
+  // Computed planet display name – used in both title and description
+  $: planetTitle = t(`planet.${planetId}.name`) !== `planet.${planetId}.name`
+    ? t(`planet.${planetId}.name`)
+    : planetData?.name ?? planetId;
   
   // Camera and interaction state
   let currentZoom = 5; // Start closer for terrain viewing
@@ -346,15 +351,13 @@
     <!-- Planet Info Panel -->
     <div class="planet-info-panel">
       <HudPanel
-        title={`${t(`planet.${planetId}.name`) !== `planet.${planetId}.name`
-          ? t(`planet.${planetId}.name`)
-          : planetData.name} ${t('terrain.suffix')}`}
+        title={`${planetTitle} ${t('terrain.suffix')}`}
       >
         <div class="planet-header">
           <span class="planet-type">{planetData.type.toUpperCase()}</span>
         </div>
         <p class="planet-description">
-          {t('terrain.descriptionPrefix')} {t(`planet.${planetId}.name`) !== `planet.${planetId}.name` ? t(`planet.${planetId}.name`) : planetData.name}{t('terrain.descriptionSuffix')}
+          {t('terrain.descriptionPrefix')} {planetTitle}{t('terrain.descriptionSuffix')}
         </p>
 
         <!-- Terrain Features -->

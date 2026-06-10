@@ -1,5 +1,5 @@
 <script lang="ts">
-  import HudFrame from "./HudFrame.svelte";
+  import HudFrame from "@/components/hud/HudFrame.svelte";
   /** Framed HUD panel with optional title header + animated entrance. */
   export let title: string | undefined = undefined;
   export let color = "var(--hud-cyan)";

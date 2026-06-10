@@ -1,23 +1,23 @@
 <script lang="ts">
-  import LoadingAnimation from './LoadingAnimation.svelte';
-  import ErrorBoundary from './ErrorBoundary.svelte';
-  import KeyboardNavigation from './KeyboardNavigation.svelte';
-  import AccessibilityManager from './AccessibilityManager.svelte';
-  import CelestialBodyInfoModal from './CelestialBodyInfoModal.svelte';
-  import ComparisonModal from './ComparisonModal.svelte';
-  import OrbitSpeedControl from './OrbitSpeedControl.svelte';
-  import HudPanel from './hud/HudPanel.svelte';
-  import HudButton from './hud/HudButton.svelte';
-  import HudSearch from './hud/HudSearch.svelte';
-  import TargetLockOverlay from './hud/TargetLockOverlay.svelte';
-  import { matchesQuery } from '../lib/hud/list';
-  import { gameState, gameActions, settings } from '../stores/gameStore';
+  import LoadingAnimation from '@/components/LoadingAnimation.svelte';
+  import ErrorBoundary from '@/components/ErrorBoundary.svelte';
+  import KeyboardNavigation from '@/components/KeyboardNavigation.svelte';
+  import AccessibilityManager from '@/components/AccessibilityManager.svelte';
+  import CelestialBodyInfoModal from '@/components/CelestialBodyInfoModal.svelte';
+  import ComparisonModal from '@/components/ComparisonModal.svelte';
+  import OrbitSpeedControl from '@/components/OrbitSpeedControl.svelte';
+  import HudPanel from '@/components/hud/HudPanel.svelte';
+  import HudButton from '@/components/hud/HudButton.svelte';
+  import HudSearch from '@/components/hud/HudSearch.svelte';
+  import TargetLockOverlay from '@/components/hud/TargetLockOverlay.svelte';
+  import { matchesQuery } from '@/lib/hud/list';
+  import { gameState, gameActions, settings } from '@/stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
-  import { PlanetarySystemRenderer, planetarySystemRegistry } from '../lib/planetary-system';
-  import { getLangFromUrl, useTranslations } from '../i18n/utils';
-  import { routes, type AppLocale } from '../i18n/routes';
-  import type { PlanetarySystemConfig, PlanetarySystemEvents } from '../lib/planetary-system/types';
-  import type { CelestialBodyData } from '../types/game';
+  import { PlanetarySystemRenderer, planetarySystemRegistry } from '@/lib/planetary-system';
+  import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+  import { routes, type AppLocale } from '@/i18n/routes';
+  import type { PlanetarySystemConfig, PlanetarySystemEvents } from '@/lib/planetary-system/types';
+  import type { CelestialBodyData } from '@/types/game';
   
   // Props
   export let systemId: string;
