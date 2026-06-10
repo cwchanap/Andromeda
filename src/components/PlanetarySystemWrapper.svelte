@@ -465,7 +465,7 @@
   }
   .hud-controls {
     position: absolute;
-    top: 20px;
+    top: 64px;
     right: 20px;
     z-index: 10;
   }
