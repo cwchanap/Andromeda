@@ -360,4 +360,78 @@ describe("PlanetarySystemRenderer", () => {
         // The null-check throws before the try/catch that would call onError
         expect(onError).not.toHaveBeenCalled();
     });
+
+    it("getBodyWorldPosition returns position for known body after init", async () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        await renderer.initialize(makeSystemData());
+        const pos = renderer.getBodyWorldPosition("test-star");
+        expect(pos).not.toBeNull();
+    });
+
+    it("getBodyWorldPosition returns null for unknown body", async () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        await renderer.initialize(makeSystemData());
+        expect(renderer.getBodyWorldPosition("nonexistent")).toBeNull();
+    });
+
+    it("getBodyWorldPosition returns null before initialize", () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        expect(renderer.getBodyWorldPosition("any")).toBeNull();
+    });
+
+    it("worldToScreen returns visible result for point in front of camera", async () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        await renderer.initialize(makeSystemData());
+        const result = renderer.worldToScreen(new THREE.Vector3(0, 0, 0));
+        expect(result).toHaveProperty("visible");
+        expect(typeof result.x).toBe("number");
+        expect(typeof result.y).toBe("number");
+    });
+
+    it("worldToScreen returns default fallback before initialize", () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        const result = renderer.worldToScreen(new THREE.Vector3(0, 0, 0));
+        expect(result).toEqual({ x: 0, y: 0, visible: false });
+    });
+
+    it("isBarycenterOverlayVisibleByDefault returns true when anchor has visibleByDefault", async () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        await renderer.initialize(
+            makeSystemData({
+                orbitAnchors: [
+                    {
+                        id: "bary",
+                        name: "Bary",
+                        type: "barycenter" as const,
+                        position: new THREE.Vector3(0, 0, 0),
+                        overlay: { visibleByDefault: true },
+                    },
+                ],
+            }),
+        );
+        expect(renderer.isBarycenterOverlayVisibleByDefault()).toBe(true);
+    });
+
+    it("isBarycenterOverlayVisibleByDefault returns false when anchors lack overlay", async () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        await renderer.initialize(
+            makeSystemData({
+                orbitAnchors: [
+                    {
+                        id: "bary",
+                        name: "Bary",
+                        type: "barycenter" as const,
+                        position: new THREE.Vector3(0, 0, 0),
+                    },
+                ],
+            }),
+        );
+        expect(renderer.isBarycenterOverlayVisibleByDefault()).toBe(false);
+    });
+
+    it("isBarycenterOverlayVisibleByDefault returns false when no orbitAnchors", async () => {
+        renderer = new PlanetarySystemRenderer(container, makeConfig());
+        await renderer.initialize(makeSystemData());
+        expect(renderer.isBarycenterOverlayVisibleByDefault()).toBe(false);
+    });
 });

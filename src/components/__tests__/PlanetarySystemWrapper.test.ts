@@ -57,11 +57,17 @@ vi.mock("@/lib/planetary-system", () => {
             zoomIn: vi.fn(),
             zoomOut: vi.fn(),
             resetView: vi.fn(),
+            focusOnPlanet: vi.fn(),
+            getBodyWorldPosition: vi.fn(() => ({ x: 0, y: 0, z: 0 })),
+            worldToScreen: vi.fn(() => ({ x: 100, y: 200, visible: true })),
         })),
         hasOrbitAnchors: vi.fn(() => true),
         isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
         setBarycenterOverlayVisible: vi.fn(),
         getSystemData: vi.fn(() => mockSystemData),
+        focusOnBody: vi.fn(),
+        getBodyWorldPosition: vi.fn(() => ({ x: 0, y: 0, z: 0 })),
+        worldToScreen: vi.fn(() => ({ x: 100, y: 200, visible: true })),
     };
 
     return {
@@ -376,5 +382,184 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         await waitFor(() =>
             expect(container.querySelector(".hud-info")).not.toBeNull(),
         );
+    });
+});
+
+describe("PlanetarySystemWrapper – finder and pinning", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it("shows Jump To button when scene is ready", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+    });
+
+    it("opens finder when Jump To button is clicked", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = Array.from(
+            container.querySelectorAll(".hud-controls .hud-btn"),
+        ).find((b) => b.textContent?.includes("Jump To"));
+        expect(jumpBtn).toBeTruthy();
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+        expect(container.querySelector("input")).not.toBeNull();
+    });
+
+    it("finder shows body results and pins on click", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = Array.from(
+            container.querySelectorAll(".hud-controls .hud-btn"),
+        ).find((b) => b.textContent?.includes("Jump To"));
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const rows = container.querySelectorAll(".hud-list-row");
+        expect(rows.length).toBeGreaterThan(0);
+
+        const mockInstance = (
+            PlanetarySystemRenderer as ReturnType<typeof vi.fn>
+        ).mock.results[0]?.value;
+        await fireEvent.click(rows[0]);
+        expect(mockInstance.focusOnBody).toHaveBeenCalled();
+        await waitFor(() =>
+            expect(container.querySelector(".hud-pinned")).not.toBeNull(),
+        );
+    });
+
+    it("unpins a body when unpin button is clicked", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = Array.from(
+            container.querySelectorAll(".hud-controls .hud-btn"),
+        ).find((b) => b.textContent?.includes("Jump To"));
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+        const rows = container.querySelectorAll(".hud-list-row");
+        await fireEvent.click(rows[0]);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-pinned")).not.toBeNull(),
+        );
+
+        const unpinBtn = container.querySelector(".hud-chip-x");
+        expect(unpinBtn).toBeTruthy();
+        await fireEvent.click(unpinBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-pinned")).toBeNull(),
+        );
+    });
+
+    it("opens finder on / keypress", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-info")).not.toBeNull(),
+        );
+        await fireEvent.keyDown(window, { key: "/" });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+    });
+
+    it("closes finder on Escape keypress", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = Array.from(
+            container.querySelectorAll(".hud-controls .hud-btn"),
+        ).find((b) => b.textContent?.includes("Jump To"));
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        await fireEvent.keyDown(window, { key: "Escape" });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).toBeNull(),
+        );
+    });
+
+    it("does not open finder on / when target is an INPUT", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = Array.from(
+            container.querySelectorAll(".hud-controls .hud-btn"),
+        ).find((b) => b.textContent?.includes("Jump To"));
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const input = container.querySelector("input");
+        expect(input).toBeTruthy();
+        await fireEvent.keyDown(input!, { key: "/" });
+        expect(container.querySelector(".hud-finder")).not.toBeNull();
+    });
+
+    it("shows target lock overlay when pinned body is visible", async () => {
+        const origRAF = window.requestAnimationFrame;
+        const origCAF = window.cancelAnimationFrame;
+        window.requestAnimationFrame = (cb: FrameRequestCallback) =>
+            setTimeout(() => cb(performance.now()), 0) as unknown as number;
+        window.cancelAnimationFrame = (id: number) => clearTimeout(id);
+
+        try {
+            const { container } = render(PlanetarySystemWrapper, {
+                props: { systemId: "alpha-centauri" },
+            });
+            await waitFor(() =>
+                expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            );
+            const jumpBtn = Array.from(
+                container.querySelectorAll(".hud-controls .hud-btn"),
+            ).find((b) => b.textContent?.includes("Jump To"));
+            await fireEvent.click(jumpBtn!);
+            await waitFor(() =>
+                expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            );
+            const rows = container.querySelectorAll(".hud-list-row");
+            await fireEvent.click(rows[0]);
+
+            await waitFor(() =>
+                expect(
+                    container.querySelector(".hud-lock-layer"),
+                ).not.toBeNull(),
+            );
+        } finally {
+            window.requestAnimationFrame = origRAF;
+            window.cancelAnimationFrame = origCAF;
+        }
     });
 });
