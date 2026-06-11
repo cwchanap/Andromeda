@@ -56,6 +56,7 @@ export const en = {
     "finder.pinned": "Pinned",
     "finder.unpin": "Unpin",
     "finder.close": "Close",
+    "finder.locked": "TARGET LOCKED",
 
     // Modal content
     "modal.celestialData": "Celestial Data",

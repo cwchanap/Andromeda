@@ -56,11 +56,11 @@
       </div>
 
       {#if pageResult.items.length === 0}
-        <div class="hud-section-label" style="text-align:center; padding:2rem 0;">{t("explore.empty")}</div>
+        <div class="hud-section-label text-center py-8">{t("explore.empty")}</div>
       {:else}
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {#each pageResult.items as system (system.id)}
-            <div class="hud-readout" style="margin-bottom:0;">
+            <div class="hud-readout mb-0">
               <h4 class="hud-panel-title" style="font-size:13px;">
                 <GlitchText text={system.name.toUpperCase()} />
               </h4>
@@ -76,7 +76,7 @@
                   <span class="readout-value">{system.systemData.metadata.distance}</span>
                 </div>
               {/if}
-              <div style="margin-top:10px;">
+              <div class="mt-2.5">
                 {#if system.id === currentSystemId}
                   <HudButton disabled>{t("explore.current")}</HudButton>
                 {:else}

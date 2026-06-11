@@ -1,20 +1,18 @@
 <script lang="ts">
   import HudReticle from "@/components/hud/HudReticle.svelte";
-  export let visible: boolean = false;
   export let x: number = 0;
   export let y: number = 0;
   export let name: string = "";
+  export let lockedLabel: string = "TARGET LOCKED";
 </script>
 
-{#if visible}
-  <div class="target-lock" style="transform: translate({x}px, {y}px);">
-    <HudReticle x={0} y={0} state="locked" />
-    <div class="target-meta">
-      <div class="target-name">{name}</div>
-      <div class="target-badge">TARGET LOCKED</div>
-    </div>
+<div class="target-lock" style="transform: translate({x}px, {y}px);">
+  <HudReticle x={0} y={0} state="locked" />
+  <div class="target-meta">
+    <div class="target-name">{name}</div>
+    <div class="target-badge">{lockedLabel}</div>
   </div>
-{/if}
+</div>
 
 <style>
   .target-lock {

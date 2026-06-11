@@ -55,6 +55,7 @@ export const ja = {
     "finder.pinned": "固定中",
     "finder.unpin": "固定解除",
     "finder.close": "閉じる",
+    "finder.locked": "ターゲットロック",
 
     // Modal content
     "modal.celestialData": "天体データ",

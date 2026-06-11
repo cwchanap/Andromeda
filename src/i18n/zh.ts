@@ -55,6 +55,7 @@ export const zh = {
     "finder.pinned": "已固定",
     "finder.unpin": "取消固定",
     "finder.close": "关闭",
+    "finder.locked": "目标已锁定",
 
     // Modal content
     "modal.celestialData": "天体数据",

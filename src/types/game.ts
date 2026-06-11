@@ -124,7 +124,6 @@ export interface GameState {
         showInfoModal: boolean;
         showChatbot: boolean;
         showControls: boolean;
-        showSystemSelector: boolean;
         showComparisonModal: boolean;
     };
     // Comparison mode state

@@ -29,7 +29,6 @@ const defaultGameState: GameState = {
         showInfoModal: false,
         showChatbot: false,
         showControls: false,
-        showSystemSelector: false,
         showComparisonModal: false,
     },
     comparison: {
@@ -97,13 +96,6 @@ export const gameActions = {
         gameState.update((state) => ({
             ...state,
             ui: { ...state.ui, showControls: show },
-        }));
-    },
-
-    showSystemSelector: (show: boolean) => {
-        gameState.update((state) => ({
-            ...state,
-            ui: { ...state.ui, showSystemSelector: show },
         }));
     },
 
