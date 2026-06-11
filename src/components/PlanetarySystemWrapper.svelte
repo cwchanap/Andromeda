@@ -332,7 +332,7 @@
     <!-- System readout (top-left) -->
     <div class="hud-info">
       <HudPanel title={t ? (t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')) : 'Unknown System'}>
-        <p class="hud-details-desc" style="margin:0;">
+        <p class="hud-details-desc m-0">
           {t ? (t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || '') : ''}
         </p>
       </HudPanel>
@@ -371,9 +371,9 @@
             on:keydown={(e) => { if (e.key === 'Enter' && finderResults[0]) pinBody(finderResults[0]); }}
           />
           {#if finderResults.length === 0}
-            <div class="hud-section-label" style="text-align:center; padding:1rem 0;">{t ? t('finder.empty') : 'No bodies match query'}</div>
+            <div class="hud-section-label text-center py-4">{t ? t('finder.empty') : 'No bodies match query'}</div>
           {:else}
-            <div class="hud-list" style="margin-top:8px;">
+            <div class="hud-list mt-2">
               {#each finderResults as body (body.id)}
                 <button
                   type="button"
@@ -406,7 +406,7 @@
     <!-- Target-lock reticle overlay -->
     {#if pinnedBodyId && lockPos && lockPos.visible}
       <div class="hud-lock-layer" aria-hidden="true">
-        <TargetLockOverlay visible={true} x={lockPos.x} y={lockPos.y} name={pinnedName} />
+        <TargetLockOverlay x={lockPos.x} y={lockPos.y} name={pinnedName} lockedLabel={t ? t('finder.locked') : 'TARGET LOCKED'} />
       </div>
     {/if}
 

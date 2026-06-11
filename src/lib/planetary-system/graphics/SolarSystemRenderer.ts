@@ -43,6 +43,7 @@ export class SolarSystemRenderer {
     // Scratch vectors to avoid per-frame allocations in worldToScreen.
     private _wtsForward = new THREE.Vector3();
     private _wtsRel = new THREE.Vector3();
+    private _wtsProject = new THREE.Vector3();
 
     constructor(
         container: HTMLElement,
@@ -360,7 +361,7 @@ export class SolarSystemRenderer {
         const rel = this._wtsRel.copy(point).sub(this.camera.position);
         if (rel.dot(forward) <= 0) return { x: 0, y: 0, visible: false };
 
-        const projected = point.clone().project(this.camera);
+        const projected = this._wtsProject.copy(point).project(this.camera);
         const width = canvas.clientWidth || canvas.width;
         const height = canvas.clientHeight || canvas.height;
         return {

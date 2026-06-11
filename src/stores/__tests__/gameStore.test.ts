@@ -21,7 +21,6 @@ describe("Game Store", () => {
             expect(state.ui.showInfoModal).toBe(false);
             expect(state.ui.showChatbot).toBe(false);
             expect(state.ui.showControls).toBe(false);
-            expect(state.ui.showSystemSelector).toBe(false);
             expect(state.settings.enableAnimations).toBe(true);
             expect(state.settings.audioEnabled).toBe(true);
             expect(state.settings.controlSensitivity).toBe(1.0);
@@ -168,16 +167,6 @@ describe("Game Store", () => {
                 gameActions.showControls(false);
                 state = get(gameState);
                 expect(state.ui.showControls).toBe(false);
-            });
-
-            it("should toggle system selector", () => {
-                gameActions.showSystemSelector(true);
-                let state = get(gameState);
-                expect(state.ui.showSystemSelector).toBe(true);
-
-                gameActions.showSystemSelector(false);
-                state = get(gameState);
-                expect(state.ui.showSystemSelector).toBe(false);
             });
         });
 
