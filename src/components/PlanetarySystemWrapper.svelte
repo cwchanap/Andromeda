@@ -248,12 +248,6 @@
     }
   });
   
-  // Handle window resize
-  const handleResize = () => {
-    // The resize is handled internally by the SolarSystemRenderer
-    // through its private handleResize method
-  };
-  
   // Synchronize all settings with renderer in a single reactive statement
   $: if (planetarySystemRenderer) {
     planetarySystemRenderer.updateConfig({
@@ -328,7 +322,7 @@
   }
 </script>
 
-<svelte:window on:resize={handleResize} on:keydown={handleFinderHotkeys} on:click={handleClickOutside} />
+<svelte:window on:keydown={handleFinderHotkeys} on:click={handleClickOutside} />
 
 <div class="planetary-system-wrapper">
   <div id="planetary-system-renderer" class="system-container">
@@ -394,7 +388,7 @@
                   <span class="row-abbr">[{t(bodyTypeKey(body.type))}]</span>
                   <span class="row-name">{body.name}</span>
                   <span class="row-leader"></span>
-                  <span class="row-count">{body.keyFacts?.moons != null ? `${body.keyFacts.moons}☽` : ''}</span>
+                  <span class="row-count">{#if body.keyFacts?.moons != null}{body.keyFacts.moons}<span aria-hidden="true">☽</span><span class="sr-only"> moons</span>{/if}</span>
                 </button>
               {/each}
             </div>
@@ -498,5 +492,16 @@
     inset: 0;
     pointer-events: none;
     z-index: 15;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 </style>
