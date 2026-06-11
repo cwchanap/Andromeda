@@ -24,11 +24,12 @@ export function paginate<T>(
     page: number,
     perPage: number,
 ): PageResult<T> {
-    const totalPages = Math.max(1, Math.ceil(items.length / perPage));
+    const size = Math.max(1, Math.trunc(perPage));
+    const totalPages = Math.max(1, Math.ceil(items.length / size));
     const clamped = Math.min(Math.max(1, Math.trunc(page)), totalPages);
-    const start = (clamped - 1) * perPage;
+    const start = (clamped - 1) * size;
     return {
-        items: items.slice(start, start + perPage),
+        items: items.slice(start, start + size),
         page: clamped,
         totalPages,
     };

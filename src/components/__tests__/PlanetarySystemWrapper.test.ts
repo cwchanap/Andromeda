@@ -379,11 +379,51 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
             props: { systemId: "alpha-centauri" },
         });
         // When onError fires, isLoading=false removes the LoadingAnimation child
+        // and the error surface appears instead
         await waitFor(() =>
-            expect(
-                container.querySelector("#planetary-system-renderer")
-                    ?.firstElementChild,
-            ).toBeNull(),
+            expect(container.querySelector('[role="alert"]')).not.toBeNull(),
+        );
+        // Loading animation should be gone
+        expect(container.querySelector(".loading-animation")).toBeNull();
+    });
+
+    it("onError callback shows error message to the user", async () => {
+        (
+            PlanetarySystemRenderer as ReturnType<typeof vi.fn>
+        ).mockImplementationOnce(
+            (_container: HTMLElement, _config: unknown, events: unknown) => {
+                const evts = events as any;
+                return {
+                    initialize: vi.fn().mockImplementation(async () => {
+                        await Promise.resolve();
+                        evts.onError?.(new Error("system load failed"));
+                    }),
+                    dispose: vi.fn(),
+                    cleanup: vi.fn().mockResolvedValue(undefined),
+                    selectBody: vi.fn(),
+                    updateConfig: vi.fn(),
+                    getControls: vi.fn(() => ({
+                        zoomIn: vi.fn(),
+                        zoomOut: vi.fn(),
+                        resetView: vi.fn(),
+                    })),
+                    hasOrbitAnchors: vi.fn(() => true),
+                    isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
+                    setBarycenterOverlayVisible: vi.fn(),
+                    getSystemData: vi.fn(() => mockSystemData),
+                };
+            },
+        );
+
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        // Error surface should appear with the error message
+        await waitFor(() =>
+            expect(container.querySelector('[role="alert"]')).not.toBeNull(),
+        );
+        expect(container.querySelector(".hud-error-msg")?.textContent).toBe(
+            "system load failed",
         );
     });
 
@@ -744,7 +784,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         expect(container.querySelector(".hud-finder")).not.toBeNull();
     });
 
-    it("renders finder list with listbox semantics", async () => {
+    it("renders finder list with ul/li semantics", async () => {
         const { container } = render(PlanetarySystemWrapper, {
             props: {
                 systemId: "alpha-centauri",
@@ -760,13 +800,12 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             expect(container.querySelector(".hud-finder")).not.toBeNull(),
         );
 
-        const listbox = container.querySelector('[role="listbox"]');
-        expect(listbox).not.toBeNull();
-        expect(listbox?.tagName).toBe("UL");
+        const list = container.querySelector(".hud-list");
+        expect(list).not.toBeNull();
+        expect(list?.tagName).toBe("UL");
 
-        const options = listbox?.querySelectorAll('[role="option"]');
-        expect(options?.length).toBeGreaterThan(0);
-        expect(options?.[0].tagName).toBe("LI");
+        const items = list?.querySelectorAll("li");
+        expect(items?.length).toBeGreaterThan(0);
     });
 
     it("pins body on Enter when finder list has focus", async () => {
@@ -790,8 +829,8 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         ).mock.results[0]?.value;
 
         // Simulate pressing Enter on the list
-        const listbox = container.querySelector('[role="listbox"]')!;
-        await fireEvent.keyDown(listbox, { key: "Enter" });
+        const list = container.querySelector(".hud-list")!;
+        await fireEvent.keyDown(list, { key: "Enter" });
         expect(mockInstance.focusOnBody).toHaveBeenCalled();
     });
 
@@ -874,8 +913,8 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
 
         // Focus the first row, then ArrowDown should move focus to the second row
         (rows[0] as HTMLElement).focus();
-        const listbox = container.querySelector('[role="listbox"]')!;
-        await fireEvent.keyDown(listbox, { key: "ArrowDown" });
+        const list = container.querySelector(".hud-list")!;
+        await fireEvent.keyDown(list, { key: "ArrowDown" });
 
         // After ArrowDown, the second row should have received focus
         expect(document.activeElement).toBe(rows[1]);
@@ -904,11 +943,257 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mock.results[0]?.value;
 
-        const listbox = container.querySelector('[role="listbox"]')!;
-        await fireEvent.keyDown(listbox, { key: "Enter" });
+        const list = container.querySelector(".hud-list")!;
+        await fireEvent.keyDown(list, { key: "Enter" });
         // Should pin the first (index 0) result, not some stale index
         expect(mockInstance.focusOnBody).toHaveBeenCalledWith(
             "alpha-centauri-a",
         );
+    });
+
+    it("populates finder results after async initialization", async () => {
+        // Simulate the real timing: getSystemData returns null before initialize,
+        // then returns data after onSystemLoad fires (which sets isSceneReady).
+        let resolveInit: () => void;
+        const initPromise = new Promise<void>((r) => {
+            resolveInit = r;
+        });
+
+        let systemDataAvailable = false;
+
+        (
+            PlanetarySystemRenderer as ReturnType<typeof vi.fn>
+        ).mockImplementationOnce(
+            (_container: HTMLElement, _config: unknown, events: unknown) => {
+                const evts = events as any;
+                return {
+                    initialize: vi.fn().mockImplementation(async () => {
+                        await initPromise;
+                        systemDataAvailable = true;
+                        evts.onSystemLoad?.("alpha-centauri");
+                    }),
+                    dispose: vi.fn(),
+                    cleanup: vi.fn().mockResolvedValue(undefined),
+                    selectBody: vi.fn(),
+                    updateConfig: vi.fn(),
+                    getControls: vi.fn(() => ({
+                        zoomIn: vi.fn(),
+                        zoomOut: vi.fn(),
+                        resetView: vi.fn(),
+                    })),
+                    hasOrbitAnchors: vi.fn(() => false),
+                    isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
+                    setBarycenterOverlayVisible: vi.fn(),
+                    getSystemData: vi.fn(() =>
+                        systemDataAvailable ? mockSystemData : null,
+                    ),
+                    focusOnBody: vi.fn(),
+                    getBodyWorldPosition: vi.fn(() => ({ x: 0, y: 0, z: 0 })),
+                    worldToScreen: vi.fn(() => ({
+                        x: 100,
+                        y: 200,
+                        visible: true,
+                    })),
+                };
+            },
+        );
+
+        const { container } = render(PlanetarySystemWrapper, {
+            props: {
+                systemId: "alpha-centauri",
+                translations: mockTranslations,
+            },
+        });
+
+        // Before init completes, no HUD controls are visible
+        expect(container.querySelector(".hud-controls")).toBeNull();
+
+        // Resolve init — triggers onSystemLoad → isSceneReady → allBodies re-runs
+        resolveInit!();
+
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+
+        // Open finder and verify it contains bodies (not "No bodies found")
+        const jumpBtn = findJumpBtn(container);
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const rows = container.querySelectorAll(".hud-list-row");
+        expect(rows.length).toBeGreaterThan(0);
+        expect(container.textContent).not.toContain(t("finder.empty"));
+    });
+
+    it("wraps focus to last row on ArrowUp from first row", async () => {
+        const multiBodySystemData = {
+            ...mockSystemData,
+            celestialBodies: [
+                {
+                    id: "planet-b",
+                    name: "Planet B",
+                    type: "planet",
+                    description: "A test planet",
+                    keyFacts: {
+                        diameter: "1000 km",
+                        distanceFromSun: "1 AU",
+                        orbitalPeriod: "365 days",
+                        composition: ["Iron"],
+                        temperature: "300 K",
+                    },
+                    images: [],
+                    position: { x: 5, y: 0, z: 0 },
+                    scale: 1,
+                    material: { color: "#FF0000" },
+                },
+            ],
+        };
+
+        (
+            PlanetarySystemRenderer as ReturnType<typeof vi.fn>
+        ).mockImplementationOnce(
+            (_container: HTMLElement, _config: unknown, events: unknown) => {
+                const evts = events as any;
+                return {
+                    initialize: vi.fn().mockImplementation(async () => {
+                        await Promise.resolve();
+                        evts.onSystemLoad?.("alpha-centauri");
+                    }),
+                    dispose: vi.fn(),
+                    cleanup: vi.fn().mockResolvedValue(undefined),
+                    selectBody: vi.fn(),
+                    updateConfig: vi.fn(),
+                    getControls: vi.fn(() => ({
+                        zoomIn: vi.fn(),
+                        zoomOut: vi.fn(),
+                        resetView: vi.fn(),
+                    })),
+                    hasOrbitAnchors: vi.fn(() => false),
+                    isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
+                    setBarycenterOverlayVisible: vi.fn(),
+                    getSystemData: vi.fn(() => multiBodySystemData),
+                    focusOnBody: vi.fn(),
+                    getBodyWorldPosition: vi.fn(() => ({ x: 0, y: 0, z: 0 })),
+                    worldToScreen: vi.fn(() => ({
+                        x: 100,
+                        y: 200,
+                        visible: true,
+                    })),
+                };
+            },
+        );
+
+        const { container } = render(PlanetarySystemWrapper, {
+            props: {
+                systemId: "alpha-centauri",
+                translations: mockTranslations,
+            },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = findJumpBtn(container);
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const rows = container.querySelectorAll(".hud-list-row");
+        expect(rows.length).toBeGreaterThanOrEqual(2);
+
+        // Focus the first row, then ArrowUp should wrap to the last row
+        (rows[0] as HTMLElement).focus();
+        const list = container.querySelector(".hud-list")!;
+        await fireEvent.keyDown(list, { key: "ArrowUp" });
+
+        expect(document.activeElement).toBe(rows[rows.length - 1]);
+    });
+
+    it("wraps focus to first row on ArrowDown from last row", async () => {
+        const multiBodySystemData = {
+            ...mockSystemData,
+            celestialBodies: [
+                {
+                    id: "planet-b",
+                    name: "Planet B",
+                    type: "planet",
+                    description: "A test planet",
+                    keyFacts: {
+                        diameter: "1000 km",
+                        distanceFromSun: "1 AU",
+                        orbitalPeriod: "365 days",
+                        composition: ["Iron"],
+                        temperature: "300 K",
+                    },
+                    images: [],
+                    position: { x: 5, y: 0, z: 0 },
+                    scale: 1,
+                    material: { color: "#FF0000" },
+                },
+            ],
+        };
+
+        (
+            PlanetarySystemRenderer as ReturnType<typeof vi.fn>
+        ).mockImplementationOnce(
+            (_container: HTMLElement, _config: unknown, events: unknown) => {
+                const evts = events as any;
+                return {
+                    initialize: vi.fn().mockImplementation(async () => {
+                        await Promise.resolve();
+                        evts.onSystemLoad?.("alpha-centauri");
+                    }),
+                    dispose: vi.fn(),
+                    cleanup: vi.fn().mockResolvedValue(undefined),
+                    selectBody: vi.fn(),
+                    updateConfig: vi.fn(),
+                    getControls: vi.fn(() => ({
+                        zoomIn: vi.fn(),
+                        zoomOut: vi.fn(),
+                        resetView: vi.fn(),
+                    })),
+                    hasOrbitAnchors: vi.fn(() => false),
+                    isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
+                    setBarycenterOverlayVisible: vi.fn(),
+                    getSystemData: vi.fn(() => multiBodySystemData),
+                    focusOnBody: vi.fn(),
+                    getBodyWorldPosition: vi.fn(() => ({ x: 0, y: 0, z: 0 })),
+                    worldToScreen: vi.fn(() => ({
+                        x: 100,
+                        y: 200,
+                        visible: true,
+                    })),
+                };
+            },
+        );
+
+        const { container } = render(PlanetarySystemWrapper, {
+            props: {
+                systemId: "alpha-centauri",
+                translations: mockTranslations,
+            },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = findJumpBtn(container);
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const rows = container.querySelectorAll(".hud-list-row");
+        expect(rows.length).toBe(2); // star + planet-b
+
+        const list = container.querySelector(".hud-list")!;
+
+        // Navigate to the last item: ArrowDown from index 0 → index 1 (last)
+        await fireEvent.keyDown(list, { key: "ArrowDown" });
+        // Now at last index (1), ArrowDown should wrap to index 0
+        await fireEvent.keyDown(list, { key: "ArrowDown" });
+
+        expect(document.activeElement).toBe(rows[0]);
     });
 });

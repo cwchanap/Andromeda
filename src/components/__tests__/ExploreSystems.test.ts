@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, fireEvent, cleanup } from "@testing-library/svelte";
+import { render, fireEvent, cleanup, waitFor } from "@testing-library/svelte";
 import ExploreSystems from "@/components/ExploreSystems.svelte";
+import { planetarySystemRegistry } from "@/lib/planetary-system";
+import type { PlanetarySystem } from "@/lib/planetary-system/types";
 
 const mockSystems = [
     {
@@ -186,5 +188,98 @@ describe("ExploreSystems", () => {
         // The autofocus attribute should be passed through to HudSearch
         // which will focus the input on mount
         expect(searchInput).toBe(document.activeElement);
+    });
+
+    it("renders pagination controls when there are enough systems", async () => {
+        // Create 7+ systems to trigger pagination (PER_PAGE=6)
+        const manySystems = Array.from({ length: 8 }, (_, i) => ({
+            id: `system-${i}`,
+            name: `System ${i}`,
+            description: `Test system ${i}`,
+            version: "1.0.0",
+            systemData: {
+                id: `system-${i}`,
+                name: `System ${i}`,
+                systemType: "star-system",
+                celestialBodies: [],
+                metadata: { distance: `${i} ly` },
+            },
+        }));
+
+        vi.mocked(planetarySystemRegistry.getAllSystems).mockReturnValue(
+            manySystems as unknown as PlanetarySystem[],
+        );
+
+        const { container } = render(ExploreSystems, {
+            props: { t: (k: string) => mockTranslations[k] || k },
+        });
+
+        await waitFor(() =>
+            expect(container.querySelector(".hud-pager")).not.toBeNull(),
+        );
+
+        // Prev should be disabled on page 1
+        const prevBtn = Array.from(container.querySelectorAll("button")).find(
+            (b) => b.textContent?.includes("Prev"),
+        );
+        expect(prevBtn?.hasAttribute("disabled")).toBe(true);
+
+        const nextBtn = Array.from(container.querySelectorAll("button")).find(
+            (b) => b.textContent?.includes("Next"),
+        );
+        expect(nextBtn?.hasAttribute("disabled")).toBe(false);
+
+        // Page label should show "01 / 02"
+        const label = container.querySelector(".hud-pager-label");
+        expect(label?.textContent).toBe("01 / 02");
+    });
+
+    it("navigates to next page and back", async () => {
+        const manySystems = Array.from({ length: 8 }, (_, i) => ({
+            id: `system-${i}`,
+            name: `System ${i}`,
+            description: `Test system ${i}`,
+            version: "1.0.0",
+            systemData: {
+                id: `system-${i}`,
+                name: `System ${i}`,
+                systemType: "star-system",
+                celestialBodies: [],
+                metadata: { distance: `${i} ly` },
+            },
+        }));
+
+        vi.mocked(planetarySystemRegistry.getAllSystems).mockReturnValue(
+            manySystems as unknown as PlanetarySystem[],
+        );
+
+        const { container } = render(ExploreSystems, {
+            props: { t: (k: string) => mockTranslations[k] || k },
+        });
+
+        await waitFor(() =>
+            expect(container.querySelector(".hud-pager")).not.toBeNull(),
+        );
+
+        const nextBtn = Array.from(container.querySelectorAll("button")).find(
+            (b) => b.textContent?.includes("Next"),
+        );
+        await fireEvent.click(nextBtn!);
+
+        const label = container.querySelector(".hud-pager-label");
+        expect(label?.textContent).toBe("02 / 02");
+
+        // Now prev should be enabled and next disabled
+        const prevBtn = Array.from(container.querySelectorAll("button")).find(
+            (b) => b.textContent?.includes("Prev"),
+        );
+        expect(prevBtn?.hasAttribute("disabled")).toBe(false);
+        expect(nextBtn?.hasAttribute("disabled")).toBe(true);
+
+        // Go back to page 1
+        await fireEvent.click(prevBtn!);
+        expect(container.querySelector(".hud-pager-label")?.textContent).toBe(
+            "01 / 02",
+        );
     });
 });

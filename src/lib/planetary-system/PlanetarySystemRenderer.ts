@@ -12,6 +12,7 @@ import type {
     SolarSystemEvents,
     SolarSystemControls,
     CameraState,
+    ScreenProjection,
 } from "./graphics/types";
 
 /**
@@ -174,11 +175,9 @@ export class PlanetarySystemRenderer {
         );
     }
 
-    worldToScreen(point: Vector3) {
+    worldToScreen(point: Vector3): ScreenProjection {
         return (
             this.solarSystemRenderer?.getControls()?.worldToScreen(point) ?? {
-                x: 0,
-                y: 0,
                 visible: false,
             }
         );

@@ -57,6 +57,7 @@
   let lockPos: { x: number; y: number; visible: boolean } | null = null;
   let lockRafId = 0;
   let loadingMessage = "Loading planetary system...";
+  let errorMessage: string | null = null;
   let debugInfo = "";
   let hasBarycenterOverlay = false;
   let showBarycenterOverlay = false;
@@ -174,8 +175,8 @@
         },
         onError: (error) => {
           console.error("Planetary system error:", error);
-          // Handle error without gameActions.handleError as it doesn't exist
           isLoading = false;
+          errorMessage = error instanceof Error ? error.message : String(error);
         }
       };
       
@@ -212,8 +213,8 @@
       
     } catch (error) {
       console.error("Failed to initialize planetary system:", error);
-      // Handle error without gameActions.handleError as it doesn't exist
       isLoading = false;
+      errorMessage = error instanceof Error ? error.message : String(error);
     }
   };
   
@@ -257,7 +258,9 @@
   }
 
   // All selectable bodies in the active system (star + planets + moons present in data).
+  // Gated on isSceneReady so this re-evaluates after initialize() populates system data.
   $: allBodies = (() => {
+    if (!isSceneReady) return [] as CelestialBodyData[];
     const data = planetarySystemRenderer?.getSystemData();
     if (!data) return [] as CelestialBodyData[];
     return [data.star, ...data.celestialBodies];
@@ -267,7 +270,7 @@
     matchesQuery(finderQuery, [b.name, b.type]),
   );
 
-  // Clamp index when results shrink (Issue 2)
+  // Clamp index when results shrink
   $: if (focusedFinderIndex >= finderResults.length && finderResults.length > 0) {
     focusedFinderIndex = finderResults.length - 1;
   } else if (finderResults.length === 0) {
@@ -283,9 +286,13 @@
         lockPos = null;
         return;
       }
-      const world = planetarySystemRenderer.getBodyWorldPosition(pinnedBodyId);
-      lockPos = world ? planetarySystemRenderer.worldToScreen(world) : null;
-      lockRafId = requestAnimationFrame(tick);
+      try {
+        const world = planetarySystemRenderer.getBodyWorldPosition(pinnedBodyId);
+        lockPos = world ? planetarySystemRenderer.worldToScreen(world) : null;
+        lockRafId = requestAnimationFrame(tick);
+      } catch {
+        unpin();
+      }
     };
     lockRafId = requestAnimationFrame(tick);
   }
@@ -362,6 +369,13 @@
         message={loadingMessage} 
       />
     {/if}
+    {#if errorMessage}
+      <div class="hud-error" role="alert">
+        <p class="hud-error-title">⚠ Initialization Failed</p>
+        <p class="hud-error-msg">{errorMessage}</p>
+        <button class="hud-error-retry" on:click={() => { errorMessage = null; isLoading = true; initializePlanetarySystem(document.getElementById('planetary-system-renderer')!); }}>Retry</button>
+      </div>
+    {/if}
   </div>
   
   {#if isSceneReady}
@@ -416,9 +430,9 @@
           {#if finderResults.length === 0}
             <div class="hud-section-label text-center py-4">{t('finder.empty')}</div>
           {:else}
-            <ul class="hud-list mt-2" role="listbox" aria-label={t('finder.title')} on:keydown={handleFinderListKeydown}>
+            <ul class="hud-list mt-2" aria-label={t('finder.title')} on:keydown={handleFinderListKeydown}>
               {#each finderResults as body, i (body.id)}
-                <li role="option" aria-selected={body.id === pinnedBodyId ? "true" : undefined}>
+                <li aria-selected={body.id === pinnedBodyId ? "true" : undefined}>
                   <button
                     type="button"
                     class="hud-list-row"
@@ -555,5 +569,41 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+  }
+  .hud-error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.85);
+    color: var(--hud-cyan, #00e5ff);
+    z-index: 30;
+  }
+  .hud-error-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin: 0;
+  }
+  .hud-error-msg {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin: 0;
+    max-width: 400px;
+    text-align: center;
+  }
+  .hud-error-retry {
+    margin-top: 8px;
+    padding: 8px 24px;
+    background: transparent;
+    border: 1px solid var(--hud-cyan, #00e5ff);
+    color: var(--hud-cyan, #00e5ff);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .hud-error-retry:hover {
+    background: rgba(0, 229, 255, 0.1);
   }
 </style>

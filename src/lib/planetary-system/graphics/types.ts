@@ -22,6 +22,11 @@ export interface SolarSystemConfig {
     };
 }
 
+/** Screen-space projection result from worldToScreen. */
+export type ScreenProjection =
+    | { visible: true; x: number; y: number }
+    | { visible: false };
+
 export interface CameraState {
     position: THREE.Vector3;
     target: THREE.Vector3;
@@ -58,10 +63,6 @@ export interface SolarSystemControls {
     hasOrbitAnchors: () => boolean;
     setBarycenterOverlayVisible: (visible: boolean) => void;
     getBodyWorldPosition: (bodyId: string) => THREE.Vector3 | null;
-    worldToScreen: (point: THREE.Vector3) => {
-        x: number;
-        y: number;
-        visible: boolean;
-    };
+    worldToScreen: (point: THREE.Vector3) => ScreenProjection;
     dispose: () => void;
 }
