@@ -267,6 +267,13 @@
     matchesQuery(finderQuery, [b.name, b.type]),
   );
 
+  // Clamp index when results shrink (Issue 2)
+  $: if (focusedFinderIndex >= finderResults.length && finderResults.length > 0) {
+    focusedFinderIndex = finderResults.length - 1;
+  } else if (finderResults.length === 0) {
+    focusedFinderIndex = 0;
+  }
+
   const bodyTypeKey = (type: string) => `planet.type.${type}`;
 
   function startLockLoop() {
@@ -319,13 +326,20 @@
     if (event.key === "ArrowDown") {
       event.preventDefault();
       focusedFinderIndex = (focusedFinderIndex + 1) % finderResults.length;
+      focusFinderRow();
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       focusedFinderIndex = focusedFinderIndex <= 0 ? finderResults.length - 1 : focusedFinderIndex - 1;
+      focusFinderRow();
     } else if (event.key === "Enter" && finderResults[focusedFinderIndex]) {
       event.preventDefault();
       pinBody(finderResults[focusedFinderIndex]);
     }
+  }
+
+  function focusFinderRow() {
+    const rows = finderEl?.querySelectorAll('.hud-list-row');
+    (rows?.[focusedFinderIndex] as HTMLElement | undefined)?.focus();
   }
 
   function handleClickOutside(event: MouseEvent) {
@@ -363,7 +377,7 @@
     <!-- Command rail (top-right) -->
     <div class="hud-controls hud-rail">
       <HudButton bracket on:click={handleBackToMenu}>{t('controls.backToMenu')}</HudButton>
-      <HudButton ariaLabel={t('finder.open')} on:click={() => (showFinder = true)}>{t('finder.title')}</HudButton>
+      <HudButton ariaLabel={t('finder.open')} on:click={() => { showFinder = true; focusedFinderIndex = 0; }}>{t('finder.title')}</HudButton>
       {#if zoomControls}
         <HudButton on:click={zoomControls.zoomIn}>{t('controls.zoomIn')}</HudButton>
         <HudButton on:click={zoomControls.zoomOut}>{t('controls.zoomOut')}</HudButton>
@@ -409,6 +423,7 @@
                     type="button"
                     class="hud-list-row"
                     class:is-selected={body.id === pinnedBodyId}
+                    class:focus-visible-ring={i === focusedFinderIndex}
                     aria-current={body.id === pinnedBodyId ? "true" : undefined}
                     on:click={() => pinBody(body)}
                   >

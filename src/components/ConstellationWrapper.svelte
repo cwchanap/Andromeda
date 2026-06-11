@@ -26,7 +26,7 @@
   let error: string | null = null;
   let debugInfo = "";
   let attemptCount = 0;
-  let retryTimeout: NodeJS.Timeout | null = null;
+  let retryTimeout: ReturnType<typeof setTimeout> | null = null;
   let webglSupported = true;
   
   // Current language and translations
@@ -628,60 +628,12 @@
       {/if}
       {#if selectedId && lockedPos && lockedPos.visible}
         <TargetLockOverlay
-          visible={true}
           x={lockedPos.x}
           y={lockedPos.y}
           name={constellations.find(c => c.id === selectedId)?.name ?? ""}
         />
       {/if}
     </div>
-
-    <!-- Text-based constellation display (always visible) -->
-    <!-- <div class="text-constellation-display">
-      <h3 class="text-xl font-bold text-white mb-4">All Constellations</h3>
-      <div class="grid gap-4 md:grid-cols-3 max-w-6xl mx-auto">
-        {#each constellations as constellation}
-          <div class="bg-black/30 rounded-lg p-4 border border-white/20 hover:border-cyan-400/50 transition-colors">
-            <h4 class="text-lg font-semibold text-cyan-300 mb-2">{constellation.name}</h4>
-            <p class="text-sm text-gray-300 mb-2">{constellation.abbreviation}</p>
-            <p class="text-xs text-gray-400 mb-3">{constellation.description}</p>
-            <div class="text-xs">
-              <span class="text-gray-400">Stars:</span>
-              <span class="text-cyan-200 ml-1">{constellation.stars.length}</span>
-            </div>
-            <div class="text-xs mt-1">
-              <span class="text-gray-400">Best viewing:</span>
-              <span class="text-cyan-200 ml-1">
-                {constellation.visibility.bestMonths.map(m =>
-                  new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'short' })
-                ).join(', ')}
-              </span>
-            </div>
-            {#if constellation.mythology}
-              <div class="text-xs mt-2 italic text-gray-400">
-                "{constellation.mythology}"
-              </div>
-            {/if}
-          </div>
-        {/each}
-      </div>
-      {#if !webglSupported}
-        <div class="mt-6 text-center">
-          <p class="text-sm text-amber-400">
-            ⚠️ WebGL not available - constellation information shown above
-          </p>
-          <p class="text-xs text-gray-400 mt-2">
-            Enable WebGL in your browser to see the interactive 3D star field
-          </p>
-        </div>
-      {:else}
-        <div class="mt-6 text-center">
-          <p class="text-sm text-cyan-400">
-            ✨ 3D star field active - use mouse to explore the sky
-          </p>
-        </div>
-      {/if}
-    </div> -->
   </div>
 </div>
 
@@ -721,31 +673,6 @@
     pointer-events: none;
     overflow: hidden;
   }
-
-  /* .text-constellation-display {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    right: 320px;
-    max-height: 60vh;
-    overflow-y: auto;
-    z-index: 10;
-    background: rgba(0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  } */
-
-  /* Responsive adjustments */
-  /* @media (max-width: 1024px) {
-    .text-constellation-display {
-      right: 20px;
-      left: 20px;
-      bottom: 20px;
-      max-height: 40vh;
-    }
-  } */
 
   .hud-drag-card {
     font-family: var(--hud-font-mono);
