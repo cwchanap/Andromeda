@@ -383,6 +383,7 @@
                   type="button"
                   class="hud-list-row"
                   class:is-selected={body.id === pinnedBodyId}
+                  aria-pressed={body.id === pinnedBodyId}
                   on:click={() => pinBody(body)}
                 >
                   <span class="row-abbr">[{t(bodyTypeKey(body.type))}]</span>

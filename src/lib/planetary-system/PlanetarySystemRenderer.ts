@@ -5,6 +5,7 @@ import type {
     PlanetarySystemEvents,
 } from "./types";
 import type { CelestialBodyData } from "../../types/game";
+import type { Vector3 } from "three";
 import { SolarSystemRenderer } from "./graphics/SolarSystemRenderer";
 import type {
     SolarSystemConfig,
@@ -173,7 +174,7 @@ export class PlanetarySystemRenderer {
         );
     }
 
-    worldToScreen(point: import("three").Vector3) {
+    worldToScreen(point: Vector3) {
         return (
             this.solarSystemRenderer?.getControls()?.worldToScreen(point) ?? {
                 x: 0,

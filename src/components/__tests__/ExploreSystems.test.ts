@@ -160,4 +160,31 @@ describe("ExploreSystems", () => {
         expect(dialog).toBeTruthy();
         expect(dialog?.getAttribute("aria-modal")).toBe("true");
     });
+
+    it("calls onClose when Escape is pressed on the dialog", async () => {
+        const onClose = vi.fn();
+        const { container } = render(ExploreSystems, {
+            props: {
+                t: (k: string) => mockTranslations[k] || k,
+                onClose,
+            },
+        });
+        const dialog = container.querySelector('[role="dialog"]');
+        expect(dialog).toBeTruthy();
+        await fireEvent.keyDown(dialog!, { key: "Escape" });
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("autofocuses the search input when rendered", async () => {
+        const { container } = render(ExploreSystems, {
+            props: {
+                t: (k: string) => mockTranslations[k] || k,
+            },
+        });
+        const searchInput = container.querySelector("input");
+        expect(searchInput).toBeTruthy();
+        // The autofocus attribute should be passed through to HudSearch
+        // which will focus the input on mount
+        expect(searchInput).toBe(document.activeElement);
+    });
 });
