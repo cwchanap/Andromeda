@@ -552,24 +552,26 @@
           <!-- Visible constellations -->
           <div>
             <h4 class="hud-section-label">VISIBLE</h4>
-            <div class="hud-list">
+            <ul class="hud-list" role="listbox" aria-label="Visible constellations">
               {#each viewState.visibleConstellations as constellationId}
                 {#each constellations.filter(c => c.id === constellationId) as constellation}
-                  <button
-                    type="button"
-                    class="hud-list-row"
-                    class:is-selected={viewState.selectedConstellation === constellation.id}
-                    on:click={() => handleSelectConstellation(constellation.id)}
-                    data-constellation-id={constellation.id}
-                  >
-                    <span class="row-abbr">[{constellation.abbreviation}]</span>
-                    <span class="row-name">{constellation.name}</span>
-                    <span class="row-leader"></span>
-                    <span class="row-count">{constellation.stars.length}★ <span class="sr-only">stars</span></span>
-                  </button>
+                  <li role="option" aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
+                    <button
+                      type="button"
+                      class="hud-list-row"
+                      class:is-selected={viewState.selectedConstellation === constellation.id}
+                      on:click={() => handleSelectConstellation(constellation.id)}
+                      data-constellation-id={constellation.id}
+                    >
+                      <span class="row-abbr">[{constellation.abbreviation}]</span>
+                      <span class="row-name">{constellation.name}</span>
+                      <span class="row-leader"></span>
+                      <span class="row-count">{constellation.stars.length}★ <span class="sr-only">stars</span></span>
+                    </button>
+                  </li>
                 {/each}
               {/each}
-            </div>
+            </ul>
           </div>
 
           <!-- Selected constellation info -->
