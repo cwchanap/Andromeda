@@ -282,4 +282,72 @@ describe("ExploreSystems", () => {
             "01 / 02",
         );
     });
+
+    it("stops propagation of ArrowDown key inside dialog", async () => {
+        const { container } = render(ExploreSystems, {
+            props: { t: (k: string) => mockTranslations[k] || k },
+        });
+        const dialog = container.querySelector('[role="dialog"]');
+        expect(dialog).toBeTruthy();
+
+        const arrowEvent = new KeyboardEvent("keydown", {
+            key: "ArrowDown",
+            bubbles: true,
+        });
+        const spy = vi.spyOn(arrowEvent, "stopPropagation");
+        dialog!.dispatchEvent(arrowEvent);
+        expect(spy).toHaveBeenCalled();
+        spy.mockRestore();
+    });
+
+    it("stops propagation of Enter key inside dialog", async () => {
+        const { container } = render(ExploreSystems, {
+            props: { t: (k: string) => mockTranslations[k] || k },
+        });
+        const dialog = container.querySelector('[role="dialog"]');
+        expect(dialog).toBeTruthy();
+
+        const enterEvent = new KeyboardEvent("keydown", {
+            key: "Enter",
+            bubbles: true,
+        });
+        const spy = vi.spyOn(enterEvent, "stopPropagation");
+        dialog!.dispatchEvent(enterEvent);
+        expect(spy).toHaveBeenCalled();
+        spy.mockRestore();
+    });
+
+    it("stops propagation of Space key inside dialog", async () => {
+        const { container } = render(ExploreSystems, {
+            props: { t: (k: string) => mockTranslations[k] || k },
+        });
+        const dialog = container.querySelector('[role="dialog"]');
+        expect(dialog).toBeTruthy();
+
+        const spaceEvent = new KeyboardEvent("keydown", {
+            key: " ",
+            bubbles: true,
+        });
+        const spy = vi.spyOn(spaceEvent, "stopPropagation");
+        dialog!.dispatchEvent(spaceEvent);
+        expect(spy).toHaveBeenCalled();
+        spy.mockRestore();
+    });
+
+    it("does not stop propagation for unrelated keys", async () => {
+        const { container } = render(ExploreSystems, {
+            props: { t: (k: string) => mockTranslations[k] || k },
+        });
+        const dialog = container.querySelector('[role="dialog"]');
+        expect(dialog).toBeTruthy();
+
+        const keyEvent = new KeyboardEvent("keydown", {
+            key: "a",
+            bubbles: true,
+        });
+        const spy = vi.spyOn(keyEvent, "stopPropagation");
+        dialog!.dispatchEvent(keyEvent);
+        expect(spy).not.toHaveBeenCalled();
+        spy.mockRestore();
+    });
 });

@@ -1196,4 +1196,154 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
 
         expect(document.activeElement).toBe(rows[0]);
     });
+
+    it("stops propagation of Arrow keys handled by finder list", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: {
+                systemId: "alpha-centauri",
+                translations: mockTranslations,
+            },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = findJumpBtn(container);
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const list = container.querySelector(".hud-list")!;
+        const arrowDownEvent = new KeyboardEvent("keydown", {
+            key: "ArrowDown",
+            bubbles: true,
+        });
+        const spy = vi.spyOn(arrowDownEvent, "stopPropagation");
+        list.dispatchEvent(arrowDownEvent);
+        // The handler calls stopPropagation on handled keys
+        expect(spy).toHaveBeenCalled();
+        spy.mockRestore();
+    });
+
+    it("stops propagation of Enter key handled by finder list", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: {
+                systemId: "alpha-centauri",
+                translations: mockTranslations,
+            },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = findJumpBtn(container);
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const list = container.querySelector(".hud-list")!;
+        const enterEvent = new KeyboardEvent("keydown", {
+            key: "Enter",
+            bubbles: true,
+        });
+        const spy = vi.spyOn(enterEvent, "stopPropagation");
+        list.dispatchEvent(enterEvent);
+        expect(spy).toHaveBeenCalled();
+        spy.mockRestore();
+    });
+
+    it("stops propagation of ArrowUp key handled by finder list", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: {
+                systemId: "alpha-centauri",
+                translations: mockTranslations,
+            },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = findJumpBtn(container);
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const list = container.querySelector(".hud-list")!;
+        const arrowUpEvent = new KeyboardEvent("keydown", {
+            key: "ArrowUp",
+            bubbles: true,
+        });
+        const spy = vi.spyOn(arrowUpEvent, "stopPropagation");
+        list.dispatchEvent(arrowUpEvent);
+        expect(spy).toHaveBeenCalled();
+        spy.mockRestore();
+    });
+});
+
+describe("PlanetarySystemWrapper – retry after failed initialization", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it("resets renderer on initialization failure so retry can succeed", async () => {
+        let initCallCount = 0;
+        let capturedEvents: any;
+
+        (
+            PlanetarySystemRenderer as ReturnType<typeof vi.fn>
+        ).mockImplementation(
+            (_container: HTMLElement, _config: unknown, events: unknown) => {
+                capturedEvents = events;
+                initCallCount++;
+                return {
+                    initialize: vi.fn().mockImplementation(async () => {
+                        if (initCallCount === 1) {
+                            throw new Error("WebGL context lost");
+                        }
+                        await Promise.resolve();
+                        capturedEvents?.onSystemLoad?.("alpha-centauri");
+                    }),
+                    dispose: vi.fn(),
+                    cleanup: vi.fn().mockResolvedValue(undefined),
+                    selectBody: vi.fn(),
+                    updateConfig: vi.fn(),
+                    getControls: vi.fn(() => ({
+                        zoomIn: vi.fn(),
+                        zoomOut: vi.fn(),
+                        resetView: vi.fn(),
+                    })),
+                    hasOrbitAnchors: vi.fn(() => false),
+                    isBarycenterOverlayVisibleByDefault: vi.fn(() => false),
+                    setBarycenterOverlayVisible: vi.fn(),
+                    getSystemData: vi.fn(() => mockSystemData),
+                };
+            },
+        );
+
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+
+        // First initialization should fail — error surface appears
+        await waitFor(() =>
+            expect(container.querySelector('[role="alert"]')).not.toBeNull(),
+        );
+        expect(container.querySelector(".hud-error-msg")?.textContent).toBe(
+            "WebGL context lost",
+        );
+
+        // The failed renderer should have been cleaned up
+        const firstRendererInstance = (
+            PlanetarySystemRenderer as ReturnType<typeof vi.fn>
+        ).mock.results[0]?.value;
+        expect(firstRendererInstance?.cleanup).toHaveBeenCalled();
+
+        // Click retry
+        const retryBtn = container.querySelector(".hud-error-retry");
+        expect(retryBtn).toBeTruthy();
+        await fireEvent.click(retryBtn!);
+
+        // Second initialization should succeed
+        await waitFor(() => expect(initCallCount).toBe(2));
+    });
 });
