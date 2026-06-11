@@ -552,10 +552,10 @@
           <!-- Visible constellations -->
           <div>
             <h4 class="hud-section-label">VISIBLE</h4>
-            <ul class="hud-list" role="listbox" aria-label="Visible constellations">
+            <ul class="hud-list" aria-label="Visible constellations">
               {#each viewState.visibleConstellations as constellationId}
                 {#each constellations.filter(c => c.id === constellationId) as constellation}
-                  <li role="option" aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
+                  <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
                     <button
                       type="button"
                       class="hud-list-row"

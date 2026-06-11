@@ -5,6 +5,7 @@ import type {
     SolarSystemEvents,
     SolarSystemControls,
     RenderStats,
+    ScreenProjection,
 } from "./types";
 import type { CelestialBodyData } from "../../../types/game";
 import type { PlanetarySystemData } from "../types";
@@ -350,16 +351,12 @@ export class SolarSystemRenderer {
     }
 
     /** Project a world point to canvas pixels. `visible:false` if behind camera. */
-    public worldToScreen(point: THREE.Vector3): {
-        x: number;
-        y: number;
-        visible: boolean;
-    } {
+    public worldToScreen(point: THREE.Vector3): ScreenProjection {
         const canvas = this.renderer.domElement;
         const forward = this._wtsForward;
         this.camera.getWorldDirection(forward);
         const rel = this._wtsRel.copy(point).sub(this.camera.position);
-        if (rel.dot(forward) <= 0) return { x: 0, y: 0, visible: false };
+        if (rel.dot(forward) <= 0) return { visible: false };
 
         const projected = this._wtsProject.copy(point).project(this.camera);
         const width = canvas.clientWidth || canvas.width;

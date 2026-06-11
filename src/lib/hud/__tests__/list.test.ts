@@ -46,6 +46,23 @@ describe("paginate", () => {
         expect(r.page).toBe(1);
         expect(r.items).toEqual([1, 2, 3]);
     });
+
+    it("guards perPage <= 0 by treating it as 1", () => {
+        const r = paginate(items, 1, 0);
+        expect(r.items).toEqual([1]);
+        expect(r.totalPages).toBe(7);
+
+        const r2 = paginate(items, 1, -5);
+        expect(r2.items).toEqual([1]);
+        expect(r2.totalPages).toBe(7);
+    });
+
+    it("guards perPage = 0 with empty items", () => {
+        const r = paginate([], 1, 0);
+        expect(r.items).toEqual([]);
+        expect(r.totalPages).toBe(1);
+        expect(r.page).toBe(1);
+    });
 });
 
 describe("pageLabel", () => {
