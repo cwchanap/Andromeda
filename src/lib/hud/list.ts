@@ -34,8 +34,9 @@ export function paginate<T>(
     };
 }
 
-/** Formats a "02 / 04" page indicator. */
+/** Formats a "02 / 04" page indicator. Pads to match the widest number. */
 export function pageLabel(page: number, totalPages: number): string {
-    const pad = (n: number) => String(n).padStart(2, "0");
+    const width = Math.max(String(page).length, String(totalPages).length, 2);
+    const pad = (n: number) => String(n).padStart(width, "0");
     return `${pad(page)} / ${pad(totalPages)}`;
 }

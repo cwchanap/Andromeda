@@ -300,6 +300,8 @@
     lockPos = null;
   }
 
+  let focusedFinderIndex = 0;
+
   function handleFinderHotkeys(event: KeyboardEvent) {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === "/" && !showFinder) {
@@ -307,8 +309,22 @@
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       event.preventDefault();
       showFinder = true;
+      focusedFinderIndex = 0;
     } else if (event.key === "Escape" && showFinder) {
       showFinder = false;
+    }
+  }
+
+  function handleFinderListKeydown(event: KeyboardEvent) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      focusedFinderIndex = (focusedFinderIndex + 1) % finderResults.length;
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      focusedFinderIndex = focusedFinderIndex <= 0 ? finderResults.length - 1 : focusedFinderIndex - 1;
+    } else if (event.key === "Enter" && finderResults[focusedFinderIndex]) {
+      event.preventDefault();
+      pinBody(finderResults[focusedFinderIndex]);
     }
   }
 
@@ -372,27 +388,38 @@
             autofocus={true}
             placeholder={t('finder.placeholder')}
             ariaLabel={t('finder.placeholder')}
-            on:keydown={(e) => { if (e.key === 'Enter' && finderResults[0]) pinBody(finderResults[0]); }}
+            on:keydown={(e) => {
+              if (e.key === 'ArrowDown' && finderResults.length > 0) {
+                e.preventDefault();
+                const firstBtn = finderEl?.querySelector('.hud-list-row') as HTMLElement | null;
+                firstBtn?.focus();
+                focusedFinderIndex = 0;
+              } else if (e.key === 'Enter' && finderResults[0]) {
+                pinBody(finderResults[0]);
+              }
+            }}
           />
           {#if finderResults.length === 0}
             <div class="hud-section-label text-center py-4">{t('finder.empty')}</div>
           {:else}
-            <div class="hud-list mt-2">
-              {#each finderResults as body (body.id)}
-                <button
-                  type="button"
-                  class="hud-list-row"
-                  class:is-selected={body.id === pinnedBodyId}
-                  aria-pressed={body.id === pinnedBodyId}
-                  on:click={() => pinBody(body)}
-                >
-                  <span class="row-abbr">[{t(bodyTypeKey(body.type))}]</span>
-                  <span class="row-name">{body.name}</span>
-                  <span class="row-leader"></span>
-                  <span class="row-count">{#if body.keyFacts?.moons != null}{body.keyFacts.moons}<span aria-hidden="true">☽</span><span class="sr-only"> moons</span>{/if}</span>
-                </button>
+            <ul class="hud-list mt-2" role="listbox" aria-label={t('finder.title')} on:keydown={handleFinderListKeydown}>
+              {#each finderResults as body, i (body.id)}
+                <li role="option" aria-selected={body.id === pinnedBodyId ? "true" : undefined}>
+                  <button
+                    type="button"
+                    class="hud-list-row"
+                    class:is-selected={body.id === pinnedBodyId}
+                    aria-current={body.id === pinnedBodyId ? "true" : undefined}
+                    on:click={() => pinBody(body)}
+                  >
+                    <span class="row-abbr">[{t(bodyTypeKey(body.type))}]</span>
+                    <span class="row-name">{body.name}</span>
+                    <span class="row-leader"></span>
+                    <span class="row-count">{#if body.keyFacts?.moons != null}{body.keyFacts.moons}<span aria-hidden="true">☽</span><span class="sr-only"> moons</span>{/if}</span>
+                  </button>
+                </li>
               {/each}
-            </div>
+            </ul>
           {/if}
         </HudPanel>
       </div>
@@ -493,6 +520,15 @@
     inset: 0;
     pointer-events: none;
     z-index: 15;
+  }
+  .hud-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .hud-list li {
+    padding: 0;
+    margin: 0;
   }
   .sr-only {
     position: absolute;

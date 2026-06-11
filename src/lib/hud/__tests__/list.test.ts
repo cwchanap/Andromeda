@@ -53,4 +53,10 @@ describe("pageLabel", () => {
         expect(pageLabel(2, 4)).toBe("02 / 04");
         expect(pageLabel(10, 12)).toBe("10 / 12");
     });
+
+    it("pads to match widest number for 100+ pages", () => {
+        expect(pageLabel(1, 100)).toBe("001 / 100");
+        expect(pageLabel(42, 100)).toBe("042 / 100");
+        expect(pageLabel(100, 100)).toBe("100 / 100");
+    });
 });

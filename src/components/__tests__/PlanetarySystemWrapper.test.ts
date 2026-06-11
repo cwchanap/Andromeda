@@ -489,7 +489,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         );
     });
 
-    it("marks pinned body with aria-pressed on finder rows", async () => {
+    it("marks pinned body with aria-current on finder rows", async () => {
         const { container } = render(PlanetarySystemWrapper, {
             props: {
                 systemId: "alpha-centauri",
@@ -505,10 +505,10 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             expect(container.querySelector(".hud-finder")).not.toBeNull(),
         );
 
-        // Before pinning, all rows have aria-pressed="false"
+        // Before pinning, no row has aria-current
         const rowsBeforePin = container.querySelectorAll(".hud-list-row");
         rowsBeforePin.forEach((row) =>
-            expect(row.getAttribute("aria-pressed")).toBe("false"),
+            expect(row.getAttribute("aria-current")).toBeNull(),
         );
 
         // Pin the first body (this closes the finder)
@@ -517,7 +517,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             expect(container.querySelector(".hud-pinned")).not.toBeNull(),
         );
 
-        // Re-open finder to check aria-pressed on the pinned row
+        // Re-open finder to check aria-current on the pinned row
         const jumpBtn2 = findJumpBtn(container);
         await fireEvent.click(jumpBtn2!);
         await waitFor(() =>
@@ -525,7 +525,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         );
 
         const rowsAfterPin = container.querySelectorAll(".hud-list-row");
-        expect(rowsAfterPin[0].getAttribute("aria-pressed")).toBe("true");
+        expect(rowsAfterPin[0].getAttribute("aria-current")).toBe("true");
     });
 
     it("unpins a body when unpin button is clicked", async () => {
@@ -742,5 +742,56 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         await fireEvent.click(finderInput!);
         // Finder should still be open
         expect(container.querySelector(".hud-finder")).not.toBeNull();
+    });
+
+    it("renders finder list with listbox semantics", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: {
+                systemId: "alpha-centauri",
+                translations: mockTranslations,
+            },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = findJumpBtn(container);
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const listbox = container.querySelector('[role="listbox"]');
+        expect(listbox).not.toBeNull();
+        expect(listbox?.tagName).toBe("UL");
+
+        const options = listbox?.querySelectorAll('[role="option"]');
+        expect(options?.length).toBeGreaterThan(0);
+        expect(options?.[0].tagName).toBe("LI");
+    });
+
+    it("pins body on Enter when finder list has focus", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: {
+                systemId: "alpha-centauri",
+                translations: mockTranslations,
+            },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = findJumpBtn(container);
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        const mockInstance = (
+            PlanetarySystemRenderer as ReturnType<typeof vi.fn>
+        ).mock.results[0]?.value;
+
+        // Simulate pressing Enter on the list
+        const listbox = container.querySelector('[role="listbox"]')!;
+        await fireEvent.keyDown(listbox, { key: "Enter" });
+        expect(mockInstance.focusOnBody).toHaveBeenCalled();
     });
 });
