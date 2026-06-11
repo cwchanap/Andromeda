@@ -42,7 +42,13 @@
   aria-modal="true"
   aria-label={t("explore.title")}
   tabindex="-1"
-  on:keydown={(e) => { if (e.key === "Escape") onClose(); }}
+  on:keydown={(e) => {
+    if (e.key === "Escape") onClose();
+    // Prevent navigation keys from bubbling to parent window listeners (e.g. MainMenu)
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", " "].includes(e.key)) {
+      e.stopPropagation();
+    }
+  }}
 >
   <div class="w-full max-w-4xl">
     <HudPanel title={t("explore.title")}>

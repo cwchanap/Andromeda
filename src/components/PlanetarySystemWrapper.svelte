@@ -213,6 +213,15 @@
       
     } catch (error) {
       console.error("Failed to initialize planetary system:", error);
+      // Dispose and null the failed renderer so retry can succeed
+      if (planetarySystemRenderer) {
+        try {
+          planetarySystemRenderer.cleanup();
+        } catch (cleanupErr) {
+          console.error("Cleanup of failed renderer:", cleanupErr);
+        }
+        planetarySystemRenderer = null;
+      }
       isLoading = false;
       errorMessage = error instanceof Error ? error.message : String(error);
     }
@@ -332,14 +341,17 @@
   function handleFinderListKeydown(event: KeyboardEvent) {
     if (event.key === "ArrowDown") {
       event.preventDefault();
+      event.stopPropagation();
       focusedFinderIndex = (focusedFinderIndex + 1) % finderResults.length;
       focusFinderRow();
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
+      event.stopPropagation();
       focusedFinderIndex = focusedFinderIndex <= 0 ? finderResults.length - 1 : focusedFinderIndex - 1;
       focusFinderRow();
     } else if (event.key === "Enter" && finderResults[focusedFinderIndex]) {
       event.preventDefault();
+      event.stopPropagation();
       pinBody(finderResults[focusedFinderIndex]);
     }
   }
@@ -419,10 +431,13 @@
             on:keydown={(e) => {
               if (e.key === 'ArrowDown' && finderResults.length > 0) {
                 e.preventDefault();
+                e.stopPropagation();
                 const firstBtn = finderEl?.querySelector('.hud-list-row') as HTMLElement | null;
                 firstBtn?.focus();
                 focusedFinderIndex = 0;
               } else if (e.key === 'Enter' && finderResults[0]) {
+                e.preventDefault();
+                e.stopPropagation();
                 pinBody(finderResults[0]);
               }
             }}
