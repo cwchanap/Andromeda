@@ -41,6 +41,8 @@
   role="dialog"
   aria-modal="true"
   aria-label={t("explore.title")}
+  tabindex="-1"
+  on:keydown={(e) => { if (e.key === "Escape") onClose(); }}
 >
   <div class="w-full max-w-4xl">
     <HudPanel title={t("explore.title")}>
@@ -48,6 +50,7 @@
         <div class="flex-1">
           <HudSearch
             bind:value={query}
+            autofocus={true}
             placeholder={t("explore.searchPlaceholder")}
             ariaLabel={t("explore.searchPlaceholder")}
           />
