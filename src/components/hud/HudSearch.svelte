@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+
   /** HUD search input. Two-way bind `value`; forwards keydown for keyboard nav. */
   export let value = "";
   export let placeholder = "";
@@ -8,7 +10,6 @@
   let inputEl: HTMLInputElement;
 
   // Focus when mounted if requested (used by the toggle-open finder).
-  import { onMount } from "svelte";
   onMount(() => {
     if (autofocus && inputEl) inputEl.focus();
   });

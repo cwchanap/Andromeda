@@ -562,4 +562,84 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             window.cancelAnimationFrame = origCAF;
         }
     });
+
+    it("does not open finder on Ctrl+/", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-info")).not.toBeNull(),
+        );
+        await fireEvent.keyDown(window, { key: "/", ctrlKey: true });
+        expect(container.querySelector(".hud-finder")).toBeNull();
+    });
+
+    it("does not open finder on Cmd+/", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-info")).not.toBeNull(),
+        );
+        await fireEvent.keyDown(window, { key: "/", metaKey: true });
+        expect(container.querySelector(".hud-finder")).toBeNull();
+    });
+
+    it("does not open finder on Alt+/", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-info")).not.toBeNull(),
+        );
+        await fireEvent.keyDown(window, { key: "/", altKey: true });
+        expect(container.querySelector(".hud-finder")).toBeNull();
+    });
+
+    it("closes finder when clicking outside the finder panel", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = Array.from(
+            container.querySelectorAll(".hud-controls .hud-btn"),
+        ).find((b) => b.textContent?.includes("Jump To"));
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        // Click on the system container (outside finder panel and rail)
+        const systemContainer = container.querySelector(".system-container");
+        expect(systemContainer).toBeTruthy();
+        await fireEvent.click(systemContainer!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).toBeNull(),
+        );
+    });
+
+    it("does not close finder when clicking inside the finder panel", async () => {
+        const { container } = render(PlanetarySystemWrapper, {
+            props: { systemId: "alpha-centauri" },
+        });
+        await waitFor(() =>
+            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+        );
+        const jumpBtn = Array.from(
+            container.querySelectorAll(".hud-controls .hud-btn"),
+        ).find((b) => b.textContent?.includes("Jump To"));
+        await fireEvent.click(jumpBtn!);
+        await waitFor(() =>
+            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+
+        // Click inside the finder panel
+        const finderInput = container.querySelector(".hud-finder input");
+        expect(finderInput).toBeTruthy();
+        await fireEvent.click(finderInput!);
+        // Finder should still be open
+        expect(container.querySelector(".hud-finder")).not.toBeNull();
+    });
 });
