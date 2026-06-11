@@ -58,9 +58,11 @@ describe("ExploreSystems", () => {
             props: { t: (k: string) => mockTranslations[k] || k },
         });
         // Both system names appear via GlitchText (aria-label)
-        const labels = Array.from(
-            container.querySelectorAll('[data-testid="glitch-text"]'),
-        ).map((el) => el.getAttribute("aria-label"));
+        const labels = Array.from(container.querySelectorAll("[aria-label]"))
+            .filter((el) =>
+                el.getAttribute("aria-label")?.match(/SYSTEM|CENTAURI/),
+            )
+            .map((el) => el.getAttribute("aria-label"));
         expect(labels).toContain("SOLAR SYSTEM");
         expect(labels).toContain("ALPHA CENTAURI");
     });
@@ -139,9 +141,11 @@ describe("ExploreSystems", () => {
         await fireEvent.input(searchInput!, {
             target: { value: "alpha" },
         });
-        const labels = Array.from(
-            container.querySelectorAll('[data-testid="glitch-text"]'),
-        ).map((el) => el.getAttribute("aria-label"));
+        const labels = Array.from(container.querySelectorAll("[aria-label]"))
+            .filter((el) =>
+                el.getAttribute("aria-label")?.match(/SYSTEM|CENTAURI/),
+            )
+            .map((el) => el.getAttribute("aria-label"));
         expect(labels).toContain("ALPHA CENTAURI");
         expect(labels).not.toContain("SOLAR SYSTEM");
     });
