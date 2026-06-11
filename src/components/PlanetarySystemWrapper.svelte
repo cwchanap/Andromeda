@@ -24,8 +24,8 @@
   export let lang: AppLocale = 'en';
   export let translations: Record<string, string> = {};
   
-  // Translation function
-  let t: (key: string) => string;
+  // Translation function (initialized with no-op fallback; overwritten by reactive block)
+  let t: (key: string) => string = (key: string) => key;
   let currentLang: AppLocale = lang;
   
   // Initialize translations
@@ -66,6 +66,7 @@
     resetView: () => void;
   } | null = null;
   let currentSelectedIndex = -1;
+  let finderEl: HTMLElement | null = null;
   
   // Reactive state from stores
   $: selectedBody = $gameState.selectedBody;
@@ -238,11 +239,12 @@
     await initializePlanetarySystem(rendererContainer);
   });
   
-  onDestroy(async () => {
+  onDestroy(() => {
     cancelAnimationFrame(lockRafId);
-    if (planetarySystemRenderer) {
-      await planetarySystemRenderer.cleanup();
-      planetarySystemRenderer = null;
+    const renderer = planetarySystemRenderer;
+    planetarySystemRenderer = null;
+    if (renderer) {
+      renderer.cleanup().catch((err) => console.error("Cleanup error:", err));
     }
   });
   
@@ -305,6 +307,7 @@
   }
 
   function handleFinderHotkeys(event: KeyboardEvent) {
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === "/" && !showFinder) {
       const tag = (event.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -314,9 +317,18 @@
       showFinder = false;
     }
   }
+
+  function handleClickOutside(event: MouseEvent) {
+    if (!showFinder) return;
+    const target = event.target as HTMLElement;
+    // Close if click is outside the finder panel and not on the finder toggle button
+    if (finderEl && !finderEl.contains(target) && !target.closest('.hud-rail')) {
+      showFinder = false;
+    }
+  }
 </script>
 
-<svelte:window on:resize={handleResize} on:keydown={handleFinderHotkeys} />
+<svelte:window on:resize={handleResize} on:keydown={handleFinderHotkeys} on:click={handleClickOutside} />
 
 <div class="planetary-system-wrapper">
   <div id="planetary-system-renderer" class="system-container">
@@ -331,27 +343,25 @@
   {#if isSceneReady}
     <!-- System readout (top-left) -->
     <div class="hud-info">
-      <HudPanel title={t ? (t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')) : 'Unknown System'}>
+      <HudPanel title={t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')}>
         <p class="hud-details-desc m-0">
-          {t ? (t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || '') : ''}
+          {t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || ''}
         </p>
       </HudPanel>
     </div>
 
     <!-- Command rail (top-right) -->
     <div class="hud-controls hud-rail">
-      <HudButton bracket on:click={handleBackToMenu}>{t ? t('controls.backToMenu') : 'Back to Menu'}</HudButton>
-      <HudButton ariaLabel={t ? t('finder.open') : 'Jump to body'} on:click={() => (showFinder = true)}>{t ? t('finder.title') : 'Jump To'}</HudButton>
+      <HudButton bracket on:click={handleBackToMenu}>{t('controls.backToMenu')}</HudButton>
+      <HudButton ariaLabel={t('finder.open')} on:click={() => (showFinder = true)}>{t('finder.title')}</HudButton>
       {#if zoomControls}
-        <HudButton on:click={zoomControls.zoomIn}>{t ? t('controls.zoomIn') : 'Zoom In'}</HudButton>
-        <HudButton on:click={zoomControls.zoomOut}>{t ? t('controls.zoomOut') : 'Zoom Out'}</HudButton>
-        <HudButton on:click={zoomControls.resetView}>{t ? t('controls.resetView') : 'Reset View'}</HudButton>
+        <HudButton on:click={zoomControls.zoomIn}>{t('controls.zoomIn')}</HudButton>
+        <HudButton on:click={zoomControls.zoomOut}>{t('controls.zoomOut')}</HudButton>
+        <HudButton on:click={zoomControls.resetView}>{t('controls.resetView')}</HudButton>
       {/if}
       {#if hasBarycenterOverlay}
         <HudButton ariaPressed={showBarycenterOverlay} on:click={toggleBarycenterOverlay}>
-          {showBarycenterOverlay
-            ? (t ? t('controls.hideBarycenters') : 'Hide barycenters')
-            : (t ? t('controls.showBarycenters') : 'Show barycenters')}
+          {showBarycenterOverlay ? t('controls.hideBarycenters') : t('controls.showBarycenters')}
         </HudButton>
       {/if}
       {#if isSceneReady}
@@ -361,17 +371,17 @@
 
     <!-- JUMP TO finder (toggle-open) -->
     {#if showFinder}
-      <div class="hud-finder">
-        <HudPanel title={t ? t('finder.title') : 'Jump To'}>
+      <div class="hud-finder" bind:this={finderEl}>
+        <HudPanel title={t('finder.title')}>
           <HudSearch
             bind:value={finderQuery}
             autofocus={true}
-            placeholder={t ? t('finder.placeholder') : 'Search bodies…'}
-            ariaLabel={t ? t('finder.placeholder') : 'Search bodies…'}
+            placeholder={t('finder.placeholder')}
+            ariaLabel={t('finder.placeholder')}
             on:keydown={(e) => { if (e.key === 'Enter' && finderResults[0]) pinBody(finderResults[0]); }}
           />
           {#if finderResults.length === 0}
-            <div class="hud-section-label text-center py-4">{t ? t('finder.empty') : 'No bodies match query'}</div>
+            <div class="hud-section-label text-center py-4">{t('finder.empty')}</div>
           {:else}
             <div class="hud-list mt-2">
               {#each finderResults as body (body.id)}
@@ -381,10 +391,10 @@
                   class:is-selected={body.id === pinnedBodyId}
                   on:click={() => pinBody(body)}
                 >
-                  <span class="row-abbr">[{t ? t(bodyTypeKey(body.type)) : body.type}]</span>
+                  <span class="row-abbr">[{t(bodyTypeKey(body.type))}]</span>
                   <span class="row-name">{body.name}</span>
                   <span class="row-leader"></span>
-                  <span class="row-count"></span>
+                  <span class="row-count">{body.keyFacts?.moons != null ? `${body.keyFacts.moons}☽` : ''}</span>
                 </button>
               {/each}
             </div>
@@ -397,8 +407,8 @@
     {#if pinnedBodyId}
       <div class="hud-pinned">
         <span class="hud-chip">
-          {t ? t('finder.pinned') : 'Pinned'}: {pinnedName}
-          <button class="hud-chip-x" aria-label={t ? t('finder.unpin') : 'Unpin'} on:click={unpin}>✕</button>
+          {t('finder.pinned')}: {pinnedName}
+          <button class="hud-chip-x" aria-label={t('finder.unpin')} on:click={unpin}>✕</button>
         </span>
       </div>
     {/if}
@@ -406,7 +416,7 @@
     <!-- Target-lock reticle overlay -->
     {#if pinnedBodyId && lockPos && lockPos.visible}
       <div class="hud-lock-layer" aria-hidden="true">
-        <TargetLockOverlay x={lockPos.x} y={lockPos.y} name={pinnedName} lockedLabel={t ? t('finder.locked') : 'TARGET LOCKED'} />
+        <TargetLockOverlay x={lockPos.x} y={lockPos.y} name={pinnedName} lockedLabel={t('finder.locked')} />
       </div>
     {/if}
 
