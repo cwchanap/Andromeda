@@ -349,10 +349,6 @@
       event.stopPropagation();
       focusedFinderIndex = focusedFinderIndex <= 0 ? finderResults.length - 1 : focusedFinderIndex - 1;
       focusFinderRow();
-    } else if (event.key === "Enter" && finderResults[focusedFinderIndex]) {
-      event.preventDefault();
-      event.stopPropagation();
-      pinBody(finderResults[focusedFinderIndex]);
     }
   }
 

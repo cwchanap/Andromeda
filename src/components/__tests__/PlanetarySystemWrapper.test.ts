@@ -808,7 +808,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         expect(items?.length).toBeGreaterThan(0);
     });
 
-    it("pins body on Enter when finder list has focus", async () => {
+    it("pins body on Enter when a finder row button has focus", async () => {
         const { container } = render(PlanetarySystemWrapper, {
             props: {
                 systemId: "alpha-centauri",
@@ -828,9 +828,11 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mock.results[0]?.value;
 
-        // Simulate pressing Enter on the list
-        const list = container.querySelector(".hud-list")!;
-        await fireEvent.keyDown(list, { key: "Enter" });
+        // Enter on a focused <button> fires click natively in browsers.
+        // jsdom does not simulate this, so we fire click directly.
+        const rows = container.querySelectorAll(".hud-list-row");
+        expect(rows.length).toBeGreaterThan(0);
+        await fireEvent.click(rows[0]);
         expect(mockInstance.focusOnBody).toHaveBeenCalled();
     });
 
@@ -920,7 +922,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         expect(document.activeElement).toBe(rows[1]);
     });
 
-    it("resets focusedFinderIndex to 0 when opened via button click", async () => {
+    it("pins correct body on Enter after opening via button click", async () => {
         const { container } = render(PlanetarySystemWrapper, {
             props: {
                 systemId: "alpha-centauri",
@@ -938,14 +940,16 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             expect(container.querySelector(".hud-finder")).not.toBeNull(),
         );
 
-        // The first row should be the one that gets Enter-activated (index 0)
+        // Enter on a focused <button> fires click natively in browsers.
+        // jsdom does not simulate this, so we fire click directly.
         const mockInstance = (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mock.results[0]?.value;
 
-        const list = container.querySelector(".hud-list")!;
-        await fireEvent.keyDown(list, { key: "Enter" });
-        // Should pin the first (index 0) result, not some stale index
+        const rows = container.querySelectorAll(".hud-list-row");
+        expect(rows.length).toBeGreaterThan(0);
+        await fireEvent.click(rows[0]);
+        // Should pin the first (index 0) result
         expect(mockInstance.focusOnBody).toHaveBeenCalledWith(
             "alpha-centauri-a",
         );
@@ -1221,33 +1225,6 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         const spy = vi.spyOn(arrowDownEvent, "stopPropagation");
         list.dispatchEvent(arrowDownEvent);
         // The handler calls stopPropagation on handled keys
-        expect(spy).toHaveBeenCalled();
-        spy.mockRestore();
-    });
-
-    it("stops propagation of Enter key handled by finder list", async () => {
-        const { container } = render(PlanetarySystemWrapper, {
-            props: {
-                systemId: "alpha-centauri",
-                translations: mockTranslations,
-            },
-        });
-        await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
-        );
-        const jumpBtn = findJumpBtn(container);
-        await fireEvent.click(jumpBtn!);
-        await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
-        );
-
-        const list = container.querySelector(".hud-list")!;
-        const enterEvent = new KeyboardEvent("keydown", {
-            key: "Enter",
-            bubbles: true,
-        });
-        const spy = vi.spyOn(enterEvent, "stopPropagation");
-        list.dispatchEvent(enterEvent);
         expect(spy).toHaveBeenCalled();
         spy.mockRestore();
     });
