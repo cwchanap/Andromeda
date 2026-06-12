@@ -338,7 +338,15 @@ describe("SolarSystemRenderer", () => {
     it("worldToScreen returns visible:false for point behind camera", async () => {
         renderer = new SolarSystemRenderer(container);
         await renderer.initialize([makeStar()]);
-        const behind = new THREE.Vector3(0, 0, -500);
+        // Compute a truly-behind point relative to the camera's forward direction,
+        // rather than using a hardcoded coordinate that happens to pass only with
+        // the mocked getWorldDirection.
+        const camera = (renderer as any).camera;
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        const behind = camera.position
+            .clone()
+            .sub(forward.clone().multiplyScalar(500));
         const result = renderer.worldToScreen(behind);
         expect(result.visible).toBe(false);
     });
