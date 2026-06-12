@@ -171,9 +171,9 @@ test.describe("System Selector", () => {
         await expect(exoplanetsButton).toBeVisible({ timeout: 5000 });
         await exoplanetsButton.click({ force: true });
 
-        // System selector modal should be visible - use heading role for specificity
+        // ExploreSystems modal should be visible - use dialog role for specificity
         await expect(
-            page.getByRole("heading", { name: /Choose a Planetary System/i }),
+            page.getByRole("dialog", { name: /Star Systems/i }),
         ).toBeVisible({ timeout: 10000 });
     });
 
@@ -197,19 +197,22 @@ test.describe("System Selector", () => {
         // Click with force to ensure it triggers
         await exoplanetsButton.click({ force: true });
 
-        // Wait for modal to appear by checking for the heading
+        // Wait for modal to appear by checking for the dialog
         await expect(
-            page.getByRole("heading", { name: /Choose a Planetary System/i }),
+            page.getByRole("dialog", { name: /Star Systems/i }),
         ).toBeVisible({ timeout: 10000 });
 
-        // Check for at least one system option - look for the button with Solar System text
+        // Check for at least one system card with Solar System heading
         await expect(
-            page.getByRole("button", {
-                name: /Solar System.*Our home solar system/,
-            }),
+            page.getByRole("heading", { name: /SOLAR SYSTEM/i }),
         ).toBeVisible({ timeout: 5000 });
 
-        // Close modal using Escape key to avoid Astro dev toolbar blocking Cancel button
+        // Check for an Explore action button in the modal
+        await expect(
+            page.getByRole("button", { name: /Explore/i }).first(),
+        ).toBeVisible({ timeout: 5000 });
+
+        // Close modal using Escape key
         await page.keyboard.press("Escape");
     });
 });
