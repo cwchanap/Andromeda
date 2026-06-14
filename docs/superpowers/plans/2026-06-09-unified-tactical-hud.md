@@ -15,6 +15,7 @@
 ## File Structure
 
 **New files:**
+
 - `src/styles/hud.css` — shared HUD classes (promoted from ConstellationWrapper), imported by `global.css`.
 - `src/lib/hud/list.ts` — pure logic: `matchesQuery`, `paginate`, `pageLabel`.
 - `src/lib/hud/__tests__/list.test.ts` — unit tests for the above.
@@ -24,6 +25,7 @@
 - `src/components/ExploreSystems.svelte` — system browser with search + pagination.
 
 **Modified files:**
+
 - `src/styles/global.css` — `@import "./hud.css";`
 - `src/i18n/en.ts`, `src/i18n/zh.ts`, `src/i18n/ja.ts` — new keys.
 - `src/lib/planetary-system/graphics/SolarSystemRenderer.ts` — `worldToScreen`, `getBodyWorldPosition` + expose on controls.
@@ -36,6 +38,7 @@
 - `src/components/TerrainExplorer.svelte` — HUD restyle (presentation only).
 
 **Removed:**
+
 - `src/components/SystemSelector.svelte` (and its test) — superseded by `ExploreSystems`.
 
 ---
@@ -43,6 +46,7 @@
 ## Task 1: Add i18n keys (en/zh/ja)
 
 **Files:**
+
 - Modify: `src/i18n/en.ts`, `src/i18n/zh.ts`, `src/i18n/ja.ts`
 
 All later UI tasks reference these keys; add them first so nothing is undefined.
@@ -142,6 +146,7 @@ git commit -m "feat(i18n): add HUD explore/finder keys"
 ## Task 2: Create shared HUD stylesheet
 
 **Files:**
+
 - Create: `src/styles/hud.css`
 - Modify: `src/styles/global.css`
 
@@ -172,17 +177,29 @@ Promote the `hud-*` classes (currently scoped inside `ConstellationWrapper.svelt
 .hud-btn::after {
   content: "";
   position: absolute;
-  left: 14px; right: 14px; bottom: 4px;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
   height: 1px;
   background: var(--hud-magenta);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 140ms var(--hud-ease-snap);
 }
-.hud-btn:hover::after { transform: scaleX(1); }
-.hud-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.hud-btn:disabled::after { display: none; }
-.hud-btn-bracket { color: var(--hud-magenta); margin-right: 4px; }
+.hud-btn:hover::after {
+  transform: scaleX(1);
+}
+.hud-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.hud-btn:disabled::after {
+  display: none;
+}
+.hud-btn-bracket {
+  color: var(--hud-magenta);
+  margin-right: 4px;
+}
 
 .hud-panel {
   background: color-mix(in srgb, var(--hud-void) 82%, transparent);
@@ -221,8 +238,14 @@ Promote the `hud-*` classes (currently scoped inside `ConstellationWrapper.svelt
   animation: hud-panel-in var(--hud-dur-glide) var(--hud-ease-glide);
 }
 @keyframes hud-panel-in {
-  from { opacity: 0; transform: translateX(24px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .hud-section-label {
@@ -235,7 +258,13 @@ Promote the `hud-*` classes (currently scoped inside `ConstellationWrapper.svelt
   margin: 8px 0 6px;
 }
 
-.hud-list { display: flex; flex-direction: column; gap: 1px; max-height: 11rem; overflow-y: auto; }
+.hud-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 11rem;
+  overflow-y: auto;
+}
 .hud-list-row {
   position: relative;
   display: grid;
@@ -254,31 +283,55 @@ Promote the `hud-*` classes (currently scoped inside `ConstellationWrapper.svelt
 .hud-list-row::before {
   content: "";
   position: absolute;
-  left: 0; top: 0;
-  width: 2px; height: 0;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 0;
   background: var(--hud-magenta);
   box-shadow: 0 0 4px var(--hud-magenta);
   transition: height 120ms var(--hud-ease-snap);
 }
-.hud-list-row:hover { background: color-mix(in srgb, var(--hud-cyan) 8%, transparent); }
-.hud-list-row:hover::before { height: 100%; }
+.hud-list-row:hover {
+  background: color-mix(in srgb, var(--hud-cyan) 8%, transparent);
+}
+.hud-list-row:hover::before {
+  height: 100%;
+}
 .hud-list-row.is-selected {
   border-color: var(--hud-cyan);
   background: color-mix(in srgb, var(--hud-cyan) 6%, transparent);
   box-shadow: 0 0 6px color-mix(in srgb, var(--hud-magenta) 25%, transparent);
 }
-.hud-list-row.is-selected::before { height: 100%; }
-.row-abbr { color: var(--hud-cyan); }
-.row-name { color: var(--hud-ivory); }
-.row-leader { border-bottom: 1px dotted var(--hud-cyan-dim); align-self: end; margin-bottom: 4px; }
-.row-count { color: var(--hud-magenta); }
+.hud-list-row.is-selected::before {
+  height: 100%;
+}
+.row-abbr {
+  color: var(--hud-cyan);
+}
+.row-name {
+  color: var(--hud-ivory);
+}
+.row-leader {
+  border-bottom: 1px dotted var(--hud-cyan-dim);
+  align-self: end;
+  margin-bottom: 4px;
+}
+.row-count {
+  color: var(--hud-magenta);
+}
 
-.hud-divider { position: relative; border-top: 1px dashed var(--hud-cyan); margin-bottom: 12px; }
+.hud-divider {
+  position: relative;
+  border-top: 1px dashed var(--hud-cyan);
+  margin-bottom: 12px;
+}
 .hud-divider-diamond {
   position: absolute;
-  top: -5px; left: 50%;
+  top: -5px;
+  left: 50%;
   transform: translateX(-50%) rotate(45deg);
-  width: 8px; height: 8px;
+  width: 8px;
+  height: 8px;
   background: var(--hud-magenta);
   box-shadow: 0 0 6px var(--hud-magenta);
 }
@@ -298,16 +351,35 @@ Promote the `hud-*` classes (currently scoped inside `ConstellationWrapper.svelt
   gap: 8px;
   padding: 2px 0;
 }
-.readout-label { color: var(--hud-cyan); letter-spacing: 0.14em; text-transform: uppercase; }
-.readout-value { color: var(--hud-ivory); }
+.readout-label {
+  color: var(--hud-cyan);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.readout-value {
+  color: var(--hud-ivory);
+}
 .readout-blink {
-  width: 6px; height: 6px;
+  width: 6px;
+  height: 6px;
   background: var(--hud-magenta);
   box-shadow: 0 0 4px var(--hud-magenta);
   animation: blink-live 1s steps(2, end) infinite;
 }
-.readout-blink[data-state="fallback"] { background: var(--hud-amber); box-shadow: 0 0 4px var(--hud-amber); }
-@keyframes blink-live { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.2; } }
+.readout-blink[data-state="fallback"] {
+  background: var(--hud-amber);
+  box-shadow: 0 0 4px var(--hud-amber);
+}
+@keyframes blink-live {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.2;
+  }
+}
 
 /* HUD search input */
 .hud-search {
@@ -318,7 +390,10 @@ Promote the `hud-*` classes (currently scoped inside `ConstellationWrapper.svelt
   background: color-mix(in srgb, var(--hud-void) 70%, transparent);
   padding: 6px 10px;
 }
-.hud-search-icon { color: var(--hud-cyan); font-family: var(--hud-font-mono); }
+.hud-search-icon {
+  color: var(--hud-cyan);
+  font-family: var(--hud-font-mono);
+}
 .hud-search-input {
   flex: 1;
   background: transparent;
@@ -329,15 +404,37 @@ Promote the `hud-*` classes (currently scoped inside `ConstellationWrapper.svelt
   font-size: 12px;
   letter-spacing: 0.08em;
 }
-.hud-search-input::placeholder { color: var(--hud-cyan-dim); letter-spacing: 0.14em; }
-.hud-search:focus-within { border-color: var(--hud-cyan); box-shadow: 0 0 6px color-mix(in srgb, var(--hud-cyan) 30%, transparent); }
+.hud-search-input::placeholder {
+  color: var(--hud-cyan-dim);
+  letter-spacing: 0.14em;
+}
+.hud-search:focus-within {
+  border-color: var(--hud-cyan);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--hud-cyan) 30%, transparent);
+}
 
 /* Command rail (vertical button stack on subpages) */
-.hud-rail { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.hud-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
 
 /* Pagination */
-.hud-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
-.hud-pager-label { font-family: var(--hud-font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--hud-cyan); }
+.hud-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.hud-pager-label {
+  font-family: var(--hud-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--hud-cyan);
+}
 
 /* Pinned target chip */
 .hud-chip {
@@ -353,13 +450,25 @@ Promote the `hud-*` classes (currently scoped inside `ConstellationWrapper.svelt
   color: var(--hud-ivory);
   text-transform: uppercase;
 }
-.hud-chip-x { color: var(--hud-magenta); cursor: pointer; background: none; border: none; font-family: var(--hud-font-mono); }
+.hud-chip-x {
+  color: var(--hud-magenta);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--hud-font-mono);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .hud-btn::after,
-  .hud-list-row::before { transition: none; }
-  .hud-panel-anim { animation: none; }
-  .readout-blink { animation: none; }
+  .hud-list-row::before {
+    transition: none;
+  }
+  .hud-panel-anim {
+    animation: none;
+  }
+  .readout-blink {
+    animation: none;
+  }
 }
 ```
 
@@ -388,6 +497,7 @@ git commit -m "feat(hud): add shared HUD stylesheet"
 ## Task 3: Pure HUD list logic (filter + pagination) — TDD
 
 **Files:**
+
 - Create: `src/lib/hud/list.ts`
 - Test: `src/lib/hud/__tests__/list.test.ts`
 
@@ -473,7 +583,9 @@ export function matchesQuery(
 ): boolean {
   const q = query.trim().toLowerCase();
   if (q === "") return true;
-  return fields.some((f) => typeof f === "string" && f.toLowerCase().includes(q));
+  return fields.some(
+    (f) => typeof f === "string" && f.toLowerCase().includes(q),
+  );
 }
 
 export interface PageResult<T> {
@@ -483,11 +595,19 @@ export interface PageResult<T> {
 }
 
 /** Slice `items` for a 1-based `page`, clamping out-of-range pages into [1, totalPages]. */
-export function paginate<T>(items: T[], page: number, perPage: number): PageResult<T> {
+export function paginate<T>(
+  items: T[],
+  page: number,
+  perPage: number,
+): PageResult<T> {
   const totalPages = Math.max(1, Math.ceil(items.length / perPage));
   const clamped = Math.min(Math.max(1, Math.trunc(page)), totalPages);
   const start = (clamped - 1) * perPage;
-  return { items: items.slice(start, start + perPage), page: clamped, totalPages };
+  return {
+    items: items.slice(start, start + perPage),
+    page: clamped,
+    totalPages,
+  };
 }
 
 /** Formats a "02 / 04" page indicator. */
@@ -514,6 +634,7 @@ git commit -m "feat(hud): add filter + pagination logic with tests"
 ## Task 4: `HudButton` component
 
 **Files:**
+
 - Create: `src/components/hud/HudButton.svelte`
 
 - [ ] **Step 1: Create the component**
@@ -557,6 +678,7 @@ git commit -m "feat(hud): add HudButton component"
 ## Task 5: `HudPanel` component
 
 **Files:**
+
 - Create: `src/components/hud/HudPanel.svelte`
 
 Wraps `HudFrame` (corner brackets) around the shared `.hud-panel` chrome with an optional title/header.
@@ -606,6 +728,7 @@ git commit -m "feat(hud): add HudPanel component"
 ## Task 6: `HudSearch` component
 
 **Files:**
+
 - Create: `src/components/hud/HudSearch.svelte`
 
 Controlled input bound by the parent; emits `keydown` so parents can wire ↑/↓/Enter/Esc.
@@ -661,6 +784,7 @@ git commit -m "feat(hud): add HudSearch component"
 ## Task 7: Renderer — `worldToScreen` + `getBodyWorldPosition`
 
 **Files:**
+
 - Modify: `src/lib/planetary-system/graphics/SolarSystemRenderer.ts`
 - Modify: `src/lib/planetary-system/graphics/types.ts`
 - Modify: `src/lib/planetary-system/PlanetarySystemRenderer.ts`
@@ -722,12 +846,12 @@ Then expose them on the controls object returned by `getControls()` (the object 
 In `src/lib/planetary-system/graphics/types.ts`, add to the `SolarSystemControls` interface (alongside `focusOnPlanet`):
 
 ```ts
-    getBodyWorldPosition: (bodyId: string) => import("three").Vector3 | null;
-    worldToScreen: (point: import("three").Vector3) => {
-        x: number;
-        y: number;
-        visible: boolean;
-    };
+getBodyWorldPosition: (bodyId: string) => import("three").Vector3 | null;
+worldToScreen: (point: import("three").Vector3) => {
+  x: number;
+  y: number;
+  visible: boolean;
+};
 ```
 
 - [ ] **Step 3: Surface on `PlanetarySystemRenderer`**
@@ -770,6 +894,7 @@ git commit -m "feat(planetary): add worldToScreen + getBodyWorldPosition"
 ## Task 8: `ExploreSystems` component (search + pagination)
 
 **Files:**
+
 - Create: `src/components/ExploreSystems.svelte`
 
 Replaces the inline modal in `MainMenu` and `SystemSelector.svelte`. Uses the registry shape already used by MainMenu: `planetarySystemRegistry.getAllSystems()` → items with `.id`, `.name`, `.description`, `.systemData.systemType`, `.systemData.metadata?.distance`, `.systemData.celestialBodies`.
@@ -879,6 +1004,7 @@ git commit -m "feat(explore): add HUD system browser with search + pagination"
 ## Task 9: Wire `ExploreSystems` into `MainMenu`, remove old selector
 
 **Files:**
+
 - Modify: `src/components/MainMenu.svelte`
 - Remove: `src/components/SystemSelector.svelte`, `src/components/__tests__/SystemSelector.test.ts`
 
@@ -887,7 +1013,7 @@ git commit -m "feat(explore): add HUD system browser with search + pagination"
 Add the import near the other component imports (top `<script>`):
 
 ```ts
-  import ExploreSystems from "./ExploreSystems.svelte";
+import ExploreSystems from "./ExploreSystems.svelte";
 ```
 
 Replace the entire inline `{#if showSystemSelector} … {/if}` block (currently `MainMenu.svelte:306-356`) with:
@@ -930,6 +1056,7 @@ git commit -m "feat(explore): use ExploreSystems in MainMenu, remove SystemSelec
 ## Task 10: Planetary view — HUD restyle of panels + command rail
 
 **Files:**
+
 - Modify: `src/components/PlanetarySystemWrapper.svelte`
 
 Replace the plain black panels (`PlanetarySystemWrapper.svelte:264-302` + the `<style>` for `.system-info-panel`, `.controls-panel`, `.back-button`, `.zoom-controls`) with HUD equivalents. Logic/handlers unchanged.
@@ -939,8 +1066,8 @@ Replace the plain black panels (`PlanetarySystemWrapper.svelte:264-302` + the `<
 In the `<script>` block add:
 
 ```ts
-  import HudPanel from './hud/HudPanel.svelte';
-  import HudButton from './hud/HudButton.svelte';
+import HudPanel from "./hud/HudPanel.svelte";
+import HudButton from "./hud/HudButton.svelte";
 ```
 
 - [ ] **Step 2: Replace the info + controls markup**
@@ -984,7 +1111,7 @@ Replace the `<!-- System Info Panel -->` and `<!-- Navigation Controls -->` bloc
 Add to the `<script>` state declarations (near `let currentZoom = 50;`):
 
 ```ts
-  let showFinder = false;
+let showFinder = false;
 ```
 
 (The finder panel itself is added in Task 11; this flag + its button are wired here.)
@@ -994,19 +1121,19 @@ Add to the `<script>` state declarations (near `let currentZoom = 50;`):
 In the `<style>` block, delete the `.system-info-panel`, `.controls-panel`, `.back-button`, `.zoom-controls` rules and replace with:
 
 ```css
-  .hud-info {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    max-width: 320px;
-    z-index: 10;
-  }
-  .hud-controls {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10;
-  }
+.hud-info {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  max-width: 320px;
+  z-index: 10;
+}
+.hud-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+}
 ```
 
 - [ ] **Step 5: Verify type-check**
@@ -1026,6 +1153,7 @@ git commit -m "feat(planetary): HUD restyle of info panel + command rail"
 ## Task 11: Planetary view — in-system finder + pin (fly + target lock)
 
 **Files:**
+
 - Modify: `src/components/PlanetarySystemWrapper.svelte`
 
 Toggle-open finder (`/` to open, `Esc` to close), filtered body list, and a per-frame target-lock reticle on the pinned body.
@@ -1035,20 +1163,20 @@ Toggle-open finder (`/` to open, `Esc` to close), filtered body list, and a per-
 In the `<script>` block add imports:
 
 ```ts
-  import HudSearch from './hud/HudSearch.svelte';
-  import TargetLockOverlay from './hud/TargetLockOverlay.svelte';
-  import { matchesQuery } from '../lib/hud/list';
-  import { Vector3 } from 'three';
+import HudSearch from "./hud/HudSearch.svelte";
+import TargetLockOverlay from "./hud/TargetLockOverlay.svelte";
+import { matchesQuery } from "../lib/hud/list";
+import { Vector3 } from "three";
 ```
 
 Add state (near `let showFinder = false;`):
 
 ```ts
-  let finderQuery = "";
-  let pinnedBodyId: string | null = null;
-  let pinnedName = "";
-  let lockPos: { x: number; y: number; visible: boolean } | null = null;
-  let lockRafId = 0;
+let finderQuery = "";
+let pinnedBodyId: string | null = null;
+let pinnedName = "";
+let lockPos: { x: number; y: number; visible: boolean } | null = null;
+let lockRafId = 0;
 ```
 
 - [ ] **Step 2: Build the body list + filter**
@@ -1056,19 +1184,19 @@ Add state (near `let showFinder = false;`):
 Add these reactive/helper declarations in the `<script>`:
 
 ```ts
-  // All selectable bodies in the active system (star + planets + moons present in data).
-  $: allBodies = (() => {
-    const data = planetarySystemRenderer?.getSystemData();
-    if (!data) return [] as CelestialBodyData[];
-    return [data.star, ...data.celestialBodies];
-  })();
+// All selectable bodies in the active system (star + planets + moons present in data).
+$: allBodies = (() => {
+  const data = planetarySystemRenderer?.getSystemData();
+  if (!data) return [] as CelestialBodyData[];
+  return [data.star, ...data.celestialBodies];
+})();
 
-  $: finderResults = allBodies.filter((b) =>
-    matchesQuery(finderQuery, [b.name, b.type]),
-  );
+$: finderResults = allBodies.filter((b) =>
+  matchesQuery(finderQuery, [b.name, b.type]),
+);
 
-  const bodyTypeKey = (type: string) =>
-    type === "star" ? "type.star" : type === "moon" ? "type.moon" : "type.planet";
+const bodyTypeKey = (type: string) =>
+  type === "star" ? "type.star" : type === "moon" ? "type.moon" : "type.planet";
 ```
 
 - [ ] **Step 3: Add the pin loop + select handler**
@@ -1076,47 +1204,49 @@ Add these reactive/helper declarations in the `<script>`:
 Add these functions in the `<script>`:
 
 ```ts
-  function startLockLoop() {
-    cancelAnimationFrame(lockRafId);
-    const tick = () => {
-      if (!pinnedBodyId || !planetarySystemRenderer) {
-        lockPos = null;
-        return;
-      }
-      const world = planetarySystemRenderer.getBodyWorldPosition(pinnedBodyId);
-      lockPos = world ? planetarySystemRenderer.worldToScreen(world as Vector3) : null;
-      lockRafId = requestAnimationFrame(tick);
-    };
-    lockRafId = requestAnimationFrame(tick);
-  }
-
-  function pinBody(body: CelestialBodyData) {
-    if (!planetarySystemRenderer) return;
-    pinnedBodyId = body.id;
-    pinnedName = body.name;
-    planetarySystemRenderer.focusOnBody(body.id);
-    showFinder = false;
-    finderQuery = "";
-    startLockLoop();
-  }
-
-  function unpin() {
-    pinnedBodyId = null;
-    pinnedName = "";
-    cancelAnimationFrame(lockRafId);
-    lockPos = null;
-  }
-
-  function handleFinderHotkeys(event: KeyboardEvent) {
-    if (event.key === "/" && !showFinder) {
-      const tag = (event.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
-      event.preventDefault();
-      showFinder = true;
-    } else if (event.key === "Escape" && showFinder) {
-      showFinder = false;
+function startLockLoop() {
+  cancelAnimationFrame(lockRafId);
+  const tick = () => {
+    if (!pinnedBodyId || !planetarySystemRenderer) {
+      lockPos = null;
+      return;
     }
+    const world = planetarySystemRenderer.getBodyWorldPosition(pinnedBodyId);
+    lockPos = world
+      ? planetarySystemRenderer.worldToScreen(world as Vector3)
+      : null;
+    lockRafId = requestAnimationFrame(tick);
+  };
+  lockRafId = requestAnimationFrame(tick);
+}
+
+function pinBody(body: CelestialBodyData) {
+  if (!planetarySystemRenderer) return;
+  pinnedBodyId = body.id;
+  pinnedName = body.name;
+  planetarySystemRenderer.focusOnBody(body.id);
+  showFinder = false;
+  finderQuery = "";
+  startLockLoop();
+}
+
+function unpin() {
+  pinnedBodyId = null;
+  pinnedName = "";
+  cancelAnimationFrame(lockRafId);
+  lockPos = null;
+}
+
+function handleFinderHotkeys(event: KeyboardEvent) {
+  if (event.key === "/" && !showFinder) {
+    const tag = (event.target as HTMLElement)?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    event.preventDefault();
+    showFinder = true;
+  } else if (event.key === "Escape" && showFinder) {
+    showFinder = false;
   }
+}
 ```
 
 - [ ] **Step 4: Register/cleanup the hotkey + raf**
@@ -1130,7 +1260,7 @@ Update the existing `<svelte:window>` (currently `on:resize={handleResize}`) to 
 In the existing `onDestroy` (around `PlanetarySystemWrapper.svelte:230`), add before/after the renderer cleanup:
 
 ```ts
-    cancelAnimationFrame(lockRafId);
+cancelAnimationFrame(lockRafId);
 ```
 
 - [ ] **Step 5: Add the finder panel + reticle markup**
@@ -1195,26 +1325,26 @@ Inside the `{#if isSceneReady}` block (after the command rail), add:
 In the `<style>` block add:
 
 ```css
-  .hud-finder {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(420px, 90vw);
-    z-index: 20;
-  }
-  .hud-pinned {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    z-index: 20;
-  }
-  .hud-lock-layer {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 15;
-  }
+.hud-finder {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, 90vw);
+  z-index: 20;
+}
+.hud-pinned {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 20;
+}
+.hud-lock-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+}
 ```
 
 - [ ] **Step 7: Verify type-check + planetary tests**
@@ -1234,6 +1364,7 @@ git commit -m "feat(planetary): toggle-open JUMP TO finder with camera fly + tar
 ## Task 12: Constellation — switch to shared HUD classes
 
 **Files:**
+
 - Modify: `src/components/ConstellationWrapper.svelte`
 
 The shared `hud.css` now defines the same classes. Remove the duplicated scoped rules so there is a single source of truth. Markup is unchanged.
@@ -1266,6 +1397,7 @@ git commit -m "refactor(constellation): use shared HUD classes"
 ## Task 13: Galaxy — HUD restyle (presentation only)
 
 **Files:**
+
 - Modify: `src/components/GalaxyWrapper.svelte`
 
 Restyle the back/controls buttons and panels into the HUD language. Do NOT change handlers, state, or the renderer wiring — presentation only.
@@ -1275,8 +1407,8 @@ Restyle the back/controls buttons and panels into the HUD language. Do NOT chang
 In the `<script>` add:
 
 ```ts
-  import HudButton from "./hud/HudButton.svelte";
-  import HudPanel from "./hud/HudPanel.svelte";
+import HudButton from "./hud/HudButton.svelte";
+import HudPanel from "./hud/HudPanel.svelte";
 ```
 
 - [ ] **Step 2: Convert the back + controls buttons**
@@ -1316,13 +1448,14 @@ git commit -m "feat(galaxy): HUD restyle of controls and panels"
 ## Task 14: Terrain — HUD restyle (presentation only)
 
 **Files:**
+
 - Modify: `src/components/TerrainExplorer.svelte`
 
 - [ ] **Step 1: Import HUD components**
 
 ```ts
-  import HudButton from "./hud/HudButton.svelte";
-  import HudPanel from "./hud/HudPanel.svelte";
+import HudButton from "./hud/HudButton.svelte";
+import HudPanel from "./hud/HudPanel.svelte";
 ```
 
 - [ ] **Step 2: Convert the back button**
@@ -1386,6 +1519,7 @@ Expected: build succeeds (Vercel adapter output produced).
 - [ ] **Step 5: Manual smoke (dev server)**
 
 Run: `bun run dev` and verify in browser at http://localhost:3600/:
+
 - Explore modal: search filters systems, pagination prev/next + `NN / NN` indicator work, empty-state shows on no match.
 - Planetary view: HUD info panel + command rail render; `/` opens the JUMP TO finder, `Esc` closes; selecting a body flies the camera and shows the target-lock reticle + pinned chip; unpin clears it.
 - Galaxy, Terrain, Constellation: HUD chrome renders consistently; existing controls still function.

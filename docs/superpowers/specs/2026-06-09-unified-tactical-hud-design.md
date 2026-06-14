@@ -95,7 +95,7 @@ Replace the two ad-hoc selectors (the inline modal in `MainMenu.svelte` and
   name, system type, constellation, and distance string. Filtering applies over the
   full registry.
 - **Pagination**: client-side, **6 systems per page**. HUD-styled prev/next plus a
-  page indicator formatted `02 / 04`. Pagination applies to the *filtered* result
+  page indicator formatted `02 / 04`. Pagination applies to the _filtered_ result
   set; changing the search resets to page 1. If results fit on one page, the
   pager is hidden.
 - Each system rendered as a HUD target card (name, type, distance, body summary,

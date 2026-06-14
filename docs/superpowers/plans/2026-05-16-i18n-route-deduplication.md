@@ -90,6 +90,7 @@
 ### Task 1: Lock the Desired Route Contract With Tests
 
 **Files:**
+
 - Create: `src/i18n/routes.ts`
 - Create: `src/i18n/__tests__/routes.test.ts`
 
@@ -108,41 +109,49 @@ export {};
 // src/i18n/__tests__/routes.test.ts
 import { describe, expect, it } from "vitest";
 import {
-    getLocaleFromPath,
-    localizePath,
-    switchLocalePath,
-    routes,
-    type AppLocale,
+  getLocaleFromPath,
+  localizePath,
+  switchLocalePath,
+  routes,
+  type AppLocale,
 } from "../routes";
 
 describe("i18n routes", () => {
-    it("detects supported locales from URL paths", () => {
-        expect(getLocaleFromPath("/")).toBe("en");
-        expect(getLocaleFromPath("/galaxy")).toBe("en");
-        expect(getLocaleFromPath("/zh/galaxy")).toBe("zh");
-        expect(getLocaleFromPath("/ja/planetary/solar")).toBe("ja");
-    });
+  it("detects supported locales from URL paths", () => {
+    expect(getLocaleFromPath("/")).toBe("en");
+    expect(getLocaleFromPath("/galaxy")).toBe("en");
+    expect(getLocaleFromPath("/zh/galaxy")).toBe("zh");
+    expect(getLocaleFromPath("/ja/planetary/solar")).toBe("ja");
+  });
 
-    it("localizes canonical paths using unprefixed English", () => {
-        expect(localizePath("/galaxy", "en")).toBe("/galaxy");
-        expect(localizePath("/galaxy", "zh")).toBe("/zh/galaxy");
-        expect(localizePath("/planetary/solar", "ja")).toBe("/ja/planetary/solar");
-    });
+  it("localizes canonical paths using unprefixed English", () => {
+    expect(localizePath("/galaxy", "en")).toBe("/galaxy");
+    expect(localizePath("/galaxy", "zh")).toBe("/zh/galaxy");
+    expect(localizePath("/planetary/solar", "ja")).toBe("/ja/planetary/solar");
+  });
 
-    it("switches locale without duplicating existing locale prefixes", () => {
-        expect(switchLocalePath("/zh/galaxy", "ja")).toBe("/ja/galaxy");
-        expect(switchLocalePath("/ja/planetary/solar", "en")).toBe("/planetary/solar");
-        expect(switchLocalePath("/planetary/terrain/earth", "zh")).toBe("/zh/planetary/terrain/earth");
-    });
+  it("switches locale without duplicating existing locale prefixes", () => {
+    expect(switchLocalePath("/zh/galaxy", "ja")).toBe("/ja/galaxy");
+    expect(switchLocalePath("/ja/planetary/solar", "en")).toBe(
+      "/planetary/solar",
+    );
+    expect(switchLocalePath("/planetary/terrain/earth", "zh")).toBe(
+      "/zh/planetary/terrain/earth",
+    );
+  });
 
-    it("builds app route URLs from stable domain ids", () => {
-        const locales: AppLocale[] = ["en", "zh", "ja"];
-        expect(locales.map((locale) => routes.home(locale))).toEqual(["/", "/zh/", "/ja/"]);
-        expect(routes.galaxy("zh")).toBe("/zh/galaxy");
-        expect(routes.constellation("ja")).toBe("/ja/constellation");
-        expect(routes.planetarySystem("solar", "en")).toBe("/planetary/solar");
-        expect(routes.terrain("mars", "zh")).toBe("/zh/planetary/terrain/mars");
-    });
+  it("builds app route URLs from stable domain ids", () => {
+    const locales: AppLocale[] = ["en", "zh", "ja"];
+    expect(locales.map((locale) => routes.home(locale))).toEqual([
+      "/",
+      "/zh/",
+      "/ja/",
+    ]);
+    expect(routes.galaxy("zh")).toBe("/zh/galaxy");
+    expect(routes.constellation("ja")).toBe("/ja/constellation");
+    expect(routes.planetarySystem("solar", "en")).toBe("/planetary/solar");
+    expect(routes.terrain("mars", "zh")).toBe("/zh/planetary/terrain/mars");
+  });
 });
 ```
 
@@ -159,6 +168,7 @@ Expected: FAIL because `getLocaleFromPath`, `localizePath`, `switchLocalePath`, 
 ### Task 2: Implement Central Route Helpers
 
 **Files:**
+
 - Modify: `src/i18n/routes.ts`
 - Modify: `src/i18n/utils.ts`
 
@@ -173,43 +183,43 @@ export type AppLocale = keyof typeof languages;
 export const appLocales = Object.keys(languages) as AppLocale[];
 
 export function isAppLocale(value: string | undefined): value is AppLocale {
-    return Boolean(value && value in languages);
+  return Boolean(value && value in languages);
 }
 
 export function getLocaleFromPath(pathname: string): AppLocale {
-    const [, segment] = pathname.split("/");
-    return isAppLocale(segment) ? segment : defaultLang;
+  const [, segment] = pathname.split("/");
+  return isAppLocale(segment) ? segment : defaultLang;
 }
 
 export function stripLocaleFromPath(pathname: string): string {
-    const segments = pathname.split("/");
-    if (isAppLocale(segments[1])) {
-        const stripped = `/${segments.slice(2).join("/")}`;
-        return stripped === "/" ? "/" : stripped.replace(/\/+$/, "");
-    }
-    return pathname === "" ? "/" : pathname.replace(/\/+$/, "") || "/";
+  const segments = pathname.split("/");
+  if (isAppLocale(segments[1])) {
+    const stripped = `/${segments.slice(2).join("/")}`;
+    return stripped === "/" ? "/" : stripped.replace(/\/+$/, "");
+  }
+  return pathname === "" ? "/" : pathname.replace(/\/+$/, "") || "/";
 }
 
 export function localizePath(pathname: string, locale: AppLocale): string {
-    const canonicalPath = stripLocaleFromPath(pathname);
-    if (!showDefaultLang && locale === defaultLang) {
-        return canonicalPath;
-    }
-    return canonicalPath === "/" ? `/${locale}/` : `/${locale}${canonicalPath}`;
+  const canonicalPath = stripLocaleFromPath(pathname);
+  if (!showDefaultLang && locale === defaultLang) {
+    return canonicalPath;
+  }
+  return canonicalPath === "/" ? `/${locale}/` : `/${locale}${canonicalPath}`;
 }
 
 export function switchLocalePath(pathname: string, locale: AppLocale): string {
-    return localizePath(stripLocaleFromPath(pathname), locale);
+  return localizePath(stripLocaleFromPath(pathname), locale);
 }
 
 export const routes = {
-    home: (locale: AppLocale) => localizePath("/", locale),
-    galaxy: (locale: AppLocale) => localizePath("/galaxy", locale),
-    constellation: (locale: AppLocale) => localizePath("/constellation", locale),
-    planetarySystem: (systemId: string, locale: AppLocale) =>
-        localizePath(`/planetary/${systemId}`, locale),
-    terrain: (planetId: string, locale: AppLocale) =>
-        localizePath(`/planetary/terrain/${planetId}`, locale),
+  home: (locale: AppLocale) => localizePath("/", locale),
+  galaxy: (locale: AppLocale) => localizePath("/galaxy", locale),
+  constellation: (locale: AppLocale) => localizePath("/constellation", locale),
+  planetarySystem: (systemId: string, locale: AppLocale) =>
+    localizePath(`/planetary/${systemId}`, locale),
+  terrain: (planetId: string, locale: AppLocale) =>
+    localizePath(`/planetary/terrain/${planetId}`, locale),
 };
 ```
 
@@ -221,54 +231,51 @@ Keep public exports stable while removing duplicated path logic:
 // src/i18n/utils.ts
 import { ui, defaultLang, type UiKey } from "./ui";
 import {
-    getLocaleFromPath,
-    localizePath,
-    stripLocaleFromPath,
-    isAppLocale,
-    type AppLocale,
+  getLocaleFromPath,
+  localizePath,
+  stripLocaleFromPath,
+  isAppLocale,
+  type AppLocale,
 } from "./routes";
 
 export function getLangFromUrl(url: URL, currentLocale?: string): AppLocale {
-    if (isAppLocale(currentLocale)) return currentLocale;
-    return getLocaleFromPath(url.pathname);
+  if (isAppLocale(currentLocale)) return currentLocale;
+  return getLocaleFromPath(url.pathname);
 }
 
 export function useTranslations(lang: keyof typeof ui) {
-    return function t(
-        key: UiKey,
-        replacements?: Record<string, string>,
-    ): string {
-        let text: string = ui[lang][key] || ui[defaultLang][key];
+  return function t(key: UiKey, replacements?: Record<string, string>): string {
+    let text: string = ui[lang][key] || ui[defaultLang][key];
 
-        if (replacements) {
-            Object.entries(replacements).forEach(([placeholder, value]) => {
-                text = text.replace(`{${placeholder}}`, value);
-            });
-        }
+    if (replacements) {
+      Object.entries(replacements).forEach(([placeholder, value]) => {
+        text = text.replace(`{${placeholder}}`, value);
+      });
+    }
 
-        return text;
-    };
+    return text;
+  };
 }
 
 export function useTranslatedPath(lang: keyof typeof ui) {
-    return function translatePath(path: string, l: keyof typeof ui = lang) {
-        return localizePath(path, l);
-    };
+  return function translatePath(path: string, l: keyof typeof ui = lang) {
+    return localizePath(path, l);
+  };
 }
 
 export function getStaticPaths() {
-    return Object.keys(ui).map((lang) => ({ params: { lang } }));
+  return Object.keys(ui).map((lang) => ({ params: { lang } }));
 }
 
 export function pathHasLocale(pathname: string) {
-    const [, segment] = pathname.split("/");
-    return isAppLocale(segment);
+  const [, segment] = pathname.split("/");
+  return isAppLocale(segment);
 }
 
 export { stripLocaleFromPath };
 
 export function addLocaleToPath(pathname: string, locale: keyof typeof ui) {
-    return localizePath(pathname, locale);
+  return localizePath(pathname, locale);
 }
 ```
 
@@ -285,6 +292,7 @@ Expected: PASS. If existing `utils.test.ts` has expectations for `/en/*`, update
 ### Task 3: Move Astro i18n to Rewrite Fallbacks and Remove Symlink Dependence
 
 **Files:**
+
 - Modify: `astro.config.mjs`
 - Modify: `src/middleware.ts`
 - Delete: `src/pages/zh`
@@ -328,14 +336,14 @@ export default defineConfig({
 import { defineMiddleware } from "astro:middleware";
 
 export const onRequest = defineMiddleware((context, next) => {
-    const url = new URL(context.request.url);
+  const url = new URL(context.request.url);
 
-    if (url.pathname === "/en" || url.pathname.startsWith("/en/")) {
-        const canonicalPath = url.pathname.replace(/^\/en(?=\/|$)/, "") || "/";
-        return context.redirect(`${canonicalPath}${url.search}`, 301);
-    }
+  if (url.pathname === "/en" || url.pathname.startsWith("/en/")) {
+    const canonicalPath = url.pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+    return context.redirect(`${canonicalPath}${url.search}`, 301);
+  }
 
-    return next();
+  return next();
 });
 ```
 
@@ -368,6 +376,7 @@ Expected: each checked localized route exists through fallback routing and has n
 ### Task 4: Replace Static Per-System Pages With One Dynamic Route
 
 **Files:**
+
 - Create: `src/pages/planetary/[systemId].astro`
 - Delete: `src/pages/en/planetary/alpha-centauri.astro`
 - Delete: `src/pages/en/planetary/barnards-star.astro`
@@ -400,7 +409,8 @@ if (!systemId || !planetarySystemRegistry.hasSystem(systemId)) {
 }
 
 const system = planetarySystemRegistry.getSystem(systemId);
-const title = systemId === "solar" ? t("main.solar") : system?.systemData.name || systemId;
+const title =
+  systemId === "solar" ? t("main.solar") : system?.systemData.name || systemId;
 ---
 
 <html lang={lang}>
@@ -463,6 +473,7 @@ Expected: build passes and Vercel handler can render `/planetary/solar`, `/zh/pl
 ### Task 5: Remove Remaining Default-Locale Duplicate Pages
 
 **Files:**
+
 - Delete: `src/pages/en/index.astro`
 - Delete: `src/pages/en/galaxy.astro`
 - Delete: `src/pages/en/planetary/terrain/[planetId].astro`
@@ -480,6 +491,7 @@ const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 ```
 
 Apply this to:
+
 - `src/pages/index.astro`
 - `src/pages/galaxy.astro`
 - `src/pages/constellation.astro`
@@ -520,6 +532,7 @@ Expected: no symlinked locale folders and no `src/pages/en`, `src/pages/zh`, or 
 ### Task 6: Centralize Client Navigation
 
 **Files:**
+
 - Modify: `src/components/MainMenu.svelte`
 - Modify: `src/components/GalaxyWrapper.svelte`
 - Modify: `src/components/TerrainExplorer.svelte`
@@ -574,13 +587,14 @@ const handleSelectSystem = (systemId: string) => {
 Use:
 
 ```ts
-routes.home(currentLang)
-routes.planetarySystem("solar", lang)
-routes.terrain(celestialBody.id, lang)
-routes.planetarySystem(routeSystemId, currentLang)
+routes.home(currentLang);
+routes.planetarySystem("solar", lang);
+routes.terrain(celestialBody.id, lang);
+routes.planetarySystem(routeSystemId, currentLang);
 ```
 
 Apply to:
+
 - `PlanetarySystemWrapper.svelte`
 - `TerrainExplorer.svelte`
 - `CelestialBodyInfoModal.svelte`
@@ -593,7 +607,7 @@ In `GalaxyWrapper.svelte`, keep only the non-identity mapping:
 
 ```ts
 const galaxySystemRouteIds: Record<string, string> = {
-    "solar-system": "solar",
+  "solar-system": "solar",
 };
 
 const routeSystemId = galaxySystemRouteIds[systemId] ?? systemId;
@@ -603,6 +617,7 @@ window.location.href = routes.planetarySystem(routeSystemId, currentLang);
 ### Task 7: Update Tests and Add Route-Level Regression Coverage
 
 **Files:**
+
 - Modify: `src/components/__tests__/MainMenu.test.ts`
 - Modify: `src/components/__tests__/LanguageSelector.test.ts`
 - Modify: related wrapper tests that assert old `/en/*` routes.
@@ -633,21 +648,27 @@ expect(window.location.href).toBe("/zh/galaxy");
 import { expect, test } from "@playwright/test";
 
 test.describe("i18n route rendering", () => {
-    test("localized galaxy route loads stylesheet links", async ({ page }) => {
-        await page.goto("/zh/galaxy");
-        const stylesheets = await page.locator('head link[rel="stylesheet"]').count();
-        expect(stylesheets).toBeGreaterThan(0);
-    });
+  test("localized galaxy route loads stylesheet links", async ({ page }) => {
+    await page.goto("/zh/galaxy");
+    const stylesheets = await page
+      .locator('head link[rel="stylesheet"]')
+      .count();
+    expect(stylesheets).toBeGreaterThan(0);
+  });
 
-    test("localized planetary route renders the 3D wrapper shell", async ({ page }) => {
-        await page.goto("/zh/planetary/solar");
-        await expect(page.locator("#planetary-system-container")).toBeAttached();
-    });
+  test("localized planetary route renders the 3D wrapper shell", async ({
+    page,
+  }) => {
+    await page.goto("/zh/planetary/solar");
+    await expect(page.locator("#planetary-system-container")).toBeAttached();
+  });
 
-    test("default-locale prefixed URL redirects to canonical route", async ({ page }) => {
-        await page.goto("/en/planetary/solar");
-        await expect(page).toHaveURL(/\/planetary\/solar\/?$/);
-    });
+  test("default-locale prefixed URL redirects to canonical route", async ({
+    page,
+  }) => {
+    await page.goto("/en/planetary/solar");
+    await expect(page).toHaveURL(/\/planetary\/solar\/?$/);
+  });
 });
 ```
 
@@ -665,6 +686,7 @@ Expected: all focused tests pass.
 ### Task 8: Final Verification
 
 **Files:**
+
 - No new source changes expected.
 
 - [ ] **Step 1: Run build**

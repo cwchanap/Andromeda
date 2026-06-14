@@ -121,6 +121,7 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 **CRITICAL - Shadow System (NEVER ENABLE):**
 
 All shadow rendering is permanently disabled project-wide for performance on mobile and to avoid artifacts with space backgrounds:
+
 ```typescript
 renderer.shadowMap.enabled = false;
 light.castShadow = false;
