@@ -1,7 +1,7 @@
 <script lang="ts">
   import { planetarySystemRegistry } from "@/lib/planetary-system";
-  import type { PlanetarySystem } from "@/lib/planetary-system";
   import { matchesQuery, paginate, pageLabel } from "@/lib/hud/list";
+  import { confirmedCount } from "@/lib/hud/confirmedCount";
   import HudPanel from "@/components/hud/HudPanel.svelte";
   import HudButton from "@/components/hud/HudButton.svelte";
   import HudSearch from "@/components/hud/HudSearch.svelte";
@@ -30,10 +30,6 @@
     ]),
   );
   $: pageResult = paginate(filtered, page, PER_PAGE);
-
-  function bodyCount(s: PlanetarySystem): number {
-    return s.systemData?.celestialBodies?.length ?? 0;
-  }
 </script>
 
 <div
@@ -76,7 +72,7 @@
               <div class="readout-row">
                 <span class="readout-label">{t("explore.bodies")}</span>
                 <span></span>
-                <span class="readout-value">{bodyCount(system)}</span>
+                <span class="readout-value">{confirmedCount(system)}</span>
               </div>
               {#if system.systemData?.metadata?.distance}
                 <div class="readout-row">
