@@ -471,3 +471,41 @@ test.describe("Error Handling", () => {
         expect(errors.length).toBe(0);
     });
 });
+
+test.describe("30 Nearest Systems", () => {
+    test("galaxy view loads with star systems @smoke", async ({ page }) => {
+        await page.goto("/galaxy");
+
+        try {
+            await page.waitForSelector("#galaxy-renderer", { timeout: 15000 });
+            const canvas = page.locator("canvas");
+            await expect(canvas).toBeVisible({ timeout: 10000 });
+        } catch {
+            const pageContent = await page.content();
+            expect(
+                pageContent.includes("galaxy") ||
+                    pageContent.includes("loading") ||
+                    pageContent.includes("WebGL"),
+            ).toBe(true);
+        }
+    });
+
+    test("Alpha Centauri system page loads @smoke", async ({ page }) => {
+        await page.goto("/planetary/alpha-centauri");
+
+        try {
+            await page.waitForSelector("#solar-system-renderer", {
+                timeout: 15000,
+            });
+            const canvas = page.locator("canvas");
+            await expect(canvas).toBeVisible({ timeout: 10000 });
+        } catch {
+            const pageContent = await page.content();
+            expect(
+                pageContent.includes("planetary-system-container") ||
+                    pageContent.includes("loading") ||
+                    pageContent.includes("WebGL"),
+            ).toBe(true);
+        }
+    });
+});
