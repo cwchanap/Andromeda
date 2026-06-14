@@ -1,398 +1,1492 @@
+/** @source src/data/nearest_30_planetary_systems.csv — run gen:systems to regenerate */
 import * as THREE from "three";
-import type { StarSystemData, GalaxyData } from "./types";
+import type { GalaxyData } from "./types";
 
-/**
- * Local galaxy data containing nearby star systems
- * Distances and positions based on real astronomical data
- * Scale: 1 unit = 1 light-year for galaxy view
- */
-
-// Our Solar System
-const solarSystem: StarSystemData = {
-    id: "solar-system",
-    name: "Solar System",
-    description: "Our home star system containing the Sun and eight planets",
-    systemType: "solar",
-    position: new THREE.Vector3(0, 0, 0), // Origin point
-    distanceFromEarth: 0,
-    stars: [
-        {
-            id: "sun",
-            name: "Sun",
-            type: "star",
-            description: "Our home star, a G-type main-sequence star",
-            keyFacts: {
-                diameter: "1,392,700 km",
-                distanceFromSun: "0 km",
-                orbitalPeriod: "N/A",
-                composition: [
-                    "Hydrogen (73%)",
-                    "Helium (25%)",
-                    "Other elements (2%)",
-                ],
-                temperature: "5,778 K (surface)",
-            },
-            images: [
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-            ],
-            position: new THREE.Vector3(0, 0, 0),
-            scale: 3.0,
-            material: {
-                color: "#FDB813",
-                emissive: "#FF8C00",
-                roughness: 1.0,
-                metalness: 0.0,
-            },
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        },
-    ],
-    metadata: {
-        constellation: "N/A",
-        spectralClass: "G2V",
-        hasExoplanets: false,
-        numberOfPlanets: 8,
-        habitableZone: true,
-    },
-    visual: {
-        brightness: 1.0,
-        colorIndex: 0.63, // Sun's B-V color index
-        scale: 3.0,
-        glowIntensity: 1.2,
-    },
-};
-
-// Alpha Centauri System (closest to Earth)
-const alphaCentauriSystem: StarSystemData = {
-    id: "alpha-centauri",
-    name: "Alpha Centauri",
-    description: "The closest star system to Earth, a triple star system",
-    systemType: "trinary",
-    position: new THREE.Vector3(4.37, -1.2, 0.8), // 4.37 ly from Earth
-    distanceFromEarth: 4.37,
-    stars: [
-        {
-            id: "alpha-centauri-a",
-            name: "Alpha Centauri A",
-            type: "star",
-            description: "A G-type main-sequence star similar to our Sun",
-            keyFacts: {
-                diameter: "1,713,400 km",
-                distanceFromSun: "4.37 light-years",
-                orbitalPeriod: "79.91 years (binary orbit)",
-                composition: [
-                    "Hydrogen (73%)",
-                    "Helium (25%)",
-                    "Other elements (2%)",
-                ],
-                temperature: "5,790 K",
-            },
-            images: [
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-            ],
-            position: new THREE.Vector3(-0.5, 0, 0),
-            scale: 3.1,
-            material: {
-                color: "#FDB813",
-                emissive: "#FF8C00",
-                roughness: 1.0,
-                metalness: 0.0,
-            },
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        },
-        {
-            id: "alpha-centauri-b",
-            name: "Alpha Centauri B",
-            type: "star",
-            description:
-                "A K-type main-sequence star, smaller and cooler than Alpha Centauri A",
-            keyFacts: {
-                diameter: "1,209,600 km",
-                distanceFromSun: "4.37 light-years",
-                orbitalPeriod: "79.91 years (binary orbit)",
-                composition: [
-                    "Hydrogen (73%)",
-                    "Helium (25%)",
-                    "Other elements (2%)",
-                ],
-                temperature: "5,260 K",
-            },
-            images: [
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-            ],
-            position: new THREE.Vector3(0.5, 0, 0),
-            scale: 2.4,
-            material: {
-                color: "#FFB84D",
-                emissive: "#FF6B35",
-                roughness: 1.0,
-                metalness: 0.0,
-            },
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        },
-        {
-            id: "proxima-centauri",
-            name: "Proxima Centauri",
-            type: "star",
-            description: "A red dwarf star and the closest star to Earth",
-            keyFacts: {
-                diameter: "214,000 km",
-                distanceFromSun: "4.24 light-years",
-                orbitalPeriod: "547,000 years (around AB pair)",
-                composition: [
-                    "Hydrogen (73%)",
-                    "Helium (25%)",
-                    "Other elements (2%)",
-                ],
-                temperature: "3,042 K",
-            },
-            images: [
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-            ],
-            position: new THREE.Vector3(2.5, -1.5, 0.3),
-            scale: 1.2,
-            material: {
-                color: "#FF6B6B",
-                emissive: "#FF4444",
-                roughness: 1.0,
-                metalness: 0.0,
-            },
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        },
-    ],
-    metadata: {
-        constellation: "Centaurus",
-        spectralClass: "G2V + K1V + M5.5Ve",
-        discoveredBy: "Nicolas Louis de Lacaille",
-        discoveryDate: "1751",
-        hasExoplanets: true,
-        numberOfPlanets: 3,
-        habitableZone: true,
-    },
-    visual: {
-        brightness: 0.85,
-        colorIndex: 0.71,
-        scale: 2.5,
-        glowIntensity: 1.0,
-    },
-};
-
-// Barnard's Star
-const barnardsStarSystem: StarSystemData = {
-    id: "barnards-star",
-    name: "Barnard's Star",
-    description: "A red dwarf star with the highest known proper motion",
-    systemType: "solar",
-    position: new THREE.Vector3(-2.1, 5.8, -1.2), // 5.96 ly from Earth
-    distanceFromEarth: 5.96,
-    stars: [
-        {
-            id: "barnards-star",
-            name: "Barnard's Star",
-            type: "star",
-            description: "A red dwarf star with high proper motion",
-            keyFacts: {
-                diameter: "196,000 km",
-                distanceFromSun: "5.96 light-years",
-                orbitalPeriod: "N/A",
-                composition: [
-                    "Hydrogen (73%)",
-                    "Helium (25%)",
-                    "Other elements (2%)",
-                ],
-                temperature: "3,134 K",
-            },
-            images: [
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-            ],
-            position: new THREE.Vector3(0, 0, 0),
-            scale: 1.3,
-            material: {
-                color: "#FF5555",
-                emissive: "#FF3333",
-                roughness: 1.0,
-                metalness: 0.0,
-            },
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        },
-    ],
-    metadata: {
-        constellation: "Ophiuchus",
-        spectralClass: "M4.0Ve",
-        discoveredBy: "Edward Emerson Barnard",
-        discoveryDate: "1916",
-        hasExoplanets: true,
-        numberOfPlanets: 1,
-        habitableZone: false,
-    },
-    visual: {
-        brightness: 0.3,
-        colorIndex: 1.74,
-        scale: 1.3,
-        glowIntensity: 0.8,
-    },
-};
-
-// Wolf 359
-const wolf359System: StarSystemData = {
-    id: "wolf-359",
-    name: "Wolf 359",
-    description:
-        "A red dwarf star known for its high proper motion and flare activity",
-    systemType: "solar",
-    position: new THREE.Vector3(6.2, 2.8, -3.1), // 7.86 ly from Earth
-    distanceFromEarth: 7.86,
-    stars: [
-        {
-            id: "wolf-359",
-            name: "Wolf 359",
-            type: "star",
-            description: "A red dwarf flare star",
-            keyFacts: {
-                diameter: "222,000 km",
-                distanceFromSun: "7.86 light-years",
-                orbitalPeriod: "N/A",
-                composition: [
-                    "Hydrogen (73%)",
-                    "Helium (25%)",
-                    "Other elements (2%)",
-                ],
-                temperature: "2,800 K",
-            },
-            images: [
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-            ],
-            position: new THREE.Vector3(0, 0, 0),
-            scale: 1.4,
-            material: {
-                color: "#FF4444",
-                emissive: "#FF2222",
-                roughness: 1.0,
-                metalness: 0.0,
-            },
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        },
-    ],
-    metadata: {
-        constellation: "Leo",
-        spectralClass: "M6.0V",
-        discoveredBy: "Max Wolf",
-        discoveryDate: "1918",
-        hasExoplanets: false,
-        numberOfPlanets: 0,
-        habitableZone: false,
-    },
-    visual: {
-        brightness: 0.2,
-        colorIndex: 2.0,
-        scale: 1.4,
-        glowIntensity: 0.9,
-    },
-};
-
-// Sirius System (binary)
-const siriusSystem: StarSystemData = {
-    id: "sirius",
-    name: "Sirius",
-    description:
-        "The brightest star in Earth's night sky, a binary star system",
-    systemType: "binary",
-    position: new THREE.Vector3(-7.8, -3.2, 2.1), // 8.66 ly from Earth
-    distanceFromEarth: 8.66,
-    stars: [
-        {
-            id: "sirius-a",
-            name: "Sirius A",
-            type: "star",
-            description:
-                "A main-sequence star, the brightest star in Earth's night sky",
-            keyFacts: {
-                diameter: "2,380,000 km",
-                distanceFromSun: "8.66 light-years",
-                orbitalPeriod: "50.09 years (binary orbit)",
-                composition: [
-                    "Hydrogen (73%)",
-                    "Helium (25%)",
-                    "Other elements (2%)",
-                ],
-                temperature: "9,940 K",
-            },
-            images: [
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-            ],
-            position: new THREE.Vector3(-0.3, 0, 0),
-            scale: 4.2,
-            material: {
-                color: "#9BB0FF",
-                emissive: "#6699FF",
-                roughness: 1.0,
-                metalness: 0.0,
-            },
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        },
-        {
-            id: "sirius-b",
-            name: "Sirius B",
-            type: "star",
-            description: "A white dwarf companion star",
-            keyFacts: {
-                diameter: "11,680 km",
-                distanceFromSun: "8.66 light-years",
-                orbitalPeriod: "50.09 years (binary orbit)",
-                composition: ["Carbon", "Oxygen", "trace elements"],
-                temperature: "25,200 K",
-            },
-            images: [
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-            ],
-            position: new THREE.Vector3(0.8, 0, 0),
-            scale: 0.8,
-            material: {
-                color: "#FFFFFF",
-                emissive: "#BBBBFF",
-                roughness: 1.0,
-                metalness: 0.0,
-            },
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        },
-    ],
-    metadata: {
-        constellation: "Canis Major",
-        spectralClass: "A1V + DA2",
-        hasExoplanets: false,
-        numberOfPlanets: 0,
-        habitableZone: false,
-    },
-    visual: {
-        brightness: 1.8,
-        colorIndex: 0.0,
-        scale: 3.5,
-        glowIntensity: 1.5,
-    },
-};
-
-/**
- * Local galaxy data containing nearby star systems within ~10 light-years
- */
 export const localGalaxyData: GalaxyData = {
     id: "local-galaxy",
-    name: "Local Stellar Neighborhood",
-    description: "Star systems within 10 light-years of Earth",
+    name: "Local Galaxy",
+    description: "The 30 nearest star systems to Earth",
     starSystems: [
-        solarSystem,
-        alphaCentauriSystem,
-        barnardsStarSystem,
-        wolf359System,
-        siriusSystem,
+        {
+            id: "alpha-centauri",
+            name: "Alpha Centauri System",
+            description: "Alpha Centauri system",
+            systemType: "multiple",
+            position: new THREE.Vector3(
+                -1.5873472912565585,
+                -3.708309014350326,
+                -1.327228345473596,
+            ),
+            distanceFromEarth: 4.2465,
+            stars: [
+                {
+                    id: "alpha-centauri-a",
+                    name: "Alpha Centauri A",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Alpha Centauri A (star)",
+                    keyFacts: {
+                        diameter: "1,703,829 km",
+                        orbitalPeriod: "80.0 years",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "5517°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.243784215140502,
+                    material: {
+                        color: "#FFF4EA",
+                        emissive: "#FFF4EA",
+                    },
+                    orbit: {
+                        centerId: "alpha-centauri-ab-barycenter",
+                        semiMajorAxis: 11.470775406305073,
+                        eccentricity: 0.519,
+                        periodYears: 79.91,
+                        inclinationDeg: 79.2,
+                        argumentOfPeriapsisDeg: 231.6,
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Centaurus",
+                spectralClass: "G2V",
+                hasExoplanets: true,
+                numberOfPlanets: 2,
+            },
+            visual: {
+                brightness: 1.0814902936246147,
+                colorIndex: 0.63,
+                scale: 1.243784215140502,
+            },
+        },
+        {
+            id: "barnard-s-star",
+            name: "Barnard's Star System",
+            description: "Barnard's Star system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -0.0570471973944269,
+                0.48755390284078953,
+                -5.9426604495877235,
+            ),
+            distanceFromEarth: 5.9629,
+            stars: [
+                {
+                    id: "barnard-s-star",
+                    name: "Barnard's Star",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Barnard's Star (star)",
+                    keyFacts: {
+                        diameter: "272,969 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2919°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Ophiuchus",
+                spectralClass: "M4V",
+                hasExoplanets: true,
+                numberOfPlanets: 4,
+            },
+            visual: {
+                brightness: 0.9121674009614245,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "lalande-21185",
+            name: "Lalande 21185 System",
+            description: "Lalande 21185 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -6.519009142177494,
+                4.877450489169711,
+                1.6338336910176645,
+            ),
+            distanceFromEarth: 8.304,
+            stars: [
+                {
+                    id: "lalande-21185",
+                    name: "Lalande 21185",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Lalande 21185 (star)",
+                    keyFacts: {
+                        diameter: "547,331 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3555°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Ursa Major",
+                spectralClass: "M2V",
+                hasExoplanets: true,
+                numberOfPlanets: 2,
+            },
+            visual: {
+                brightness: 0.751653638003608,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "epsilon-eridani",
+            name: "Epsilon Eridani System",
+            description: "Epsilon Eridani system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                6.200458131947616,
+                -1.725933947744345,
+                8.29737741470088,
+            ),
+            distanceFromEarth: 10.501,
+            stars: [
+                {
+                    id: "epsilon-eridani",
+                    name: "Epsilon Eridani",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Epsilon Eridani (star)",
+                    keyFacts: {
+                        diameter: "1,023,634 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "4811°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.1331435634752864,
+                    material: {
+                        color: "#FFD2A1",
+                        emissive: "#FFD2A1",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Eridanus",
+                spectralClass: "K2V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.6451196696987291,
+                colorIndex: 0.9,
+                scale: 1.1331435634752864,
+            },
+        },
+        {
+            id: "gliese-887",
+            name: "Gliese 887 System",
+            description: "Gliese 887 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                8.26176372009645,
+                -6.280674021601993,
+                -2.701956710917462,
+            ),
+            distanceFromEarth: 10.724,
+            stars: [
+                {
+                    id: "gliese-887",
+                    name: "Gliese 887",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 887 (star)",
+                    keyFacts: {
+                        diameter: "655,962 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3415°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.0365105528753642,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Piscis Austrinus",
+                spectralClass: "M0.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 4,
+            },
+            visual: {
+                brightness: 0.635970490969219,
+                colorIndex: 1.5,
+                scale: 1.0365105528753642,
+            },
+        },
+        {
+            id: "ross-128",
+            name: "Ross 128 System",
+            description: "Ross 128 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -10.911267730453032,
+                0.153681718992972,
+                -1.4403705924593442,
+            ),
+            distanceFromEarth: 11.007,
+            stars: [
+                {
+                    id: "ross-128",
+                    name: "Ross 128",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Ross 128 (star)",
+                    keyFacts: {
+                        diameter: "274,362 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2919°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Virgo",
+                spectralClass: "M4V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.6247266820765914,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "gliese-725",
+            name: "Gliese 725 System",
+            description: "Gliese 725 system",
+            systemType: "binary",
+            position: new THREE.Vector3(
+                1.6977206850952116,
+                9.85177472954905,
+                -5.6659827173773305,
+            ),
+            distanceFromEarth: 11.491,
+            stars: [
+                {
+                    id: "gliese-725-a",
+                    name: "Gliese 725 A",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 725 A (star)",
+                    keyFacts: {
+                        diameter: "487,445 km",
+                        orbitalPeriod: "",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3127°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Draco",
+                spectralClass: "M3.0V",
+                hasExoplanets: true,
+                numberOfPlanets: 2,
+            },
+            visual: {
+                brightness: 0.6063913649869626,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "groombridge-34",
+            name: "Groombridge 34 System",
+            description: "Groombridge 34 system",
+            systemType: "binary",
+            position: new THREE.Vector3(
+                8.323153763409023,
+                8.065398648789696,
+                0.8219592853369175,
+            ),
+            distanceFromEarth: 11.619,
+            stars: [
+                {
+                    id: "groombridge-34-a",
+                    name: "Groombridge 34 A",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Groombridge 34 A (star)",
+                    keyFacts: {
+                        diameter: "537,582 km",
+                        orbitalPeriod: "",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3294°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Andromeda",
+                spectralClass: "M1.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 2,
+            },
+            visual: {
+                brightness: 0.6017209218364523,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "epsilon-indi",
+            name: "Epsilon Indi System",
+            description: "Epsilon Indi system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                5.679196974814513,
+                -9.924207811445362,
+                -3.175296842266021,
+            ),
+            distanceFromEarth: 11.867,
+            stars: [
+                {
+                    id: "epsilon-indi-a",
+                    name: "Epsilon Indi A",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Epsilon Indi A (star)",
+                    keyFacts: {
+                        diameter: "1,019,456 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "4357°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.132255455327991,
+                    material: {
+                        color: "#FFD2A1",
+                        emissive: "#FFD2A1",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Indus",
+                spectralClass: "K5V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.5928736586233473,
+                colorIndex: 0.9,
+                scale: 1.132255455327991,
+            },
+        },
+        {
+            id: "gj-1061",
+            name: "GJ 1061 System",
+            description: "GJ 1061 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                7.152233495084114,
+                -7.278792063243867,
+                6.283390655677471,
+            ),
+            distanceFromEarth: 11.984,
+            stars: [
+                {
+                    id: "gj-1061",
+                    name: "GJ 1061",
+                    type: "star",
+                    status: "confirmed",
+                    description: "GJ 1061 (star)",
+                    keyFacts: {
+                        diameter: "217,261 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2680°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Horologium",
+                spectralClass: "M5.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 3,
+            },
+            visual: {
+                brightness: 0.5887894488930758,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "yz-ceti",
+            name: "YZ Ceti System",
+            description: "YZ Ceti system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                11.384319823597107,
+                -3.4367478462780467,
+                2.351363518292562,
+            ),
+            distanceFromEarth: 12.122,
+            stars: [
+                {
+                    id: "yz-ceti",
+                    name: "YZ Ceti",
+                    type: "star",
+                    status: "confirmed",
+                    description: "YZ Ceti (star)",
+                    keyFacts: {
+                        diameter: "233,974 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2877°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Cetus",
+                spectralClass: "M4.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 3,
+            },
+            visual: {
+                brightness: 0.5840439201027917,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "luyten-s-star",
+            name: "Luyten's Star System",
+            description: "Luyten's Star system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -4.8383020077340655,
+                1.1234235578012812,
+                11.304948349803887,
+            ),
+            distanceFromEarth: 12.348,
+            stars: [
+                {
+                    id: "luyten-s-star",
+                    name: "Luyten's Star",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Luyten's Star (star)",
+                    keyFacts: {
+                        diameter: "408,061 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3109°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Canis Minor",
+                spectralClass: "M3.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 2,
+            },
+            visual: {
+                brightness: 0.576435323956652,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "teegarden-s-star",
+            name: "Teegarden's Star System",
+            description: "Teegarden's Star system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                8.793235867383034,
+                3.6266439883882953,
+                8.105644043631301,
+            ),
+            distanceFromEarth: 12.497,
+            stars: [
+                {
+                    id: "teegarden-s-star",
+                    name: "Teegarden's Star",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Teegarden's Star (star)",
+                    keyFacts: {
+                        diameter: "149,019 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2631°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Aries",
+                spectralClass: "M7V",
+                hasExoplanets: true,
+                numberOfPlanets: 3,
+            },
+            visual: {
+                brightness: 0.5715265474081271,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "wolf-1061",
+            name: "Wolf 1061 System",
+            description: "Wolf 1061 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -5.228294023544984,
+                -3.0792696443588636,
+                -12.672235006528796,
+            ),
+            distanceFromEarth: 14.05,
+            stars: [
+                {
+                    id: "wolf-1061",
+                    name: "Wolf 1061",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Wolf 1061 (star)",
+                    keyFacts: {
+                        diameter: "427,559 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3069°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Ophiuchus",
+                spectralClass: "M3.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 3,
+            },
+            visual: {
+                brightness: 0.5249343832020997,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "tz-arietis",
+            name: "TZ Arietis System",
+            description: "TZ Arietis system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                11.580386208289429,
+                5.300217195468661,
+                7.093689938791963,
+            ),
+            distanceFromEarth: 14.578,
+            stars: [
+                {
+                    id: "tz-arietis",
+                    name: "TZ Arietis",
+                    type: "star",
+                    status: "confirmed",
+                    description: "TZ Arietis (star)",
+                    keyFacts: {
+                        diameter: "222,832 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2827°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Aries",
+                spectralClass: "M4.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.5107774032076821,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "gliese-687",
+            name: "Gliese 687 System",
+            description: "Gliese 687 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -0.7305958099330445,
+                13.8036168007859,
+                -5.396509425505485,
+            ),
+            distanceFromEarth: 14.839,
+            stars: [
+                {
+                    id: "gliese-687",
+                    name: "Gliese 687",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 687 (star)",
+                    keyFacts: {
+                        diameter: "582,149 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3140°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.0105882900914605,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Draco",
+                spectralClass: "M3V",
+                hasExoplanets: true,
+                numberOfPlanets: 2,
+            },
+            visual: {
+                brightness: 0.5040576641967841,
+                colorIndex: 1.5,
+                scale: 1.0105882900914605,
+            },
+        },
+        {
+            id: "gliese-674",
+            name: "Gliese 674 System",
+            description: "Gliese 674 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -1.9580458645387249,
+                -10.819131367265292,
+                -9.980243175906038,
+            ),
+            distanceFromEarth: 14.849,
+            stars: [
+                {
+                    id: "gliese-674",
+                    name: "Gliese 674",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 674 (star)",
+                    keyFacts: {
+                        diameter: "501,372 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3131°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Ara",
+                spectralClass: "M2.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.5038037180714393,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "gliese-876",
+            name: "Gliese 876 System",
+            description: "Gliese 876 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                8.876614259107109,
+                -11.963365662554398,
+                -3.206282164599793,
+            ),
+            distanceFromEarth: 15.238,
+            stars: [
+                {
+                    id: "gliese-876",
+                    name: "Gliese 876",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 876 (star)",
+                    keyFacts: {
+                        diameter: "523,655 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2856°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Aquarius",
+                spectralClass: "M4V",
+                hasExoplanets: true,
+                numberOfPlanets: 4,
+            },
+            visual: {
+                brightness: 0.49411997232928156,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "gj-1002",
+            name: "GJ 1002 System",
+            description: "GJ 1002 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                15.660444430506105,
+                -2.0740367571113865,
+                0.5277194038323789,
+            ),
+            distanceFromEarth: 15.806,
+            stars: [
+                {
+                    id: "gj-1002",
+                    name: "GJ 1002",
+                    type: "star",
+                    status: "confirmed",
+                    description: "GJ 1002 (star)",
+                    keyFacts: {
+                        diameter: "190,800 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2751°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Cetus",
+                spectralClass: "M5.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 2,
+            },
+            visual: {
+                brightness: 0.48063058733057773,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "gliese-832",
+            name: "Gliese 832 System",
+            description: "Gliese 832 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                8.47514454739206,
+                -12.22814997658558,
+                -6.409701479081583,
+            ),
+            distanceFromEarth: 16.2,
+            stars: [
+                {
+                    id: "gliese-832",
+                    name: "Gliese 832",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 832 (star)",
+                    keyFacts: {
+                        diameter: "668,496 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3347°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.0406206186877935,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Grus",
+                spectralClass: "M1.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.4716981132075471,
+                colorIndex: 1.5,
+                scale: 1.0406206186877935,
+            },
+        },
+        {
+            id: "gj-3323",
+            name: "GJ 3323 System",
+            description: "GJ 3323 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                2.6802952749243403,
+                -2.1213059981563176,
+                17.19453515223381,
+            ),
+            distanceFromEarth: 17.531,
+            stars: [
+                {
+                    id: "gj-3323",
+                    name: "GJ 3323",
+                    type: "star",
+                    status: "confirmed",
+                    description: "GJ 3323 (star)",
+                    keyFacts: {
+                        diameter: "165,731 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2886°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Eridanus",
+                spectralClass: "M4.0Ve",
+                hasExoplanets: true,
+                numberOfPlanets: 2,
+            },
+            visual: {
+                brightness: 0.4438329412809019,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "gliese-251",
+            name: "Gliese 251 System",
+            description: "Gliese 251 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -2.7420942451659114,
+                10.008420647388354,
+                14.969925193385517,
+            ),
+            distanceFromEarth: 18.215,
+            stars: [
+                {
+                    id: "gliese-251",
+                    name: "Gliese 251",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 251 (star)",
+                    keyFacts: {
+                        diameter: "506,943 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3150°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Gemini",
+                spectralClass: "M3.0V",
+                hasExoplanets: true,
+                numberOfPlanets: 2,
+            },
+            visual: {
+                brightness: 0.43075597673917726,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "gliese-752",
+            name: "Gliese 752 System",
+            description: "Gliese 752 system",
+            systemType: "binary",
+            position: new THREE.Vector3(
+                5.517515554977851,
+                2.1906071569381154,
+                -18.355912572916363,
+            ),
+            distanceFromEarth: 19.292,
+            stars: [
+                {
+                    id: "gliese-752-a",
+                    name: "Gliese 752 A",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 752 A (star)",
+                    keyFacts: {
+                        diameter: "668,496 km",
+                        orbitalPeriod: "",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3081°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.0406206186877935,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Aquila",
+                spectralClass: "M2.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.41165815906471265,
+                colorIndex: 1.5,
+                scale: 1.0406206186877935,
+            },
+        },
+        {
+            id: "82-g-eridani",
+            name: "82 G. Eridani System",
+            description: "82 G. Eridani system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                11.280567555763911,
+                -9.407980137636736,
+                13.133404788921997,
+            ),
+            distanceFromEarth: 19.704,
+            stars: [
+                {
+                    id: "82-g-eridani",
+                    name: "82 G. Eridani",
+                    type: "star",
+                    status: "confirmed",
+                    description: "82 G. Eridani (star)",
+                    keyFacts: {
+                        diameter: "1,281,284 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "5128°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.1818939136727775,
+                    material: {
+                        color: "#FFF4EA",
+                        emissive: "#FFF4EA",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Eridanus",
+                spectralClass: "G8V",
+                hasExoplanets: true,
+                numberOfPlanets: 3,
+            },
+            visual: {
+                brightness: 0.40479274611398963,
+                colorIndex: 0.63,
+                scale: 1.1818939136727775,
+            },
+        },
+        {
+            id: "hn-librae",
+            name: "HN Librae System",
+            description: "HN Librae system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -12.025215473851363,
+                -7.778511878327967,
+                -14.520501739477064,
+            ),
+            distanceFromEarth: 20.395,
+            stars: [
+                {
+                    id: "hn-librae",
+                    name: "HN Librae",
+                    type: "star",
+                    status: "confirmed",
+                    description: "HN Librae (star)",
+                    keyFacts: {
+                        diameter: "417,810 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "2927°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Libra",
+                spectralClass: "M4.0V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.3937783028155149,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "eq-pegasi",
+            name: "EQ Pegasi System",
+            description: "EQ Pegasi system",
+            systemType: "binary",
+            position: new THREE.Vector3(
+                18.422803428334564,
+                6.947090587811657,
+                -5.338374865601216,
+            ),
+            distanceFromEarth: 20.4,
+            stars: [
+                {
+                    id: "eq-pegasi-a",
+                    name: "EQ Pegasi A",
+                    type: "star",
+                    status: "confirmed",
+                    description: "EQ Pegasi A (star)",
+                    keyFacts: {
+                        diameter: "487,445 km",
+                        orbitalPeriod: "",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3127°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Pegasus",
+                spectralClass: "M4Ve",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.39370078740157477,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "gliese-581",
+            name: "Gliese 581 System",
+            description: "Gliese 581 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -13.124283104352264,
+                -2.760390233341324,
+                -15.569034644334488,
+            ),
+            distanceFromEarth: 20.549,
+            stars: [
+                {
+                    id: "gliese-581",
+                    name: "Gliese 581",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 581 (star)",
+                    keyFacts: {
+                        diameter: "416,417 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3225°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Libra",
+                spectralClass: "M3V",
+                hasExoplanets: true,
+                numberOfPlanets: 3,
+            },
+            visual: {
+                brightness: 0.3914047516536851,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "gliese-338",
+            name: "Gliese 338 System",
+            description: "Gliese 338 system",
+            systemType: "binary",
+            position: new THREE.Vector3(
+                -14.07039414794729,
+                13.388860916162159,
+                7.036716271747506,
+            ),
+            distanceFromEarth: 20.658,
+            stars: [
+                {
+                    id: "gliese-338-a",
+                    name: "Gliese 338 A",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 338 A (star)",
+                    keyFacts: {
+                        diameter: "807,766 km",
+                        orbitalPeriod: "975.7 years",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3634°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.0817139967814686,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Ursa Major",
+                spectralClass: "M0V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.389741990802089,
+                colorIndex: 1.5,
+                scale: 1.0817139967814686,
+            },
+        },
+        {
+            id: "gliese-625",
+            name: "Gliese 625 System",
+            description: "Gliese 625 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                -4.702588942025791,
+                17.164440225655408,
+                -11.392401414198819,
+            ),
+            distanceFromEarth: 21.131,
+            stars: [
+                {
+                    id: "gliese-625",
+                    name: "Gliese 625",
+                    type: "star",
+                    status: "confirmed",
+                    description: "Gliese 625 (star)",
+                    keyFacts: {
+                        diameter: "355,138 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "3226°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1,
+                    material: {
+                        color: "#FFA050",
+                        emissive: "#FFA050",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Draco",
+                spectralClass: "M1.5V",
+                hasExoplanets: true,
+                numberOfPlanets: 1,
+            },
+            visual: {
+                brightness: 0.382687229727144,
+                colorIndex: 1.5,
+                scale: 1,
+            },
+        },
+        {
+            id: "hd-219134",
+            name: "HD 219134 System",
+            description: "HD 219134 system",
+            systemType: "solar",
+            position: new THREE.Vector3(
+                11.333445962324529,
+                17.928274898907183,
+                -2.3140565611679493,
+            ),
+            distanceFromEarth: 21.336,
+            stars: [
+                {
+                    id: "hd-219134",
+                    name: "HD 219134",
+                    type: "star",
+                    status: "confirmed",
+                    description: "HD 219134 (star)",
+                    keyFacts: {
+                        diameter: "1,083,521 km",
+                        orbitalPeriod: "0.0 days",
+                        composition: [
+                            "Mostly hydrogen/helium plasma",
+                            "trace metals",
+                        ],
+                        temperature: "4426°C",
+                        distanceFromSun: "0 (system center)",
+                    },
+                    images: [],
+                    position: new THREE.Vector3(0, 0, 0),
+                    scale: 1.1454898786584151,
+                    material: {
+                        color: "#FFD2A1",
+                        emissive: "#FFD2A1",
+                    },
+                },
+            ],
+            metadata: {
+                constellation: "Cassiopeia",
+                spectralClass: "K3V",
+                hasExoplanets: true,
+                numberOfPlanets: 6,
+            },
+            visual: {
+                brightness: 0.3797083839611179,
+                colorIndex: 0.9,
+                scale: 1.1454898786584151,
+            },
+        },
     ],
-    center: new THREE.Vector3(0, 0, 0), // Centered on Solar System
-    scale: 1.0, // 1 unit = 1 light-year
-    boundingRadius: 10, // 10 light-year radius
+    center: new THREE.Vector3(0, 0, 0),
+    scale: 1,
+    boundingRadius: 22,
 };
