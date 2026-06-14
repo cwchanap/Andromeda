@@ -472,4 +472,8 @@ export const en = {
 
     // Units
     "unit.lightYears": "ly",
+
+    "common.unknown": "Unknown",
+    "status.candidate": "Candidate",
+    "status.controversial": "Disputed",
 } as const;

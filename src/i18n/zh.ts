@@ -437,4 +437,8 @@ export const zh = {
 
     // Units
     "unit.lightYears": "光年",
+
+    "common.unknown": "未知",
+    "status.candidate": "候选",
+    "status.controversial": "有争议",
 } as const;
