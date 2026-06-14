@@ -33,7 +33,8 @@ export interface ModalTheme {
 export interface CelestialBodyData {
     id: string;
     name: string;
-    type: "star" | "planet" | "moon";
+    type: "star" | "planet" | "brown-dwarf" | "moon";
+    status?: "confirmed" | "candidate" | "controversial";
     description: string;
     keyFacts: {
         diameter: string;
@@ -42,6 +43,7 @@ export interface CelestialBodyData {
         orbitalPeriod: string;
         composition: string[];
         temperature: string;
+        equilibriumTemperature?: string;
         moons?: number;
     };
     images: string[];
