@@ -15,6 +15,7 @@
 ## File Structure
 
 ### New files
+
 - `src/components/hud/HudFrame.svelte` — SVG corner-bracket wrapper
 - `src/components/hud/HudReticle.svelte` — animated screen-space reticle
 - `src/components/hud/ScanLines.svelte` — full-bleed scan-line overlay
@@ -25,12 +26,14 @@
 - One `__tests__/*.test.ts` next to each new component (under `src/components/hud/__tests__/`)
 
 ### Modified files
+
 - `src/styles/global.css` — Google Font imports, HUD palette CSS variables, four motion-language curves as `--ease-*` vars
 - `src/lib/constellation/ConstellationRenderer.ts` — shader materials, `worldToScreen`, `setSelected`/`setHovered`, `tweenCameraTo`, raycasting + callbacks, shooting stars
 - `src/lib/constellation/__tests__/ConstellationRenderer.test.ts` — tests for new public API
 - `src/components/ConstellationWrapper.svelte` — HUD layer integration, panel reskin, selection wiring
 
 ### Z-index map (single source of truth, also in spec §3)
+
 - `z-1`: 3D canvas
 - `z-5`: HUD overlay layer (reticles, callouts, target-lock, scan-lines, drag-instructions)
 - `z-20`: side panels, back button, controls toggle
@@ -43,6 +46,7 @@
 ### Task 1: Add fonts, CSS variables, and motion-language curves
 
 **Files:**
+
 - Modify: `src/styles/global.css:1`
 
 - [ ] **Step 1: Update the Google Fonts import**
@@ -105,6 +109,7 @@ git commit -m "feat(constellation): add HUD palette, fonts, and motion-language 
 ### Task 2: `HudFrame.svelte`
 
 **Files:**
+
 - Create: `src/components/hud/HudFrame.svelte`
 - Test: `src/components/hud/__tests__/HudFrame.test.ts`
 
@@ -227,6 +232,7 @@ git commit -m "feat(hud): add HudFrame with SVG corner brackets"
 ### Task 3: `ScanLines.svelte`
 
 **Files:**
+
 - Create: `src/components/hud/ScanLines.svelte`
 - Test: `src/components/hud/__tests__/ScanLines.test.ts`
 
@@ -329,6 +335,7 @@ git commit -m "feat(hud): add ScanLines full-bleed overlay"
 ### Task 4: `HudReticle.svelte`
 
 **Files:**
+
 - Create: `src/components/hud/HudReticle.svelte`
 - Test: `src/components/hud/__tests__/HudReticle.test.ts`
 
@@ -474,6 +481,7 @@ git commit -m "feat(hud): add HudReticle with hover and locked states"
 ### Task 5: `GlitchText.svelte`
 
 **Files:**
+
 - Create: `src/components/hud/GlitchText.svelte`
 - Test: `src/components/hud/__tests__/GlitchText.test.ts`
 
@@ -501,8 +509,10 @@ describe("GlitchText", () => {
     Object.defineProperty(window, "matchMedia", {
       writable: true,
       value: vi.fn().mockReturnValue({
-        matches: true, media: "(prefers-reduced-motion: reduce)",
-        addEventListener: vi.fn(), removeEventListener: vi.fn(),
+        matches: true,
+        media: "(prefers-reduced-motion: reduce)",
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
       }),
     });
     const { getByTestId } = render(GlitchText, { props: { text: "ORION" } });
@@ -600,6 +610,7 @@ git commit -m "feat(hud): add GlitchText with reduced-motion gate"
 ### Task 6: `HudCallout.svelte`
 
 **Files:**
+
 - Create: `src/components/hud/HudCallout.svelte`
 - Test: `src/components/hud/__tests__/HudCallout.test.ts`
 
@@ -719,6 +730,7 @@ git commit -m "feat(hud): add HudCallout with leader line"
 ### Task 7: Add `worldToScreen()` projection helper
 
 **Files:**
+
 - Modify: `src/lib/constellation/ConstellationRenderer.ts` (add public method)
 - Modify: `src/lib/constellation/__tests__/ConstellationRenderer.test.ts` (add tests)
 
@@ -819,6 +831,7 @@ git commit -m "feat(constellation): add worldToScreen projection helper"
 ### Task 8: Replace star material with twinkle ShaderMaterial
 
 **Files:**
+
 - Modify: `src/lib/constellation/ConstellationRenderer.ts:518-534` (the existing star material/Points block inside `createStars`)
 - Modify: `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
 
@@ -842,7 +855,11 @@ describe("twinkle shader", () => {
 
   it("increments uTime each frame during animate()", async () => {
     const renderer = new ConstellationRenderer(makeContainer());
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
     const stars = (renderer as any).starPoints;
     const initial = stars.material.uniforms.uTime.value;
     // Animate is requestAnimationFrame; call its body directly:
@@ -855,8 +872,14 @@ describe("twinkle shader", () => {
 Make sure there's a `makeSkyConfig` helper near the top of the file (mirror the existing `makeStar`/`makeConstellation` style):
 
 ```ts
-const makeSkyConfig = (overrides: Partial<SkyConfiguration> = {}): SkyConfiguration => ({
-  location: { latitude: 40.7128, longitude: -74.006, timezone: "America/New_York" },
+const makeSkyConfig = (
+  overrides: Partial<SkyConfiguration> = {},
+): SkyConfiguration => ({
+  location: {
+    latitude: 40.7128,
+    longitude: -74.006,
+    timezone: "America/New_York",
+  },
   dateTime: new Date("2026-01-01T00:00:00Z"),
   fieldOfView: 80,
   showConstellationLines: true,
@@ -881,10 +904,7 @@ const starSeeds: number[] = [];
 for (let i = 0; i < starPositions.length / 3; i++) {
   starSeeds.push(Math.random());
 }
-geometry.setAttribute(
-  "aSeed",
-  new THREE.Float32BufferAttribute(starSeeds, 1),
-);
+geometry.setAttribute("aSeed", new THREE.Float32BufferAttribute(starSeeds, 1));
 
 const material = new THREE.ShaderMaterial({
   uniforms: {
@@ -970,6 +990,7 @@ git commit -m "feat(constellation): replace star material with twinkle ShaderMat
 ### Task 9: Replace line material with energy-flow ShaderMaterial
 
 **Files:**
+
 - Modify: `src/lib/constellation/ConstellationRenderer.ts:584-599` (line material/segments inside `createConstellationLines`)
 - Modify: `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
 
@@ -981,7 +1002,11 @@ Add inside the existing describe block:
 describe("energy-flow lines", () => {
   it("creates ShaderMaterial with uIsSelected and uIsDimmed uniforms per constellation", async () => {
     const renderer = new ConstellationRenderer(makeContainer());
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
     const group = (renderer as any).constellationLines;
     expect(group.children.length).toBe(1);
     const mat = group.children[0].material;
@@ -992,7 +1017,11 @@ describe("energy-flow lines", () => {
 
   it("ticks line uTime every frame", async () => {
     const renderer = new ConstellationRenderer(makeContainer());
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
     const line = (renderer as any).constellationLines.children[0];
     const t0 = line.material.uniforms.uTime.value;
     (renderer as any).tickUniforms(0.25);
@@ -1030,15 +1059,28 @@ constellations.forEach((constellation) => {
     const startPos = starPositions[startIndex];
     const endPos = starPositions[endIndex];
     if (startPos && endPos) {
-      linePositions.push(startPos.x, startPos.y, startPos.z, endPos.x, endPos.y, endPos.z);
+      linePositions.push(
+        startPos.x,
+        startPos.y,
+        startPos.z,
+        endPos.x,
+        endPos.y,
+        endPos.z,
+      );
       lineProgress.push(0, 1); // 0 at start vertex, 1 at end vertex
     }
   });
 
   if (linePositions.length === 0) return;
 
-  lineGeometry.setAttribute("position", new THREE.Float32BufferAttribute(linePositions, 3));
-  lineGeometry.setAttribute("aLineProgress", new THREE.Float32BufferAttribute(lineProgress, 1));
+  lineGeometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(linePositions, 3),
+  );
+  lineGeometry.setAttribute(
+    "aLineProgress",
+    new THREE.Float32BufferAttribute(lineProgress, 1),
+  );
 
   const lineMaterial = new THREE.ShaderMaterial({
     uniforms: {
@@ -1119,6 +1161,7 @@ git commit -m "feat(constellation): replace line material with energy-flow shade
 ### Task 10: Add `setSelected()` / `setHovered()` methods
 
 **Files:**
+
 - Modify: `src/lib/constellation/ConstellationRenderer.ts`
 - Modify: `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
 
@@ -1135,8 +1178,12 @@ describe("selection state", () => {
     await renderer.initialize([makeStar()], [c1, c2], makeSkyConfig());
     renderer.setSelected("orion");
     const children = (renderer as any).constellationLines.children;
-    const orionMat = children.find((c: any) => c.userData.constellationId === "orion").material;
-    const lyraMat = children.find((c: any) => c.userData.constellationId === "lyra").material;
+    const orionMat = children.find(
+      (c: any) => c.userData.constellationId === "orion",
+    ).material;
+    const lyraMat = children.find(
+      (c: any) => c.userData.constellationId === "lyra",
+    ).material;
     expect(orionMat.uniforms.uIsSelected.value).toBe(1);
     expect(orionMat.uniforms.uIsDimmed.value).toBe(0);
     expect(lyraMat.uniforms.uIsSelected.value).toBe(0);
@@ -1145,7 +1192,11 @@ describe("selection state", () => {
 
   it("setSelected(null) restores idle state on all", async () => {
     const renderer = new ConstellationRenderer(makeContainer());
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
     renderer.setSelected("orion");
     renderer.setSelected(null);
     const mat = (renderer as any).constellationLines.children[0].material;
@@ -1210,6 +1261,7 @@ git commit -m "feat(constellation): add setSelected/setHovered with uniform upda
 ### Task 11: Add `tweenCameraTo()`
 
 **Files:**
+
 - Modify: `src/lib/constellation/ConstellationRenderer.ts`
 - Modify: `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
 
@@ -1220,7 +1272,11 @@ describe("tweenCameraTo", () => {
   it("reaches the target rotation within tolerance after duration", async () => {
     vi.useFakeTimers();
     const renderer = new ConstellationRenderer(makeContainer());
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
     renderer.tweenCameraTo(0.5, 1.0, 100);
     // simulate frames
     for (let i = 0; i < 12; i++) {
@@ -1233,7 +1289,11 @@ describe("tweenCameraTo", () => {
 
   it("cancels active drag momentum on tween start", async () => {
     const renderer = new ConstellationRenderer(makeContainer());
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
     (renderer as any).dragVelocityX = 5;
     (renderer as any).dragVelocityY = 5;
     renderer.tweenCameraTo(0, 0, 200);
@@ -1312,6 +1372,7 @@ git commit -m "feat(constellation): add tweenCameraTo with ease-in-out"
 ### Task 12: Raycasting + hover/click callbacks
 
 **Files:**
+
 - Modify: `src/lib/constellation/ConstellationRenderer.ts` (constructor signature + raycaster wiring)
 - Modify: `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
 
@@ -1321,18 +1382,24 @@ git commit -m "feat(constellation): add tweenCameraTo with ease-in-out"
 describe("interaction callbacks", () => {
   it("fires onConstellationClick when raycaster hits a constellation line group", async () => {
     const onConstellationClick = vi.fn();
-    const renderer = new ConstellationRenderer(makeContainer(), { onConstellationClick });
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
+    const renderer = new ConstellationRenderer(makeContainer(), {
+      onConstellationClick,
+    });
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
 
     // Force the raycaster mock to return a hit on the orion line group
     const group = (renderer as any).constellationLines;
-    globalThis.__threeRaycasterIntersects = [
-      { object: group.children[0] },
-    ];
+    globalThis.__threeRaycasterIntersects = [{ object: group.children[0] }];
 
     // Simulate click
     (renderer as any).handleCanvasClick({
-      clientX: 100, clientY: 100, preventDefault: () => {},
+      clientX: 100,
+      clientY: 100,
+      preventDefault: () => {},
     });
 
     expect(onConstellationClick).toHaveBeenCalledWith("orion");
@@ -1341,11 +1408,19 @@ describe("interaction callbacks", () => {
 
   it("does not fire onConstellationClick when there are no hits", async () => {
     const onConstellationClick = vi.fn();
-    const renderer = new ConstellationRenderer(makeContainer(), { onConstellationClick });
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
+    const renderer = new ConstellationRenderer(makeContainer(), {
+      onConstellationClick,
+    });
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
     globalThis.__threeRaycasterIntersects = [];
     (renderer as any).handleCanvasClick({
-      clientX: 100, clientY: 100, preventDefault: () => {},
+      clientX: 100,
+      clientY: 100,
+      preventDefault: () => {},
     });
     expect(onConstellationClick).not.toHaveBeenCalled();
   });
@@ -1468,6 +1543,7 @@ git commit -m "feat(constellation): add raycasting and hover/click callbacks"
 ### Task 13: Shooting stars (reduced-motion gated)
 
 **Files:**
+
 - Modify: `src/lib/constellation/ConstellationRenderer.ts`
 - Modify: `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
 
@@ -1477,19 +1553,33 @@ git commit -m "feat(constellation): add raycasting and hover/click callbacks"
 describe("shooting stars", () => {
   it("does not spawn shooting stars when reduced-motion is preferred", async () => {
     (window.matchMedia as any).mockReturnValueOnce({
-      matches: true, media: "(prefers-reduced-motion: reduce)",
-      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      matches: true,
+      media: "(prefers-reduced-motion: reduce)",
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
     });
     const renderer = new ConstellationRenderer(makeContainer());
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
-    const sceneAddCalls = ((renderer as any).scene.add as any).mock.calls.length;
-    for (let i = 0; i < 1000; i++) (renderer as any).maybeSpawnShootingStar(performance.now() + i * 100);
-    expect(((renderer as any).scene.add as any).mock.calls.length).toBe(sceneAddCalls);
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
+    const sceneAddCalls = ((renderer as any).scene.add as any).mock.calls
+      .length;
+    for (let i = 0; i < 1000; i++)
+      (renderer as any).maybeSpawnShootingStar(performance.now() + i * 100);
+    expect(((renderer as any).scene.add as any).mock.calls.length).toBe(
+      sceneAddCalls,
+    );
   });
 
   it("spawns at most one shooting star at a time", async () => {
     const renderer = new ConstellationRenderer(makeContainer());
-    await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
     // Force-spawn by directly invoking
     (renderer as any).spawnShootingStar();
     (renderer as any).spawnShootingStar();
@@ -1625,6 +1715,7 @@ git commit -m "feat(constellation): add reduced-motion-gated shooting stars"
 ### Task 14: `BootSequence.svelte`
 
 **Files:**
+
 - Create: `src/components/hud/BootSequence.svelte`
 - Test: `src/components/hud/__tests__/BootSequence.test.ts`
 
@@ -1770,6 +1861,7 @@ git commit -m "feat(hud): add BootSequence loading replacement"
 ### Task 15: `TargetLockOverlay.svelte`
 
 **Files:**
+
 - Create: `src/components/hud/TargetLockOverlay.svelte`
 - Test: `src/components/hud/__tests__/TargetLockOverlay.test.ts`
 
@@ -1882,6 +1974,7 @@ git commit -m "feat(hud): add TargetLockOverlay"
 ### Task 16: Wire HUD overlay layer + screen-coords rAF loop
 
 **Files:**
+
 - Modify: `src/components/ConstellationWrapper.svelte`
 
 - [ ] **Step 1: Add imports and reactive state**
@@ -1898,7 +1991,12 @@ import { celestialToSphere } from "../utils/astronomy";
 
 let hoverPos: { x: number; y: number } | null = null;
 let lockedPos: { x: number; y: number; visible: boolean } | null = null;
-let hoverStarPos: { x: number; y: number; name: string; magnitude: number } | null = null;
+let hoverStarPos: {
+  x: number;
+  y: number;
+  name: string;
+  magnitude: number;
+} | null = null;
 let hudRafId: number | null = null;
 let selectedId: string | null = null;
 let hoveredConstellationId: string | null = null;
@@ -1918,9 +2016,15 @@ renderer = new ConstellationRenderer(container, {
     handleSelectConstellation(id);
   },
   onStarHover: (star, screenPos) => {
-    hoverStarPos = star && screenPos
-      ? { x: screenPos.x, y: screenPos.y, name: star.name, magnitude: star.magnitude }
-      : null;
+    hoverStarPos =
+      star && screenPos
+        ? {
+            x: screenPos.x,
+            y: screenPos.y,
+            name: star.name,
+            magnitude: star.magnitude,
+          }
+        : null;
   },
 });
 ```
@@ -1932,12 +2036,23 @@ After `loading = false;` near line 157 in `onMount`, append:
 ```ts
 const tickHud = () => {
   if (renderer && selectedId && viewState.skyConfig) {
-    const c = constellations.find(x => x.id === selectedId);
+    const c = constellations.find((x) => x.id === selectedId);
     if (c && c.stars.length) {
-      let avgRA = 0, avgDec = 0;
-      c.stars.forEach(s => { avgRA += s.rightAscension; avgDec += s.declination; });
-      avgRA /= c.stars.length; avgDec /= c.stars.length;
-      const p = celestialToSphere(avgRA, avgDec, viewState.skyConfig.location, viewState.skyConfig.dateTime, 100);
+      let avgRA = 0,
+        avgDec = 0;
+      c.stars.forEach((s) => {
+        avgRA += s.rightAscension;
+        avgDec += s.declination;
+      });
+      avgRA /= c.stars.length;
+      avgDec /= c.stars.length;
+      const p = celestialToSphere(
+        avgRA,
+        avgDec,
+        viewState.skyConfig.location,
+        viewState.skyConfig.dateTime,
+        100,
+      );
       lockedPos = renderer.worldToScreen(p);
     }
   } else {
@@ -1965,15 +2080,26 @@ const handleSelectConstellation = (constellationId: string) => {
   if (!renderer || !viewState.skyConfig) return;
   renderer.setSelected(constellationId);
 
-  const c = constellations.find(x => x.id === constellationId);
+  const c = constellations.find((x) => x.id === constellationId);
   if (!c || c.stars.length === 0) return;
-  let avgRA = 0, avgDec = 0;
-  c.stars.forEach(s => { avgRA += s.rightAscension; avgDec += s.declination; });
-  avgRA /= c.stars.length; avgDec /= c.stars.length;
+  let avgRA = 0,
+    avgDec = 0;
+  c.stars.forEach((s) => {
+    avgRA += s.rightAscension;
+    avgDec += s.declination;
+  });
+  avgRA /= c.stars.length;
+  avgDec /= c.stars.length;
 
-  const p = celestialToSphere(avgRA, avgDec, viewState.skyConfig.location, viewState.skyConfig.dateTime, 100);
+  const p = celestialToSphere(
+    avgRA,
+    avgDec,
+    viewState.skyConfig.location,
+    viewState.skyConfig.dateTime,
+    100,
+  );
   // Convert world (sphere) coords back to camera rotation: yaw=atan2(x,z), pitch=asin(y/|p|)
-  const r = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z) || 1;
+  const r = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z) || 1;
   const targetY = Math.atan2(p.x, p.z);
   const targetX = Math.asin(p.y / r);
   renderer.tweenCameraTo(targetX, targetY, 900);
@@ -2054,6 +2180,7 @@ git commit -m "feat(constellation): wire HUD overlay layer and selection tween"
 ### Task 17: Replace loading overlay with `<BootSequence>` and drag-instructions with HUD card
 
 **Files:**
+
 - Modify: `src/components/ConstellationWrapper.svelte`
 
 - [ ] **Step 1: Replace the loading overlay block**
@@ -2103,7 +2230,7 @@ Add to `<style>`:
   text-transform: uppercase;
   text-shadow: 0 0 4px var(--hud-cyan);
   padding: 8px 12px;
-  background: rgba(2,4,10,0.6);
+  background: rgba(2, 4, 10, 0.6);
   border: 1px solid var(--hud-cyan);
   animation: drag-fade-in var(--hud-dur-glide) var(--hud-ease-glide);
 }
@@ -2112,8 +2239,14 @@ Add to `<style>`:
   margin-right: 6px;
 }
 @keyframes drag-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 ```
 
@@ -2136,6 +2269,7 @@ git commit -m "feat(constellation): replace loading overlay with BootSequence an
 ### Task 18: Reskin back button + controls toggle
 
 **Files:**
+
 - Modify: `src/components/ConstellationWrapper.svelte`
 
 - [ ] **Step 1: Replace the back-button markup**
@@ -2192,7 +2326,7 @@ Add to `<style>`:
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--hud-cyan);
-  background: rgba(2,4,10,0.65);
+  background: rgba(2, 4, 10, 0.65);
   backdrop-filter: blur(8px);
   border: none;
   padding: 8px 14px;
@@ -2203,15 +2337,22 @@ Add to `<style>`:
 .hud-btn::after {
   content: "";
   position: absolute;
-  left: 14px; right: 14px; bottom: 4px;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
   height: 1px;
   background: var(--hud-magenta);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 140ms var(--hud-ease-snap);
 }
-.hud-btn:hover::after { transform: scaleX(1); }
-.hud-btn-bracket { color: var(--hud-magenta); margin-right: 4px; }
+.hud-btn:hover::after {
+  transform: scaleX(1);
+}
+.hud-btn-bracket {
+  color: var(--hud-magenta);
+  margin-right: 4px;
+}
 ```
 
 - [ ] **Step 4: Verify**
@@ -2231,6 +2372,7 @@ git commit -m "feat(constellation): reskin back button and controls toggle with 
 ### Task 19: Reskin the controls panel
 
 **Files:**
+
 - Modify: `src/components/ConstellationWrapper.svelte`
 
 - [ ] **Step 1: Replace the outer panel wrapper**
@@ -2263,7 +2405,7 @@ Add to `<style>`:
 
 ```css
 .hud-panel {
-  background: rgba(2,4,10,0.82);
+  background: rgba(2, 4, 10, 0.82);
   backdrop-filter: blur(10px);
   color: var(--hud-ivory);
   padding: 16px;
@@ -2288,7 +2430,8 @@ Add to `<style>`:
   flex: 1;
 }
 .hud-panel-tick {
-  width: 8px; height: 8px;
+  width: 8px;
+  height: 8px;
   background: var(--hud-magenta);
   box-shadow: 0 0 6px var(--hud-magenta);
 }
@@ -2296,8 +2439,14 @@ Add to `<style>`:
   animation: hud-panel-in var(--hud-dur-glide) var(--hud-ease-glide);
 }
 @keyframes hud-panel-in {
-  from { opacity: 0; transform: translateX(24px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 ```
 
@@ -2318,6 +2467,7 @@ git commit -m "feat(constellation): reskin controls panel with HudFrame and entr
 ### Task 20: Reformat constellation list rows
 
 **Files:**
+
 - Modify: `src/components/ConstellationWrapper.svelte`
 
 - [ ] **Step 1: Replace the list section**
@@ -2362,7 +2512,13 @@ Add to `<style>`:
   color: var(--hud-cyan-dim);
   margin: 8px 0 6px;
 }
-.hud-list { display: flex; flex-direction: column; gap: 1px; max-height: 11rem; overflow-y: auto; }
+.hud-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 11rem;
+  overflow-y: auto;
+}
 .hud-list-row {
   position: relative;
   display: grid;
@@ -2381,8 +2537,10 @@ Add to `<style>`:
 .hud-list-row::before {
   content: "";
   position: absolute;
-  left: 0; top: 0;
-  width: 2px; height: 0;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 0;
   background: var(--hud-magenta);
   box-shadow: 0 0 4px var(--hud-magenta);
   transition: height 120ms var(--hud-ease-snap);
@@ -2390,21 +2548,31 @@ Add to `<style>`:
 .hud-list-row:hover {
   background: rgba(0, 240, 255, 0.08);
 }
-.hud-list-row:hover::before { height: 100%; }
+.hud-list-row:hover::before {
+  height: 100%;
+}
 .hud-list-row.is-selected {
   border-color: var(--hud-cyan);
   background: rgba(0, 240, 255, 0.06);
   box-shadow: 0 0 6px rgba(255, 45, 180, 0.25);
 }
-.hud-list-row.is-selected::before { height: 100%; }
-.row-abbr { color: var(--hud-cyan); }
-.row-name { color: var(--hud-ivory); }
+.hud-list-row.is-selected::before {
+  height: 100%;
+}
+.row-abbr {
+  color: var(--hud-cyan);
+}
+.row-name {
+  color: var(--hud-ivory);
+}
 .row-leader {
   border-bottom: 1px dotted var(--hud-cyan-dim);
   align-self: end;
   margin-bottom: 4px;
 }
-.row-count { color: var(--hud-magenta); }
+.row-count {
+  color: var(--hud-magenta);
+}
 ```
 
 - [ ] **Step 3: Verify**
@@ -2424,6 +2592,7 @@ git commit -m "feat(constellation): reformat list rows with dot leaders and hove
 ### Task 21: Reskin the selected-details block
 
 **Files:**
+
 - Modify: `src/components/ConstellationWrapper.svelte`
 
 - [ ] **Step 1: Add the import**
@@ -2471,7 +2640,10 @@ Replace the selected-constellation block (lines ~511–530) with:
 Add to `<style>`:
 
 ```css
-.hud-details { margin-top: 12px; padding-top: 12px; }
+.hud-details {
+  margin-top: 12px;
+  padding-top: 12px;
+}
 .hud-divider {
   position: relative;
   border-top: 1px dashed var(--hud-cyan);
@@ -2482,7 +2654,8 @@ Add to `<style>`:
   top: -5px;
   left: 50%;
   transform: translateX(-50%) rotate(45deg);
-  width: 8px; height: 8px;
+  width: 8px;
+  height: 8px;
   background: var(--hud-magenta);
   box-shadow: 0 0 6px var(--hud-magenta);
 }
@@ -2540,6 +2713,7 @@ git commit -m "feat(constellation): reskin details block with GlitchText name an
 ### Task 22: Reformat location/time block
 
 **Files:**
+
 - Modify: `src/components/ConstellationWrapper.svelte`
 
 - [ ] **Step 1: Replace the location/time block**
@@ -2599,7 +2773,8 @@ Add to `<style>`:
   text-transform: uppercase;
 }
 .readout-blink {
-  width: 6px; height: 6px;
+  width: 6px;
+  height: 6px;
   background: var(--hud-magenta);
   box-shadow: 0 0 4px var(--hud-magenta);
   animation: blink-live 1s steps(2, end) infinite;
@@ -2612,11 +2787,19 @@ Add to `<style>`:
   color: var(--hud-ivory);
 }
 @keyframes blink-live {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0.2; }
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.2;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .readout-blink { animation: none; }
+  .readout-blink {
+    animation: none;
+  }
 }
 ```
 
@@ -2635,6 +2818,7 @@ bun run dev
 ```
 
 Verify:
+
 - Boot sequence prints, then unmounts
 - Stars twinkle, constellation lines have a slow flowing pulse
 - Hovering over a line shows the cyan reticle with the abbreviation label
@@ -2656,28 +2840,28 @@ git commit -m "feat(constellation): reformat location/time block as HUD readout"
 
 **Spec coverage check** (every spec section maps to at least one task):
 
-| Spec §                              | Task(s)            |
-|-------------------------------------|--------------------|
-| §1 Palette, fonts, motion           | 1                  |
-| §1 HudFrame / HudReticle / ScanLines| 2, 3, 4            |
-| §1 Reduced-motion gates             | 1, 5, 13, 22       |
-| §2 Star twinkling                   | 8                  |
-| §2 Energy-flow lines                | 9                  |
-| §2 Raycasting hover + click         | 12                 |
-| §2 Camera tween                     | 11                 |
-| §2 worldToScreen                    | 7                  |
-| §2 Shooting stars                   | 13                 |
-| §2 Selection state on renderer      | 10                 |
-| §3 HudReticle / HudCallout          | 4, 6               |
-| §3 BootSequence                     | 14                 |
-| §3 TargetLockOverlay                | 15                 |
-| §3 Wiring + rAF loop                | 16                 |
-| §3 Loading/drag-instructions swap   | 17                 |
-| §4 Back/toggle reskin               | 18                 |
-| §4 Controls panel                   | 19                 |
-| §4 List rows                        | 20                 |
-| §4 Details block (GlitchText, month strip) | 5, 21       |
-| §4 Location/time block              | 22                 |
+| Spec §                                     | Task(s)      |
+| ------------------------------------------ | ------------ |
+| §1 Palette, fonts, motion                  | 1            |
+| §1 HudFrame / HudReticle / ScanLines       | 2, 3, 4      |
+| §1 Reduced-motion gates                    | 1, 5, 13, 22 |
+| §2 Star twinkling                          | 8            |
+| §2 Energy-flow lines                       | 9            |
+| §2 Raycasting hover + click                | 12           |
+| §2 Camera tween                            | 11           |
+| §2 worldToScreen                           | 7            |
+| §2 Shooting stars                          | 13           |
+| §2 Selection state on renderer             | 10           |
+| §3 HudReticle / HudCallout                 | 4, 6         |
+| §3 BootSequence                            | 14           |
+| §3 TargetLockOverlay                       | 15           |
+| §3 Wiring + rAF loop                       | 16           |
+| §3 Loading/drag-instructions swap          | 17           |
+| §4 Back/toggle reskin                      | 18           |
+| §4 Controls panel                          | 19           |
+| §4 List rows                               | 20           |
+| §4 Details block (GlitchText, month strip) | 5, 21        |
+| §4 Location/time block                     | 22           |
 
 All spec sections covered.
 

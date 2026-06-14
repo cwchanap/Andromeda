@@ -47,18 +47,18 @@ Each file carries a single unobtrusive top JSDoc so edits route to the CSV:
 
 ```ts
 export interface CelestialBodyData {
-    type: "star" | "planet" | "brown-dwarf" | "moon"; // + "brown-dwarf"
-    status?: "confirmed" | "candidate" | "controversial"; // NEW, optional
-    keyFacts: {
-        // distanceFromSun field NAME kept for back-compat; semantics corrected:
-        //   unary central star -> "0 (system center)"
-        //   planet             -> "X AU from <host>"
-        //   moon               -> uses distanceFromParent
-        distanceFromSun?: string;
-        equilibriumTemperature?: string; // NEW: labeled estimated/equilibrium
-        // ...existing fields unchanged
-    };
-    // ...rest unchanged
+  type: "star" | "planet" | "brown-dwarf" | "moon"; // + "brown-dwarf"
+  status?: "confirmed" | "candidate" | "controversial"; // NEW, optional
+  keyFacts: {
+    // distanceFromSun field NAME kept for back-compat; semantics corrected:
+    //   unary central star -> "0 (system center)"
+    //   planet             -> "X AU from <host>"
+    //   moon               -> uses distanceFromParent
+    distanceFromSun?: string;
+    equilibriumTemperature?: string; // NEW: labeled estimated/equilibrium
+    // ...existing fields unchanged
+  };
+  // ...rest unchanged
 }
 ```
 
@@ -72,13 +72,13 @@ Add `confirmedExoplanetCount: number`. This makes the count explicit rather than
 
 ### Object-kind → type/status mapping
 
-| CSV `object_kind` | `type`        | `status`                         |
-| ----------------- | ------------- | -------------------------------- |
-| star              | `star`        | `confirmed` (default)            |
-| planet            | `planet`      | from `status` col (default confirmed) |
-| planet candidate  | `planet`      | `candidate` / `controversial`    |
-| brown dwarf / substellar | `brown-dwarf` | from `status` col         |
-| satellite         | `moon`        | `confirmed`                      |
+| CSV `object_kind`        | `type`        | `status`                              |
+| ------------------------ | ------------- | ------------------------------------- |
+| star                     | `star`        | `confirmed` (default)                 |
+| planet                   | `planet`      | from `status` col (default confirmed) |
+| planet candidate         | `planet`      | `candidate` / `controversial`         |
+| brown dwarf / substellar | `brown-dwarf` | from `status` col                     |
+| satellite                | `moon`        | `confirmed`                           |
 
 Empty numeric cells → field omitted entirely; rendered as "Unknown" at the UI layer (never `0`).
 
@@ -146,6 +146,7 @@ Proxima c row carries `status:controversial` → derived as `type:"planet", stat
 ## Codegen validation gate
 
 `scripts/gen-systems.ts` fails the build on hard errors:
+
 - duplicate `object_id` / `system_id`,
 - a system with no central star / barycenter,
 - a candidate counted toward `confirmedExoplanetCount`,

@@ -46,17 +46,17 @@ Extend `PlanetarySystemData` with optional invisible anchors:
 
 ```ts
 interface OrbitAnchorData {
-    id: string;
-    name: string;
-    type: "barycenter";
-    description?: string;
-    position?: Vector3;
-    orbit?: OrbitalElementsData;
-    overlay?: {
-        visibleByDefault?: boolean;
-        color?: string;
-        label?: string;
-    };
+  id: string;
+  name: string;
+  type: "barycenter";
+  description?: string;
+  position?: Vector3;
+  orbit?: OrbitalElementsData;
+  overlay?: {
+    visibleByDefault?: boolean;
+    color?: string;
+    label?: string;
+  };
 }
 ```
 
@@ -64,22 +64,22 @@ Extend `CelestialBodyData` with optional orbital elements:
 
 ```ts
 interface OrbitalElementsData {
-    centerId: string;
-    semiMajorAxis: number;
-    eccentricity?: number;
-    inclinationDeg?: number;
-    longitudeOfAscendingNodeDeg?: number;
-    argumentOfPeriapsisDeg?: number;
-    phaseDeg?: number;
-    periodDays?: number;
-    periodYears?: number;
-    visualPeriodSeconds?: number;
-    clockwise?: boolean;
-    line?: {
-        visible?: boolean;
-        color?: string;
-        opacity?: number;
-    };
+  centerId: string;
+  semiMajorAxis: number;
+  eccentricity?: number;
+  inclinationDeg?: number;
+  longitudeOfAscendingNodeDeg?: number;
+  argumentOfPeriapsisDeg?: number;
+  phaseDeg?: number;
+  periodDays?: number;
+  periodYears?: number;
+  visualPeriodSeconds?: number;
+  clockwise?: boolean;
+  line?: {
+    visible?: boolean;
+    color?: string;
+    opacity?: number;
+  };
 }
 ```
 

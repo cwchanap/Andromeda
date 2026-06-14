@@ -40,6 +40,7 @@ The CSV (`src/data/nearest_30_planetary_systems.csv`, 103 object rows, 30 system
 ## Task 1: Widen `CelestialBodyData` type + add `status`
 
 **Files:**
+
 - Modify: `src/types/game.ts:33-113`
 - Test: `src/types/__tests__/game.types.test.ts` (create)
 
@@ -51,24 +52,31 @@ import { describe, it, expectTypeOf } from "vitest";
 import type { CelestialBodyData } from "@/types/game";
 
 describe("CelestialBodyData type", () => {
-    it("accepts brown-dwarf type", () => {
-        const b = { type: "brown-dwarf" } as CelestialBodyData;
-        expectTypeOf(b.type).toEqualTypeOf<CelestialBodyData["type"]>();
-    });
-    it("accepts optional status field", () => {
-        const b = { status: "controversial" } as Partial<CelestialBodyData>;
-        expectTypeOf(b.status).toEqualTypeOf<"confirmed" | "candidate" | "controversial" | undefined>();
-    });
-    it("accepts optional equilibriumTemperature", () => {
-        const b = { keyFacts: { equilibriumTemperature: "310 K (equilibrium)" } } as unknown as CelestialBodyData;
-        expectTypeOf(b.keyFacts.equilibriumTemperature).toEqualTypeOf<string | undefined>();
-    });
+  it("accepts brown-dwarf type", () => {
+    const b = { type: "brown-dwarf" } as CelestialBodyData;
+    expectTypeOf(b.type).toEqualTypeOf<CelestialBodyData["type"]>();
+  });
+  it("accepts optional status field", () => {
+    const b = { status: "controversial" } as Partial<CelestialBodyData>;
+    expectTypeOf(b.status).toEqualTypeOf<
+      "confirmed" | "candidate" | "controversial" | undefined
+    >();
+  });
+  it("accepts optional equilibriumTemperature", () => {
+    const b = {
+      keyFacts: { equilibriumTemperature: "310 K (equilibrium)" },
+    } as unknown as CelestialBodyData;
+    expectTypeOf(b.keyFacts.equilibriumTemperature).toEqualTypeOf<
+      string | undefined
+    >();
+  });
 });
 ```
 
 **Step 2: Run → FAIL** (`bunx vitest src/types/__tests__/game.types.test.ts`): type errors — `brown-dwarf` not assignable, no `status`/`equilibriumTemperature`.
 
 **Step 3: Implement** in `src/types/game.ts`:
+
 - Line 36: `type: "star" | "planet" | "brown-dwarf" | "moon";`
 - After line 36 (inside the interface, before `description`): add `status?: "confirmed" | "candidate" | "controversial";`
 - In `keyFacts` (after `temperature: string;` ~line 44): add `equilibriumTemperature?: string;`
@@ -82,6 +90,7 @@ describe("CelestialBodyData type", () => {
 ## Task 2: Add `confirmedExoplanetCount` to system metadata
 
 **Files:**
+
 - Modify: `src/lib/planetary-system/types.ts:32-42` (`PlanetarySystemData.metadata`)
 - Modify: `src/types/universe.ts:19-29` (`StarSystemData.metadata`) — keep in sync
 - Modify: `src/lib/galaxy/types.ts:24-32` — document `numberOfPlanets` = confirmed count (no field change, just sourcing)
@@ -93,10 +102,10 @@ import { describe, it, expectTypeOf } from "vitest";
 import type { PlanetarySystemData } from "@/lib/planetary-system/types";
 
 describe("PlanetarySystemData.metadata", () => {
-    it("has confirmedExoplanetCount", () => {
-        const m = { confirmedExoplanetCount: 2 } as PlanetarySystemData["metadata"];
-        expectTypeOf(m.confirmedExoplanetCount).toEqualTypeOf<number | undefined>();
-    });
+  it("has confirmedExoplanetCount", () => {
+    const m = { confirmedExoplanetCount: 2 } as PlanetarySystemData["metadata"];
+    expectTypeOf(m.confirmedExoplanetCount).toEqualTypeOf<number | undefined>();
+  });
 });
 ```
 
@@ -113,6 +122,7 @@ describe("PlanetarySystemData.metadata", () => {
 ## Task 3: CSV parser module
 
 **Files:**
+
 - Create: `src/lib/planetary-system/derive/parseCsv.ts`
 - Test: `src/lib/planetary-system/derive/__tests__/parseCsv.test.ts`
 
@@ -129,29 +139,34 @@ const CSV = `system_rank,system_name,distance_from_earth_ly,number_of_stars,numb
 `;
 
 describe("parseSystemsCsv", () => {
-    it("parses one object row preserving quoted commas/semicolons", () => {
-        const rows = parseSystemsCsv(CSV);
-        expect(rows).toHaveLength(1);
-        const r = rows[0];
-        expect(r.system_rank).toBe(1);
-        expect(r.object_name).toBe("Proxima Centauri c");
-        expect(r.object_type).toBe("planet_candidate");
-        expect(r.composition).toBe("Hydrogen/helium plus water/ammonia/methane ices; rocky core likely");
-        expect(r.source_url).toBe("https://exoplanetarchive.ipac.caltech.edu/overview/alpha%20Cen");
-        expect(r.distance_from_system_center_AU).toBe(1.48);
-        expect(r.surface_temperature_K).toBe(39);
-        expect(r.notes).toContain("candidate, not confirmed");
-    });
-    it("treats empty numeric cells as undefined, not 0 or NaN", () => {
-        const rows = parseSystemsCsv(CSV.replace(",1900,", ",,"));
-        expect(rows[0].orbital_period_days).toBeUndefined();
-    });
+  it("parses one object row preserving quoted commas/semicolons", () => {
+    const rows = parseSystemsCsv(CSV);
+    expect(rows).toHaveLength(1);
+    const r = rows[0];
+    expect(r.system_rank).toBe(1);
+    expect(r.object_name).toBe("Proxima Centauri c");
+    expect(r.object_type).toBe("planet_candidate");
+    expect(r.composition).toBe(
+      "Hydrogen/helium plus water/ammonia/methane ices; rocky core likely",
+    );
+    expect(r.source_url).toBe(
+      "https://exoplanetarchive.ipac.caltech.edu/overview/alpha%20Cen",
+    );
+    expect(r.distance_from_system_center_AU).toBe(1.48);
+    expect(r.surface_temperature_K).toBe(39);
+    expect(r.notes).toContain("candidate, not confirmed");
+  });
+  it("treats empty numeric cells as undefined, not 0 or NaN", () => {
+    const rows = parseSystemsCsv(CSV.replace(",1900,", ",,"));
+    expect(rows[0].orbital_period_days).toBeUndefined();
+  });
 });
 ```
 
 **Step 2: Run → FAIL** (module missing).
 
 **Step 3: Implement** `parseCsv.ts`:
+
 - Export `interface SystemCsvRow` with all 26 columns typed (`system_rank: number`, numerics `number | undefined`, strings, `object_type` as raw string).
 - Export `parseSystemsCsv(text: string): SystemCsvRow[]` using a hand-rolled RFC-4180 field parser (handle `"` quoting, `""` escapes, embedded newlines/commas). Skip the header row. Trim nothing inside quotes. Coerce numerics: `cell === "" || cell === "N/A" ? undefined : Number(cell)` (note `N/A` appears for star spectral fields). For `system_rank`/`distance`/counts always `Number`.
 
@@ -164,6 +179,7 @@ describe("parseSystemsCsv", () => {
 ## Task 4: Status + object-type mapping
 
 **Files:**
+
 - Create: `src/lib/planetary-system/derive/mapObject.ts`
 - Test: `src/lib/planetary-system/derive/__tests__/mapObject.test.ts`
 
@@ -171,56 +187,87 @@ describe("parseSystemsCsv", () => {
 
 ```ts
 import { describe, it, expect } from "vitest";
-import { parseStatus, mapBodyType } from "@/lib/planetary-system/derive/mapObject";
+import {
+  parseStatus,
+  mapBodyType,
+} from "@/lib/planetary-system/derive/mapObject";
 
 describe("parseStatus", () => {
-    it("planet_candidate object type -> candidate", () => {
-        expect(parseStatus("candidate/disputed - not counted", "planet_candidate")).toBe("candidate");
-    });
-    it("confirmed -> confirmed", () => {
-        expect(parseStatus("confirmed", "planet")).toBe("confirmed");
-    });
-    it("confirmed/controversial -> controversial", () => {
-        expect(parseStatus("confirmed/controversial in some lists", "planet")).toBe("controversial");
-    });
-    it("confirmed (NASA overview); disputed -> controversial", () => {
-        expect(parseStatus("confirmed (NASA overview); disputed in some lists", "planet")).toBe("controversial");
-    });
-    it("stellar component (star) -> confirmed", () => {
-        expect(parseStatus("stellar component", "star")).toBe("confirmed");
-    });
+  it("planet_candidate object type -> candidate", () => {
+    expect(
+      parseStatus("candidate/disputed - not counted", "planet_candidate"),
+    ).toBe("candidate");
+  });
+  it("confirmed -> confirmed", () => {
+    expect(parseStatus("confirmed", "planet")).toBe("confirmed");
+  });
+  it("confirmed/controversial -> controversial", () => {
+    expect(parseStatus("confirmed/controversial in some lists", "planet")).toBe(
+      "controversial",
+    );
+  });
+  it("confirmed (NASA overview); disputed -> controversial", () => {
+    expect(
+      parseStatus(
+        "confirmed (NASA overview); disputed in some lists",
+        "planet",
+      ),
+    ).toBe("controversial");
+  });
+  it("stellar component (star) -> confirmed", () => {
+    expect(parseStatus("stellar component", "star")).toBe("confirmed");
+  });
 });
 describe("mapBodyType", () => {
-    it.each([
-        ["star", "star"],
-        ["planet", "planet"],
-        ["planet_candidate", "planet"],
-    ])("%s -> %s", (csv, mapped) => expect(mapBodyType(csv as never)).toBe(mapped));
+  it.each([
+    ["star", "star"],
+    ["planet", "planet"],
+    ["planet_candidate", "planet"],
+  ])("%s -> %s", (csv, mapped) =>
+    expect(mapBodyType(csv as never)).toBe(mapped),
+  );
 });
 ```
 
 **Step 2: Run → FAIL.**
 
 **Step 3: Implement** `mapObject.ts`:
+
 ```ts
-export type CsvObjectType = "star" | "planet" | "planet_candidate" | "brown_dwarf" | "satellite";
+export type CsvObjectType =
+  | "star"
+  | "planet"
+  | "planet_candidate"
+  | "brown_dwarf"
+  | "satellite";
 export type BodyStatus = "confirmed" | "candidate" | "controversial";
 
-export function mapBodyType(csvObjectType: CsvObjectType): "star" | "planet" | "brown-dwarf" | "moon" {
-    switch (csvObjectType) {
-        case "star": return "star";
-        case "planet": case "planet_candidate": return "planet";
-        case "brown_dwarf": return "brown-dwarf";
-        case "satellite": return "moon";
-    }
+export function mapBodyType(
+  csvObjectType: CsvObjectType,
+): "star" | "planet" | "brown-dwarf" | "moon" {
+  switch (csvObjectType) {
+    case "star":
+      return "star";
+    case "planet":
+    case "planet_candidate":
+      return "planet";
+    case "brown_dwarf":
+      return "brown-dwarf";
+    case "satellite":
+      return "moon";
+  }
 }
 
-export function parseStatus(statusCell: string, csvObjectType: CsvObjectType): BodyStatus {
-    if (csvObjectType === "planet_candidate") return "candidate";
-    const s = (statusCell ?? "").toLowerCase();
-    if (s.includes("disputed") || s.includes("controversial")) return "controversial";
-    if (s.includes("candidate")) return "candidate";
-    return "confirmed";
+export function parseStatus(
+  statusCell: string,
+  csvObjectType: CsvObjectType,
+): BodyStatus {
+  if (csvObjectType === "planet_candidate") return "candidate";
+  const s = (statusCell ?? "").toLowerCase();
+  if (s.includes("disputed") || s.includes("controversial"))
+    return "controversial";
+  if (s.includes("candidate")) return "candidate";
+  return "confirmed";
 }
 ```
 
@@ -233,6 +280,7 @@ export function parseStatus(statusCell: string, csvObjectType: CsvObjectType): B
 ## Task 5: Visual derivation — spectral color & diameter scale
 
 **Files:**
+
 - Create: `src/lib/planetary-system/derive/visualFromAstronomy.ts`
 - Test: `src/lib/planetary-system/derive/__tests__/visualFromAstronomy.test.ts`
 
@@ -240,34 +288,45 @@ export function parseStatus(statusCell: string, csvObjectType: CsvObjectType): B
 
 ```ts
 import { describe, it, expect } from "vitest";
-import { spectralColor, planetScale, starScale } from "@/lib/planetary-system/derive/visualFromAstronomy";
+import {
+  spectralColor,
+  planetScale,
+  starScale,
+} from "@/lib/planetary-system/derive/visualFromAstronomy";
 
 describe("spectralColor", () => {
-    it.each([
-        ["G2V", "#FFF4EA"], ["M5.5Ve", "#FFA050"], ["K1V", "#FFD2A1"],
-        ["A1V", "#CAD7FF"], ["O5V", "#9BB0FF"],
-    ])("%s -> %s", (cls, hex) => expect(spectralColor(cls)).toBe(hex));
-    it("unknown class falls back from temperature", () => {
-        expect(spectralColor("unknown", 5790)).toMatch(/^#[0-9a-f]{6}$/i);
-    });
+  it.each([
+    ["G2V", "#FFF4EA"],
+    ["M5.5Ve", "#FFA050"],
+    ["K1V", "#FFD2A1"],
+    ["A1V", "#CAD7FF"],
+    ["O5V", "#9BB0FF"],
+  ])("%s -> %s", (cls, hex) => expect(spectralColor(cls)).toBe(hex));
+  it("unknown class falls back from temperature", () => {
+    expect(spectralColor("unknown", 5790)).toMatch(/^#[0-9a-f]{6}$/i);
+  });
 });
 describe("planetScale", () => {
-    it("Earth diameter ~ 1.0", () => expect(planetScale(12742)).toBeCloseTo(1.0, 1));
-    it("is monotonic & clamped", () => {
-        expect(planetScale(5000)).toBeGreaterThanOrEqual(0.4);
-        expect(planetScale(5000)).toBeLessThanOrEqual(planetScale(12742));
-        expect(planetScale(200000)).toBeLessThanOrEqual(3.5);
-    });
+  it("Earth diameter ~ 1.0", () =>
+    expect(planetScale(12742)).toBeCloseTo(1.0, 1));
+  it("is monotonic & clamped", () => {
+    expect(planetScale(5000)).toBeGreaterThanOrEqual(0.4);
+    expect(planetScale(5000)).toBeLessThanOrEqual(planetScale(12742));
+    expect(planetScale(200000)).toBeLessThanOrEqual(3.5);
+  });
 });
 describe("starScale", () => {
-    it("red dwarf floor >= 1.0", () => expect(starScale(214754)).toBeGreaterThanOrEqual(1.0));
-    it("Sun-sized is mid-range", () => expect(starScale(1392700)).toBeGreaterThan(1.0));
+  it("red dwarf floor >= 1.0", () =>
+    expect(starScale(214754)).toBeGreaterThanOrEqual(1.0));
+  it("Sun-sized is mid-range", () =>
+    expect(starScale(1392700)).toBeGreaterThan(1.0));
 });
 ```
 
 **Step 2: Run → FAIL.**
 
 **Step 3: Implement** `visualFromAstronomy.ts` with these exact rules:
+
 - `spectralColor(cls: string, tempK?: number)`: take first letter of `cls` (uppercase). Map: `O#9BB0FF B#AABFFF A#CAD7FF F#F8F7FF G#FFF4EA K#FFD2A1 M#FFA050 L#FFCC99 T#FF8866`. White-dwarf (`cls` starts `D` or contains `white dwarf`) → `#FFFFFF`. Unknown + temp provided → blackbody-ish interpolation between [3000K→#FFA050, 6000K→#FFF4EA, 10000K→#CAD7FF, 25000K→#9BB0FF]. Unknown & no temp → `#FFA050` (default warm).
 - `planetScale(diameterKm)`: `clamp(1 + Math.log10(diameterKm / 12742), 0.4, 3.5)`.
 - `starScale(diameterKm)`: `clamp(1.2 + 0.5 * Math.log10(diameterKm / 1392700), 1.0, 4.5)`.
@@ -286,35 +345,39 @@ describe("starScale", () => {
 **Step 1: Append failing tests:**
 
 ```ts
-import { orbitVisualRadius, visualPeriodSeconds } from "@/lib/planetary-system/derive/visualFromAstronomy";
+import {
+  orbitVisualRadius,
+  visualPeriodSeconds,
+} from "@/lib/planetary-system/derive/visualFromAstronomy";
 
 describe("orbitVisualRadius", () => {
-    it("monotonic in semi-major axis", () => {
-        expect(orbitVisualRadius(0.02)).toBeLessThan(orbitVisualRadius(1));
-        expect(orbitVisualRadius(1)).toBeLessThan(orbitVisualRadius(50));
-    });
-    it("bounded for the full dataset range", () => {
-        for (const au of [0.0163, 0.5, 5, 50]) {
-            const r = orbitVisualRadius(au);
-            expect(r).toBeGreaterThanOrEqual(2);
-            expect(r).toBeLessThanOrEqual(60);
-        }
-    });
+  it("monotonic in semi-major axis", () => {
+    expect(orbitVisualRadius(0.02)).toBeLessThan(orbitVisualRadius(1));
+    expect(orbitVisualRadius(1)).toBeLessThan(orbitVisualRadius(50));
+  });
+  it("bounded for the full dataset range", () => {
+    for (const au of [0.0163, 0.5, 5, 50]) {
+      const r = orbitVisualRadius(au);
+      expect(r).toBeGreaterThanOrEqual(2);
+      expect(r).toBeLessThanOrEqual(60);
+    }
+  });
 });
 describe("visualPeriodSeconds", () => {
-    it("compresses 1.9-day and 60000-day orbits both into watchable range", () => {
-        expect(visualPeriodSeconds(1.938)).toBeGreaterThanOrEqual(6);
-        expect(visualPeriodSeconds(63400)).toBeLessThanOrEqual(120);
-    });
-    it("returns 0 for static/origin (0 days)", () => {
-        expect(visualPeriodSeconds(0)).toBe(0);
-    });
+  it("compresses 1.9-day and 60000-day orbits both into watchable range", () => {
+    expect(visualPeriodSeconds(1.938)).toBeGreaterThanOrEqual(6);
+    expect(visualPeriodSeconds(63400)).toBeLessThanOrEqual(120);
+  });
+  it("returns 0 for static/origin (0 days)", () => {
+    expect(visualPeriodSeconds(0)).toBe(0);
+  });
 });
 ```
 
 **Step 2: Run → FAIL.**
 
 **Step 3: Implement:**
+
 - `orbitVisualRadius(au)`: `au = Math.max(au, 0); const v = 2 + (Math.log10(au * 1000 + 1) / Math.log10(50 * 1000 + 1)) * 38; return clamp(v, 2, 60);` (chosen so 0.016→~2, 50→~40). TUNE constants only if a test asserts otherwise.
 - `visualPeriodSeconds(days)`: if `!days || days <= 0` return `0`; else `clamp(8 + (Math.log10(days + 1) / 5) * 82, 6, 120)`.
 - Deterministic hash helper `seededFromId(id: string): number` (FNV-1a → [0,1)) used later for inclination/phase. Add it now + a test that same id → same value, different id → likely different.
@@ -328,6 +391,7 @@ describe("visualPeriodSeconds", () => {
 ## Task 7: RA/Dec → Cartesian + galaxy visual
 
 **Files:**
+
 - Create: `src/lib/planetary-system/derive/buildGalaxy.ts`
 - Test: `src/lib/planetary-system/derive/__tests__/buildGalaxy.test.ts`
 
@@ -335,28 +399,38 @@ describe("visualPeriodSeconds", () => {
 
 ```ts
 import { describe, it, expect } from "vitest";
-import { radialToCartesian, galaxyVisual } from "@/lib/planetary-system/derive/buildGalaxy";
+import {
+  radialToCartesian,
+  galaxyVisual,
+} from "@/lib/planetary-system/derive/buildGalaxy";
 
 describe("radialToCartesian", () => {
-    it("origin (d=0) is the zero vector", () => {
-        const v = radialToCartesian(0, 0, 0);
-        expect(v.x).toBeCloseTo(0); expect(v.y).toBeCloseTo(0); expect(v.z).toBeCloseTo(0);
-    });
-    it("known case: d=10, dec=0, ra=0 -> (+10, 0, 0)", () => {
-        const v = radialToCartesian(10, 0, 0);
-        expect(v.x).toBeCloseTo(10); expect(v.z).toBeCloseTo(0); expect(v.y).toBeCloseTo(0);
-    });
+  it("origin (d=0) is the zero vector", () => {
+    const v = radialToCartesian(0, 0, 0);
+    expect(v.x).toBeCloseTo(0);
+    expect(v.y).toBeCloseTo(0);
+    expect(v.z).toBeCloseTo(0);
+  });
+  it("known case: d=10, dec=0, ra=0 -> (+10, 0, 0)", () => {
+    const v = radialToCartesian(10, 0, 0);
+    expect(v.x).toBeCloseTo(10);
+    expect(v.z).toBeCloseTo(0);
+    expect(v.y).toBeCloseTo(0);
+  });
 });
 describe("galaxyVisual", () => {
-    it("Solar brightness is max, far systems dimmer", () => {
-        expect(galaxyVisual(0).brightness).toBeGreaterThan(galaxyVisual(20).brightness);
-    });
+  it("Solar brightness is max, far systems dimmer", () => {
+    expect(galaxyVisual(0).brightness).toBeGreaterThan(
+      galaxyVisual(20).brightness,
+    );
+  });
 });
 ```
 
 **Step 2: Run → FAIL.** (No THREE in math: import `type { Vector3Like }` or return a plain `{x,y,z}` to keep it Three-free; the assembler converts.)
 
 **Step 3: Implement** (return plain `{x,y,z}` — no `three` import, so it stays unit-testable in node):
+
 - `radialToCartesian(d, raDeg, decDeg)`: `ra=raDeg*π/180, dec=decDeg*π/180; return { x: d*cos(dec)*cos(ra), y: d*sin(dec), z: d*cos(dec)*sin(ra) }`.
 - `galaxyVisual(distanceLy)`: `brightness = clamp(2.0 / (1 + distanceLy / 5), 0.15, 2.0)`. (colorIndex computed in assembler from spectral class.)
 - Export `BV_INDEX: Record<string, number>` = `{O:-0.33,B:-0.2,A:0.0,F:0.3,G:0.63,K:0.9,M:1.5}`.
@@ -370,6 +444,7 @@ describe("galaxyVisual", () => {
 ## Task 8: Coordinates supplement for galaxy positions
 
 **Files:**
+
 - Create: `src/data/system_coordinates.csv`
 - Create: `src/lib/planetary-system/derive/__tests__/coordinates.test.ts`
 
@@ -383,21 +458,24 @@ import { loadCoordinates } from "@/lib/planetary-system/derive/buildSystem"; // 
 import { SYSTEM_NAMES } from "@/lib/planetary-system/derive/systemNames";
 
 describe("system_coordinates.csv", () => {
-    it("has RA/Dec for all 30 systems", () => {
-        const coords = loadCoordinates();
-        for (const name of SYSTEM_NAMES) {
-            expect(coords[name], `missing coords for ${name}`).toBeDefined();
-            const { ra, dec } = coords[name];
-            expect(ra).toBeGreaterThanOrEqual(0); expect(ra).toBeLessThanOrEqual(360);
-            expect(dec).toBeGreaterThanOrEqual(-90); expect(dec).toBeLessThanOrEqual(90);
-        }
-    });
+  it("has RA/Dec for all 30 systems", () => {
+    const coords = loadCoordinates();
+    for (const name of SYSTEM_NAMES) {
+      expect(coords[name], `missing coords for ${name}`).toBeDefined();
+      const { ra, dec } = coords[name];
+      expect(ra).toBeGreaterThanOrEqual(0);
+      expect(ra).toBeLessThanOrEqual(360);
+      expect(dec).toBeGreaterThanOrEqual(-90);
+      expect(dec).toBeLessThanOrEqual(90);
+    }
+  });
 });
 ```
 
 **Step 2: Run → FAIL** (files missing).
 
 **Step 3: Implement:**
+
 - Create `src/data/system_coordinates.csv` with header `system_name,ra_deg,dec_deg` and 30 rows sourced from SIMBAD/public catalogs. Use the EXACT `system_name` strings from the main CSV, e.g.:
   `Alpha Centauri / Proxima Centauri,219.90,-60.83` / `Barnard's Star,269.45,4.69` / `Lalande 21185,165.93,35.97` / `HD 219134,348.46,57.17` / … (executor fills all 30 from a reliable source; values are illustrative—verify each).
 - Add `loadCoordinates()` (parse this file) and the `SYSTEM_NAMES` list (the 30 names) where `loadCoordinates` lives. (`buildSystem` re-exports it — created Task 9; if Task 9 not done yet, put `loadCoordinates` in `parseCsv.ts` for now and move it.)
@@ -411,6 +489,7 @@ describe("system_coordinates.csv", () => {
 ## Task 9: `buildSystem` — assemble a `PlanetarySystem` from CSV rows
 
 **Files:**
+
 - Create: `src/lib/planetary-system/derive/buildSystem.ts`
 - Test: `src/lib/planetary-system/derive/__tests__/buildSystem.test.ts`
 
@@ -458,6 +537,7 @@ describe("buildSystem (Alpha Centauri golden)", () => {
 **Step 2: Run → FAIL.**
 
 **Step 3: Implement** `buildSystem(rows: SystemCsvRow[]): PlanetarySystem`:
+
 - `id = slug(system_name before " / ")` → `alpha-centauri`. Object ids = `slug(object_name)`.
 - Star = the row with `object_type==="star"` whose `host_object` is empty/`stellar component` (the first star); other star rows → secondary stars in `celestialBodies`.
 - `systemType` from `number_of_stars`: 1→`solar`, 2→`binary`, ≥3→`multiple`.
@@ -480,6 +560,7 @@ Provide a `slug(s)` helper: lowercase, replace non-alphanumeric with `-`, collap
 ## Task 10: Alpha Centauri AB barycenter override
 
 **Files:**
+
 - Create: `src/lib/planetary-system/derive/overrides.ts`
 - Test: `src/lib/planetary-system/derive/__tests__/overrides.test.ts`
 
@@ -492,21 +573,28 @@ import { describe, it, expect } from "vitest";
 import { applyOverrides } from "@/lib/planetary-system/derive/overrides";
 
 describe("alpha-centauri override", () => {
-    it("adds the AB barycenter anchor", () => {
-        const sys = applyOverrides(/* a minimal built alpha-centauri PlanetarySystem */);
-        expect(sys.systemData.orbitAnchors?.some(a => a.id === "alpha-centauri-ab-barycenter")).toBe(true);
-    });
-    it("A & B orbit the barycenter with e=0.519, period 79.91 yr", () => {
-        const sys = applyOverrides(built);
-        const a = sys.systemData.star;
-        const b = sys.systemData.celestialBodies.find(x => x.id === "alpha-centauri-b")!;
-        expect(a.orbit?.centerId).toBe("alpha-centauri-ab-barycenter");
-        expect(b.orbit?.centerId).toBe("alpha-centauri-ab-barycenter");
-        expect(a.orbit?.eccentricity).toBeCloseTo(0.519, 3);
-        expect(a.orbit?.periodYears).toBeCloseTo(79.91, 2);
-        // B axis larger than A axis (A is more massive) -> matches existing test
-        expect(b.orbit!.semiMajorAxis).toBeGreaterThan(a.orbit!.semiMajorAxis);
-    });
+  it("adds the AB barycenter anchor", () => {
+    const sys =
+      applyOverrides(/* a minimal built alpha-centauri PlanetarySystem */);
+    expect(
+      sys.systemData.orbitAnchors?.some(
+        (a) => a.id === "alpha-centauri-ab-barycenter",
+      ),
+    ).toBe(true);
+  });
+  it("A & B orbit the barycenter with e=0.519, period 79.91 yr", () => {
+    const sys = applyOverrides(built);
+    const a = sys.systemData.star;
+    const b = sys.systemData.celestialBodies.find(
+      (x) => x.id === "alpha-centauri-b",
+    )!;
+    expect(a.orbit?.centerId).toBe("alpha-centauri-ab-barycenter");
+    expect(b.orbit?.centerId).toBe("alpha-centauri-ab-barycenter");
+    expect(a.orbit?.eccentricity).toBeCloseTo(0.519, 3);
+    expect(a.orbit?.periodYears).toBeCloseTo(79.91, 2);
+    // B axis larger than A axis (A is more massive) -> matches existing test
+    expect(b.orbit!.semiMajorAxis).toBeGreaterThan(a.orbit!.semiMajorAxis);
+  });
 });
 ```
 
@@ -523,6 +611,7 @@ describe("alpha-centauri override", () => {
 ## Task 11: `buildGalaxy` assembler + full pipeline
 
 **Files:**
+
 - Create: `src/lib/planetary-system/derive/buildAll.ts`
 - Test: `src/lib/planetary-system/derive/__tests__/buildAll.test.ts`
 
@@ -530,35 +619,41 @@ describe("alpha-centauri override", () => {
 
 ```ts
 import { describe, it, expect } from "vitest";
-import { buildAllPlanetarySystems, buildLocalGalaxy } from "@/lib/planetary-system/derive/buildAll";
+import {
+  buildAllPlanetarySystems,
+  buildLocalGalaxy,
+} from "@/lib/planetary-system/derive/buildAll";
 
 describe("buildAllPlanetarySystems", () => {
-    const all = buildAllPlanetarySystems();
-    it("returns 30 systems", () => expect(all).toHaveLength(30));
-    it("ids are unique", () => {
-        expect(new Set(all.map(s => s.id)).size).toBe(30);
-    });
-    it("alpha-centauri confirmedExoplanetCount is 2", () => {
-        const ac = all.find(s => s.id === "alpha-centauri")!;
-        expect(ac.systemData.metadata?.confirmedExoplanetCount).toBe(2);
-    });
-    it("every system has a star and valid systemType", () => {
-        for (const s of all) {
-            expect(s.systemData.star.type).toBe("star");
-            expect(["solar","binary","multiple","exotic"]).toContain(s.systemData.systemType);
-        }
-    });
+  const all = buildAllPlanetarySystems();
+  it("returns 30 systems", () => expect(all).toHaveLength(30));
+  it("ids are unique", () => {
+    expect(new Set(all.map((s) => s.id)).size).toBe(30);
+  });
+  it("alpha-centauri confirmedExoplanetCount is 2", () => {
+    const ac = all.find((s) => s.id === "alpha-centauri")!;
+    expect(ac.systemData.metadata?.confirmedExoplanetCount).toBe(2);
+  });
+  it("every system has a star and valid systemType", () => {
+    for (const s of all) {
+      expect(s.systemData.star.type).toBe("star");
+      expect(["solar", "binary", "multiple", "exotic"]).toContain(
+        s.systemData.systemType,
+      );
+    }
+  });
 });
 describe("buildLocalGalaxy", () => {
-    it("has 30 star systems, Solar not included (added separately by caller)", () => {
-        expect(buildLocalGalaxy().starSystems).toHaveLength(30);
-    });
+  it("has 30 star systems, Solar not included (added separately by caller)", () => {
+    expect(buildLocalGalaxy().starSystems).toHaveLength(30);
+  });
 });
 ```
 
 **Step 2: Run → FAIL.**
 
 **Step 3: Implement** `buildAll.ts`:
+
 - Read the CSV text via `import rawCsv from "@/data/nearest_30_planetary_systems.csv?raw"` (Vite/Astro supports `?raw`). Parse → group by `system_rank` → `buildSystem` each → `applyOverrides`.
 - `buildAllPlanetarySystems(): PlanetarySystem[]` returns the 30.
 - `buildLocalGalaxy(): GalaxyData`: for each system's star row, `radialToCartesian(distance, ra, dec)` (from coordinate supplement) → `THREE.Vector3`; `visual.brightness`/`colorIndex` from `galaxyVisual` + `BV_INDEX`. Wrap `THREE` import so the math above stays pure. `boundingRadius` = ceil(max distance) ≈ 22.
@@ -572,12 +667,14 @@ describe("buildLocalGalaxy", () => {
 ## Task 12: Codegen script + `prebuild` hook
 
 **Files:**
+
 - Create: `scripts/gen-systems.ts`
 - Modify: `package.json` (scripts)
 
 **Step 1:** No unit test (it's a script). Instead the script itself runs the pipeline and writes files; verification is Task 14.
 
 **Step 2: Implement** `scripts/gen-systems.ts` (run with `bun`):
+
 1. `import { buildAllPlanetarySystems, buildLocalGalaxy } from "../src/lib/planetary-system/derive/buildAll"`.
 2. **Validation gate** (throw on hard error, console.warn on soft):
    - HARD: duplicate `id`; a system with no star; a body whose `orbit.centerId` references a non-existent id/barycenter.
@@ -587,13 +684,16 @@ describe("buildLocalGalaxy", () => {
    /** @source src/data/nearest_30_planetary_systems.csv — run gen:systems to regenerate */
    import type { PlanetarySystem } from "./types";
    import * as THREE from "three";
-   export const starSystems: PlanetarySystem[] = [ /* ...literal objects, Vector3 inlined as new THREE.Vector3(x,y,z)... */ ];
+   export const starSystems: PlanetarySystem[] = [
+     /* ...literal objects, Vector3 inlined as new THREE.Vector3(x,y,z)... */
+   ];
    ```
    Use `JSON.stringify` then a regex post-pass to turn `{"x":1,"y":2,"z":3}` into `new THREE.Vector3(1,2,3)` (match the existing hand-authored style). Run Prettier on output (`execSync("bunx prettier --write ...")`).
 4. Write `src/lib/galaxy/LocalGalaxy.ts` similarly, exporting `localGalaxyData` with the 30 systems.
 5. `console.log("Generated N systems")`.
 
 **Step 3: Add scripts** to `package.json`:
+
 ```json
 "gen:systems": "bun run scripts/gen-systems.ts",
 "prebuild": "bun run gen:systems",
@@ -608,6 +708,7 @@ describe("buildLocalGalaxy", () => {
 ## Task 13: Rewire registry — keep Solar + curated, drop superseded files
 
 **Files:**
+
 - Modify: `src/lib/planetary-system/index.ts`
 - Create: `src/lib/planetary-system/CuratedSystems.ts` (move trappist1, wolf359, kepler442, kepler438 here)
 - Delete: `src/lib/planetary-system/AlphaCentauri.ts`, `KeplerSystems.ts`, `NearbyExoplanets.ts`
@@ -616,6 +717,7 @@ describe("buildLocalGalaxy", () => {
 **Step 1:** Move the 4 curated `PlanetarySystem` exports verbatim from `KeplerSystems.ts`/`NearbyExoplanets.ts` into `CuratedSystems.ts` (trappist1System, wolf359System, kepler442System, kepler438System — do NOT move barnardsStar/ross128, those are now CSV-generated).
 
 **Step 2: Rewrite** `index.ts`:
+
 ```ts
 export * from "./types";
 export { PlanetarySystemRegistry } from "./PlanetarySystemRegistry";
@@ -628,7 +730,12 @@ export { starSystems } from "./systems";
 import { planetarySystemRegistry } from "./PlanetarySystemRegistry";
 import { solarSystem } from "./SolarSystem";
 import { starSystems } from "./systems";
-import { trappist1System, wolf359System, kepler442System, kepler438System } from "./CuratedSystems";
+import {
+  trappist1System,
+  wolf359System,
+  kepler442System,
+  kepler438System,
+} from "./CuratedSystems";
 
 planetarySystemRegistry.registerSystem(solarSystem);
 for (const s of starSystems) planetarySystemRegistry.registerSystem(s);
@@ -651,6 +758,7 @@ export { planetarySystemRegistry };
 ## Task 14: `CelestialBodyManager` — candidate/disputed rendering
 
 **Files:**
+
 - Modify: `src/lib/planetary-system/graphics/CelestialBodyManager.ts` (orbit line creation + body material)
 - Test: `src/lib/planetary-system/graphics/__tests__/CelestialBodyManager.test.ts` (extend)
 
@@ -658,16 +766,17 @@ export { planetarySystemRegistry };
 
 ```ts
 it("renders a candidate body's orbit dashed and body opaque", () => {
-    const mgr = new CelestialBodyManager(scene, camera);
-    mgr.createCelestialBody({ ...makeBody(), status: "candidate" });
-    const line = mgr.getOrbitLine(makeBody().id);
-    expect((line.material as any).dashed).toBe(true);
+  const mgr = new CelestialBodyManager(scene, camera);
+  mgr.createCelestialBody({ ...makeBody(), status: "candidate" });
+  const line = mgr.getOrbitLine(makeBody().id);
+  expect((line.material as any).dashed).toBe(true);
 });
 it("confirmed body orbit is solid", () => {
-    mgr.createCelestialBody({ ...makeBody(), status: "confirmed" });
-    expect((mgr.getOrbitLine(id).material as any).dashed).toBeFalsy();
+  mgr.createCelestialBody({ ...makeBody(), status: "confirmed" });
+  expect((mgr.getOrbitLine(id).material as any).dashed).toBeFalsy();
 });
 ```
+
 (Add a small `getOrbitLine(id)` test accessor if not present.)
 
 **Step 2: Run → FAIL.**
@@ -683,6 +792,7 @@ it("confirmed body orbit is solid", () => {
 ## Task 15: Explore modal — confirmed count + Unknown rendering
 
 **Files:**
+
 - Modify: `src/components/ExploreSystems.svelte:34-36` (`bodyCount`)
 - Test: `src/components/__tests__/ExploreSystems.test.ts` (extend)
 
@@ -691,11 +801,17 @@ it("confirmed body orbit is solid", () => {
 **Step 2: Run → FAIL.**
 
 **Step 3: Implement:** replace `bodyCount` with:
+
 ```ts
 function confirmedCount(s: PlanetarySystem): number {
-    return s.systemData?.metadata?.confirmedExoplanetCount ?? s.systemData?.celestialBodies?.filter(b => b.type !== "star").length ?? 0;
+  return (
+    s.systemData?.metadata?.confirmedExoplanetCount ??
+    s.systemData?.celestialBodies?.filter((b) => b.type !== "star").length ??
+    0
+  );
 }
 ```
+
 Use it in the template's `readout-value`. Label key `explore.bodies` stays (or add `explore.confirmed`).
 
 **Step 4: Run → PASS.**
@@ -707,6 +823,7 @@ Use it in the template's `readout-value`. Label key `explore.bodies` stays (or a
 ## Task 16: Info modal — status badge + Unknown fallback
 
 **Files:**
+
 - Modify: the body info modal component (locate via `grep -rl "keyFacts" src/components`) — add badge + `?? t("common.unknown")` guards
 - Add i18n keys `common.unknown`, `status.candidate`, `status.controversial` to `src/i18n/ui/*`
 
@@ -725,6 +842,7 @@ Use it in the template's `readout-value`. Label key `explore.bodies` stays (or a
 ## Task 17: Rewrite the bespoke-import system tests
 
 **Files:**
+
 - Rewrite: `src/lib/planetary-system/__tests__/PlanetarySystems.test.ts`
 
 The old file imported deleted modules. Rewrite to import from the new locations and assert on the unified registry.
@@ -737,29 +855,36 @@ import { planetarySystemRegistry } from "@/lib/planetary-system";
 import { starSystems } from "@/lib/planetary-system/systems";
 
 describe("registry", () => {
-    it("has 35 systems (solar + 30 + 4 curated)", () => {
-        expect(planetarySystemRegistry.getAllSystems()).toHaveLength(35);
-    });
-    it("alpha-centauri has 2 confirmed", () => {
-        const ac = planetarySystemRegistry.getSystem("alpha-centauri")!;
-        expect(ac.systemData.metadata?.confirmedExoplanetCount).toBe(2);
-    });
-    it("Proxima c is a candidate and excluded from count", () => {
-        const ac = planetarySystemRegistry.getSystem("alpha-centauri")!;
-        const c = ac.systemData.celestialBodies.find(b => b.name.includes("c") && b.name.includes("Proxima"))!;
-        expect(c.status).toBe("candidate");
-    });
+  it("has 35 systems (solar + 30 + 4 curated)", () => {
+    expect(planetarySystemRegistry.getAllSystems()).toHaveLength(35);
+  });
+  it("alpha-centauri has 2 confirmed", () => {
+    const ac = planetarySystemRegistry.getSystem("alpha-centauri")!;
+    expect(ac.systemData.metadata?.confirmedExoplanetCount).toBe(2);
+  });
+  it("Proxima c is a candidate and excluded from count", () => {
+    const ac = planetarySystemRegistry.getSystem("alpha-centauri")!;
+    const c = ac.systemData.celestialBodies.find(
+      (b) => b.name.includes("c") && b.name.includes("Proxima"),
+    )!;
+    expect(c.status).toBe("candidate");
+  });
 });
 describe("generated starSystems", () => {
-    it("every confirmed count matches the column", () => {
-        for (const s of starSystems) {
-            const confirmed = s.systemData.celestialBodies.filter(b => b.type === "planet" && (!b.status || b.status === "confirmed")).length;
-            // column may exceed confirmed-row count for contested systems (HD 219134) -> warn only
-            expect(s.systemData.metadata?.confirmedExoplanetCount).toBeGreaterThanOrEqual(confirmed);
-        }
-    });
+  it("every confirmed count matches the column", () => {
+    for (const s of starSystems) {
+      const confirmed = s.systemData.celestialBodies.filter(
+        (b) => b.type === "planet" && (!b.status || b.status === "confirmed"),
+      ).length;
+      // column may exceed confirmed-row count for contested systems (HD 219134) -> warn only
+      expect(
+        s.systemData.metadata?.confirmedExoplanetCount,
+      ).toBeGreaterThanOrEqual(confirmed);
+    }
+  });
 });
 ```
+
 Keep the TRAPPIST-1/Wolf 359/Kepler bespoke tests (repoint imports to `CuratedSystems`). Drop the Alpha Centauri barycenter/mass-ratio assertions OR keep them pointing at the registry's `alpha-centauri` (the override preserves those values — re-verify they still pass; if an exact value drifted, update the assertion to match the override's documented values, not the old bespoke file).
 
 **Step 2: Run → fix until PASS.**
@@ -771,6 +896,7 @@ Keep the TRAPPIST-1/Wolf 359/Kepler bespoke tests (repoint imports to `CuratedSy
 ## Task 18: New `systems.test.ts` — Unknown-rule guard
 
 **Files:**
+
 - Create: `src/lib/planetary-system/__tests__/systems.test.ts`
 
 **Step 1: Write failing test:**
@@ -780,18 +906,18 @@ import { describe, it, expect } from "vitest";
 import { starSystems } from "@/lib/planetary-system/systems";
 
 describe("no zero-where-unknown", () => {
-    for (const sys of starSystems) {
-        const bodies = [sys.systemData.star, ...sys.systemData.celestialBodies];
-        for (const b of bodies) {
-            it(`${sys.id}/${b.id}: temperature not literal 0 unless star origin`, () => {
-                const t = b.keyFacts.temperature;
-                if (t !== undefined) expect(t).not.toBe("0");
-            });
-            it(`${sys.id}/${b.id}: diameter present`, () => {
-                expect(b.keyFacts.diameter).toBeTruthy();
-            });
-        }
+  for (const sys of starSystems) {
+    const bodies = [sys.systemData.star, ...sys.systemData.celestialBodies];
+    for (const b of bodies) {
+      it(`${sys.id}/${b.id}: temperature not literal 0 unless star origin`, () => {
+        const t = b.keyFacts.temperature;
+        if (t !== undefined) expect(t).not.toBe("0");
+      });
+      it(`${sys.id}/${b.id}: diameter present`, () => {
+        expect(b.keyFacts.diameter).toBeTruthy();
+      });
     }
+  }
 });
 ```
 
@@ -804,9 +930,11 @@ describe("no zero-where-unknown", () => {
 ## Task 19: E2E smoke test
 
 **Files:**
+
 - Modify/extend: `e2e/main-user-journeys.spec.ts` (or the `@smoke` file)
 
 **Step 1: Write** a `@smoke` test:
+
 - Visit `/` → galaxy view → assert at least 30 star-system points render (count rendered star markers, selector per existing `StarSystemManager` mesh naming).
 - Visit `/planetary/alpha-centauri` → wait for `#solar-system-renderer` → assert HUD shows "2" confirmed and a "Candidate"/"Disputed" badge text is present for Proxima c (open the body list / info modal as the existing journey does).
 
@@ -819,9 +947,11 @@ describe("no zero-where-unknown", () => {
 ## Task 20: Final verification & cleanup
 
 **Step 1:** Run the full gate:
+
 ```
 bun run gen:systems && bun run lint && bun run type-check && bun run test:run && bun run test:e2e:smoke
 ```
+
 Fix anything red. Re-run `bun run format`.
 
 **Step 2:** Remove now-dead code: confirm no remaining references to deleted files (`grep -r "AlphaCentauri.ts\|KeplerSystems\|NearbyExoplanets" src`). Confirm `localGalaxyData` still exported from `LocalGalaxy.ts` (GalaxyRenderer imports it).
@@ -834,11 +964,11 @@ Fix anything red. Re-run `bun run format`.
 
 ## Acceptance criteria mapping (HPA-59)
 
-| Criterion | Tasks |
-| --- | --- |
-| All 30 systems shown in galaxy/system view | 8, 11, 12, 13, 19 |
-| Detail view: distance, star count, confirmed count, constellation | 2, 9, 15, 16 |
-| Each object: classification, diameter, temp, period, composition, distance-from-center | 9 |
-| Unknown → "Unknown", not 0 | 3, 9, 16, 18 |
-| Confirmed vs candidate visually/textually clear | 4, 9, 14, 16 |
-| Alpha Centauri/Proxima corrected (Proxima c not confirmed, count 2) | 4, 9, 10, 17, 19 |
+| Criterion                                                                              | Tasks             |
+| -------------------------------------------------------------------------------------- | ----------------- |
+| All 30 systems shown in galaxy/system view                                             | 8, 11, 12, 13, 19 |
+| Detail view: distance, star count, confirmed count, constellation                      | 2, 9, 15, 16      |
+| Each object: classification, diameter, temp, period, composition, distance-from-center | 9                 |
+| Unknown → "Unknown", not 0                                                             | 3, 9, 16, 18      |
+| Confirmed vs candidate visually/textually clear                                        | 4, 9, 14, 16      |
+| Alpha Centauri/Proxima corrected (Proxima c not confirmed, count 2)                    | 4, 9, 10, 17, 19  |

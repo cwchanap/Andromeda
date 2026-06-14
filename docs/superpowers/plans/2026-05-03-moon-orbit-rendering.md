@@ -22,6 +22,7 @@
 ## Task 1: Add Failing Orbit Radius Tests
 
 **Files:**
+
 - Modify: `src/lib/planetary-system/graphics/__tests__/CelestialBodyManager.test.ts`
 
 - [ ] **Step 1: Add parent-relative visual spacing tests**
@@ -29,115 +30,115 @@
 First, in the existing `"moon orbits around parent body position, not system center"` test, replace:
 
 ```ts
-        // Allow some floating point tolerance
-        expect(distanceToParent).toBeCloseTo(0.5, 1);
+// Allow some floating point tolerance
+expect(distanceToParent).toBeCloseTo(0.5, 1);
 ```
 
 with:
 
 ```ts
-        // The visual orbit radius expands past the rendered parent radius.
-        expect(distanceToParent).toBeCloseTo(1.44, 5);
+// The visual orbit radius expands past the rendered parent radius.
+expect(distanceToParent).toBeCloseTo(1.44, 5);
 ```
 
 Then add these tests inside the existing `describe("CelestialBodyManager", () => { ... })` block, after the current `"moon orbits around parent body position, not system center"` test:
 
 ```ts
-    it("expands a too-small moon orbit radius outside the rendered parent", async () => {
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-        const manager = new CelestialBodyManager(scene, camera);
+it("expands a too-small moon orbit radius outside the rendered parent", async () => {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+  const manager = new CelestialBodyManager(scene, camera);
 
-        const parentData = makeBodyData({
-            id: "earth",
-            position: new THREE.Vector3(15, 0, 0),
-            scale: 1.0,
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        });
-        const parentGroup = await manager.createCelestialBody(parentData);
+  const parentData = makeBodyData({
+    id: "earth",
+    position: new THREE.Vector3(15, 0, 0),
+    scale: 1.0,
+    orbitRadius: 0,
+    orbitSpeed: 0,
+  });
+  const parentGroup = await manager.createCelestialBody(parentData);
 
-        const moonData = makeBodyData({
-            id: "luna",
-            name: "Moon",
-            type: "moon",
-            parentId: "earth",
-            position: new THREE.Vector3(15.4, 0, 0),
-            scale: 0.27,
-            orbitRadius: 0.4,
-            orbitSpeed: 1.0,
-        });
-        const moonGroup = await manager.createCelestialBody(moonData);
+  const moonData = makeBodyData({
+    id: "luna",
+    name: "Moon",
+    type: "moon",
+    parentId: "earth",
+    position: new THREE.Vector3(15.4, 0, 0),
+    scale: 0.27,
+    orbitRadius: 0.4,
+    orbitSpeed: 1.0,
+  });
+  const moonGroup = await manager.createCelestialBody(moonData);
 
-        manager.updateAnimations(0, 1.0);
+  manager.updateAnimations(0, 1.0);
 
-        const distanceToParent = Math.sqrt(
-            Math.pow(moonGroup.position.x - parentGroup.position.x, 2) +
-                Math.pow(moonGroup.position.z - parentGroup.position.z, 2),
-        );
+  const distanceToParent = Math.sqrt(
+    Math.pow(moonGroup.position.x - parentGroup.position.x, 2) +
+      Math.pow(moonGroup.position.z - parentGroup.position.z, 2),
+  );
 
-        expect(distanceToParent).toBeCloseTo(1.42, 5);
-        expect(moonData.orbitRadius).toBe(0.4);
-    });
+  expect(distanceToParent).toBeCloseTo(1.42, 5);
+  expect(moonData.orbitRadius).toBe(0.4);
+});
 
-    it("preserves an already-large moon orbit radius", async () => {
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-        const manager = new CelestialBodyManager(scene, camera);
+it("preserves an already-large moon orbit radius", async () => {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+  const manager = new CelestialBodyManager(scene, camera);
 
-        const parentData = makeBodyData({
-            id: "jupiter",
-            position: new THREE.Vector3(20, 0, 0),
-            scale: 1.2,
-            orbitRadius: 0,
-            orbitSpeed: 0,
-        });
-        const parentGroup = await manager.createCelestialBody(parentData);
+  const parentData = makeBodyData({
+    id: "jupiter",
+    position: new THREE.Vector3(20, 0, 0),
+    scale: 1.2,
+    orbitRadius: 0,
+    orbitSpeed: 0,
+  });
+  const parentGroup = await manager.createCelestialBody(parentData);
 
-        const moonData = makeBodyData({
-            id: "ganymede",
-            name: "Ganymede",
-            type: "moon",
-            parentId: "jupiter",
-            position: new THREE.Vector3(22.5, 0, 0),
-            scale: 0.3,
-            orbitRadius: 2.5,
-            orbitSpeed: 1.0,
-        });
-        const moonGroup = await manager.createCelestialBody(moonData);
+  const moonData = makeBodyData({
+    id: "ganymede",
+    name: "Ganymede",
+    type: "moon",
+    parentId: "jupiter",
+    position: new THREE.Vector3(22.5, 0, 0),
+    scale: 0.3,
+    orbitRadius: 2.5,
+    orbitSpeed: 1.0,
+  });
+  const moonGroup = await manager.createCelestialBody(moonData);
 
-        manager.updateAnimations(0, 1.0);
+  manager.updateAnimations(0, 1.0);
 
-        const distanceToParent = Math.sqrt(
-            Math.pow(moonGroup.position.x - parentGroup.position.x, 2) +
-                Math.pow(moonGroup.position.z - parentGroup.position.z, 2),
-        );
+  const distanceToParent = Math.sqrt(
+    Math.pow(moonGroup.position.x - parentGroup.position.x, 2) +
+      Math.pow(moonGroup.position.z - parentGroup.position.z, 2),
+  );
 
-        expect(distanceToParent).toBeCloseTo(2.5, 5);
-    });
+  expect(distanceToParent).toBeCloseTo(2.5, 5);
+});
 
-    it("keeps non-parented planet orbit radius unchanged", async () => {
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-        const manager = new CelestialBodyManager(scene, camera);
+it("keeps non-parented planet orbit radius unchanged", async () => {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+  const manager = new CelestialBodyManager(scene, camera);
 
-        const data = makeBodyData({
-            id: "mars",
-            position: new THREE.Vector3(5, 0, 0),
-            scale: 0.7,
-            orbitRadius: 5,
-            orbitSpeed: 1.0,
-        });
-        const group = await manager.createCelestialBody(data);
+  const data = makeBodyData({
+    id: "mars",
+    position: new THREE.Vector3(5, 0, 0),
+    scale: 0.7,
+    orbitRadius: 5,
+    orbitSpeed: 1.0,
+  });
+  const group = await manager.createCelestialBody(data);
 
-        manager.updateAnimations(0, 1.0);
+  manager.updateAnimations(0, 1.0);
 
-        const distanceToSystemCenter = Math.sqrt(
-            Math.pow(group.position.x, 2) + Math.pow(group.position.z, 2),
-        );
+  const distanceToSystemCenter = Math.sqrt(
+    Math.pow(group.position.x, 2) + Math.pow(group.position.z, 2),
+  );
 
-        expect(distanceToSystemCenter).toBeCloseTo(5, 5);
-    });
+  expect(distanceToSystemCenter).toBeCloseTo(5, 5);
+});
 ```
 
 - [ ] **Step 2: Run the new tests and verify they fail**
@@ -153,6 +154,7 @@ Expected: at least the new `"expands a too-small moon orbit radius outside the r
 ## Task 2: Implement Effective Visual Orbit Radii
 
 **Files:**
+
 - Modify: `src/lib/planetary-system/graphics/CelestialBodyManager.ts`
 
 - [ ] **Step 1: Add private state for visual orbit radii**
@@ -181,28 +183,28 @@ to:
 In `createCelestialBody`, replace:
 
 ```ts
-        // Create orbit path visualization
-        if (data.orbitRadius && data.orbitRadius > 0) {
-            this.createOrbitLine(data);
-        }
+// Create orbit path visualization
+if (data.orbitRadius && data.orbitRadius > 0) {
+  this.createOrbitLine(data);
+}
 
-        // Store references
-        this.bodies.set(data.id, celestialGroup);
-        this.bodyData.set(data.id, data);
+// Store references
+this.bodies.set(data.id, celestialGroup);
+this.bodyData.set(data.id, data);
 ```
 
 with:
 
 ```ts
-        // Store references before orbit calculations so children can inspect parent data.
-        this.bodies.set(data.id, celestialGroup);
-        this.bodyData.set(data.id, data);
+// Store references before orbit calculations so children can inspect parent data.
+this.bodies.set(data.id, celestialGroup);
+this.bodyData.set(data.id, data);
 
-        const visualOrbitRadius = this.getVisualOrbitRadius(data);
-        if (visualOrbitRadius > 0) {
-            this.visualOrbitRadii.set(data.id, visualOrbitRadius);
-            this.createOrbitLine(data, visualOrbitRadius);
-        }
+const visualOrbitRadius = this.getVisualOrbitRadius(data);
+if (visualOrbitRadius > 0) {
+  this.visualOrbitRadii.set(data.id, visualOrbitRadius);
+  this.createOrbitLine(data, visualOrbitRadius);
+}
 ```
 
 - [ ] **Step 3: Add helper methods for effective radius calculation**
@@ -267,15 +269,15 @@ to:
 Then replace both geometry uses of `data.orbitRadius` inside the point loop:
 
 ```ts
-            const x = Math.cos(angle) * data.orbitRadius;
-            const z = Math.sin(angle) * data.orbitRadius;
+const x = Math.cos(angle) * data.orbitRadius;
+const z = Math.sin(angle) * data.orbitRadius;
 ```
 
 with:
 
 ```ts
-            const x = Math.cos(angle) * orbitRadius;
-            const z = Math.sin(angle) * orbitRadius;
+const x = Math.cos(angle) * orbitRadius;
+const z = Math.sin(angle) * orbitRadius;
 ```
 
 - [ ] **Step 5: Update direct private-method test call**
@@ -302,26 +304,21 @@ with:
 In `updateAnimations`, replace:
 
 ```ts
-                // Calculate position from the smooth accumulated angle relative to orbit center
-                body.position.x =
-                    orbitCenterX + Math.cos(currentAngle) * data.orbitRadius;
-                body.position.y = orbitCenterY; // Inherit parent's Y offset
-                body.position.z =
-                    orbitCenterZ + Math.sin(currentAngle) * data.orbitRadius;
+// Calculate position from the smooth accumulated angle relative to orbit center
+body.position.x = orbitCenterX + Math.cos(currentAngle) * data.orbitRadius;
+body.position.y = orbitCenterY; // Inherit parent's Y offset
+body.position.z = orbitCenterZ + Math.sin(currentAngle) * data.orbitRadius;
 ```
 
 with:
 
 ```ts
-                const orbitRadius =
-                    this.visualOrbitRadii.get(id) ?? data.orbitRadius;
+const orbitRadius = this.visualOrbitRadii.get(id) ?? data.orbitRadius;
 
-                // Calculate position from the smooth accumulated angle relative to orbit center
-                body.position.x =
-                    orbitCenterX + Math.cos(currentAngle) * orbitRadius;
-                body.position.y = orbitCenterY; // Inherit parent's Y offset
-                body.position.z =
-                    orbitCenterZ + Math.sin(currentAngle) * orbitRadius;
+// Calculate position from the smooth accumulated angle relative to orbit center
+body.position.x = orbitCenterX + Math.cos(currentAngle) * orbitRadius;
+body.position.y = orbitCenterY; // Inherit parent's Y offset
+body.position.z = orbitCenterZ + Math.sin(currentAngle) * orbitRadius;
 ```
 
 - [ ] **Step 7: Clear visual orbit radii during disposal**
@@ -329,18 +326,18 @@ with:
 In `dispose`, replace:
 
 ```ts
-        this.bodies.clear();
-        this.bodyData.clear();
-        this.orbitLines.clear();
+this.bodies.clear();
+this.bodyData.clear();
+this.orbitLines.clear();
 ```
 
 with:
 
 ```ts
-        this.bodies.clear();
-        this.bodyData.clear();
-        this.orbitLines.clear();
-        this.visualOrbitRadii.clear();
+this.bodies.clear();
+this.bodyData.clear();
+this.orbitLines.clear();
+this.visualOrbitRadii.clear();
 ```
 
 - [ ] **Step 8: Run the focused test file**
@@ -367,6 +364,7 @@ Expected: commit succeeds and includes only the renderer/test changes.
 ## Task 3: Verification
 
 **Files:**
+
 - Verify: `src/lib/planetary-system/graphics/CelestialBodyManager.ts`
 - Verify: `src/lib/planetary-system/graphics/__tests__/CelestialBodyManager.test.ts`
 
