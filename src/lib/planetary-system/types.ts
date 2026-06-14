@@ -27,7 +27,7 @@ export interface PlanetarySystemData {
     celestialBodies: CelestialBodyData[];
     systemScale: number;
     systemCenter: Vector3;
-    systemType: "solar" | "binary" | "multiple" | "exotic";
+    systemType: "solar" | "binary" | "multiple";
     orbitAnchors?: OrbitAnchorData[];
     metadata?: {
         discoveredBy?: string;

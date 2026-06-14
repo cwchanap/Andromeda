@@ -17,10 +17,18 @@ describe("buildAllPlanetarySystems", () => {
     it("every system has a star and valid systemType", () => {
         for (const s of all) {
             expect(s.systemData.star.type).toBe("star");
-            expect(["solar", "binary", "multiple", "exotic"]).toContain(
+            expect(["solar", "binary", "multiple"]).toContain(
                 s.systemData.systemType,
             );
         }
+    });
+    it("Proxima Centauri c is marked as candidate, not confirmed", () => {
+        const ac = all.find((s) => s.id === "alpha-centauri")!;
+        const proximaC = ac.systemData.celestialBodies.find(
+            (b) => b.id === "proxima-centauri-c",
+        );
+        expect(proximaC).toBeDefined();
+        expect(proximaC!.status).toBe("candidate");
     });
 });
 describe("buildLocalGalaxy", () => {
@@ -35,5 +43,17 @@ describe("buildLocalGalaxy", () => {
         const galaxy = buildLocalGalaxy();
         const ac = galaxy.starSystems.find((s) => s.id === "alpha-centauri");
         expect(ac?.systemType).toBe("trinary");
+    });
+    it("systems with coordinates produce valid non-origin 3D positions", () => {
+        const galaxy = buildLocalGalaxy();
+        // Alpha Centauri has coordinates in the CSV and is 4.2465 ly away,
+        // so its position must not be the (0,0,0) fallback
+        const ac = galaxy.starSystems.find((s) => s.id === "alpha-centauri");
+        expect(ac).toBeDefined();
+        const mag = Math.sqrt(
+            ac!.position.x ** 2 + ac!.position.y ** 2 + ac!.position.z ** 2,
+        );
+        expect(mag).toBeCloseTo(ac!.distanceFromEarth, 1);
+        expect(mag).toBeGreaterThan(0);
     });
 });
