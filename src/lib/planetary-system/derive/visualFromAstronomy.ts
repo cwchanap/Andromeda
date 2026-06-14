@@ -93,3 +93,23 @@ export function starScale(diameterKm: number): number {
 export function emissiveFromTemp(tempK: number): number {
     return clamp(0.3 + (tempK - 3000) / 12000, 0.3, 1.0);
 }
+
+export function orbitVisualRadius(au: number): number {
+    const a = Math.max(au, 0);
+    const v = 2 + (Math.log10(a * 1000 + 1) / Math.log10(50 * 1000 + 1)) * 38;
+    return clamp(v, 2, 60);
+}
+
+export function visualPeriodSeconds(days: number): number {
+    if (!days || days <= 0) return 0;
+    return clamp(8 + (Math.log10(days + 1) / 5) * 82, 6, 120);
+}
+
+export function seededFromId(id: string): number {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < id.length; i++) {
+        h ^= id.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+    }
+    return (h >>> 0) / 4294967296;
+}

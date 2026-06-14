@@ -4,6 +4,9 @@ import {
     planetScale,
     starScale,
     emissiveFromTemp,
+    orbitVisualRadius,
+    visualPeriodSeconds,
+    seededFromId,
 } from "@/lib/planetary-system/derive/visualFromAstronomy";
 
 describe("spectralColor", () => {
@@ -44,5 +47,46 @@ describe("emissiveFromTemp", () => {
         const v = emissiveFromTemp(5790);
         expect(v).toBeGreaterThan(0.3);
         expect(v).toBeLessThan(1.0);
+    });
+});
+describe("orbitVisualRadius", () => {
+    it("monotonic in semi-major axis", () => {
+        expect(orbitVisualRadius(0.02)).toBeLessThan(orbitVisualRadius(1));
+        expect(orbitVisualRadius(1)).toBeLessThan(orbitVisualRadius(50));
+    });
+    it("bounded for the full dataset range", () => {
+        for (const au of [0.0163, 0.5, 5, 50]) {
+            const r = orbitVisualRadius(au);
+            expect(r).toBeGreaterThanOrEqual(2);
+            expect(r).toBeLessThanOrEqual(60);
+        }
+    });
+});
+describe("visualPeriodSeconds", () => {
+    it("compresses 1.9-day and 60000-day orbits both into watchable range", () => {
+        expect(visualPeriodSeconds(1.938)).toBeGreaterThanOrEqual(6);
+        expect(visualPeriodSeconds(63400)).toBeLessThanOrEqual(120);
+    });
+    it("returns 0 for static/origin (0 days)", () => {
+        expect(visualPeriodSeconds(0)).toBe(0);
+    });
+});
+describe("seededFromId", () => {
+    it("same id -> same value", () => {
+        expect(seededFromId("proxima-centauri-b")).toBe(
+            seededFromId("proxima-centauri-b"),
+        );
+    });
+    it("different ids -> likely different values", () => {
+        expect(seededFromId("proxima-centauri-b")).not.toBe(
+            seededFromId("alpha-centauri-a"),
+        );
+    });
+    it("output is in [0, 1)", () => {
+        for (const id of ["a", "b", "test-123", "proxima-centauri-c"]) {
+            const v = seededFromId(id);
+            expect(v).toBeGreaterThanOrEqual(0);
+            expect(v).toBeLessThan(1);
+        }
     });
 });
