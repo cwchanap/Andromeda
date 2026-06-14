@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import * as THREE from "three";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { CelestialBodyManager } from "../CelestialBodyManager";
 import type { CelestialBodyData } from "@/types/game";
 
@@ -60,6 +61,8 @@ beforeAll(() => {
         }
         return mesh;
     });
+
+    (Line2 as any).prototype.computeLineDistances = vi.fn();
 });
 
 afterAll(() => {
@@ -1367,5 +1370,65 @@ describe("CelestialBodyManager", () => {
         expect(orbitLine?.position.z).toBe(0);
         expect(warnSpy).toHaveBeenCalled();
         warnSpy.mockRestore();
+    });
+});
+
+describe("candidate/disputed body rendering", () => {
+    it("renders a candidate body's orbit dashed", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const body = makeBodyData({
+            id: "candidate-planet",
+            status: "candidate",
+            orbitRadius: 10,
+            orbitSpeed: 1,
+        });
+        await manager.createCelestialBody(body);
+
+        const orbitLine = scene.children.find(
+            (child: any) => child.name === "candidate-planet_orbit",
+        );
+        expect(orbitLine).toBeTruthy();
+        const material = (orbitLine as any).material;
+        expect(material.dashed).toBe(true);
+    });
+
+    it("renders a confirmed body's orbit solid", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const body = makeBodyData({
+            id: "confirmed-planet",
+            status: "confirmed",
+            orbitRadius: 10,
+            orbitSpeed: 1,
+        });
+        await manager.createCelestialBody(body);
+
+        const orbitLine = scene.children.find(
+            (child: any) => child.name === "confirmed-planet_orbit",
+        );
+        expect(orbitLine).toBeTruthy();
+        const material = (orbitLine as any).material;
+        expect(material.dashed).toBeFalsy();
+    });
+
+    it("renders a candidate body mesh semi-transparent", async () => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const manager = new CelestialBodyManager(scene, camera);
+
+        const body = makeBodyData({
+            id: "candidate-body",
+            status: "candidate",
+        });
+        const group = await manager.createCelestialBody(body);
+        const mesh = (group as any).getObjectByName?.("candidate-body_body");
+        expect(mesh).toBeTruthy();
+        expect(mesh.material.transparent).toBe(true);
+        expect(mesh.material.opacity).toBeCloseTo(0.6, 1);
     });
 });
