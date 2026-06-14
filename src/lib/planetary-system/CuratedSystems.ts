@@ -1,11 +1,6 @@
-// Nearby exoplanet systems - additional interesting nearby planetary systems
 import type { PlanetarySystem } from "./types";
 import * as THREE from "three";
 
-/**
- * TRAPPIST-1 System
- * A famous ultra-cool dwarf star system with seven Earth-sized planets
- */
 export const trappist1System: PlanetarySystem = {
     id: "trappist-1",
     name: "TRAPPIST-1 System",
@@ -261,10 +256,6 @@ export const trappist1System: PlanetarySystem = {
     async cleanup() {},
 };
 
-/**
- * Wolf 359 System
- * A nearby red dwarf star with recently discovered planets
- */
 export const wolf359System: PlanetarySystem = {
     id: "wolf-359",
     name: "Wolf 359 System",
@@ -385,98 +376,87 @@ export const wolf359System: PlanetarySystem = {
     async cleanup() {},
 };
 
-/**
- * Barnard's Star System
- * A nearby red dwarf with a super-Earth in its outer regions
- */
-export const barnardsStarSystem: PlanetarySystem = {
-    id: "barnards-star",
-    name: "Barnard's Star System",
+export const kepler442System: PlanetarySystem = {
+    id: "kepler-442",
+    name: "Kepler-442 System",
     version: "1.0.0",
     description:
-        "The closest single star to the Sun, hosting a super-Earth exoplanet in its cold outer regions",
+        "A star system containing potentially habitable super-Earth exoplanets",
     author: "Andromeda Team",
 
     systemData: {
-        id: "barnards-star",
-        name: "Barnard's Star System",
+        id: "kepler-442",
+        name: "Kepler-442 System",
         description:
-            "The closest single star to the Sun, hosting a super-Earth exoplanet in its cold outer regions",
+            "A star system containing potentially habitable super-Earth exoplanets",
         systemType: "solar",
-        systemScale: 1.1,
+        systemScale: 1.0,
         systemCenter: new THREE.Vector3(0, 0, 0),
 
         star: {
-            id: "barnards-star",
-            name: "Barnard's Star",
+            id: "kepler-442",
+            name: "Kepler-442",
             type: "star",
             description:
-                "An ancient red dwarf star with the highest known proper motion",
+                "A K-type main-sequence star smaller and cooler than our Sun",
             keyFacts: {
-                diameter: "254,000 km",
+                diameter: "970,000 km",
                 distanceFromSun: "0 km",
                 orbitalPeriod: "N/A",
-                composition: [
-                    "Hydrogen (75%)",
-                    "Helium (24%)",
-                    "Other elements (1%)",
-                ],
-                temperature: "3,134 K (surface)",
+                composition: ["Hydrogen", "Helium"],
+                temperature: "4,402 K (surface)",
             },
             images: [],
             position: new THREE.Vector3(0, 0, 0),
-            scale: 1.4,
+            scale: 2.0,
             material: {
-                color: "#DC143C",
-                emissive: "#B22222",
+                color: "#FFB347",
+                emissive: "#FF8C00",
             },
         },
 
         celestialBodies: [
             {
-                id: "barnards-star-b",
-                name: "Barnard's Star b",
+                id: "kepler-442b",
+                name: "Kepler-442b",
                 type: "planet",
                 description:
-                    "A cold super-Earth exoplanet beyond the snow line of its star",
+                    "A potentially habitable super-Earth in the habitable zone",
                 keyFacts: {
-                    diameter: "~19,000 km (estimated)",
-                    distanceFromSun: "0.404 AU",
-                    orbitalPeriod: "233 days",
-                    composition: ["Rocky/icy", "Possible ice surface"],
-                    temperature: "-170°C (estimated)",
-                    moons: 0,
+                    diameter: "~16,000 km (estimated)",
+                    distanceFromSun: "0.41 AU",
+                    orbitalPeriod: "112.3 days",
+                    composition: ["Rocky (estimated)", "Possible atmosphere"],
+                    temperature: "-2°C to +15°C (estimated)",
                 },
                 images: [],
-                position: new THREE.Vector3(12, 0, 0),
-                scale: 1.5,
+                position: new THREE.Vector3(8, 0, 0),
+                scale: 1.3,
                 material: {
-                    color: "#4682B4",
-                    roughness: 0.3,
-                    metalness: 0.0,
-                    transparent: true,
-                    opacity: 0.9,
+                    color: "#6B8E5A",
+                    roughness: 0.7,
+                    metalness: 0.1,
                 },
-                orbitRadius: 12,
-                orbitSpeed: 0.02,
+                orbitRadius: 8,
+                orbitSpeed: 0.03,
             },
         ],
 
         metadata: {
-            discoveredBy: "European Southern Observatory",
-            discoveryDate: "2018",
-            distance: "5.96 light-years",
-            constellation: "Ophiuchus",
-            spectralClass: "M4V",
+            discoveredBy: "Kepler Space Telescope",
+            discoveryDate: "2015",
+            distance: "1,206 light-years",
+            constellation: "Lyra",
+            spectralClass: "K5V",
         },
 
         backgroundStars: {
             enabled: true,
-            density: 1.0,
-            seed: 1916,
-            animationSpeed: 1.3,
-            minRadius: 2100,
-            maxRadius: 5200,
+            density: 1.4,
+            seed: 442,
+            animationSpeed: 1.2,
+            minRadius: 2400,
+            maxRadius: 6000,
             colorVariation: true,
         },
     },
@@ -486,100 +466,87 @@ export const barnardsStarSystem: PlanetarySystem = {
     async cleanup() {},
 };
 
-/**
- * Ross 128 System
- * A nearby red dwarf with a potentially habitable planet
- */
-export const ross128System: PlanetarySystem = {
-    id: "ross-128",
-    name: "Ross 128 System",
+export const kepler438System: PlanetarySystem = {
+    id: "kepler-438",
+    name: "Kepler-438 System",
     version: "1.0.0",
     description:
-        "A quiet red dwarf star system with a potentially habitable Earth-sized exoplanet",
+        "Another potentially habitable exoplanet system discovered by Kepler",
     author: "Andromeda Team",
 
     systemData: {
-        id: "ross-128",
-        name: "Ross 128 System",
+        id: "kepler-438",
+        name: "Kepler-438 System",
         description:
-            "A quiet red dwarf star system with a potentially habitable Earth-sized exoplanet",
+            "Another potentially habitable exoplanet system discovered by Kepler",
         systemType: "solar",
-        systemScale: 0.95,
+        systemScale: 1.0,
         systemCenter: new THREE.Vector3(0, 0, 0),
 
         star: {
-            id: "ross-128",
-            name: "Ross 128",
+            id: "kepler-438",
+            name: "Kepler-438",
             type: "star",
-            description: "A quiet red dwarf star with minimal flare activity",
+            description:
+                "A red dwarf star hosting a potentially habitable planet",
             keyFacts: {
-                diameter: "270,000 km",
+                diameter: "680,000 km",
                 distanceFromSun: "0 km",
                 orbitalPeriod: "N/A",
-                composition: [
-                    "Hydrogen (75%)",
-                    "Helium (24%)",
-                    "Other elements (1%)",
-                ],
-                temperature: "3,192 K (surface)",
+                composition: ["Hydrogen", "Helium"],
+                temperature: "3,970 K (surface)",
             },
             images: [],
             position: new THREE.Vector3(0, 0, 0),
-            scale: 1.5,
+            scale: 1.8,
             material: {
-                color: "#FF6347",
-                emissive: "#CD5C5C",
+                color: "#FF6B47",
+                emissive: "#FF4500",
             },
         },
 
         celestialBodies: [
             {
-                id: "ross-128b",
-                name: "Ross 128 b",
+                id: "kepler-438b",
+                name: "Kepler-438b",
                 type: "planet",
                 description:
-                    "A potentially habitable Earth-sized exoplanet with temperate conditions",
+                    "A potentially habitable rocky planet similar to Earth in size",
                 keyFacts: {
-                    diameter: "~14,200 km",
-                    distanceFromSun: "0.049 AU",
-                    orbitalPeriod: "9.9 days",
-                    composition: ["Rocky", "Possible atmosphere"],
-                    temperature: "-60°C to +20°C (estimated)",
-                    moons: 0,
+                    diameter: "~15,200 km",
+                    distanceFromSun: "0.166 AU",
+                    orbitalPeriod: "35.2 days",
+                    composition: ["Rocky", "Possible thin atmosphere"],
+                    temperature: "-12°C to +8°C (estimated)",
                 },
                 images: [],
-                position: new THREE.Vector3(7, 0, 0),
-                scale: 1.12,
+                position: new THREE.Vector3(6, 0, 0),
+                scale: 1.2,
                 material: {
-                    color: "#228B22",
-                    roughness: 0.6,
-                    metalness: 0.1,
-                    atmosphereColor: "#87CEEB",
+                    color: "#8B4513",
+                    roughness: 0.8,
+                    metalness: 0.2,
                 },
-                orbitRadius: 7,
-                orbitSpeed: 0.06,
+                orbitRadius: 6,
+                orbitSpeed: 0.04,
             },
         ],
 
         metadata: {
-            discoveredBy: "European Southern Observatory",
-            discoveryDate: "2017",
-            distance: "11.03 light-years",
-            constellation: "Virgo",
-            spectralClass: "M4V",
-            habitableZone: {
-                inner: 0.04,
-                outer: 0.08,
-            },
+            discoveredBy: "Kepler Space Telescope",
+            discoveryDate: "2015",
+            distance: "640 light-years",
+            constellation: "Lyra",
+            spectralClass: "M0V",
         },
 
         backgroundStars: {
             enabled: true,
-            density: 1.2,
-            seed: 128,
+            density: 1.3,
+            seed: 438,
             animationSpeed: 0.9,
             minRadius: 2300,
-            maxRadius: 5600,
+            maxRadius: 5800,
             colorVariation: true,
         },
     },

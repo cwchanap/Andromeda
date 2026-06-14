@@ -1,36 +1,26 @@
-// Main exports for planetary system module
 export * from "./types";
 export { PlanetarySystemRegistry } from "./PlanetarySystemRegistry";
 export * from "./PlanetarySystemRenderer";
 export * from "./DistanceRenderer";
-
-// Export all systems
 export * from "./SolarSystem";
-export * from "./AlphaCentauri";
-export * from "./KeplerSystems";
-export * from "./NearbyExoplanets";
+export * from "./CuratedSystems";
+export { starSystems } from "./systems";
 
-// Pre-configured registry with all systems
 import { planetarySystemRegistry } from "./PlanetarySystemRegistry";
 import { solarSystem } from "./SolarSystem";
-import { alphaCentauriSystem } from "./AlphaCentauri";
-import { kepler442System, kepler438System } from "./KeplerSystems";
+import { starSystems } from "./systems";
 import {
     trappist1System,
     wolf359System,
-    barnardsStarSystem,
-    ross128System,
-} from "./NearbyExoplanets";
+    kepler442System,
+    kepler438System,
+} from "./CuratedSystems";
 
-// Register all available systems
 planetarySystemRegistry.registerSystem(solarSystem);
-planetarySystemRegistry.registerSystem(alphaCentauriSystem);
-planetarySystemRegistry.registerSystem(kepler442System);
-planetarySystemRegistry.registerSystem(kepler438System);
+for (const s of starSystems) planetarySystemRegistry.registerSystem(s);
 planetarySystemRegistry.registerSystem(trappist1System);
 planetarySystemRegistry.registerSystem(wolf359System);
-planetarySystemRegistry.registerSystem(barnardsStarSystem);
-planetarySystemRegistry.registerSystem(ross128System);
+planetarySystemRegistry.registerSystem(kepler442System);
+planetarySystemRegistry.registerSystem(kepler438System);
 
-// Export the configured registry
 export { planetarySystemRegistry };
