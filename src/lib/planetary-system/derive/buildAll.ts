@@ -35,7 +35,10 @@ export function buildLocalGalaxy(): GalaxyData {
             id: sys.id,
             name: sys.systemData.name,
             description: sys.systemData.description,
-            systemType: mapSystemType(sys.systemData.systemType),
+            systemType: mapSystemType(
+                sys.systemData.systemType,
+                group[0].number_of_stars,
+            ),
             position: new THREE.Vector3(pos.x, pos.y, pos.z),
             distanceFromEarth: distanceLy,
             stars: [sys.systemData.star],
@@ -81,8 +84,12 @@ function groupBySystemRank(rows: SystemCsvRow[]): SystemCsvRow[][] {
         .map(([, group]) => group);
 }
 
-function mapSystemType(t: string): "solar" | "binary" | "trinary" | "multiple" {
+function mapSystemType(
+    t: string,
+    starCount: number,
+): "solar" | "binary" | "trinary" | "multiple" {
     if (t === "solar") return "solar";
     if (t === "binary") return "binary";
+    if (starCount === 3) return "trinary";
     return "multiple";
 }

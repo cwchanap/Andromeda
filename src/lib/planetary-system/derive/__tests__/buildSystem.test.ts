@@ -139,4 +139,8 @@ describe("buildSystem (Alpha Centauri golden)", () => {
     it("systemType is multiple for 3 stars", () => {
         expect(sys.systemData.systemType).toBe("multiple");
     });
+    it("throws on invalid object_type", () => {
+        const badRow = row({ object_type: "asteroid" });
+        expect(() => buildSystem([badRow])).toThrow(/Invalid object_type/);
+    });
 });

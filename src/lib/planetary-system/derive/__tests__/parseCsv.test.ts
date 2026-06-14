@@ -27,4 +27,8 @@ describe("parseSystemsCsv", () => {
         const rows = parseSystemsCsv(CSV.replace(",1900,", ",,"));
         expect(rows[0].orbital_period_days).toBeUndefined();
     });
+    it("treats malformed numeric cells as undefined, not NaN", () => {
+        const rows = parseSystemsCsv(CSV.replace(",1900,", ",oops,"));
+        expect(rows[0].orbital_period_days).toBeUndefined();
+    });
 });

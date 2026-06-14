@@ -11,7 +11,7 @@ export const localGalaxyData: GalaxyData = {
             id: "alpha-centauri",
             name: "Alpha Centauri System",
             description: "Alpha Centauri system",
-            systemType: "multiple",
+            systemType: "trinary",
             position: new THREE.Vector3(
                 -1.5873472912565585,
                 -3.708309014350326,

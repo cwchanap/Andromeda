@@ -95,7 +95,9 @@ function toSystemCsvRow(row: string[]): SystemCsvRow {
     const cell = (index: number): string => row[index] ?? "";
     const numberOrUndefined = (index: number): number | undefined => {
         const value = cell(index);
-        return value === "" || value === "N/A" ? undefined : Number(value);
+        if (value === "" || value === "N/A") return undefined;
+        const num = Number(value);
+        return Number.isNaN(num) ? undefined : num;
     };
 
     return {

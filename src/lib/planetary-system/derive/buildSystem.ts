@@ -13,6 +13,18 @@ import {
     seededFromId,
 } from "./visualFromAstronomy";
 
+const VALID_CSV_OBJECT_TYPES = new Set<CsvObjectType>([
+    "star",
+    "planet",
+    "planet_candidate",
+    "brown_dwarf",
+    "satellite",
+]);
+
+function isValidCsvObjectType(value: string): value is CsvObjectType {
+    return VALID_CSV_OBJECT_TYPES.has(value as CsvObjectType);
+}
+
 const DEFAULT_PLANET_COLOR = "#8B7355";
 
 function slug(s: string): string {
@@ -68,7 +80,12 @@ function buildOrbit(
 function buildBody(row: SystemCsvRow, isStar: boolean): CelestialBodyData {
     const id = slug(row.object_name);
     const name = row.object_name;
-    const csvType = row.object_type as CsvObjectType;
+    if (!isValidCsvObjectType(row.object_type)) {
+        throw new Error(
+            `Invalid object_type "${row.object_type}" for object "${row.object_name}" in system "${row.system_name}"`,
+        );
+    }
+    const csvType = row.object_type;
     const type = mapBodyType(csvType);
     const status = parseStatus(row.status, csvType);
 

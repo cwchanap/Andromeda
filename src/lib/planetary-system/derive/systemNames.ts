@@ -44,10 +44,10 @@ export function loadCoordinates(): Record<string, SystemCoordinate> {
     for (let i = 1; i < lines.length; i++) {
         const parts = lines[i].split(",");
         if (parts.length >= 3) {
-            result[parts[0]] = {
-                ra: parseFloat(parts[1]),
-                dec: parseFloat(parts[2]),
-            };
+            const ra = parseFloat(parts[1]);
+            const dec = parseFloat(parts[2]);
+            if (!Number.isFinite(ra) || !Number.isFinite(dec)) continue;
+            result[parts[0]] = { ra, dec };
         }
     }
     return result;

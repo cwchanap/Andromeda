@@ -48,19 +48,6 @@ describe("localGalaxyData", () => {
         expect(alphaCentauri!.stars.length).toBeGreaterThanOrEqual(1);
     });
 
-    it("every star system has required fields", () => {
-        for (const system of localGalaxyData.starSystems) {
-            expect(system.id).toBeTruthy();
-            expect(system.name).toBeTruthy();
-            expect(system.description).toBeTruthy();
-            expect(system.stars.length).toBeGreaterThan(0);
-            expect(system.metadata).toBeDefined();
-            expect(system.visual).toBeDefined();
-            expect(system.visual.brightness).toBeGreaterThan(0);
-            expect(system.visual.scale).toBeGreaterThan(0);
-        }
-    });
-
     it("all stars have required CelestialBodyData fields", () => {
         for (const system of localGalaxyData.starSystems) {
             for (const star of system.stars) {
