@@ -25,6 +25,15 @@ describe("buildAllPlanetarySystems", () => {
 });
 describe("buildLocalGalaxy", () => {
     it("has 30 star systems, Solar not included", () => {
-        expect(buildLocalGalaxy().starSystems).toHaveLength(30);
+        const galaxy = buildLocalGalaxy();
+        expect(galaxy.starSystems).toHaveLength(30);
+        expect(
+            galaxy.starSystems.find((s) => s.id === "solar"),
+        ).toBeUndefined();
+    });
+    it("classifies Alpha Centauri (3 stars) as trinary", () => {
+        const galaxy = buildLocalGalaxy();
+        const ac = galaxy.starSystems.find((s) => s.id === "alpha-centauri");
+        expect(ac?.systemType).toBe("trinary");
     });
 });
