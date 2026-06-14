@@ -221,11 +221,12 @@ export class CelestialBodyManager {
                 transparent: false,
             });
         } else {
-            // Always use standard material for all non-star celestial bodies
+            const isUnconfirmed = data.status && data.status !== "confirmed";
             return new THREE.MeshStandardMaterial({
                 color: data.material.color,
                 metalness: data.material.metalness || 0.1,
                 roughness: data.material.roughness || 0.8,
+                ...(isUnconfirmed ? { transparent: true, opacity: 0.6 } : {}),
             });
         }
     }
@@ -440,8 +441,18 @@ export class CelestialBodyManager {
             linewidth: 5,
         });
 
+        if (data.status && data.status !== "confirmed") {
+            orbitMaterial.dashed = true;
+            orbitMaterial.dashSize = 0.5;
+            orbitMaterial.gapSize = 0.3;
+        }
+
         const orbitLine = new Line2(orbitGeometry, orbitMaterial);
         orbitLine.name = `${data.id}_orbit`;
+
+        if (data.status && data.status !== "confirmed") {
+            orbitLine.computeLineDistances();
+        }
 
         orbitLine.position.copy(center);
         this.orbitLines.set(data.id, orbitLine);
@@ -486,8 +497,18 @@ export class CelestialBodyManager {
             linewidth: 5, // 5x thicker than default (which is typically 1)
         });
 
+        if (data.status && data.status !== "confirmed") {
+            orbitMaterial.dashed = true;
+            orbitMaterial.dashSize = 0.5;
+            orbitMaterial.gapSize = 0.3;
+        }
+
         const orbitLine = new Line2(orbitGeometry, orbitMaterial);
         orbitLine.name = `${data.id}_orbit`;
+
+        if (data.status && data.status !== "confirmed") {
+            orbitLine.computeLineDistances();
+        }
 
         // Initialize orbit line position based on parent body if specified
         if (data.parentId) {
