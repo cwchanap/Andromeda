@@ -455,4 +455,8 @@ export const ja = {
 
     // Units
     "unit.lightYears": "光年",
+
+    "common.unknown": "不明",
+    "status.candidate": "候補",
+    "status.controversial": "論争中",
 } as const;

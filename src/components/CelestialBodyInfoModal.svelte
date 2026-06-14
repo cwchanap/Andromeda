@@ -2,6 +2,7 @@
   import type { CelestialBodyData } from '../types/game';
   import { gameState, gameActions } from '../stores/gameStore';
   import { routes, type AppLocale } from '../i18n/routes';
+  import { getStatusBadge, factOrUnknown } from '@/lib/hud/statusBadge';
 
   export let isOpen: boolean = false;
   export let celestialBody: CelestialBodyData | null = null;
@@ -313,6 +314,9 @@
           <div class="header-text">
             <h2 id="modal-title" class="planet-name">{getTranslatedName(celestialBody)}</h2>
             <span class="planet-type">{getTranslatedType(celestialBody)}</span>
+            {#if getStatusBadge(celestialBody)}
+              <span class={getStatusBadge(celestialBody)!.className}>{t(getStatusBadge(celestialBody)!.label)}</span>
+            {/if}
           </div>
         </div>
         
@@ -333,7 +337,7 @@
                 <div class="fact-icon">🌍</div>
                 <div class="fact-content">
                   <span class="fact-label">{t('modal.diameter')}</span>
-                  <span class="fact-value">{getTranslatedFact(celestialBody, 'diameter', celestialBody.keyFacts.diameter)}</span>
+                  <span class="fact-value">{getTranslatedFact(celestialBody, 'diameter', factOrUnknown(celestialBody.keyFacts.diameter, t('common.unknown')))}</span>
                 </div>
               </div>
 
@@ -351,7 +355,7 @@
                 <div class="fact-icon">🔄</div>
                 <div class="fact-content">
                   <span class="fact-label">{t('modal.orbitalPeriod')}</span>
-                  <span class="fact-value">{getTranslatedFact(celestialBody, 'orbitalPeriod', celestialBody.keyFacts.orbitalPeriod)}</span>
+                  <span class="fact-value">{getTranslatedFact(celestialBody, 'orbitalPeriod', factOrUnknown(celestialBody.keyFacts.orbitalPeriod, t('common.unknown')))}</span>
                 </div>
               </div>
 
@@ -359,7 +363,7 @@
                 <div class="fact-icon">🌡️</div>
                 <div class="fact-content">
                   <span class="fact-label">{t('modal.temperature')}</span>
-                  <span class="fact-value">{getTranslatedFact(celestialBody, 'temperature', celestialBody.keyFacts.temperature)}</span>
+                  <span class="fact-value">{getTranslatedFact(celestialBody, 'temperature', factOrUnknown(celestialBody.keyFacts.temperature, t('common.unknown')))}</span>
                 </div>
               </div>
               
@@ -663,6 +667,27 @@
     font-weight: 600;
     letter-spacing: 0.05em;
     border: 1px solid var(--primary-color);
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+
+  .status-badge--candidate {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.4);
+  }
+
+  .status-badge--controversial {
+    background: rgba(249, 115, 22, 0.2);
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.4);
   }
   
   .modal-body {
