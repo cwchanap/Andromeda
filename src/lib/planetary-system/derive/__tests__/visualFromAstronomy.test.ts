@@ -3,6 +3,7 @@ import {
     spectralColor,
     planetScale,
     starScale,
+    emissiveFromTemp,
 } from "@/lib/planetary-system/derive/visualFromAstronomy";
 
 describe("spectralColor", () => {
@@ -31,4 +32,17 @@ describe("starScale", () => {
         expect(starScale(214754)).toBeGreaterThanOrEqual(1.0));
     it("Sun-sized is mid-range", () =>
         expect(starScale(1392700)).toBeGreaterThan(1.0));
+});
+describe("emissiveFromTemp", () => {
+    it("floors at 0.3 for cold bodies", () => {
+        expect(emissiveFromTemp(1000)).toBeCloseTo(0.3, 2);
+    });
+    it("caps at 1.0 for very hot stars", () => {
+        expect(emissiveFromTemp(20000)).toBeCloseTo(1.0, 2);
+    });
+    it("Sun temp (~5790K) is mid-range", () => {
+        const v = emissiveFromTemp(5790);
+        expect(v).toBeGreaterThan(0.3);
+        expect(v).toBeLessThan(1.0);
+    });
 });
