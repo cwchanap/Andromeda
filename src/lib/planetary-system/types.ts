@@ -35,6 +35,7 @@ export interface PlanetarySystemData {
         distance?: string;
         constellation?: string;
         spectralClass?: string;
+        confirmedExoplanetCount?: number;
         habitableZone?: {
             inner: number;
             outer: number;

@@ -22,6 +22,7 @@ export interface StarSystemData {
         distance?: string; // distance from Earth/reference point
         constellation?: string;
         spectralClass?: string;
+        confirmedExoplanetCount?: number;
         habitableZone?: {
             inner: number;
             outer: number;
