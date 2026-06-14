@@ -6,6 +6,8 @@
     "dev": "astro dev --port 3600",
     "lint-staged": "lint-staged",
     "start": "astro dev",
+    "gen:systems": "bun run scripts/gen-systems.ts",
+    "prebuild": "bun run gen:systems",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
