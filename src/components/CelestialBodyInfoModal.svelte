@@ -366,7 +366,17 @@
                   <span class="fact-value">{getTranslatedFact(celestialBody, 'temperature', factOrUnknown(celestialBody.keyFacts.temperature, t('common.unknown')))}</span>
                 </div>
               </div>
-              
+
+              {#if celestialBody.keyFacts.equilibriumTemperature}
+                <div class="fact-item">
+                  <div class="fact-icon">🌡️</div>
+                  <div class="fact-content">
+                    <span class="fact-label">{t('modal.equilibriumTemperature')}</span>
+                    <span class="fact-value">{celestialBody.keyFacts.equilibriumTemperature}</span>
+                  </div>
+                </div>
+              {/if}
+
               {#if celestialBody.keyFacts.moons}
                 <div class="fact-item">
                   <div class="fact-icon">🌙</div>

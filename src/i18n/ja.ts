@@ -65,6 +65,7 @@ export const ja = {
     "modal.distanceFromParent": "母天体からの距離",
     "modal.orbitalPeriod": "軌道周期",
     "modal.temperature": "温度",
+    "modal.equilibriumTemperature": "平衡温度",
     "modal.moons": "衛星",
     "modal.viewTerrain": "惑星を探索",
     "modal.footerText": "宇宙を探索し、宇宙の驚異を発見する",

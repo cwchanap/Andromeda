@@ -66,6 +66,7 @@ export const en = {
     "modal.distanceFromParent": "Distance from Parent",
     "modal.orbitalPeriod": "Orbital Period",
     "modal.temperature": "Temperature",
+    "modal.equilibriumTemperature": "Equilibrium Temperature",
     "modal.moons": "Moons",
     "modal.viewTerrain": "Explore Planet",
     "modal.footerText":
