@@ -508,6 +508,107 @@ describe("CelestialBodyInfoModal", () => {
         });
     });
 
+    describe("Status Badge Rendering", () => {
+        it("renders candidate badge for candidate status", () => {
+            const candidateBody: CelestialBodyData = {
+                ...mockEarth,
+                status: "candidate",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: candidateBody,
+                    onClose: defaultOnClose,
+                },
+            });
+            expect(
+                container.querySelector(".status-badge--candidate"),
+            ).toBeTruthy();
+        });
+
+        it("renders controversial badge for controversial status", () => {
+            const controversialBody: CelestialBodyData = {
+                ...mockEarth,
+                status: "controversial",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: controversialBody,
+                    onClose: defaultOnClose,
+                },
+            });
+            expect(
+                container.querySelector(".status-badge--controversial"),
+            ).toBeTruthy();
+        });
+
+        it("does not render a badge for confirmed status", () => {
+            const confirmedBody: CelestialBodyData = {
+                ...mockEarth,
+                status: "confirmed",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: confirmedBody,
+                    onClose: defaultOnClose,
+                },
+            });
+            expect(container.querySelector(".status-badge")).toBeFalsy();
+        });
+    });
+
+    describe("Equilibrium Temperature Rendering", () => {
+        it("renders equilibriumTemperature when present in keyFacts", () => {
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    equilibriumTemperature: "-234°C (equilibrium, estimated)",
+                },
+            };
+            const translations = {
+                "modal.equilibriumTemperature": "Equilibrium Temperature",
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                    translations,
+                },
+            });
+            expect(container.textContent).toContain("Equilibrium Temperature");
+            expect(container.textContent).toContain(
+                "-234°C (equilibrium, estimated)",
+            );
+        });
+
+        it("does not render equilibriumTemperature when absent", () => {
+            const body: CelestialBodyData = {
+                ...mockEarth,
+                keyFacts: {
+                    ...mockEarth.keyFacts,
+                    equilibriumTemperature: undefined,
+                },
+            };
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: body,
+                    onClose: defaultOnClose,
+                },
+            });
+            expect(container.textContent).not.toContain(
+                "Equilibrium Temperature",
+            );
+            expect(container.textContent).not.toContain(
+                "modal.equilibriumTemperature",
+            );
+        });
+    });
+
     describe("Moon Distance Fact Overrides", () => {
         it("uses facts.<id>.distanceFromParent to localize parent name", () => {
             // Regression for mixed-language distance string:

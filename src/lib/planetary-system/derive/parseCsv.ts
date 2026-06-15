@@ -27,7 +27,7 @@ export interface SystemCsvRow {
     source_url: string;
 }
 
-function parseCsvRows(text: string): string[][] {
+export function parseCsvRows(text: string): string[][] {
     const rows: string[][] = [];
     let row: string[] = [];
     let field = "";

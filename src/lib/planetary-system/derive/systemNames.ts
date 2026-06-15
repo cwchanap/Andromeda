@@ -32,6 +32,7 @@ export const SYSTEM_NAMES: readonly string[] = [
 ] as const;
 
 import systemCoordinatesCsv from "@/data/system_coordinates.csv?raw";
+import { parseCsvRows } from "./parseCsv";
 
 export interface SystemCoordinate {
     ra: number;
@@ -39,10 +40,10 @@ export interface SystemCoordinate {
 }
 
 export function loadCoordinates(): Record<string, SystemCoordinate> {
-    const lines = systemCoordinatesCsv.trim().split("\n");
+    const rows = parseCsvRows(systemCoordinatesCsv);
     const result: Record<string, SystemCoordinate> = {};
-    for (let i = 1; i < lines.length; i++) {
-        const parts = lines[i].split(",");
+    for (let i = 1; i < rows.length; i++) {
+        const parts = rows[i];
         // RA and DEC are always the last two columns and are always numeric,
         // so parse from the end. This stays correct even if a system name
         // contains a comma, unlike a naive [0]/[1]/[2] index split.

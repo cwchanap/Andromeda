@@ -234,6 +234,7 @@ export const trappist1System: PlanetarySystem = {
             distance: "40.7 light-years",
             constellation: "Aquarius",
             spectralClass: "M8V",
+            confirmedExoplanetCount: 7,
             habitableZone: {
                 inner: 0.025,
                 outer: 0.055,
@@ -358,6 +359,7 @@ export const wolf359System: PlanetarySystem = {
             distance: "7.86 light-years",
             constellation: "Leo",
             spectralClass: "M6V",
+            confirmedExoplanetCount: 2,
         },
 
         backgroundStars: {
@@ -448,6 +450,7 @@ export const kepler442System: PlanetarySystem = {
             distance: "1,206 light-years",
             constellation: "Lyra",
             spectralClass: "K5V",
+            confirmedExoplanetCount: 1,
         },
 
         backgroundStars: {
@@ -538,6 +541,7 @@ export const kepler438System: PlanetarySystem = {
             distance: "640 light-years",
             constellation: "Lyra",
             spectralClass: "M0V",
+            confirmedExoplanetCount: 1,
         },
 
         backgroundStars: {

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { parseCsvRows } from "@/lib/planetary-system/derive/parseCsv";
 import {
     loadCoordinates,
     SYSTEM_NAMES,
@@ -23,13 +24,10 @@ describe("system_coordinates.csv", () => {
 
 describe("loadCoordinates parsing robustness", () => {
     it("parses a name containing a comma correctly (parse-from-end)", () => {
-        // Verifies the parser tolerates commas in the system_name column by
-        // reading the trailing numeric RA/DEC columns from the end. We can't
-        // inject a CSV here (it's a ?raw import), so we re-implement the same
-        // parse logic over an inline fixture to lock in the contract.
         const parseLine = (line: string) => {
-            const parts = line.split(",");
-            if (parts.length < 3) return null;
+            const rows = parseCsvRows(line);
+            const parts = rows[0];
+            if (!parts || parts.length < 3) return null;
             const dec = parseFloat(parts[parts.length - 1]);
             const ra = parseFloat(parts[parts.length - 2]);
             if (!Number.isFinite(ra) || !Number.isFinite(dec)) return null;
