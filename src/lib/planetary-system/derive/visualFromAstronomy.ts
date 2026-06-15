@@ -96,12 +96,20 @@ export function emissiveFromTemp(tempK: number): number {
 
 export function orbitVisualRadius(au: number): number {
     const a = Math.max(au, 0);
+    // Logarithmically map semi-major axis (AU) to an on-screen orbit radius:
+    //  - inner floor of 2 units at 0 AU
+    //  - the log ratio maps 0 AU -> 0 and 50 AU -> 1 (the 50 AU reference)
+    //  - the * 38 spans 2 -> 40 units, clamped to a safe [2, 60] range
     const v = 2 + (Math.log10(a * 1000 + 1) / Math.log10(50 * 1000 + 1)) * 38;
     return clamp(v, 2, 60);
 }
 
 export function visualPeriodSeconds(days: number): number {
     if (!days || days <= 0) return 0;
+    // Logarithmically compress orbital periods into a watchable animation range:
+    //  - 8s baseline offset
+    //  - log10(days+1)/5 normalizes the period (5 = log10(100000), the upper ref)
+    //  - * 82 spans 8s -> 90s, clamped to a visible [6s, 120s] window
     return clamp(8 + (Math.log10(days + 1) / 5) * 82, 6, 120);
 }
 

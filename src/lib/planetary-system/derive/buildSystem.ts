@@ -38,6 +38,12 @@ function formatDiameter(km: number): string {
     return `${Math.round(km).toLocaleString("en-US")} km`;
 }
 
+function formatDistanceAu(au: number): string {
+    // Round to 4 decimals and strip trailing zeros (e.g. 0.0485, 1.48),
+    // consistent with the formatting applied by formatDiameter/formatOrbitalPeriod.
+    return `${parseFloat(au.toFixed(4))} AU`;
+}
+
 function formatOrbitalPeriod(days: number): string {
     if (days > 365) {
         return `${(days / 365).toFixed(1)} years`;
@@ -124,7 +130,7 @@ function buildBody(row: SystemCsvRow, isStar: boolean): CelestialBodyData {
     if (isStar) {
         keyFacts.distanceFromSun = "0 (system center)";
     } else if (au !== undefined) {
-        keyFacts.distanceFromSun = `${au} AU from ${row.host_object}`;
+        keyFacts.distanceFromSun = `${formatDistanceAu(au)} from ${row.host_object}`;
     }
 
     if (

@@ -117,6 +117,18 @@ describe("buildSystem (Alpha Centauri golden)", () => {
         )!;
         expect(b.keyFacts.distanceFromSun).toMatch(/Proxima Centauri/i);
     });
+    it("distanceFromSun formats AU value and strips trailing zeros", () => {
+        const b = sys.systemData.celestialBodies.find(
+            (b) => b.name === "Proxima Centauri b",
+        )!;
+        // 0.0485 AU -> formatted (no raw JS float, no trailing-zero padding)
+        expect(b.keyFacts.distanceFromSun).toMatch(/^0\.0485 AU from /);
+        // Proxima c at 1.48 AU should not render as "1.4800"
+        const c = sys.systemData.celestialBodies.find(
+            (b) => b.name === "Proxima Centauri c",
+        )!;
+        expect(c!.keyFacts.distanceFromSun).toMatch(/^1\.48 AU from /);
+    });
     it("diameter keyFact is populated", () => {
         const b = sys.systemData.celestialBodies.find(
             (b) => b.name === "Proxima Centauri b",

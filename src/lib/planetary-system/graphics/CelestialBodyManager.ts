@@ -441,18 +441,14 @@ export class CelestialBodyManager {
             linewidth: 5,
         });
 
-        if (data.status && data.status !== "confirmed") {
-            orbitMaterial.dashed = true;
-            orbitMaterial.dashSize = 0.5;
-            orbitMaterial.gapSize = 0.3;
-        }
-
         const orbitLine = new Line2(orbitGeometry, orbitMaterial);
         orbitLine.name = `${data.id}_orbit`;
 
-        if (data.status && data.status !== "confirmed") {
-            orbitLine.computeLineDistances();
-        }
+        this.applyUnconfirmedOrbitStyling(
+            orbitMaterial,
+            orbitLine,
+            data.status,
+        );
 
         orbitLine.position.copy(center);
         this.orbitLines.set(data.id, orbitLine);
@@ -497,18 +493,14 @@ export class CelestialBodyManager {
             linewidth: 5, // 5x thicker than default (which is typically 1)
         });
 
-        if (data.status && data.status !== "confirmed") {
-            orbitMaterial.dashed = true;
-            orbitMaterial.dashSize = 0.5;
-            orbitMaterial.gapSize = 0.3;
-        }
-
         const orbitLine = new Line2(orbitGeometry, orbitMaterial);
         orbitLine.name = `${data.id}_orbit`;
 
-        if (data.status && data.status !== "confirmed") {
-            orbitLine.computeLineDistances();
-        }
+        this.applyUnconfirmedOrbitStyling(
+            orbitMaterial,
+            orbitLine,
+            data.status,
+        );
 
         // Initialize orbit line position based on parent body if specified
         if (data.parentId) {
@@ -528,6 +520,24 @@ export class CelestialBodyManager {
         // Store and add to scene
         this.orbitLines.set(data.id, orbitLine);
         this.scene.add(orbitLine);
+    }
+
+    /**
+     * Apply dashed styling to an orbit line when the body is not yet confirmed
+     * (candidate/controversial). Shared by createOrbitalElementsOrbitLine and
+     * createOrbitLine to keep the dashing rules in one place.
+     */
+    private applyUnconfirmedOrbitStyling(
+        material: LineMaterial,
+        orbitLine: Line2,
+        status: CelestialBodyData["status"],
+    ): void {
+        if (status && status !== "confirmed") {
+            material.dashed = true;
+            material.dashSize = 0.5;
+            material.gapSize = 0.3;
+            orbitLine.computeLineDistances();
+        }
     }
 
     /**
