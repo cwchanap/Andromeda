@@ -2,6 +2,30 @@ import { describe, it, expect } from "vitest";
 import { confirmedCount } from "@/lib/hud/confirmedCount";
 import type { PlanetarySystem } from "@/lib/planetary-system/types";
 
+function makeBody(
+    id: string,
+    type: "planet" | "star" = "planet",
+    status?: "confirmed" | "candidate" | "controversial",
+) {
+    return {
+        id,
+        name: id,
+        type,
+        status,
+        description: "",
+        keyFacts: {
+            diameter: "",
+            orbitalPeriod: "",
+            composition: [],
+            temperature: "",
+        },
+        images: [],
+        position: undefined as never,
+        scale: 1,
+        material: { color: "#fff" },
+    };
+}
+
 function makeSystem(overrides: Partial<PlanetarySystem> = {}): PlanetarySystem {
     return {
         id: "test",
@@ -12,55 +36,10 @@ function makeSystem(overrides: Partial<PlanetarySystem> = {}): PlanetarySystem {
             id: "test",
             name: "Test",
             description: "Test",
-            star: {
-                id: "star",
-                name: "Star",
-                type: "star",
-                description: "",
-                keyFacts: {
-                    diameter: "",
-                    orbitalPeriod: "",
-                    composition: [],
-                    temperature: "",
-                },
-                images: [],
-                position: undefined as never,
-                scale: 1,
-                material: { color: "#fff" },
-            },
+            star: makeBody("star", "star", "confirmed") as never,
             celestialBodies: [
-                {
-                    id: "p1",
-                    name: "P1",
-                    type: "planet",
-                    description: "",
-                    keyFacts: {
-                        diameter: "",
-                        orbitalPeriod: "",
-                        composition: [],
-                        temperature: "",
-                    },
-                    images: [],
-                    position: undefined as never,
-                    scale: 1,
-                    material: { color: "#fff" },
-                },
-                {
-                    id: "p2",
-                    name: "P2",
-                    type: "planet",
-                    description: "",
-                    keyFacts: {
-                        diameter: "",
-                        orbitalPeriod: "",
-                        composition: [],
-                        temperature: "",
-                    },
-                    images: [],
-                    position: undefined as never,
-                    scale: 1,
-                    material: { color: "#fff" },
-                },
+                makeBody("p1", "planet", "confirmed"),
+                makeBody("p2", "planet", "confirmed"),
             ],
             systemScale: 1,
             systemCenter: undefined as never,
@@ -82,8 +61,19 @@ describe("confirmedCount", () => {
         expect(confirmedCount(sys)).toBe(2);
     });
 
-    it("falls back to non-star body count when no confirmedExoplanetCount", () => {
+    it("falls back to confirmed non-star body count when no confirmedExoplanetCount", () => {
         const sys = makeSystem();
+        expect(confirmedCount(sys)).toBe(2);
+    });
+
+    it("falls back to body count when metadata exists but confirmedExoplanetCount is undefined", () => {
+        const base = makeSystem();
+        const sys = makeSystem({
+            systemData: {
+                ...base.systemData,
+                metadata: {},
+            },
+        });
         expect(confirmedCount(sys)).toBe(2);
     });
 
@@ -101,38 +91,50 @@ describe("confirmedCount", () => {
             systemData: {
                 ...base.systemData,
                 celestialBodies: [
-                    {
-                        id: "s1",
-                        name: "S1",
-                        type: "star",
-                        description: "",
-                        keyFacts: {
-                            diameter: "",
-                            orbitalPeriod: "",
-                            composition: [],
-                            temperature: "",
-                        },
-                        images: [],
-                        position: undefined as never,
-                        scale: 1,
-                        material: { color: "#fff" },
-                    },
-                    {
-                        id: "p1",
-                        name: "P1",
-                        type: "planet",
-                        description: "",
-                        keyFacts: {
-                            diameter: "",
-                            orbitalPeriod: "",
-                            composition: [],
-                            temperature: "",
-                        },
-                        images: [],
-                        position: undefined as never,
-                        scale: 1,
-                        material: { color: "#fff" },
-                    },
+                    makeBody("s1", "star", "confirmed"),
+                    makeBody("p1", "planet", "confirmed"),
+                ],
+            },
+        });
+        expect(confirmedCount(sys)).toBe(1);
+    });
+
+    it("excludes candidate bodies from fallback count", () => {
+        const base = makeSystem();
+        const sys = makeSystem({
+            systemData: {
+                ...base.systemData,
+                celestialBodies: [
+                    makeBody("p1", "planet", "confirmed"),
+                    makeBody("p2", "planet", "candidate"),
+                ],
+            },
+        });
+        expect(confirmedCount(sys)).toBe(1);
+    });
+
+    it("excludes controversial bodies from fallback count", () => {
+        const base = makeSystem();
+        const sys = makeSystem({
+            systemData: {
+                ...base.systemData,
+                celestialBodies: [
+                    makeBody("p1", "planet", "confirmed"),
+                    makeBody("p2", "planet", "controversial"),
+                ],
+            },
+        });
+        expect(confirmedCount(sys)).toBe(1);
+    });
+
+    it("excludes bodies with undefined status from fallback count", () => {
+        const base = makeSystem();
+        const sys = makeSystem({
+            systemData: {
+                ...base.systemData,
+                celestialBodies: [
+                    makeBody("p1", "planet", "confirmed"),
+                    makeBody("p2", "planet"),
                 ],
             },
         });

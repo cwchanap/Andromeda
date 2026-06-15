@@ -22,6 +22,20 @@ export function mapBodyType(
     }
 }
 
+/**
+ * Derive the canonical body status from CSV columns.
+ *
+ * `object_type` is authoritative: a `planet_candidate` row is always a
+ * candidate regardless of the free-text status cell (e.g. Proxima Centauri c
+ * has status "candidate/disputed - not counted" but is classified via its
+ * object_type).
+ *
+ * For `planet` rows the status cell is parsed. Note that "disputed" and
+ * "controversial" are treated as synonyms — both indicate that the object's
+ * existence is debated (distinct from "candidate", which means insufficient
+ * evidence to even claim existence). The CSV's combined phrasing
+ * "candidate/disputed" is descriptive prose, not canonical status.
+ */
 export function parseStatus(
     statusCell: string,
     csvObjectType: CsvObjectType,
