@@ -56,4 +56,15 @@ describe("buildLocalGalaxy", () => {
         expect(mag).toBeCloseTo(ac!.distanceFromEarth, 1);
         expect(mag).toBeGreaterThan(0);
     });
+    it("Alpha Centauri position magnitude matches known real distance (~4.2 ly)", () => {
+        const galaxy = buildLocalGalaxy();
+        const ac = galaxy.starSystems.find((s) => s.id === "alpha-centauri");
+        expect(ac).toBeDefined();
+        const mag = Math.sqrt(
+            ac!.position.x ** 2 + ac!.position.y ** 2 + ac!.position.z ** 2,
+        );
+        // Alpha Centauri / Proxima is ~4.2465 ly from Earth — guard against a
+        // broken coordinate transform that would silently produce wrong units.
+        expect(mag).toBeCloseTo(4.2, 0);
+    });
 });

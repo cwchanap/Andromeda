@@ -10,6 +10,7 @@ import {
     buildAllPlanetarySystems,
     buildLocalGalaxy,
 } from "../src/lib/planetary-system/derive/buildAll";
+import { validateSystems } from "../src/lib/planetary-system/derive/validateSystems";
 
 const REPO_ROOT = resolve(process.cwd());
 const SYSTEMS_OUT = join(REPO_ROOT, "src/lib/planetary-system/systems.ts");
@@ -20,78 +21,16 @@ const GALAXY_OUT = join(REPO_ROOT, "src/lib/galaxy/LocalGalaxy.ts");
 const systems = buildAllPlanetarySystems();
 const galaxy = buildLocalGalaxy();
 
-// ─── HARD validation (throw on failure) ──────────────────────────────
-
-// 1. Duplicate system id
-{
-    const seen = new Set<string>();
-    for (const sys of systems) {
-        if (seen.has(sys.id)) {
-            throw new Error(`Duplicate system id: "${sys.id}"`);
-        }
-        seen.add(sys.id);
-    }
+// ─── Validation ──────────────────────────────────────────────────────
+// Hard issues abort codegen; soft issues are logged but non-fatal.
+const issues = validateSystems(systems);
+const errors = issues.filter((i) => i.level === "error");
+const warnings = issues.filter((i) => i.level === "warn");
+if (errors.length > 0) {
+    throw new Error(errors[0].message);
 }
-
-// 2. A system with no star
-for (const sys of systems) {
-    if (!sys.systemData?.star) {
-        throw new Error(`System "${sys.id}" has no star`);
-    }
-}
-
-// 3. A body whose orbit.centerId references a non-existent id
-for (const sys of systems) {
-    const validIds = new Set<string>();
-    validIds.add(sys.systemData.star.id);
-    for (const body of sys.systemData.celestialBodies) {
-        validIds.add(body.id);
-    }
-    for (const anchor of sys.systemData.orbitAnchors ?? []) {
-        validIds.add(anchor.id);
-    }
-
-    const allBodies = [sys.systemData.star, ...sys.systemData.celestialBodies];
-    for (const body of allBodies) {
-        const centerId = body.orbit?.centerId;
-        if (centerId && !validIds.has(centerId)) {
-            throw new Error(
-                `Body "${body.id}" in system "${sys.id}" has orbit.centerId "${centerId}" referencing non-existent id`,
-            );
-        }
-    }
-}
-
-// ─── SOFT validation (warn, continue) ────────────────────────────────
-
-// 1. confirmedExoplanetCount mismatch
-for (const sys of systems) {
-    const expected = sys.systemData.metadata?.confirmedExoplanetCount ?? 0;
-    const confirmedCount = sys.systemData.celestialBodies.filter(
-        (b) => b.status === "confirmed" && b.type !== "star",
-    ).length;
-    if (expected !== confirmedCount) {
-        console.warn(
-            `[SOFT] System "${sys.id}": confirmedExoplanetCount=${expected} but found ${confirmedCount} confirmed non-star bodies`,
-        );
-    }
-}
-
-// 2. Any body missing diameter or temperature
-for (const sys of systems) {
-    const allBodies = [sys.systemData.star, ...sys.systemData.celestialBodies];
-    for (const body of allBodies) {
-        if (!body.keyFacts.diameter) {
-            console.warn(
-                `[SOFT] Body "${body.id}" in system "${sys.id}" is missing diameter`,
-            );
-        }
-        if (!body.keyFacts.temperature) {
-            console.warn(
-                `[SOFT] Body "${body.id}" in system "${sys.id}" is missing temperature`,
-            );
-        }
-    }
+for (const w of warnings) {
+    console.warn(`[SOFT] ${w.message}`);
 }
 
 // ─── Serialize ───────────────────────────────────────────────────────
