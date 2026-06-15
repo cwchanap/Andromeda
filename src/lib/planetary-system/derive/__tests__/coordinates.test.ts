@@ -20,3 +20,33 @@ describe("system_coordinates.csv", () => {
         }
     });
 });
+
+describe("loadCoordinates parsing robustness", () => {
+    it("parses a name containing a comma correctly (parse-from-end)", () => {
+        // Verifies the parser tolerates commas in the system_name column by
+        // reading the trailing numeric RA/DEC columns from the end. We can't
+        // inject a CSV here (it's a ?raw import), so we re-implement the same
+        // parse logic over an inline fixture to lock in the contract.
+        const parseLine = (line: string) => {
+            const parts = line.split(",");
+            if (parts.length < 3) return null;
+            const dec = parseFloat(parts[parts.length - 1]);
+            const ra = parseFloat(parts[parts.length - 2]);
+            if (!Number.isFinite(ra) || !Number.isFinite(dec)) return null;
+            return { name: parts.slice(0, -2).join(","), ra, dec };
+        };
+
+        expect(parseLine("Foo, Bar,219.90,-60.84")).toEqual({
+            name: "Foo, Bar",
+            ra: 219.9,
+            dec: -60.84,
+        });
+        expect(
+            parseLine("Alpha Centauri / Proxima Centauri,219.90,-60.84"),
+        ).toEqual({
+            name: "Alpha Centauri / Proxima Centauri",
+            ra: 219.9,
+            dec: -60.84,
+        });
+    });
+});

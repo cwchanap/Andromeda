@@ -43,11 +43,15 @@ export function loadCoordinates(): Record<string, SystemCoordinate> {
     const result: Record<string, SystemCoordinate> = {};
     for (let i = 1; i < lines.length; i++) {
         const parts = lines[i].split(",");
+        // RA and DEC are always the last two columns and are always numeric,
+        // so parse from the end. This stays correct even if a system name
+        // contains a comma, unlike a naive [0]/[1]/[2] index split.
         if (parts.length >= 3) {
-            const ra = parseFloat(parts[1]);
-            const dec = parseFloat(parts[2]);
+            const dec = parseFloat(parts[parts.length - 1]);
+            const ra = parseFloat(parts[parts.length - 2]);
             if (!Number.isFinite(ra) || !Number.isFinite(dec)) continue;
-            result[parts[0]] = { ra, dec };
+            const name = parts.slice(0, -2).join(",");
+            result[name] = { ra, dec };
         }
     }
     return result;
