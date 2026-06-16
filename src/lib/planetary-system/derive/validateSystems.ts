@@ -13,7 +13,7 @@ export interface ValidationIssue {
  * Hard issues (`level: "error"`) indicate broken references or missing required
  * data (duplicate ids, no star, dangling orbit center) and should abort codegen.
  * Soft issues (`level: "warn"`) indicate suspicious but non-fatal data — e.g. a
- * `confirmedExoplanetCount` mismatch or a missing key fact — and should be
+ * `knownExoplanetCount` mismatch or a missing key fact — and should be
  * logged but not block generation.
  *
  * Extracted as a pure function from `scripts/gen-systems.ts` so it can be unit
@@ -69,15 +69,19 @@ export function validateSystems(systems: PlanetarySystem[]): ValidationIssue[] {
             }
         }
 
-        // ─── SOFT: confirmedExoplanetCount mismatch ────────────────
-        const expected = sys.systemData.metadata?.confirmedExoplanetCount ?? 0;
-        const confirmedCount = sys.systemData.celestialBodies.filter(
-            (b) => b.status === "confirmed" && b.type !== "star",
+        // ─── SOFT: knownExoplanetCount mismatch ──────────────────
+        // The CSV `number_of_known_exoplanets` column counts every
+        // non-candidate planet (confirmed + controversial); candidates are
+        // excluded because their existence is unconfirmed. Mirror that
+        // definition here so the cross-check is apples-to-apples.
+        const expected = sys.systemData.metadata?.knownExoplanetCount ?? 0;
+        const actual = sys.systemData.celestialBodies.filter(
+            (b) => b.type !== "star" && b.status !== "candidate",
         ).length;
-        if (expected !== confirmedCount) {
+        if (expected !== actual) {
             issues.push({
                 level: "warn",
-                message: `System "${sys.id}": confirmedExoplanetCount=${expected} but found ${confirmedCount} confirmed non-star bodies`,
+                message: `System "${sys.id}": knownExoplanetCount=${expected} but found ${actual} known (non-candidate) non-star bodies`,
             });
         }
 

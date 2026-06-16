@@ -24,6 +24,15 @@ export function buildLocalGalaxy(): GalaxyData {
         const systemName = group[0].system_name;
         const distanceLy = group[0].distance_from_earth_ly;
         const coord = coords[systemName];
+        if (!coord) {
+            // A missing coordinate parks the system at the galaxy origin
+            // ({0,0,0}); two such systems would overlap invisibly. Warn so
+            // name drift between the two CSVs is caught at build time rather
+            // than rendering as a silent stack at the center.
+            console.warn(
+                `[buildLocalGalaxy] no coordinate found for "${systemName}" — placing at galaxy origin`,
+            );
+        }
         const pos = coord
             ? radialToCartesian(distanceLy, coord.ra, coord.dec)
             : { x: 0, y: 0, z: 0 };
@@ -46,9 +55,8 @@ export function buildLocalGalaxy(): GalaxyData {
                 constellation: sys.systemData.metadata?.constellation,
                 spectralClass,
                 hasExoplanets:
-                    (sys.systemData.metadata?.confirmedExoplanetCount ?? 0) > 0,
-                numberOfPlanets:
-                    sys.systemData.metadata?.confirmedExoplanetCount,
+                    (sys.systemData.metadata?.knownExoplanetCount ?? 0) > 0,
+                numberOfPlanets: sys.systemData.metadata?.knownExoplanetCount,
             },
             visual: {
                 brightness: galaxyVisual(distanceLy).brightness,

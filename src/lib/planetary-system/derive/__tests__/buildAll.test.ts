@@ -10,9 +10,9 @@ describe("buildAllPlanetarySystems", () => {
     it("ids are unique", () => {
         expect(new Set(all.map((s) => s.id)).size).toBe(30);
     });
-    it("alpha-centauri confirmedExoplanetCount is 2", () => {
+    it("alpha-centauri knownExoplanetCount is 2", () => {
         const ac = all.find((s) => s.id === "alpha-centauri")!;
-        expect(ac.systemData.metadata?.confirmedExoplanetCount).toBe(2);
+        expect(ac.systemData.metadata?.knownExoplanetCount).toBe(2);
     });
     it("every system has a star and valid systemType", () => {
         for (const s of all) {

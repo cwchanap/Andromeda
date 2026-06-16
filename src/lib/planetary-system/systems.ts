@@ -210,7 +210,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 2,
+                knownExoplanetCount: 2,
                 distance: "4.2465 light-years",
                 constellation: "Centaurus",
                 spectralClass: "G2V",
@@ -418,7 +418,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 4,
+                knownExoplanetCount: 4,
                 distance: "5.9629 light-years",
                 constellation: "Ophiuchus",
                 spectralClass: "M4V",
@@ -543,7 +543,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 2,
+                knownExoplanetCount: 2,
                 distance: "8.304 light-years",
                 constellation: "Ursa Major",
                 spectralClass: "M2V",
@@ -633,7 +633,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "10.501 light-years",
                 constellation: "Eridanus",
                 spectralClass: "K2V",
@@ -827,7 +827,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 4,
+                knownExoplanetCount: 4,
                 distance: "10.724 light-years",
                 constellation: "Piscis Austrinus",
                 spectralClass: "M0.5V",
@@ -916,7 +916,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "11.007 light-years",
                 constellation: "Virgo",
                 spectralClass: "M4V",
@@ -1064,7 +1064,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 2,
+                knownExoplanetCount: 2,
                 distance: "11.491 light-years",
                 constellation: "Draco",
                 spectralClass: "M3.0V",
@@ -1212,7 +1212,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 2,
+                knownExoplanetCount: 2,
                 distance: "11.619 light-years",
                 constellation: "Andromeda",
                 spectralClass: "M1.5V",
@@ -1302,7 +1302,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "11.867 light-years",
                 constellation: "Indus",
                 spectralClass: "K5V",
@@ -1460,7 +1460,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 3,
+                knownExoplanetCount: 3,
                 distance: "11.984 light-years",
                 constellation: "Horologium",
                 spectralClass: "M5.5V",
@@ -1619,7 +1619,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 3,
+                knownExoplanetCount: 3,
                 distance: "12.122 light-years",
                 constellation: "Cetus",
                 spectralClass: "M4.5V",
@@ -1743,7 +1743,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 2,
+                knownExoplanetCount: 2,
                 distance: "12.348 light-years",
                 constellation: "Canis Minor",
                 spectralClass: "M3.5V",
@@ -1903,7 +1903,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 3,
+                knownExoplanetCount: 3,
                 distance: "12.497 light-years",
                 constellation: "Aries",
                 spectralClass: "M7V",
@@ -2062,7 +2062,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 3,
+                knownExoplanetCount: 3,
                 distance: "14.05 light-years",
                 constellation: "Ophiuchus",
                 spectralClass: "M3.5V",
@@ -2152,7 +2152,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "14.578 light-years",
                 constellation: "Aries",
                 spectralClass: "M4.5V",
@@ -2277,7 +2277,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 2,
+                knownExoplanetCount: 2,
                 distance: "14.839 light-years",
                 constellation: "Draco",
                 spectralClass: "M3V",
@@ -2367,7 +2367,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "14.849 light-years",
                 constellation: "Ara",
                 spectralClass: "M2.5V",
@@ -2562,7 +2562,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 4,
+                knownExoplanetCount: 4,
                 distance: "15.238 light-years",
                 constellation: "Aquarius",
                 spectralClass: "M4V",
@@ -2687,7 +2687,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 2,
+                knownExoplanetCount: 2,
                 distance: "15.806 light-years",
                 constellation: "Cetus",
                 spectralClass: "M5.5V",
@@ -2777,7 +2777,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "16.2 light-years",
                 constellation: "Grus",
                 spectralClass: "M1.5V",
@@ -2901,7 +2901,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 2,
+                knownExoplanetCount: 2,
                 distance: "17.531 light-years",
                 constellation: "Eridanus",
                 spectralClass: "M4.0Ve",
@@ -3025,7 +3025,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 2,
+                knownExoplanetCount: 2,
                 distance: "18.215 light-years",
                 constellation: "Gemini",
                 spectralClass: "M3.0V",
@@ -3139,7 +3139,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "19.292 light-years",
                 constellation: "Aquila",
                 spectralClass: "M2.5V",
@@ -3299,7 +3299,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 3,
+                knownExoplanetCount: 3,
                 distance: "19.704 light-years",
                 constellation: "Eridanus",
                 spectralClass: "G8V",
@@ -3389,7 +3389,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "20.395 light-years",
                 constellation: "Libra",
                 spectralClass: "M4.0V",
@@ -3503,7 +3503,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "20.4 light-years",
                 constellation: "Pegasus",
                 spectralClass: "M4Ve",
@@ -3662,7 +3662,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 3,
+                knownExoplanetCount: 3,
                 distance: "20.549 light-years",
                 constellation: "Libra",
                 spectralClass: "M3V",
@@ -3775,7 +3775,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "20.658 light-years",
                 constellation: "Ursa Major",
                 spectralClass: "M0V",
@@ -3864,7 +3864,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 1,
+                knownExoplanetCount: 1,
                 distance: "21.131 light-years",
                 constellation: "Draco",
                 spectralClass: "M1.5V",
@@ -4128,7 +4128,7 @@ export const starSystems: PlanetarySystem[] = [
                 },
             ],
             metadata: {
-                confirmedExoplanetCount: 6,
+                knownExoplanetCount: 6,
                 distance: "21.336 light-years",
                 constellation: "Cassiopeia",
                 spectralClass: "K3V",

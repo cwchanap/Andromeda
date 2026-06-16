@@ -1,7 +1,7 @@
 <script lang="ts">
   import { planetarySystemRegistry } from "@/lib/planetary-system";
   import { matchesQuery, paginate, pageLabel } from "@/lib/hud/list";
-  import { confirmedCount } from "@/lib/hud/confirmedCount";
+  import { knownCount } from "@/lib/hud/knownCount";
   import HudPanel from "@/components/hud/HudPanel.svelte";
   import HudButton from "@/components/hud/HudButton.svelte";
   import HudSearch from "@/components/hud/HudSearch.svelte";
@@ -70,9 +70,9 @@
                 <GlitchText text={system.name.toUpperCase()} />
               </h4>
               <div class="readout-row">
-                <span class="readout-label">{t("explore.bodies")}</span>
+                <span class="readout-label">{t("explore.knownPlanets")}</span>
                 <span></span>
-                <span class="readout-value">{confirmedCount(system)}</span>
+                <span class="readout-value">{knownCount(system)}</span>
               </div>
               {#if system.systemData?.metadata?.distance}
                 <div class="readout-row">

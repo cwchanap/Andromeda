@@ -48,7 +48,7 @@ function system(
             systemScale: 1,
             systemCenter: V,
             systemType: "solar",
-            metadata: { confirmedExoplanetCount: 0 },
+            metadata: { knownExoplanetCount: 0 },
             ...overrides,
         },
     };
@@ -60,9 +60,9 @@ describe("validateSystems", () => {
         expect(issues).toHaveLength(0);
     });
 
-    it("warns when confirmedExoplanetCount mismatches actual confirmed bodies", () => {
+    it("warns when knownExoplanetCount mismatches actual known bodies", () => {
         const sys = system("ac", {
-            metadata: { confirmedExoplanetCount: 3 },
+            metadata: { knownExoplanetCount: 3 },
             celestialBodies: [
                 body("p1", { status: "confirmed" }),
                 body("p2", { status: "confirmed" }),
@@ -70,18 +70,18 @@ describe("validateSystems", () => {
         });
         const issues = validateSystems([sys]);
         const mismatch = issues.find((i) =>
-            i.message.includes("confirmedExoplanetCount"),
+            i.message.includes("knownExoplanetCount"),
         );
         expect(mismatch).toBeDefined();
         expect(mismatch!.level).toBe("warn");
-        // Declared 3, found 2
-        expect(mismatch!.message).toContain("confirmedExoplanetCount=3");
+        // Declared 3, found 2 known (non-candidate)
+        expect(mismatch!.message).toContain("knownExoplanetCount=3");
         expect(mismatch!.message).toContain("found 2");
     });
 
-    it("does not warn when count matches confirmed non-star bodies", () => {
+    it("does not warn when count matches known (non-candidate) non-star bodies", () => {
         const sys = system("ac", {
-            metadata: { confirmedExoplanetCount: 2 },
+            metadata: { knownExoplanetCount: 2 },
             celestialBodies: [
                 body("p1", { status: "confirmed" }),
                 body("p2", { status: "confirmed" }),
@@ -91,7 +91,28 @@ describe("validateSystems", () => {
         });
         const issues = validateSystems([sys]);
         expect(
-            issues.find((i) => i.message.includes("confirmedExoplanetCount")),
+            issues.find((i) => i.message.includes("knownExoplanetCount")),
+        ).toBeUndefined();
+    });
+
+    it("counts controversial bodies as known (regression: HD 219134)", () => {
+        // HD 219134 has 4 confirmed + 2 controversial planets; the CSV
+        // known count is 6. Controversial bodies must count as known so the
+        // validator does not emit a spurious warning on correct data.
+        const sys = system("hd", {
+            metadata: { knownExoplanetCount: 6 },
+            celestialBodies: [
+                body("b", { status: "confirmed" }),
+                body("c", { status: "confirmed" }),
+                body("d", { status: "confirmed" }),
+                body("h", { status: "confirmed" }),
+                body("f", { status: "controversial" }),
+                body("g", { status: "controversial" }),
+            ],
+        });
+        const issues = validateSystems([sys]);
+        expect(
+            issues.find((i) => i.message.includes("knownExoplanetCount")),
         ).toBeUndefined();
     });
 

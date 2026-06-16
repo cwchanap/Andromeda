@@ -32,3 +32,43 @@ describe("parseSystemsCsv", () => {
         expect(rows[0].orbital_period_days).toBeUndefined();
     });
 });
+
+describe("parseSystemsCsv required-numeric guards", () => {
+    // Required numeric columns (system_rank, distance_from_earth_ly,
+    // number_of_stars, number_of_known_exoplanets) must fail loudly at the
+    // parse boundary. A blank/garbage cell must NOT silently become NaN,
+    // which would collapse NaN-rank rows into one group and surface
+    // "NaN light-years" downstream.
+    const REQUIRED_FIELDS = [
+        { label: "system_rank", badCsv: CSV.replace("1,", ",") },
+        {
+            label: "distance_from_earth_ly",
+            badCsv: CSV.replace("4.2465,", "garbage,"),
+        },
+        { label: "number_of_stars", badCsv: CSV.replace(",3,", ",x,") },
+        {
+            label: "number_of_known_exoplanets",
+            badCsv: CSV.replace(",2,", ",,"),
+        },
+    ] as const;
+
+    for (const { label, badCsv } of REQUIRED_FIELDS) {
+        it(`throws when required field ${label} is blank/non-numeric`, () => {
+            expect(() => parseSystemsCsv(badCsv)).toThrow(
+                new RegExp(`required numeric field "${label}"`),
+            );
+        });
+    }
+
+    it("error message includes system and object context", () => {
+        try {
+            parseSystemsCsv(CSV.replace("4.2465,", "garbage,"));
+            throw new Error("should have thrown");
+        } catch (e) {
+            expect((e as Error).message).toContain("distance_from_earth_ly");
+            // system_name (col 1) and object_name (col 6) are included for context
+            expect((e as Error).message).toContain("Alpha Centauri");
+            expect((e as Error).message).toContain("Proxima Centauri c");
+        }
+    });
+});

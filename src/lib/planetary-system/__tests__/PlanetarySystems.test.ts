@@ -12,10 +12,10 @@ describe("registry", () => {
     it("has 35 systems (solar + 30 + 4 curated)", () => {
         expect(planetarySystemRegistry.getAllSystems()).toHaveLength(35);
     });
-    it("alpha-centauri has 2 confirmed", () => {
+    it("alpha-centauri has 2 known", () => {
         const ac = planetarySystemRegistry.getSystem("alpha-centauri")!;
         expect(ac).toBeDefined();
-        expect(ac.systemData.metadata?.confirmedExoplanetCount).toBe(2);
+        expect(ac.systemData.metadata?.knownExoplanetCount).toBe(2);
     });
     it("Proxima c is a candidate and excluded from count", () => {
         const ac = planetarySystemRegistry.getSystem("alpha-centauri")!;
@@ -51,7 +51,7 @@ describe("generated starSystems", () => {
             expect(s.systemData.star.type).toBe("star");
         }
     });
-    it("every confirmed count is >= actual confirmed body count", () => {
+    it("every known count is >= actual confirmed body count", () => {
         for (const s of starSystems) {
             const confirmedBodies = s.systemData.celestialBodies.filter(
                 (b) =>
@@ -59,7 +59,7 @@ describe("generated starSystems", () => {
                     (!b.status || b.status === "confirmed"),
             ).length;
             expect(
-                s.systemData.metadata?.confirmedExoplanetCount ?? 0,
+                s.systemData.metadata?.knownExoplanetCount ?? 0,
             ).toBeGreaterThanOrEqual(confirmedBodies);
         }
     });

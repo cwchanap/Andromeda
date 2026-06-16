@@ -39,18 +39,25 @@ export interface SystemCoordinate {
     dec: number;
 }
 
-export function loadCoordinates(): Record<string, SystemCoordinate> {
-    const rows = parseCsvRows(systemCoordinatesCsv);
+export function loadCoordinates(
+    csvText: string = systemCoordinatesCsv,
+): Record<string, SystemCoordinate> {
+    const rows = parseCsvRows(csvText);
     const result: Record<string, SystemCoordinate> = {};
     for (let i = 1; i < rows.length; i++) {
         const parts = rows[i];
         // RA and DEC are always the last two columns and are always numeric,
-        // so parse from the end. This stays correct even if a system name
-        // contains a comma, unlike a naive [0]/[1]/[2] index split.
+        // so parse from the end. parseCsvRows already splits quoted fields, so
+        // this stays correct even if a system name contains a comma.
         if (parts.length >= 3) {
             const dec = parseFloat(parts[parts.length - 1]);
             const ra = parseFloat(parts[parts.length - 2]);
-            if (!Number.isFinite(ra) || !Number.isFinite(dec)) continue;
+            if (!Number.isFinite(ra) || !Number.isFinite(dec)) {
+                console.warn(
+                    `[loadCoordinates] skipping unparseable coordinate row ${i + 1}: "${parts.join(",")}"`,
+                );
+                continue;
+            }
             const name = parts.slice(0, -2).join(",");
             result[name] = { ra, dec };
         }

@@ -41,7 +41,7 @@ export const ja = {
     "explore.title": "恒星系",
     "explore.searchPlaceholder": "システムを検索…",
     "explore.empty": "一致するシステムがありません",
-    "explore.bodies": "天体",
+    "explore.knownPlanets": "既知の惑星",
     "explore.distance": "距離",
     "explore.action": "探索",
     "explore.current": "現在のシステム",

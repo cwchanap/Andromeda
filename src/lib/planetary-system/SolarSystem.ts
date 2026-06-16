@@ -1176,7 +1176,7 @@ export const solarSystemData: PlanetarySystemData = {
         distance: "0 light-years",
         constellation: "N/A",
         spectralClass: "G2V",
-        confirmedExoplanetCount: 8,
+        knownExoplanetCount: 8,
     },
 };
 
