@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { parseCsvRows } from "@/lib/planetary-system/derive/parseCsv";
 import {
     loadCoordinates,
     SYSTEM_NAMES,
@@ -24,27 +23,32 @@ describe("system_coordinates.csv", () => {
 
 describe("loadCoordinates parsing robustness", () => {
     it("parses a name containing a comma correctly (parse-from-end)", () => {
-        const parseLine = (line: string) => {
-            const rows = parseCsvRows(line);
-            const parts = rows[0];
-            if (!parts || parts.length < 3) return null;
-            const dec = parseFloat(parts[parts.length - 1]);
-            const ra = parseFloat(parts[parts.length - 2]);
-            if (!Number.isFinite(ra) || !Number.isFinite(dec)) return null;
-            return { name: parts.slice(0, -2).join(","), ra, dec };
-        };
+        // Exercise the REAL loadCoordinates (with a synthetic CSV) rather than a
+        // local re-implementation of its parse logic, so the test actually
+        // guards the production code path.
+        const coords = loadCoordinates("name,ra,dec\nFoo, Bar,219.90,-60.84\n");
+        expect(coords["Foo, Bar"]).toEqual({ ra: 219.9, dec: -60.84 });
+    });
 
-        expect(parseLine("Foo, Bar,219.90,-60.84")).toEqual({
-            name: "Foo, Bar",
+    it("parses a slash-separated name without a comma", () => {
+        const coords = loadCoordinates(
+            "name,ra,dec\nAlpha Centauri / Proxima Centauri,219.90,-60.84\n",
+        );
+        expect(coords["Alpha Centauri / Proxima Centauri"]).toEqual({
             ra: 219.9,
             dec: -60.84,
         });
-        expect(
-            parseLine("Alpha Centauri / Proxima Centauri,219.90,-60.84"),
-        ).toEqual({
-            name: "Alpha Centauri / Proxima Centauri",
-            ra: 219.9,
-            dec: -60.84,
-        });
+    });
+
+    it("skips rows whose RA/Dec are not finite (warned, not stored)", () => {
+        const coords = loadCoordinates(
+            "name,ra,dec\nGarbage Row,not-a-number,-60.84\n",
+        );
+        expect(coords["Garbage Row"]).toBeUndefined();
+    });
+
+    it("ignores rows with fewer than 3 columns", () => {
+        const coords = loadCoordinates("name,ra,dec\nStubby,12.3\n");
+        expect(coords["Stubby"]).toBeUndefined();
     });
 });

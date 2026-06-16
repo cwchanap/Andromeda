@@ -35,7 +35,7 @@ const mockTranslations: Record<string, string> = {
     "explore.title": "Explore Systems",
     "explore.searchPlaceholder": "Search systems…",
     "explore.empty": "No systems match your search",
-    "explore.bodies": "Bodies",
+    "explore.knownPlanets": "Known Planets",
     "explore.distance": "Distance",
     "explore.current": "Current",
     "explore.action": "Select",

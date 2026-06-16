@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { confirmedCount } from "@/lib/hud/confirmedCount";
+import { knownCount } from "@/lib/hud/knownCount";
 import type { PlanetarySystem } from "@/lib/planetary-system/types";
 
 function makeBody(
@@ -49,24 +49,24 @@ function makeSystem(overrides: Partial<PlanetarySystem> = {}): PlanetarySystem {
     };
 }
 
-describe("confirmedCount", () => {
-    it("uses confirmedExoplanetCount from metadata when present", () => {
+describe("knownCount", () => {
+    it("uses knownExoplanetCount from metadata when present", () => {
         const base = makeSystem();
         const sys = makeSystem({
             systemData: {
                 ...base.systemData,
-                metadata: { confirmedExoplanetCount: 2 },
+                metadata: { knownExoplanetCount: 2 },
             },
         });
-        expect(confirmedCount(sys)).toBe(2);
+        expect(knownCount(sys)).toBe(2);
     });
 
-    it("falls back to confirmed non-star body count when no confirmedExoplanetCount", () => {
+    it("falls back to known (non-candidate) non-star body count when no knownExoplanetCount", () => {
         const sys = makeSystem();
-        expect(confirmedCount(sys)).toBe(2);
+        expect(knownCount(sys)).toBe(2);
     });
 
-    it("falls back to body count when metadata exists but confirmedExoplanetCount is undefined", () => {
+    it("falls back to body count when metadata exists but knownExoplanetCount is undefined", () => {
         const base = makeSystem();
         const sys = makeSystem({
             systemData: {
@@ -74,7 +74,7 @@ describe("confirmedCount", () => {
                 metadata: {},
             },
         });
-        expect(confirmedCount(sys)).toBe(2);
+        expect(knownCount(sys)).toBe(2);
     });
 
     it("returns 0 when no bodies and no metadata", () => {
@@ -82,7 +82,7 @@ describe("confirmedCount", () => {
         const sys = makeSystem({
             systemData: { ...base.systemData, celestialBodies: [] },
         });
-        expect(confirmedCount(sys)).toBe(0);
+        expect(knownCount(sys)).toBe(0);
     });
 
     it("ignores stars when falling back to body count", () => {
@@ -96,7 +96,7 @@ describe("confirmedCount", () => {
                 ],
             },
         });
-        expect(confirmedCount(sys)).toBe(1);
+        expect(knownCount(sys)).toBe(1);
     });
 
     it("excludes candidate bodies from fallback count", () => {
@@ -110,10 +110,13 @@ describe("confirmedCount", () => {
                 ],
             },
         });
-        expect(confirmedCount(sys)).toBe(1);
+        expect(knownCount(sys)).toBe(1);
     });
 
-    it("excludes controversial bodies from fallback count", () => {
+    it("includes controversial bodies in the known count", () => {
+        // "Known" exoplanets = confirmed + controversial (non-candidate),
+        // matching the CSV `number_of_known_exoplanets` column. This is the
+        // regression guard for the HD 219134 semantic mismatch.
         const base = makeSystem();
         const sys = makeSystem({
             systemData: {
@@ -124,10 +127,12 @@ describe("confirmedCount", () => {
                 ],
             },
         });
-        expect(confirmedCount(sys)).toBe(1);
+        expect(knownCount(sys)).toBe(2);
     });
 
-    it("excludes bodies with undefined status from fallback count", () => {
+    it("includes undefined-status bodies in the known count", () => {
+        // Undefined status follows the project-wide "undefined ⇒ confirmed"
+        // convention, so it counts as known (not candidate).
         const base = makeSystem();
         const sys = makeSystem({
             systemData: {
@@ -138,6 +143,6 @@ describe("confirmedCount", () => {
                 ],
             },
         });
-        expect(confirmedCount(sys)).toBe(1);
+        expect(knownCount(sys)).toBe(2);
     });
 });

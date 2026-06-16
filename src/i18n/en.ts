@@ -42,7 +42,7 @@ export const en = {
     "explore.title": "Star Systems",
     "explore.searchPlaceholder": "SEARCH SYSTEMS…",
     "explore.empty": "NO SYSTEMS MATCH QUERY",
-    "explore.bodies": "Bodies",
+    "explore.knownPlanets": "Known Planets",
     "explore.distance": "Distance",
     "explore.action": "Explore",
     "explore.current": "Current System",

@@ -41,7 +41,7 @@ export const zh = {
     "explore.title": "恒星系统",
     "explore.searchPlaceholder": "搜索系统…",
     "explore.empty": "没有匹配的系统",
-    "explore.bodies": "天体",
+    "explore.knownPlanets": "已知行星",
     "explore.distance": "距离",
     "explore.action": "探索",
     "explore.current": "当前系统",

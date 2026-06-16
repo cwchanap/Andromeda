@@ -83,8 +83,8 @@ describe("buildSystem (Alpha Centauri golden)", () => {
     it("id is alpha-centauri", () => {
         expect(sys.id).toBe("alpha-centauri");
     });
-    it("confirmedExoplanetCount comes from the column = 2", () => {
-        expect(sys.systemData.metadata?.confirmedExoplanetCount).toBe(2);
+    it("knownExoplanetCount comes from the column = 2", () => {
+        expect(sys.systemData.metadata?.knownExoplanetCount).toBe(2);
     });
     it("Proxima c is type planet, status candidate", () => {
         const c = sys.systemData.celestialBodies.find(

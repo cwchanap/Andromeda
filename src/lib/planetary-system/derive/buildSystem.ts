@@ -39,8 +39,9 @@ function formatDiameter(km: number): string {
 }
 
 function formatDistanceAu(au: number): string {
-    // Round to 4 decimals and strip trailing zeros (e.g. 0.0485, 1.48),
-    // consistent with the formatting applied by formatDiameter/formatOrbitalPeriod.
+    // Round to 4 decimals and strip trailing zeros (e.g. 0.0485, 1.48).
+    // Unlike formatDiameter/formatOrbitalPeriod, this also strips trailing
+    // zeros via parseFloat so small AU values stay compact.
     return `${parseFloat(au.toFixed(4))} AU`;
 }
 
@@ -215,7 +216,7 @@ export function buildSystem(rows: SystemCsvRow[]): PlanetarySystem {
                 buildBody(r, r.object_type === "star"),
             ),
             metadata: {
-                confirmedExoplanetCount: first.number_of_known_exoplanets,
+                knownExoplanetCount: first.number_of_known_exoplanets,
                 distance: `${first.distance_from_earth_ly} light-years`,
                 constellation: first.constellation,
                 spectralClass: primaryStarRow.spectral_classification,

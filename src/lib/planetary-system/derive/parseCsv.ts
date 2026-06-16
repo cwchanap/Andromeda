@@ -100,12 +100,35 @@ function toSystemCsvRow(row: string[]): SystemCsvRow {
         return Number.isNaN(num) ? undefined : num;
     };
 
+    // Required numeric columns: a blank or garbage cell must fail loudly at
+    // the parse boundary rather than silently becoming 0/NaN (Number("")===0
+    // is finite, so we must reject empties explicitly). A silent 0/NaN would
+    // collapse bad-rank rows into one Map group, default deriveSystemType to
+    // "multiple", or surface "NaN light-years" downstream. Mirrors the
+    // existing throw for invalid object_type in buildBody.
+    const requiredNumber = (index: number, fieldName: string): number => {
+        const value = cell(index);
+        const trimmed = value.trim();
+        const num = Number(trimmed);
+        if (trimmed === "" || !Number.isFinite(num)) {
+            const system = cell(1) || "(unknown system)";
+            const object = cell(6) || "(unknown object)";
+            throw new Error(
+                `CSV parse error: required numeric field "${fieldName}" is "${value}" (row for object "${object}" in system "${system}")`,
+            );
+        }
+        return num;
+    };
+
     return {
-        system_rank: Number(cell(0)),
+        system_rank: requiredNumber(0, "system_rank"),
         system_name: cell(1),
-        distance_from_earth_ly: Number(cell(2)),
-        number_of_stars: Number(cell(3)),
-        number_of_known_exoplanets: Number(cell(4)),
+        distance_from_earth_ly: requiredNumber(2, "distance_from_earth_ly"),
+        number_of_stars: requiredNumber(3, "number_of_stars"),
+        number_of_known_exoplanets: requiredNumber(
+            4,
+            "number_of_known_exoplanets",
+        ),
         constellation: cell(5),
         object_name: cell(6),
         object_type: cell(7),
