@@ -96,6 +96,16 @@ describe("alpha-centauri override", () => {
         )!;
         expect(b.orbit?.centerId).toBe("alpha-centauri-ab-barycenter");
     });
+    it("Proxima orbits the AB barycenter, not Alpha Centauri A", () => {
+        // Proxima is gravitationally bound to the AB pair and orbits their
+        // common center of mass. The derive step centers every secondary star
+        // on the primary; the override must move Proxima to the barycenter or
+        // it rides A's tight ~11.5 AU binary loop instead of its own wide orbit.
+        const proxima = sys.systemData.celestialBodies.find(
+            (x) => x.id === "proxima-centauri",
+        )!;
+        expect(proxima.orbit?.centerId).toBe("alpha-centauri-ab-barycenter");
+    });
     it("A eccentricity = 0.519", () => {
         expect(sys.systemData.star.orbit?.eccentricity).toBeCloseTo(0.519, 3);
     });

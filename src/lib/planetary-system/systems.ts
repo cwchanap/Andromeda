@@ -108,7 +108,7 @@ export const starSystems: PlanetarySystem[] = [
                         emissive: "#FFA050",
                     },
                     orbit: {
-                        centerId: "alpha-centauri-a",
+                        centerId: "alpha-centauri-ab-barycenter",
                         semiMajorAxis: 58.11894645315716,
                         visualPeriodSeconds: 120,
                         phaseDeg: 299.0009451750666,
