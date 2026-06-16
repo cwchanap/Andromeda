@@ -45,7 +45,46 @@ describe("localGalaxyData", () => {
         );
         expect(alphaCentauri).toBeDefined();
         expect(alphaCentauri!.distanceFromEarth).toBeCloseTo(4.2465, 1);
-        expect(alphaCentauri!.stars.length).toBeGreaterThanOrEqual(1);
+        // Alpha Centauri is a trinary system (A, B, Proxima); all three
+        // stars must be present so the "Number of Stars" stat is correct.
+        expect(alphaCentauri!.stars.length).toBe(3);
+    });
+
+    it("multi-star systems include companion stars in stars array", () => {
+        // Binary systems must carry both stars — the galaxy stat panel
+        // displays stars.length as "Number of Stars".
+        const gliese725 = localGalaxyData.starSystems.find(
+            (s) => s.id === "gliese-725",
+        );
+        expect(gliese725).toBeDefined();
+        expect(gliese725!.systemType).toBe("binary");
+        expect(gliese725!.stars.length).toBe(2);
+
+        const groombridge34 = localGalaxyData.starSystems.find(
+            (s) => s.id === "groombridge-34",
+        );
+        expect(groombridge34).toBeDefined();
+        expect(groombridge34!.systemType).toBe("binary");
+        expect(groombridge34!.stars.length).toBe(2);
+    });
+
+    it("solar-type systems have exactly one star", () => {
+        const barnard = localGalaxyData.starSystems.find(
+            (s) => s.id === "barnard-s-star",
+        );
+        expect(barnard).toBeDefined();
+        expect(barnard!.systemType).toBe("solar");
+        expect(barnard!.stars.length).toBe(1);
+    });
+
+    it("every star in stars array has type 'star' and a unique id", () => {
+        for (const system of localGalaxyData.starSystems) {
+            const ids = system.stars.map((s) => s.id);
+            expect(new Set(ids).size).toBe(ids.length); // no duplicates
+            for (const star of system.stars) {
+                expect(star.type).toBe("star");
+            }
+        }
     });
 
     it("all stars have required CelestialBodyData fields", () => {

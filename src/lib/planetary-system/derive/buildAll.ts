@@ -40,6 +40,14 @@ export function buildLocalGalaxy(): GalaxyData {
         const spectralClass = sys.systemData.metadata?.spectralClass ?? "M";
         const firstLetter = spectralClass.charAt(0).toUpperCase();
 
+        // Include companion stars (from celestialBodies with type "star") so
+        // the galaxy view's "Number of Stars" stat matches the CSV star count.
+        // The primary star leads so galaxy rendering keeps using it for color.
+        const allStars = [
+            sys.systemData.star,
+            ...sys.systemData.celestialBodies.filter((b) => b.type === "star"),
+        ];
+
         return {
             id: sys.id,
             name: sys.systemData.name,
@@ -50,7 +58,7 @@ export function buildLocalGalaxy(): GalaxyData {
             ),
             position: new THREE.Vector3(pos.x, pos.y, pos.z),
             distanceFromEarth: distanceLy,
-            stars: [sys.systemData.star],
+            stars: allStars,
             metadata: {
                 constellation: sys.systemData.metadata?.constellation,
                 spectralClass,
