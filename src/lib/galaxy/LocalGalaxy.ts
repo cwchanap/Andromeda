@@ -70,7 +70,7 @@ export const localGalaxyData: GalaxyData = {
                         distanceFromSun: "12.7 AU from system center",
                     },
                     images: [],
-                    position: new THREE.Vector3(35.187177702303394, 0, 0),
+                    position: new THREE.Vector3(0, 0, 0),
                     scale: 1.1680557808635326,
                     material: {
                         color: "#FFD2A1",
@@ -104,14 +104,14 @@ export const localGalaxyData: GalaxyData = {
                         distanceFromSun: "8700 AU from system center",
                     },
                     images: [],
-                    position: new THREE.Vector3(58.11894645315716, 0, 0),
+                    position: new THREE.Vector3(0, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
                         emissive: "#FFA050",
                     },
                     orbit: {
-                        centerId: "alpha-centauri-a",
+                        centerId: "alpha-centauri-ab-barycenter",
                         semiMajorAxis: 58.11894645315716,
                         visualPeriodSeconds: 120,
                         phaseDeg: 299.0009451750666,
@@ -430,7 +430,7 @@ export const localGalaxyData: GalaxyData = {
                         distanceFromSun: "36 AU from system center",
                     },
                     images: [],
-                    position: new THREE.Vector3(38.84629466570936, 0, 0),
+                    position: new THREE.Vector3(0, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
@@ -503,7 +503,7 @@ export const localGalaxyData: GalaxyData = {
                         distanceFromSun: "146 AU from system center",
                     },
                     images: [],
-                    position: new THREE.Vector3(43.76344148289271, 0, 0),
+                    position: new THREE.Vector3(0, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
@@ -1262,7 +1262,7 @@ export const localGalaxyData: GalaxyData = {
                         distanceFromSun: "434 AU from system center",
                     },
                     images: [],
-                    position: new THREE.Vector3(47.58961890948434, 0, 0),
+                    position: new THREE.Vector3(0, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
@@ -1433,7 +1433,7 @@ export const localGalaxyData: GalaxyData = {
                         distanceFromSun: "36 AU from system center",
                     },
                     images: [],
-                    position: new THREE.Vector3(38.84629466570936, 0, 0),
+                    position: new THREE.Vector3(0, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
@@ -1555,7 +1555,7 @@ export const localGalaxyData: GalaxyData = {
                         distanceFromSun: "53 AU from system center",
                     },
                     images: [],
-                    position: new THREE.Vector3(40.20464110628665, 0, 0),
+                    position: new THREE.Vector3(0, 0, 0),
                     scale: 1.0740940135031,
                     material: {
                         color: "#FFA050",

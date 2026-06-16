@@ -84,5 +84,23 @@ function applyAlphaCentauriOverride(sys: PlanetarySystem): PlanetarySystem {
         };
     }
 
+    // Proxima Centauri is gravitationally bound to the AB pair and orbits their
+    // common center of mass, not Alpha Centauri A. The derive step assigns
+    // every secondary star to the primary (`centerId: "alpha-centauri-a"`);
+    // left alone, Proxima would ride Alpha Centauri A's tight ~11.5 AU / 81 s
+    // binary loop (dragging its planets along) instead of tracing its own wide
+    // orbit around the AB barycenter. Only the center changes — Proxima keeps
+    // the generated semi-major axis, period, and phase that represent its wide
+    // ~8700 AU orbit, so it still animates at a sensible cadence.
+    const proxima = sys.systemData.celestialBodies.find(
+        (b) => b.id === "proxima-centauri",
+    );
+    if (proxima?.orbit) {
+        proxima.orbit = {
+            ...proxima.orbit,
+            centerId: ALPHA_CENTAURI_AB_BARYCENTER_ID,
+        };
+    }
+
     return sys;
 }

@@ -6,6 +6,7 @@ import { applyOverrides } from "./overrides";
 import { loadCoordinates } from "./systemNames";
 import { radialToCartesian, galaxyVisual, BV_INDEX } from "./buildGalaxy";
 import type { PlanetarySystem } from "../types";
+import type { CelestialBodyData } from "@/types/game";
 import type { GalaxyData, StarSystemData } from "@/lib/galaxy/types";
 
 export function buildAllPlanetarySystems(): PlanetarySystem[] {
@@ -43,10 +44,24 @@ export function buildLocalGalaxy(): GalaxyData {
         // Include companion stars (from celestialBodies with type "star") so
         // the galaxy view's "Number of Stars" stat matches the CSV star count.
         // The primary star leads so galaxy rendering keeps using it for color.
-        const allStars = [
+        const planetStars: CelestialBodyData[] = [
             sys.systemData.star,
             ...sys.systemData.celestialBodies.filter((b) => b.type === "star"),
         ];
+        // Galaxy view treats each system as a point source: all of a system's
+        // stars cluster at its galaxy position. The planetary-system
+        // `position` fields are in visual AU/orbit units (e.g. Alpha Centauri
+        // B at x≈35 and Proxima at x≈58), but StarSystemManager copies each
+        // star's `position` directly into a mesh inside the system group,
+        // which lives in light-years (galaxy bounding radius ≈22 ly). Reusing
+        // the planetary coordinates would place companions tens of light-years
+        // from their system and overlap unrelated systems. Clone every star
+        // with a compact origin position so the planetary renderer coordinates
+        // are never shared into the galaxy scene.
+        const allStars: CelestialBodyData[] = planetStars.map((star) => ({
+            ...star,
+            position: new THREE.Vector3(0, 0, 0),
+        }));
 
         return {
             id: sys.id,

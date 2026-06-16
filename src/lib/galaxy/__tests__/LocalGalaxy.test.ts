@@ -102,6 +102,19 @@ describe("localGalaxyData", () => {
         }
     });
 
+    it("stars cluster compactly at their system (no AU-scale offsets)", () => {
+        // StarSystemManager copies each star.position into a mesh inside the
+        // system group (light-year units, bounding radius ~22 ly). Companion
+        // stars must not carry planetary-AU positions (e.g. Proxima at x≈58),
+        // or they render tens of light-years from their system and overlap
+        // unrelated systems.
+        for (const system of localGalaxyData.starSystems) {
+            for (const star of system.stars) {
+                expect(star.position.length()).toBeLessThan(1);
+            }
+        }
+    });
+
     it("Alpha Centauri has confirmed exoplanet metadata", () => {
         const ac = localGalaxyData.starSystems.find(
             (s) => s.id === "alpha-centauri",

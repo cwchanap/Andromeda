@@ -30,14 +30,16 @@ describe("buildAllPlanetarySystems", () => {
         expect(proximaC).toBeDefined();
         expect(proximaC!.status).toBe("candidate");
     });
-    // Regression: secondary stars with separation + period data must orbit the
-    // primary instead of rendering as a frozen projected offset.
-    it("Proxima Centauri orbits the Alpha Centauri primary", () => {
+    // Regression: Proxima Centauri orbits the AB barycenter (the system's
+    // center of mass), not Alpha Centauri A. Proxima is bound to the AB pair;
+    // centering it on A would make it ride A's tight ~11.5 AU binary loop and
+    // drag its planets along that loop instead of its own wide orbit.
+    it("Proxima Centauri orbits the AB barycenter", () => {
         const ac = all.find((s) => s.id === "alpha-centauri")!;
         const proxima = ac.systemData.celestialBodies.find(
             (b) => b.id === "proxima-centauri",
         )!;
-        expect(proxima.orbit?.centerId).toBe("alpha-centauri-a");
+        expect(proxima.orbit?.centerId).toBe("alpha-centauri-ab-barycenter");
         expect(proxima.orbit?.visualPeriodSeconds).toBeGreaterThan(0);
     });
     it("Gliese 338 B orbits the Gliese 338 primary", () => {
@@ -108,5 +110,33 @@ describe("buildLocalGalaxy", () => {
         // Alpha Centauri / Proxima is ~4.2465 ly from Earth — guard against a
         // broken coordinate transform that would silently produce wrong units.
         expect(mag).toBeCloseTo(4.2, 0);
+    });
+    it("galaxy stars cluster compactly at their system (no AU-scale offsets)", () => {
+        // StarSystemManager copies each star.position into a mesh inside the
+        // system group, which is positioned in light-years. Companion stars
+        // must not carry planetary-AU positions (e.g. Proxima at x≈58 or
+        // Alpha Centauri B at x≈35), or they render tens of light-years from
+        // their system and overlap unrelated systems in a ~22 ly galaxy.
+        const galaxy = buildLocalGalaxy();
+        for (const system of galaxy.starSystems) {
+            for (const star of system.stars) {
+                expect(star.position.length()).toBeLessThan(1);
+            }
+        }
+    });
+    it("galaxy stars are decoupled from planetary-system star objects", () => {
+        // Mutating a galaxy star's position must not bleed into the planetary
+        // system data (the AU offsets are still needed by the planetary view).
+        const galaxy = buildLocalGalaxy();
+        const ac = galaxy.starSystems.find((s) => s.id === "alpha-centauri")!;
+        const proxima = ac.stars.find((s) => s.id === "proxima-centauri")!;
+        proxima.position.set(999, 999, 999);
+        const planet = buildAllPlanetarySystems().find(
+            (s) => s.id === "alpha-centauri",
+        )!;
+        const planetProxima = planet.systemData.celestialBodies.find(
+            (b) => b.id === "proxima-centauri",
+        )!;
+        expect(planetProxima.position.x).not.toBe(999);
     });
 });
