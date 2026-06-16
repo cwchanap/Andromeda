@@ -23,5 +23,8 @@ export function factOrUnknown(
     value: string | undefined,
     unknownLabel: string,
 ): string {
-    return value ?? unknownLabel;
+    // Generated bodies use "" (empty string) for missing facts rather than
+    // undefined. Treat blank/whitespace-only values as unknown so the modal
+    // renders the Unknown fallback instead of an empty cell.
+    return value && value.trim() ? value : unknownLabel;
 }

@@ -167,8 +167,10 @@ export const en = {
     "facts.alpha-centauri-b.distanceFromSun": "23 AU from Alpha Centauri A",
     "facts.proxima-centauri.distanceFromSun":
         "13,000 AU from Alpha Centauri AB",
-    "facts.proxima-b.distanceFromSun": "0.05 AU from Proxima Centauri",
-    "facts.proxima-c.distanceFromSun": "1.5 AU from Proxima Centauri",
+    "facts.proxima-centauri-b.distanceFromSun": "0.05 AU from Proxima Centauri",
+    "facts.proxima-centauri-c.distanceFromSun": "1.5 AU from Proxima Centauri",
+    "facts.proxima-centauri-d.distanceFromSun":
+        "0.0288 AU from Proxima Centauri",
 
     // Chemical elements and composition
     "element.hydrogen": "Hydrogen",
@@ -257,12 +259,15 @@ export const en = {
     "planet.proxima-centauri.name": "Proxima Centauri",
     "planet.proxima-centauri.description":
         "A small red dwarf star, the closest known star to the Solar System",
-    "planet.proxima-b.name": "Proxima Centauri b",
-    "planet.proxima-b.description":
+    "planet.proxima-centauri-b.name": "Proxima Centauri b",
+    "planet.proxima-centauri-b.description":
         "An Earth-mass exoplanet orbiting in the habitable zone of Proxima Centauri",
-    "planet.proxima-c.name": "Proxima Centauri c",
-    "planet.proxima-c.description":
+    "planet.proxima-centauri-c.name": "Proxima Centauri c",
+    "planet.proxima-centauri-c.description":
         "A super-Earth exoplanet orbiting Proxima Centauri",
+    "planet.proxima-centauri-d.name": "Proxima Centauri d",
+    "planet.proxima-centauri-d.description":
+        "The innermost known planet orbiting Proxima Centauri",
 
     // Kepler-438 celestial bodies
     "planet.kepler-438.name": "Kepler-438",

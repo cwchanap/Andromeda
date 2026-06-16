@@ -49,4 +49,16 @@ describe("factOrUnknown", () => {
     it("returns Unknown label when undefined", () => {
         expect(factOrUnknown(undefined, "Unknown")).toBe("Unknown");
     });
+    it("returns Unknown label for an empty string (generated missing fact)", () => {
+        // buildSystem writes "" for missing facts, not undefined.
+        expect(factOrUnknown("", "Unknown")).toBe("Unknown");
+    });
+    it("returns Unknown label for a whitespace-only string", () => {
+        expect(factOrUnknown("   ", "Unknown")).toBe("Unknown");
+    });
+    it("returns a real value that happens to contain spaces", () => {
+        expect(factOrUnknown("0.05 AU from Proxima Centauri", "Unknown")).toBe(
+            "0.05 AU from Proxima Centauri",
+        );
+    });
 });

@@ -156,3 +156,94 @@ describe("buildSystem (Alpha Centauri golden)", () => {
         expect(() => buildSystem([badRow])).toThrow(/Invalid object_type/);
     });
 });
+
+// Multi-star positioning: secondary stars must not collapse onto the primary.
+// Regression coverage for the buildSystem offset logic.
+describe("buildSystem (multi-star offsets)", () => {
+    const BINARY_ROWS: SystemCsvRow[] = [
+        // Primary star, chosen as the visualization origin (au = 0).
+        row({
+            object_name: "Companion A",
+            object_type: "star",
+            host_object: "",
+            status: "stellar component",
+            spectral_classification: "K0V",
+            diameter_km: 800000,
+            surface_temperature_K: 3900,
+            surface_temperature_C: 3600,
+            orbital_period_days: 0,
+            distance_from_system_center_AU: 0,
+            composition: "Mostly hydrogen/helium plasma",
+        }),
+        // Secondary star with a projected barycentric separation of 53 AU.
+        row({
+            object_name: "Companion B",
+            object_type: "star",
+            host_object: "",
+            status: "stellar component",
+            spectral_classification: "K1V",
+            diameter_km: 780000,
+            surface_temperature_K: 3850,
+            surface_temperature_C: 3550,
+            orbital_period_days: undefined,
+            distance_from_system_center_AU: 53,
+            composition: "Mostly hydrogen/helium plasma",
+        }),
+    ];
+
+    it("keeps the primary star pinned to the origin", () => {
+        const sys = buildSystem(BINARY_ROWS);
+        expect(sys.systemData.star.position.x).toBe(0);
+    });
+
+    it("offsets the secondary star away from the primary", () => {
+        const sys = buildSystem(BINARY_ROWS);
+        const starB = sys.systemData.celestialBodies.find(
+            (b) => b.id === "companion-b",
+        )!;
+        // au=53 maps (via orbitVisualRadius) well past 0, so the two stars
+        // no longer render on top of each other.
+        expect(starB.position.x).toBeGreaterThan(0);
+        expect(starB.position.y).toBe(0);
+    });
+
+    it("does not assign an orbit to a static secondary star", () => {
+        const sys = buildSystem(BINARY_ROWS);
+        const starB = sys.systemData.celestialBodies.find(
+            (b) => b.id === "companion-b",
+        )!;
+        expect(starB.orbit).toBeUndefined();
+    });
+});
+
+// The CSV encodes a static origin star with orbital_period_days = 0. That 0
+// must surface as an unknown period, never the impossible "0.0 days".
+describe("buildSystem (period-0 sentinel)", () => {
+    it("treats orbital_period_days = 0 as unknown for the star", () => {
+        const sys = buildSystem([
+            row({
+                object_name: "Static Star",
+                object_type: "star",
+                host_object: "",
+                status: "stellar component",
+                spectral_classification: "M4V",
+                diameter_km: 272969,
+                surface_temperature_K: 3192,
+                surface_temperature_C: 2919,
+                orbital_period_days: 0,
+                distance_from_system_center_AU: 0,
+                composition: "Mostly hydrogen/helium plasma",
+            }),
+        ]);
+        expect(sys.systemData.star.keyFacts.orbitalPeriod).toBe("");
+    });
+
+    it("still formats a real period for planets", () => {
+        const sys = buildSystem(ALPHA_CEN_ROWS);
+        const b = sys.systemData.celestialBodies.find(
+            (bb) => bb.name === "Proxima Centauri b",
+        )!;
+        expect(b.keyFacts.orbitalPeriod).not.toBe("");
+        expect(b.keyFacts.orbitalPeriod).toMatch(/days/);
+    });
+});

@@ -65,7 +65,7 @@ export const starSystems: PlanetarySystem[] = [
                         distanceFromSun: "0 (system center)",
                     },
                     images: [],
-                    position: new THREE.Vector3(0, 0, 0),
+                    position: new THREE.Vector3(35.187177702303394, 0, 0),
                     scale: 1.1680557808635326,
                     material: {
                         color: "#FFD2A1",
@@ -97,7 +97,7 @@ export const starSystems: PlanetarySystem[] = [
                         distanceFromSun: "0 (system center)",
                     },
                     images: [],
-                    position: new THREE.Vector3(0, 0, 0),
+                    position: new THREE.Vector3(58.11894645315716, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
@@ -260,7 +260,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Barnard's Star (star)",
                 keyFacts: {
                     diameter: "272,969 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -454,7 +454,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Lalande 21185 (star)",
                 keyFacts: {
                     diameter: "547,331 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -579,7 +579,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Epsilon Eridani (star)",
                 keyFacts: {
                     diameter: "1,023,634 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -669,7 +669,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Gliese 887 (star)",
                 keyFacts: {
                     diameter: "655,962 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -863,7 +863,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Ross 128 (star)",
                 keyFacts: {
                     diameter: "274,362 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -986,7 +986,7 @@ export const starSystems: PlanetarySystem[] = [
                         distanceFromSun: "0 (system center)",
                     },
                     images: [],
-                    position: new THREE.Vector3(0, 0, 0),
+                    position: new THREE.Vector3(38.84629466570936, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
@@ -1134,7 +1134,7 @@ export const starSystems: PlanetarySystem[] = [
                         distanceFromSun: "0 (system center)",
                     },
                     images: [],
-                    position: new THREE.Vector3(0, 0, 0),
+                    position: new THREE.Vector3(43.76344148289271, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
@@ -1248,7 +1248,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Epsilon Indi A (star)",
                 keyFacts: {
                     diameter: "1,019,456 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -1338,7 +1338,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "GJ 1061 (star)",
                 keyFacts: {
                     diameter: "217,261 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -1496,7 +1496,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "YZ Ceti (star)",
                 keyFacts: {
                     diameter: "233,974 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -1655,7 +1655,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Luyten's Star (star)",
                 keyFacts: {
                     diameter: "408,061 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -1779,7 +1779,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Teegarden's Star (star)",
                 keyFacts: {
                     diameter: "149,019 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -1939,7 +1939,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Wolf 1061 (star)",
                 keyFacts: {
                     diameter: "427,559 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -2098,7 +2098,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "TZ Arietis (star)",
                 keyFacts: {
                     diameter: "222,832 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -2188,7 +2188,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Gliese 687 (star)",
                 keyFacts: {
                     diameter: "582,149 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -2313,7 +2313,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Gliese 674 (star)",
                 keyFacts: {
                     diameter: "501,372 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -2403,7 +2403,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Gliese 876 (star)",
                 keyFacts: {
                     diameter: "523,655 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -2598,7 +2598,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "GJ 1002 (star)",
                 keyFacts: {
                     diameter: "190,800 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -2723,7 +2723,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Gliese 832 (star)",
                 keyFacts: {
                     diameter: "668,496 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -2813,7 +2813,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "GJ 3323 (star)",
                 keyFacts: {
                     diameter: "165,731 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -2937,7 +2937,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Gliese 251 (star)",
                 keyFacts: {
                     diameter: "506,943 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -3095,7 +3095,7 @@ export const starSystems: PlanetarySystem[] = [
                         distanceFromSun: "0 (system center)",
                     },
                     images: [],
-                    position: new THREE.Vector3(0, 0, 0),
+                    position: new THREE.Vector3(47.58961890948434, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
@@ -3175,7 +3175,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "82 G. Eridani (star)",
                 keyFacts: {
                     diameter: "1,281,284 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -3335,7 +3335,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "HN Librae (star)",
                 keyFacts: {
                     diameter: "417,810 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -3459,7 +3459,7 @@ export const starSystems: PlanetarySystem[] = [
                         distanceFromSun: "0 (system center)",
                     },
                     images: [],
-                    position: new THREE.Vector3(0, 0, 0),
+                    position: new THREE.Vector3(38.84629466570936, 0, 0),
                     scale: 1,
                     material: {
                         color: "#FFA050",
@@ -3539,7 +3539,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Gliese 581 (star)",
                 keyFacts: {
                     diameter: "416,417 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -3732,7 +3732,7 @@ export const starSystems: PlanetarySystem[] = [
                         distanceFromSun: "0 (system center)",
                     },
                     images: [],
-                    position: new THREE.Vector3(0, 0, 0),
+                    position: new THREE.Vector3(40.20464110628665, 0, 0),
                     scale: 1.0740940135031,
                     material: {
                         color: "#FFA050",
@@ -3811,7 +3811,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "Gliese 625 (star)",
                 keyFacts: {
                     diameter: "355,138 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",
@@ -3900,7 +3900,7 @@ export const starSystems: PlanetarySystem[] = [
                 description: "HD 219134 (star)",
                 keyFacts: {
                     diameter: "1,083,521 km",
-                    orbitalPeriod: "0.0 days",
+                    orbitalPeriod: "",
                     composition: [
                         "Mostly hydrogen/helium plasma",
                         "trace metals",

@@ -84,7 +84,11 @@ function buildOrbit(
     return orbit;
 }
 
-function buildBody(row: SystemCsvRow, isStar: boolean): CelestialBodyData {
+function buildBody(
+    row: SystemCsvRow,
+    isStar: boolean,
+    isPrimary = false,
+): CelestialBodyData {
     const id = slug(row.object_name);
     const name = row.object_name;
     if (!isValidCsvObjectType(row.object_type)) {
@@ -100,7 +104,11 @@ function buildBody(row: SystemCsvRow, isStar: boolean): CelestialBodyData {
     const tempC = row.surface_temperature_C;
     const diameterKm = row.diameter_km;
     const au = row.distance_from_system_center_AU;
-    const periodDays = row.orbital_period_days;
+    // 0 is the CSV sentinel for a static origin star (see the
+    // orbital_period_basis column), not a real period. Normalizing it to
+    // undefined here stops it formatting as the impossible "0.0 days" in the
+    // modal and keeps visualPeriodSeconds consistent (it already guards <= 0).
+    const periodDays = row.orbital_period_days || undefined;
 
     const starColor = isStar
         ? spectralColor(row.spectral_classification, tempK)
@@ -152,8 +160,18 @@ function buildBody(row: SystemCsvRow, isStar: boolean): CelestialBodyData {
               metalness: 0.2,
           };
 
+    // The primary star is the visualization origin and stays pinned to (0,0,0)
+    // even when the CSV gives it a barycentric distance (e.g. Alpha Centauri A
+    // at 10.7 AU, or Gliese 338 A at 53 AU). Secondary stars are offset by
+    // their projected separation so they don't overlap the primary, and planets
+    // that list such a star as host_object orbit this offset via centerId.
+    // orbitVisualRadius floors at 2 even for 0 AU, so only offset on a
+    // genuinely positive separation. Overridden systems (Alpha Centauri A/B)
+    // are unaffected — an assigned orbit supersedes `position`.
+    const starOffset =
+        isStar && !isPrimary && au !== undefined && au > 0 ? orbitRadius : 0;
     const position = isStar
-        ? new THREE.Vector3(0, 0, 0)
+        ? new THREE.Vector3(starOffset, 0, 0)
         : new THREE.Vector3(orbitRadius, 0, 0);
 
     const body: CelestialBodyData = {
@@ -211,9 +229,9 @@ export function buildSystem(rows: SystemCsvRow[]): PlanetarySystem {
             systemType,
             systemScale: 1.2,
             systemCenter: new THREE.Vector3(0, 0, 0),
-            star: buildBody(primaryStarRow, true),
+            star: buildBody(primaryStarRow, true, true),
             celestialBodies: otherRows.map((r) =>
-                buildBody(r, r.object_type === "star"),
+                buildBody(r, r.object_type === "star", false),
             ),
             metadata: {
                 knownExoplanetCount: first.number_of_known_exoplanets,

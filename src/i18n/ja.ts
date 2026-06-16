@@ -156,8 +156,12 @@ export const ja = {
         "ケンタウルス座アルファ星Aから 23 AU",
     "facts.proxima-centauri.distanceFromSun":
         "ケンタウルス座アルファ星ABから 13,000 AU",
-    "facts.proxima-b.distanceFromSun": "プロキシマ・ケンタウリから 0.05 AU",
-    "facts.proxima-c.distanceFromSun": "プロキシマ・ケンタウリから 1.5 AU",
+    "facts.proxima-centauri-b.distanceFromSun":
+        "プロキシマ・ケンタウリから 0.05 AU",
+    "facts.proxima-centauri-c.distanceFromSun":
+        "プロキシマ・ケンタウリから 1.5 AU",
+    "facts.proxima-centauri-d.distanceFromSun":
+        "プロキシマ・ケンタウリから 0.0288 AU",
 
     // Chemical elements and composition
     "element.hydrogen": "水素",
@@ -246,12 +250,15 @@ export const ja = {
     "planet.proxima-centauri.name": "プロキシマ・ケンタウリ",
     "planet.proxima-centauri.description":
         "小さな赤色矮星。太陽系に最も近い既知の恒星",
-    "planet.proxima-b.name": "プロキシマ・ケンタウリb",
-    "planet.proxima-b.description":
+    "planet.proxima-centauri-b.name": "プロキシマ・ケンタウリb",
+    "planet.proxima-centauri-b.description":
         "プロキシマ・ケンタウリの居住可能ゾーンを公転する地球質量の系外惑星",
-    "planet.proxima-c.name": "プロキシマ・ケンタウリc",
-    "planet.proxima-c.description":
+    "planet.proxima-centauri-c.name": "プロキシマ・ケンタウリc",
+    "planet.proxima-centauri-c.description":
         "プロキシマ・ケンタウリを公転するスーパーアース系外惑星",
+    "planet.proxima-centauri-d.name": "プロキシマ・ケンタウリd",
+    "planet.proxima-centauri-d.description":
+        "プロキシマ・ケンタウリの既知の惑星の中で最も内側を公転する惑星",
 
     // Kepler-438 celestial bodies
     "planet.kepler-438.name": "ケプラー438",
