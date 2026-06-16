@@ -214,6 +214,89 @@ describe("buildSystem (multi-star offsets)", () => {
         )!;
         expect(starB.orbit).toBeUndefined();
     });
+
+    it("reports the primary star at the system center", () => {
+        const sys = buildSystem(BINARY_ROWS);
+        expect(sys.systemData.star.keyFacts.distanceFromSun).toBe(
+            "0 (system center)",
+        );
+    });
+
+    it("reports the secondary star's real projected separation", () => {
+        const sys = buildSystem(BINARY_ROWS);
+        const starB = sys.systemData.celestialBodies.find(
+            (b) => b.id === "companion-b",
+        )!;
+        // au=53 must NOT collapse to "0 (system center)" — regression for the
+        // isStar-vs-isPrimary gating of distanceFromSun.
+        expect(starB.keyFacts.distanceFromSun).toBe("53 AU from system center");
+    });
+});
+
+// Secondary stars that carry both a separation and an orbital period must
+// animate around the primary instead of freezing at a projected offset.
+// Regression for the buildOrbit / centerId wiring for non-primary stars.
+describe("buildSystem (secondary-star orbits)", () => {
+    const ORBIT_ROWS: SystemCsvRow[] = [
+        row({
+            object_name: "Companion A",
+            object_type: "star",
+            host_object: "",
+            status: "stellar component",
+            spectral_classification: "M0V",
+            diameter_km: 807766,
+            surface_temperature_K: 3907,
+            surface_temperature_C: 3634,
+            orbital_period_days: 0,
+            distance_from_system_center_AU: 0,
+            composition: "Mostly hydrogen/helium plasma",
+        }),
+        row({
+            object_name: "Companion B",
+            object_type: "star",
+            host_object: "",
+            status: "stellar component",
+            spectral_classification: "M0V",
+            diameter_km: 779912,
+            surface_temperature_K: 3900,
+            surface_temperature_C: 3627,
+            orbital_period_days: 356119,
+            distance_from_system_center_AU: 53,
+            composition: "Mostly hydrogen/helium plasma",
+        }),
+    ];
+
+    it("does not assign an orbit to the primary star", () => {
+        const sys = buildSystem(ORBIT_ROWS);
+        expect(sys.systemData.star.orbit).toBeUndefined();
+    });
+
+    it("assigns an orbit to a secondary star with period data", () => {
+        const sys = buildSystem(ORBIT_ROWS);
+        const starB = sys.systemData.celestialBodies.find(
+            (b) => b.id === "companion-b",
+        )!;
+        expect(starB.orbit).toBeDefined();
+    });
+
+    it("centers the secondary star's orbit on the primary star id", () => {
+        const sys = buildSystem(ORBIT_ROWS);
+        const starB = sys.systemData.celestialBodies.find(
+            (b) => b.id === "companion-b",
+        )!;
+        // Star rows have an empty host_object, so the orbit center must be the
+        // primary star id — never an empty/dangling centerId.
+        expect(starB.orbit?.centerId).toBe("companion-a");
+    });
+
+    it("gives the secondary star a visible animation period", () => {
+        const sys = buildSystem(ORBIT_ROWS);
+        const starB = sys.systemData.celestialBodies.find(
+            (b) => b.id === "companion-b",
+        )!;
+        expect(starB.orbit?.visualPeriodSeconds).toBeGreaterThan(0);
+        expect(starB.orbit?.semiMajorAxis).toBeGreaterThan(0);
+    });
 });
 
 // The CSV encodes a static origin star with orbital_period_days = 0. That 0

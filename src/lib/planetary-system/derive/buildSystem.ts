@@ -65,9 +65,13 @@ function buildOrbit(
     visualPeriodSecondsValue: number,
     phaseDeg: number,
     inclinationDeg: number,
+    centerIdOverride?: string,
 ): OrbitalElementsData {
+    // Star rows carry an empty host_object, so slug("") would yield a broken
+    // empty centerId. Callers that build an orbit for a secondary star pass the
+    // primary star id explicitly; planets keep the host-derived default.
     const orbit: OrbitalElementsData = {
-        centerId: slug(row.host_object),
+        centerId: centerIdOverride ?? slug(row.host_object),
         semiMajorAxis,
         visualPeriodSeconds: visualPeriodSecondsValue,
         phaseDeg,
@@ -88,6 +92,7 @@ function buildBody(
     row: SystemCsvRow,
     isStar: boolean,
     isPrimary = false,
+    primaryStarId = "",
 ): CelestialBodyData {
     const id = slug(row.object_name);
     const name = row.object_name;
@@ -136,8 +141,15 @@ function buildBody(
         temperature: tempC !== undefined ? `${tempC}°C` : "",
     };
 
-    if (isStar) {
+    // Only the primary star is pinned to the origin, so only it reports
+    // "0 (system center)". Non-primary stars carry a real projected separation
+    // from the system center (distance_basis = barycentric approximation), and
+    // reporting them as "0" mislabels companion stars like Gliese 725 B or
+    // Proxima Centauri in the info modal. Planets keep host-relative wording.
+    if (isPrimary) {
         keyFacts.distanceFromSun = "0 (system center)";
+    } else if (isStar && au !== undefined) {
+        keyFacts.distanceFromSun = `${formatDistanceAu(au)} from system center`;
     } else if (au !== undefined) {
         keyFacts.distanceFromSun = `${formatDistanceAu(au)} from ${row.host_object}`;
     }
@@ -187,13 +199,27 @@ function buildBody(
         material,
     };
 
-    if (!isStar && row.host_object) {
+    // Planets orbit their recorded host. A non-primary star that has both a
+    // real separation (au > 0) and a real orbital period orbits the primary
+    // star instead of freezing at a projected offset, so multi-star systems
+    // (e.g. Proxima Centauri, Gliese 338 B) animate. The primary itself is the
+    // pinned origin and never gets an orbit here. Per-system overrides (such as
+    // Alpha Centauri's AB barycenter) run later and supersede this assignment.
+    const hasStarOrbit =
+        isStar &&
+        !isPrimary &&
+        au !== undefined &&
+        au > 0 &&
+        periodDays !== undefined &&
+        primaryStarId !== "";
+    if ((!isStar && row.host_object) || hasStarOrbit) {
         body.orbit = buildOrbit(
             row,
             orbitRadius,
             visualPeriod,
             phaseDeg,
             inclinationDeg,
+            hasStarOrbit ? primaryStarId : undefined,
         );
     }
 
@@ -214,6 +240,9 @@ export function buildSystem(rows: SystemCsvRow[]): PlanetarySystem {
     const starRows = rows.filter((r) => r.object_type === "star");
     const primaryStarRow = starRows[0] ?? rows[0];
     const otherRows = rows.filter((r) => r !== primaryStarRow);
+    // Secondary stars orbit the primary, so its id is the orbit centerId for
+    // any companion star that receives a generated orbit below.
+    const primaryStarId = slug(primaryStarRow.object_name);
 
     const systemType = deriveSystemType(first.number_of_stars);
 
@@ -229,9 +258,9 @@ export function buildSystem(rows: SystemCsvRow[]): PlanetarySystem {
             systemType,
             systemScale: 1.2,
             systemCenter: new THREE.Vector3(0, 0, 0),
-            star: buildBody(primaryStarRow, true, true),
+            star: buildBody(primaryStarRow, true, true, primaryStarId),
             celestialBodies: otherRows.map((r) =>
-                buildBody(r, r.object_type === "star", false),
+                buildBody(r, r.object_type === "star", false, primaryStarId),
             ),
             metadata: {
                 knownExoplanetCount: first.number_of_known_exoplanets,

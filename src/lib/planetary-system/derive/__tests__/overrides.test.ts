@@ -109,6 +109,30 @@ describe("alpha-centauri override", () => {
         )!;
         expect(b.orbit!.semiMajorAxis).toBeGreaterThan(a.orbit!.semiMajorAxis);
     });
+    it("A and B share one visual period so the binary never desyncs", () => {
+        // Regression: buildBody now attaches a generic orbit (with a visual
+        // period) to secondary stars, and the override spreads it onto B. If A
+        // kept only its real periodYears while B inherited a visualPeriodSeconds,
+        // B would whip around a frozen A. Both stars must animate together.
+        const a = sys.systemData.star.orbit!;
+        const b = sys.systemData.celestialBodies.find(
+            (x) => x.id === "alpha-centauri-b",
+        )!.orbit!;
+        expect(a.visualPeriodSeconds).toBeDefined();
+        expect(b.visualPeriodSeconds).toBeDefined();
+        expect(a.visualPeriodSeconds).toBe(b.visualPeriodSeconds);
+    });
+    it("A and B share a phase so argumentOfPeriapsis keeps them opposite", () => {
+        const a = sys.systemData.star.orbit!;
+        const b = sys.systemData.celestialBodies.find(
+            (x) => x.id === "alpha-centauri-b",
+        )!.orbit!;
+        expect(a.phaseDeg).toBe(b.phaseDeg);
+        // The 180° separation is encoded in argumentOfPeriapsis, not phase.
+        expect(
+            b.argumentOfPeriapsisDeg! - a.argumentOfPeriapsisDeg!,
+        ).toBeCloseTo(180, 3);
+    });
     it("non-alpha systems pass through unchanged", () => {
         const otherRows = [
             {
