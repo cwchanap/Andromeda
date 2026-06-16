@@ -30,6 +30,33 @@ describe("buildAllPlanetarySystems", () => {
         expect(proximaC).toBeDefined();
         expect(proximaC!.status).toBe("candidate");
     });
+    // Regression: secondary stars with separation + period data must orbit the
+    // primary instead of rendering as a frozen projected offset.
+    it("Proxima Centauri orbits the Alpha Centauri primary", () => {
+        const ac = all.find((s) => s.id === "alpha-centauri")!;
+        const proxima = ac.systemData.celestialBodies.find(
+            (b) => b.id === "proxima-centauri",
+        )!;
+        expect(proxima.orbit?.centerId).toBe("alpha-centauri-a");
+        expect(proxima.orbit?.visualPeriodSeconds).toBeGreaterThan(0);
+    });
+    it("Gliese 338 B orbits the Gliese 338 primary", () => {
+        const g = all.find((s) => s.id === "gliese-338")!;
+        const b = g.systemData.celestialBodies.find(
+            (x) => x.id === "gliese-338-b",
+        )!;
+        expect(b.orbit?.centerId).toBe("gliese-338-a");
+        expect(b.orbit?.visualPeriodSeconds).toBeGreaterThan(0);
+    });
+    // Regression: secondary stars must report their real separation, not
+    // "0 (system center)".
+    it("secondary stars report their projected separation", () => {
+        const g725 = all.find((s) => s.id === "gliese-725")!;
+        const b = g725.systemData.celestialBodies.find(
+            (x) => x.id === "gliese-725-b",
+        )!;
+        expect(b.keyFacts.distanceFromSun).toBe("36 AU from system center");
+    });
     // Guards against id drift: these ids must match the planet.*/facts.* keys
     // in src/i18n/{en,zh,ja}.ts. If slug() changes, translations break.
     it("Proxima planet ids match the locale translation keys", () => {

@@ -47,6 +47,8 @@ export const localGalaxyData: GalaxyData = {
                         semiMajorAxis: 11.470775406305073,
                         eccentricity: 0.519,
                         periodYears: 79.91,
+                        visualPeriodSeconds: 81.22938224868967,
+                        phaseDeg: 0,
                         inclinationDeg: 79.2,
                         argumentOfPeriapsisDeg: 231.6,
                     },
