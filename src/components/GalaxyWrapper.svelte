@@ -157,8 +157,20 @@
         // Keep selectedSystemId and selectedSystemData for tooltip
     };
     
+    // Resolve the route-safe id for a given galaxy system id, mirroring the
+    // mapping used by navigateToSystem so the CTA label stays in sync with
+    // actual navigability.
+    const resolveRouteSystemId = (systemId: string | null): string | null =>
+        systemId === null ? null : systemId === 'solar-system' ? 'solar' : systemId;
+
+    // CTA label must reflect actual route availability: systems registered in
+    // the planetary registry are explorable, everything else is "Coming Soon".
+    $: canExplore =
+        selectedSystemId !== null &&
+        planetarySystemRegistry.hasSystem(resolveRouteSystemId(selectedSystemId) ?? '');
+
     const navigateToSystem = (systemId: string) => {
-        const routeSystemId = systemId === 'solar-system' ? 'solar' : systemId;
+        const routeSystemId = resolveRouteSystemId(systemId) ?? systemId;
 
         if (planetarySystemRegistry.hasSystem(routeSystemId)) {
             window.location.href = routes.planetarySystem(routeSystemId, lang);
@@ -468,8 +480,8 @@
                         <button class="action-button secondary" on:click={closeSystemDialog}>
                             {t('action.close')}
                         </button>
-                        <button class="action-button primary" on:click={() => navigateToSystem(selectedSystemId)}>
-                            {(selectedSystemId === 'solar-system' || selectedSystemId === 'alpha-centauri') ? t('action.explore') : t('common.comingSoon')}
+                        <button class="action-button primary" on:click={() => navigateToSystem(selectedSystemId!)}>
+                            {canExplore ? t('action.explore') : t('common.comingSoon')}
                         </button>
                     </div>
                 </div>
