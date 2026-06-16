@@ -133,7 +133,7 @@ export const localGalaxyData: GalaxyData = {
             },
         },
         {
-            id: "barnard-s-star",
+            id: "barnards-star",
             name: "Barnard's Star System",
             description: "Barnard's Star system",
             systemType: "solar",
@@ -145,7 +145,7 @@ export const localGalaxyData: GalaxyData = {
             distanceFromEarth: 5.9629,
             stars: [
                 {
-                    id: "barnard-s-star",
+                    id: "barnards-star",
                     name: "Barnard's Star",
                     type: "star",
                     status: "confirmed",
@@ -671,7 +671,7 @@ export const localGalaxyData: GalaxyData = {
             },
         },
         {
-            id: "luyten-s-star",
+            id: "luytens-star",
             name: "Luyten's Star System",
             description: "Luyten's Star system",
             systemType: "solar",
@@ -683,7 +683,7 @@ export const localGalaxyData: GalaxyData = {
             distanceFromEarth: 12.348,
             stars: [
                 {
-                    id: "luyten-s-star",
+                    id: "luytens-star",
                     name: "Luyten's Star",
                     type: "star",
                     status: "confirmed",
@@ -720,7 +720,7 @@ export const localGalaxyData: GalaxyData = {
             },
         },
         {
-            id: "teegarden-s-star",
+            id: "teegardens-star",
             name: "Teegarden's Star System",
             description: "Teegarden's Star system",
             systemType: "solar",
@@ -732,7 +732,7 @@ export const localGalaxyData: GalaxyData = {
             distanceFromEarth: 12.497,
             stars: [
                 {
-                    id: "teegarden-s-star",
+                    id: "teegardens-star",
                     name: "Teegarden's Star",
                     type: "star",
                     status: "confirmed",

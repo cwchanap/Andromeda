@@ -28,10 +28,17 @@ function isValidCsvObjectType(value: string): value is CsvObjectType {
 const DEFAULT_PLANET_COLOR = "#8B7355";
 
 function slug(s: string): string {
-    return s
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+    return (
+        s
+            .toLowerCase()
+            // Apostrophes in possessives ("Barnard's", "Luyten's") are part of
+            // the word, not a separator. Strip them so "Barnard's Star" becomes
+            // "barnards-star" (matching the legacy hand-authored id) instead of
+            // the broken "barnard-s-star". Covers both ASCII ' and curly ’.
+            .replace(/[''\u2019]/g, "")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+    );
 }
 
 function formatDiameter(km: number): string {
