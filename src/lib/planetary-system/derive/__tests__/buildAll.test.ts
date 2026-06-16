@@ -30,6 +30,21 @@ describe("buildAllPlanetarySystems", () => {
         expect(proximaC).toBeDefined();
         expect(proximaC!.status).toBe("candidate");
     });
+    // Guards against id drift: these ids must match the planet.*/facts.* keys
+    // in src/i18n/{en,zh,ja}.ts. If slug() changes, translations break.
+    it("Proxima planet ids match the locale translation keys", () => {
+        const ac = all.find((s) => s.id === "alpha-centauri")!;
+        const ids = ac.systemData.celestialBodies
+            .filter((b) => b.type !== "star")
+            .map((b) => b.id);
+        expect(ids).toEqual(
+            expect.arrayContaining([
+                "proxima-centauri-b",
+                "proxima-centauri-c",
+                "proxima-centauri-d",
+            ]),
+        );
+    });
 });
 describe("buildLocalGalaxy", () => {
     it("has 30 star systems, Solar not included", () => {

@@ -84,7 +84,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Barnard's Star (star)",
                     keyFacts: {
                         diameter: "272,969 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -133,7 +133,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Lalande 21185 (star)",
                     keyFacts: {
                         diameter: "547,331 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -182,7 +182,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Epsilon Eridani (star)",
                     keyFacts: {
                         diameter: "1,023,634 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -231,7 +231,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Gliese 887 (star)",
                     keyFacts: {
                         diameter: "655,962 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -280,7 +280,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Ross 128 (star)",
                     keyFacts: {
                         diameter: "274,362 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -427,7 +427,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Epsilon Indi A (star)",
                     keyFacts: {
                         diameter: "1,019,456 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -476,7 +476,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "GJ 1061 (star)",
                     keyFacts: {
                         diameter: "217,261 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -525,7 +525,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "YZ Ceti (star)",
                     keyFacts: {
                         diameter: "233,974 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -574,7 +574,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Luyten's Star (star)",
                     keyFacts: {
                         diameter: "408,061 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -623,7 +623,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Teegarden's Star (star)",
                     keyFacts: {
                         diameter: "149,019 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -672,7 +672,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Wolf 1061 (star)",
                     keyFacts: {
                         diameter: "427,559 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -721,7 +721,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "TZ Arietis (star)",
                     keyFacts: {
                         diameter: "222,832 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -770,7 +770,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Gliese 687 (star)",
                     keyFacts: {
                         diameter: "582,149 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -819,7 +819,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Gliese 674 (star)",
                     keyFacts: {
                         diameter: "501,372 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -868,7 +868,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Gliese 876 (star)",
                     keyFacts: {
                         diameter: "523,655 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -917,7 +917,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "GJ 1002 (star)",
                     keyFacts: {
                         diameter: "190,800 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -966,7 +966,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Gliese 832 (star)",
                     keyFacts: {
                         diameter: "668,496 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -1015,7 +1015,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "GJ 3323 (star)",
                     keyFacts: {
                         diameter: "165,731 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -1064,7 +1064,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Gliese 251 (star)",
                     keyFacts: {
                         diameter: "506,943 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -1162,7 +1162,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "82 G. Eridani (star)",
                     keyFacts: {
                         diameter: "1,281,284 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -1211,7 +1211,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "HN Librae (star)",
                     keyFacts: {
                         diameter: "417,810 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -1309,7 +1309,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Gliese 581 (star)",
                     keyFacts: {
                         diameter: "416,417 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -1407,7 +1407,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "Gliese 625 (star)",
                     keyFacts: {
                         diameter: "355,138 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",
@@ -1456,7 +1456,7 @@ export const localGalaxyData: GalaxyData = {
                     description: "HD 219134 (star)",
                     keyFacts: {
                         diameter: "1,083,521 km",
-                        orbitalPeriod: "0.0 days",
+                        orbitalPeriod: "",
                         composition: [
                             "Mostly hydrogen/helium plasma",
                             "trace metals",

@@ -149,8 +149,9 @@ export const zh = {
     "facts.alpha-centauri-b.distanceFromSun": "距离半人马座阿尔法星A 23 AU",
     "facts.proxima-centauri.distanceFromSun":
         "距离半人马座阿尔法星AB 13,000 AU",
-    "facts.proxima-b.distanceFromSun": "距离比邻星 0.05 AU",
-    "facts.proxima-c.distanceFromSun": "距离比邻星 1.5 AU",
+    "facts.proxima-centauri-b.distanceFromSun": "距离比邻星 0.05 AU",
+    "facts.proxima-centauri-c.distanceFromSun": "距离比邻星 1.5 AU",
+    "facts.proxima-centauri-d.distanceFromSun": "距离比邻星 0.0288 AU",
 
     // Chemical elements and composition
     "element.hydrogen": "氢",
@@ -239,11 +240,14 @@ export const zh = {
     "planet.proxima-centauri.name": "比邻星",
     "planet.proxima-centauri.description":
         "一颗小型红矮星，是已知距离太阳系最近的恒星",
-    "planet.proxima-b.name": "比邻星b",
-    "planet.proxima-b.description":
+    "planet.proxima-centauri-b.name": "比邻星b",
+    "planet.proxima-centauri-b.description":
         "一颗地球质量的系外行星，位于比邻星的宜居带内",
-    "planet.proxima-c.name": "比邻星c",
-    "planet.proxima-c.description": "一颗超级地球系外行星，围绕比邻星运行",
+    "planet.proxima-centauri-c.name": "比邻星c",
+    "planet.proxima-centauri-c.description":
+        "一颗超级地球系外行星，围绕比邻星运行",
+    "planet.proxima-centauri-d.name": "比邻星d",
+    "planet.proxima-centauri-d.description": "已知最靠近比邻星运行的行星",
 
     // Kepler-438 celestial bodies
     "planet.kepler-438.name": "开普勒-438",
