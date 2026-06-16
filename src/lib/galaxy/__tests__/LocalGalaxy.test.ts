@@ -70,7 +70,7 @@ describe("localGalaxyData", () => {
 
     it("solar-type systems have exactly one star", () => {
         const barnard = localGalaxyData.starSystems.find(
-            (s) => s.id === "barnard-s-star",
+            (s) => s.id === "barnards-star",
         );
         expect(barnard).toBeDefined();
         expect(barnard!.systemType).toBe("solar");

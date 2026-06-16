@@ -330,3 +330,67 @@ describe("buildSystem (period-0 sentinel)", () => {
         expect(b.keyFacts.orbitalPeriod).toMatch(/days/);
     });
 });
+
+// Regression: possessive apostrophes ("Barnard's Star") must not be treated
+// as word separators. The legacy hand-authored id was "barnards-star"; the
+// generic slug previously produced "barnard-s-star", which broke existing
+// /planetary/barnards-star bookmarks via the [systemId].astro redirect.
+describe("buildSystem (possessive apostrophe slug)", () => {
+    const BARNARD_ROWS: SystemCsvRow[] = [
+        row({
+            system_name: "Barnard's Star",
+            object_name: "Barnard's Star",
+            object_type: "star",
+            host_object: "",
+            status: "stellar component",
+            spectral_classification: "M4V",
+            diameter_km: 272969,
+            surface_temperature_K: 3192,
+            surface_temperature_C: 2919,
+            orbital_period_days: 0,
+            distance_from_system_center_AU: 0,
+            composition: "Mostly hydrogen/helium plasma",
+        }),
+        row({
+            object_name: "Barnard b",
+            object_type: "planet",
+            host_object: "Barnard's Star",
+            status: "confirmed",
+            diameter_km: 12997,
+            surface_temperature_K: 234,
+            surface_temperature_C: -39,
+            orbital_period_days: 232.6,
+            distance_from_system_center_AU: 0.4,
+        }),
+    ];
+
+    it("strips the possessive apostrophe instead of hyphenating it", () => {
+        const sys = buildSystem(BARNARD_ROWS);
+        expect(sys.id).toBe("barnards-star");
+        expect(sys.systemData.id).toBe("barnards-star");
+        expect(sys.systemData.star.id).toBe("barnards-star");
+    });
+
+    it("planet centerId references the apostrophe-stripped star id", () => {
+        const sys = buildSystem(BARNARD_ROWS);
+        const planet = sys.systemData.celestialBodies.find(
+            (b) => b.name === "Barnard b",
+        )!;
+        expect(planet.orbit?.centerId).toBe("barnards-star");
+    });
+
+    it("handles the curly apostrophe (U+2019) identically", () => {
+        const sys = buildSystem([
+            {
+                ...BARNARD_ROWS[0],
+                object_name: "Barnard\u2019s Star",
+                system_name: "Barnard\u2019s Star",
+            },
+            {
+                ...BARNARD_ROWS[1],
+                host_object: "Barnard\u2019s Star",
+            },
+        ]);
+        expect(sys.id).toBe("barnards-star");
+    });
+});
