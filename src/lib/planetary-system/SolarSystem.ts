@@ -1414,11 +1414,7 @@ export const validatePlanetarySystemData = (
     if (typeof obj.id !== "string") return false;
     if (typeof obj.name !== "string") return false;
     if (typeof obj.description !== "string") return false;
-    if (
-        !["solar", "binary", "multiple", "exotic"].includes(
-            obj.systemType as string,
-        )
-    )
+    if (!["solar", "binary", "multiple"].includes(obj.systemType as string))
         return false;
 
     // Check star

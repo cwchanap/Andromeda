@@ -14,6 +14,9 @@ export interface StarSystemData {
     celestialBodies: CelestialBodyData[]; // planets, moons, asteroids, etc.
     systemScale: number;
     systemCenter: Vector3;
+    // Intentionally broader than PlanetarySystemData.systemType: the universe
+    // layer must support future non-planetary system topologies ("exotic")
+    // beyond the solar/binary/multiple set used by the planetary renderer.
     systemType: "solar" | "binary" | "multiple" | "exotic";
     orbitAnchors?: OrbitAnchorData[];
     metadata?: {

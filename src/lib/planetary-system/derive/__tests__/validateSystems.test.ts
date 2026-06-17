@@ -148,6 +148,90 @@ describe("validateSystems", () => {
         expect(dangling!.level).toBe("error");
     });
 
+    it("errors when orbit.centerId is an empty string", () => {
+        const orbit: OrbitalElementsData = {
+            centerId: "",
+            semiMajorAxis: 1,
+        };
+        const sys = system("s", {
+            celestialBodies: [body("planet", { orbit })],
+        });
+        const issues = validateSystems([sys]);
+        const empty = issues.find((i) =>
+            i.message.includes("empty or whitespace-only centerId"),
+        );
+        expect(empty).toBeDefined();
+        expect(empty!.level).toBe("error");
+    });
+
+    it("errors when orbit.centerId is whitespace-only", () => {
+        const orbit: OrbitalElementsData = {
+            centerId: "   ",
+            semiMajorAxis: 1,
+        };
+        const sys = system("s", {
+            celestialBodies: [body("planet", { orbit })],
+        });
+        const issues = validateSystems([sys]);
+        const ws = issues.find((i) =>
+            i.message.includes("empty or whitespace-only centerId"),
+        );
+        expect(ws).toBeDefined();
+        expect(ws!.level).toBe("error");
+    });
+
+    it("does not error when a body has no orbit at all", () => {
+        const sys = system("s", {
+            celestialBodies: [body("planet", { orbit: undefined })],
+        });
+        const issues = validateSystems([sys]);
+        expect(
+            issues.find((i) => i.message.includes("centerId")),
+        ).toBeUndefined();
+    });
+
+    it("errors when two celestial bodies share the same id", () => {
+        const sys = system("dup-body", {
+            celestialBodies: [body("same"), body("same")],
+        });
+        const issues = validateSystems([sys]);
+        const dup = issues.find((i) =>
+            i.message.includes('Duplicate body id "same"'),
+        );
+        expect(dup).toBeDefined();
+        expect(dup!.level).toBe("error");
+    });
+
+    it("errors when a body id collides with the star id", () => {
+        const sys = system("dup-star", {
+            star: body("collision", { type: "star" }),
+            celestialBodies: [body("collision")],
+        });
+        const issues = validateSystems([sys]);
+        const dup = issues.find((i) => i.message.includes("Duplicate"));
+        expect(dup).toBeDefined();
+        expect(dup!.level).toBe("error");
+    });
+
+    it("errors when an orbit anchor id collides with a body id", () => {
+        const sys = system("dup-anchor", {
+            celestialBodies: [body("bary")],
+            orbitAnchors: [
+                {
+                    id: "bary",
+                    name: "Bary",
+                    type: "barycenter",
+                },
+            ],
+        });
+        const issues = validateSystems([sys]);
+        const dup = issues.find((i) =>
+            i.message.includes('Duplicate anchor id "bary"'),
+        );
+        expect(dup).toBeDefined();
+        expect(dup!.level).toBe("error");
+    });
+
     it("warns when a body is missing diameter or temperature", () => {
         const sys = system("s", {
             celestialBodies: [

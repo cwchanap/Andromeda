@@ -45,12 +45,27 @@ export function validateSystems(systems: PlanetarySystem[]): ValidationIssue[] {
         }
 
         const validIds = new Set<string>();
-        validIds.add(sys.systemData.star.id);
+
+        // ─── HARD: duplicate id within a system ─────────────────────
+        // A duplicate id makes orbit.centerId references ambiguous, so it
+        // is a hard error regardless of which entity collides (star, body,
+        // or orbit anchor).
+        const checkDuplicate = (id: string, kind: string) => {
+            if (validIds.has(id)) {
+                issues.push({
+                    level: "error",
+                    message: `Duplicate ${kind} id "${id}" in system "${sys.id}"`,
+                });
+            } else {
+                validIds.add(id);
+            }
+        };
+        checkDuplicate(sys.systemData.star.id, "star");
         for (const body of sys.systemData.celestialBodies) {
-            validIds.add(body.id);
+            checkDuplicate(body.id, "body");
         }
         for (const anchor of sys.systemData.orbitAnchors ?? []) {
-            validIds.add(anchor.id);
+            checkDuplicate(anchor.id, "anchor");
         }
 
         const allBodies = [
@@ -58,10 +73,17 @@ export function validateSystems(systems: PlanetarySystem[]): ValidationIssue[] {
             ...sys.systemData.celestialBodies,
         ];
 
-        // ─── HARD: orbit.centerId references a non-existent id ──────
+        // ─── HARD: orbit.centerId missing, empty, or dangling ───────
         for (const body of allBodies) {
-            const centerId = body.orbit?.centerId;
-            if (centerId && !validIds.has(centerId)) {
+            const orbit = body.orbit;
+            if (!orbit) continue; // a body with no orbit is fine
+            const centerId = orbit.centerId;
+            if (typeof centerId !== "string" || centerId.trim() === "") {
+                issues.push({
+                    level: "error",
+                    message: `Body "${body.id}" in system "${sys.id}" has an orbit with an empty or whitespace-only centerId`,
+                });
+            } else if (!validIds.has(centerId)) {
                 issues.push({
                     level: "error",
                     message: `Body "${body.id}" in system "${sys.id}" has orbit.centerId "${centerId}" referencing non-existent id`,
