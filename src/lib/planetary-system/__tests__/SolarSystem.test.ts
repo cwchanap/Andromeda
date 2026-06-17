@@ -105,6 +105,11 @@ describe("validatePlanetarySystemData", () => {
         expect(validatePlanetarySystemData(bad)).toBe(false);
     });
 
+    it("returns false for systemType 'exotic' (not in PlanetarySystemData)", () => {
+        const bad = { ...solarSystemData, systemType: "exotic" } as unknown;
+        expect(validatePlanetarySystemData(bad)).toBe(false);
+    });
+
     it("returns false when systemScale is not a positive number", () => {
         const bad = { ...solarSystemData, systemScale: -1 } as unknown;
         expect(validatePlanetarySystemData(bad)).toBe(false);
