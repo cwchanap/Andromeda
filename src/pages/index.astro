@@ -4,9 +4,24 @@ import MainMenu from "@/components/MainMenu.svelte";
 import GlobalLanguageSelector from "@/components/GlobalLanguageSelector.svelte";
 import ErrorBoundary from "@/components/ErrorBoundary.svelte";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+import { planetarySystemRegistry } from "@/lib/planetary-system";
 
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
+
+// Localized system name/description keys are consumed by ExploreSystems
+// (explore modal) and PlanetarySystemWrapper (HUD). Build them dynamically so
+// every registered system is covered for the active locale without manually
+// enumerating keys here — new systems are picked up automatically.
+const systemNameKeys: Record<string, string> = {};
+for (const system of planetarySystemRegistry.getAllSystems()) {
+  systemNameKeys[`systems.${system.id}.name`] = t(
+    `systems.${system.id}.name` as never,
+  );
+  systemNameKeys[`systems.${system.id}.description`] = t(
+    `systems.${system.id}.description` as never,
+  );
+}
 
 // Pre-compute all translations needed by MainMenu
 const translations = {
@@ -78,6 +93,7 @@ const translations = {
   "explore.prev": t("explore.prev"),
   "explore.next": t("explore.next"),
   "finder.close": t("finder.close"),
+  ...systemNameKeys,
 };
 
 const content = {

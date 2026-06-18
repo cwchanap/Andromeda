@@ -42,6 +42,9 @@ const mockTranslations: Record<string, string> = {
     "explore.prev": "Prev",
     "explore.next": "Next",
     "finder.close": "Close",
+    // No systems.<id>.name keys here by design: this exercises the fallback
+    // to the registry name, mirroring how useTranslations returns a falsy
+    // value for missing keys.
 };
 
 vi.mock("@/lib/planetary-system", () => ({
@@ -57,7 +60,7 @@ describe("ExploreSystems", () => {
 
     it("renders all systems by default", () => {
         const { container } = render(ExploreSystems, {
-            props: { t: (k: string) => mockTranslations[k] || k },
+            props: { t: (k: string) => mockTranslations[k] || "" },
         });
         // Both system names appear via GlitchText (aria-label)
         const labels = Array.from(container.querySelectorAll("[aria-label]"))
@@ -69,11 +72,25 @@ describe("ExploreSystems", () => {
         expect(labels).toContain("ALPHA CENTAURI");
     });
 
+    it("uses the i18n system name when a translation exists", () => {
+        // Provide a translated name for solar; assert it is rendered instead
+        // of the raw registry name.
+        const t = (k: string) =>
+            k === "systems.solar.name" ? "Sol (i18n)" : "";
+        const { container } = render(ExploreSystems, { props: { t } });
+        const labels = Array.from(
+            container.querySelectorAll("[aria-label]"),
+        ).map((el) => el.getAttribute("aria-label") ?? "");
+        expect(labels).toContain("SOL (I18N)");
+        // The untranslated alpha-centauri must still fall back to registry name.
+        expect(labels).toContain("ALPHA CENTAURI");
+    });
+
     it("calls onClose when close button is clicked", async () => {
         const onClose = vi.fn();
         const { container } = render(ExploreSystems, {
             props: {
-                t: (k: string) => mockTranslations[k] || k,
+                t: (k: string) => mockTranslations[k] || "",
                 onClose,
             },
         });
@@ -89,7 +106,7 @@ describe("ExploreSystems", () => {
         const onSelect = vi.fn();
         const { container } = render(ExploreSystems, {
             props: {
-                t: (k: string) => mockTranslations[k] || k,
+                t: (k: string) => mockTranslations[k] || "",
                 onSelect,
             },
         });
@@ -107,7 +124,7 @@ describe("ExploreSystems", () => {
     it("shows disabled button for current system", () => {
         const { container } = render(ExploreSystems, {
             props: {
-                t: (k: string) => mockTranslations[k] || k,
+                t: (k: string) => mockTranslations[k] || "",
                 currentSystemId: "solar",
             },
         });
@@ -121,7 +138,7 @@ describe("ExploreSystems", () => {
     it("shows empty state when search matches nothing", async () => {
         const { container } = render(ExploreSystems, {
             props: {
-                t: (k: string) => mockTranslations[k] || k,
+                t: (k: string) => mockTranslations[k] || "",
             },
         });
         const searchInput = container.querySelector("input");
@@ -135,7 +152,7 @@ describe("ExploreSystems", () => {
     it("filters systems by name when typing in search", async () => {
         const { container } = render(ExploreSystems, {
             props: {
-                t: (k: string) => mockTranslations[k] || k,
+                t: (k: string) => mockTranslations[k] || "",
             },
         });
         const searchInput = container.querySelector("input");
@@ -155,7 +172,7 @@ describe("ExploreSystems", () => {
     it("has role=dialog with aria-modal", () => {
         const { container } = render(ExploreSystems, {
             props: {
-                t: (k: string) => mockTranslations[k] || k,
+                t: (k: string) => mockTranslations[k] || "",
             },
         });
         const dialog = container.querySelector('[role="dialog"]');
@@ -167,7 +184,7 @@ describe("ExploreSystems", () => {
         const onClose = vi.fn();
         const { container } = render(ExploreSystems, {
             props: {
-                t: (k: string) => mockTranslations[k] || k,
+                t: (k: string) => mockTranslations[k] || "",
                 onClose,
             },
         });
@@ -180,7 +197,7 @@ describe("ExploreSystems", () => {
     it("autofocuses the search input when rendered", async () => {
         const { container } = render(ExploreSystems, {
             props: {
-                t: (k: string) => mockTranslations[k] || k,
+                t: (k: string) => mockTranslations[k] || "",
             },
         });
         const searchInput = container.querySelector("input");
@@ -211,7 +228,7 @@ describe("ExploreSystems", () => {
         );
 
         const { container } = render(ExploreSystems, {
-            props: { t: (k: string) => mockTranslations[k] || k },
+            props: { t: (k: string) => mockTranslations[k] || "" },
         });
 
         await waitFor(() =>
@@ -254,7 +271,7 @@ describe("ExploreSystems", () => {
         );
 
         const { container } = render(ExploreSystems, {
-            props: { t: (k: string) => mockTranslations[k] || k },
+            props: { t: (k: string) => mockTranslations[k] || "" },
         });
 
         await waitFor(() =>
@@ -285,7 +302,7 @@ describe("ExploreSystems", () => {
 
     it("stops propagation of ArrowDown key inside dialog", async () => {
         const { container } = render(ExploreSystems, {
-            props: { t: (k: string) => mockTranslations[k] || k },
+            props: { t: (k: string) => mockTranslations[k] || "" },
         });
         const dialog = container.querySelector('[role="dialog"]');
         expect(dialog).toBeTruthy();
@@ -302,7 +319,7 @@ describe("ExploreSystems", () => {
 
     it("stops propagation of Enter key inside dialog", async () => {
         const { container } = render(ExploreSystems, {
-            props: { t: (k: string) => mockTranslations[k] || k },
+            props: { t: (k: string) => mockTranslations[k] || "" },
         });
         const dialog = container.querySelector('[role="dialog"]');
         expect(dialog).toBeTruthy();
@@ -319,7 +336,7 @@ describe("ExploreSystems", () => {
 
     it("stops propagation of Space key inside dialog", async () => {
         const { container } = render(ExploreSystems, {
-            props: { t: (k: string) => mockTranslations[k] || k },
+            props: { t: (k: string) => mockTranslations[k] || "" },
         });
         const dialog = container.querySelector('[role="dialog"]');
         expect(dialog).toBeTruthy();
@@ -336,7 +353,7 @@ describe("ExploreSystems", () => {
 
     it("does not stop propagation for unrelated keys", async () => {
         const { container } = render(ExploreSystems, {
-            props: { t: (k: string) => mockTranslations[k] || k },
+            props: { t: (k: string) => mockTranslations[k] || "" },
         });
         const dialog = container.querySelector('[role="dialog"]');
         expect(dialog).toBeTruthy();
