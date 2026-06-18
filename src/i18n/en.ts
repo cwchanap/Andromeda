@@ -299,63 +299,98 @@ export const en = {
     "systems.kepler-442.name": "Kepler-442 System",
     "systems.kepler-442.description": "Another fascinating exoplanet system",
     "systems.hd-219134.name": "HD 219134 System",
-    "systems.hd-219134.description": "HD 219134 system",
+    "systems.hd-219134.description":
+        "An orange-dwarf system 21.3 light-years from Earth in Cassiopeia, hosting six confirmed planets",
     "systems.82-g-eridani.name": "82 G. Eridani System",
-    "systems.82-g-eridani.description": "82 G. Eridani system",
+    "systems.82-g-eridani.description":
+        "A Sun-like yellow dwarf 19.7 light-years away in Eridanus, orbited by three confirmed planets",
     "systems.barnards-star.name": "Barnard's Star System",
-    "systems.barnards-star.description": "Barnard's Star system",
+    "systems.barnards-star.description":
+        "A red-dwarf star system 5.96 light-years from Earth in Ophiuchus, orbited by four confirmed planets",
     "systems.epsilon-eridani.name": "Epsilon Eridani System",
-    "systems.epsilon-eridani.description": "Epsilon Eridani system",
+    "systems.epsilon-eridani.description":
+        "An orange-dwarf star 10.5 light-years from Earth in Eridanus, hosting one confirmed planet",
     "systems.epsilon-indi.name": "Epsilon Indi System",
-    "systems.epsilon-indi.description": "Epsilon Indi system",
+    "systems.epsilon-indi.description":
+        "An orange-dwarf system 11.9 light-years from Earth in Indus, orbited by one confirmed planet",
     "systems.eq-pegasi.name": "EQ Pegasi System",
-    "systems.eq-pegasi.description": "EQ Pegasi system",
+    "systems.eq-pegasi.description":
+        "A binary red-dwarf system 20.4 light-years away in Pegasus, with one known planet",
     "systems.gj-1002.name": "GJ 1002 System",
-    "systems.gj-1002.description": "GJ 1002 system",
+    "systems.gj-1002.description":
+        "A small red dwarf 15.8 light-years away in Cetus, orbited by two confirmed planets",
     "systems.gj-1061.name": "GJ 1061 System",
-    "systems.gj-1061.description": "GJ 1061 system",
+    "systems.gj-1061.description":
+        "A red-dwarf system 12 light-years from Earth in Horologium, hosting three confirmed planets",
     "systems.gj-3323.name": "GJ 3323 System",
-    "systems.gj-3323.description": "GJ 3323 system",
+    "systems.gj-3323.description":
+        "A red dwarf 17.5 light-years away in Eridanus, orbited by two confirmed planets",
     "systems.gliese-251.name": "Gliese 251 System",
-    "systems.gliese-251.description": "Gliese 251 system",
+    "systems.gliese-251.description":
+        "A red-dwarf system 18.2 light-years from Earth in Gemini, with one known planet",
     "systems.gliese-338.name": "Gliese 338 System",
-    "systems.gliese-338.description": "Gliese 338 system",
+    "systems.gliese-338.description":
+        "A binary red-dwarf system 20.7 light-years away in Ursa Major, orbited by one confirmed planet",
     "systems.gliese-581.name": "Gliese 581 System",
-    "systems.gliese-581.description": "Gliese 581 system",
+    "systems.gliese-581.description":
+        "A red-dwarf system 20.5 light-years from Earth in Libra, hosting three confirmed planets",
     "systems.gliese-625.name": "Gliese 625 System",
-    "systems.gliese-625.description": "Gliese 625 system",
+    "systems.gliese-625.description":
+        "A red dwarf 21.1 light-years away in Draco, with one known planet",
     "systems.gliese-674.name": "Gliese 674 System",
-    "systems.gliese-674.description": "Gliese 674 system",
+    "systems.gliese-674.description":
+        "A red-dwarf system 14.8 light-years from Earth in Ara, orbited by one confirmed planet",
     "systems.gliese-687.name": "Gliese 687 System",
-    "systems.gliese-687.description": "Gliese 687 system",
+    "systems.gliese-687.description":
+        "A red dwarf 14.8 light-years away in Draco, hosting two confirmed planets",
     "systems.gliese-725.name": "Gliese 725 System",
-    "systems.gliese-725.description": "Gliese 725 system",
+    "systems.gliese-725.description":
+        "A binary red-dwarf system 11.5 light-years away in Draco, hosting two confirmed planets",
     "systems.gliese-752.name": "Gliese 752 System",
-    "systems.gliese-752.description": "Gliese 752 system",
+    "systems.gliese-752.description":
+        "A binary red-dwarf system 19.3 light-years from Earth in Aquila, with one known planet",
     "systems.gliese-832.name": "Gliese 832 System",
-    "systems.gliese-832.description": "Gliese 832 system",
+    "systems.gliese-832.description":
+        "A red-dwarf system 16.2 light-years from Earth in Grus, orbited by one confirmed planet",
     "systems.gliese-876.name": "Gliese 876 System",
-    "systems.gliese-876.description": "Gliese 876 system",
+    "systems.gliese-876.description":
+        "A red dwarf 15.2 light-years away in Aquarius, hosting four confirmed planets",
     "systems.gliese-887.name": "Gliese 887 System",
-    "systems.gliese-887.description": "Gliese 887 system",
+    "systems.gliese-887.description":
+        "A red-dwarf system 10.7 light-years from Earth in Piscis Austrinus, hosting four confirmed planets",
     "systems.groombridge-34.name": "Groombridge 34 System",
-    "systems.groombridge-34.description": "Groombridge 34 system",
+    "systems.groombridge-34.description":
+        "A binary red-dwarf system 11.6 light-years away in Andromeda, hosting two confirmed planets",
     "systems.hn-librae.name": "HN Librae System",
-    "systems.hn-librae.description": "HN Librae system",
+    "systems.hn-librae.description":
+        "A red-dwarf system 20.4 light-years from Earth in Libra, orbited by one confirmed planet",
     "systems.lalande-21185.name": "Lalande 21185 System",
-    "systems.lalande-21185.description": "Lalande 21185 system",
+    "systems.lalande-21185.description":
+        "A red-dwarf system 8.3 light-years from Earth in Ursa Major, orbited by two confirmed planets",
     "systems.luytens-star.name": "Luyten's Star System",
-    "systems.luytens-star.description": "Luyten's Star system",
+    "systems.luytens-star.description":
+        "A red dwarf 12.3 light-years away in Canis Minor, hosting two confirmed planets",
     "systems.ross-128.name": "Ross 128 System",
-    "systems.ross-128.description": "Ross 128 system",
+    "systems.ross-128.description":
+        "A red-dwarf system 11 light-years from Earth in Virgo, orbited by one confirmed planet",
     "systems.teegardens-star.name": "Teegarden's Star System",
-    "systems.teegardens-star.description": "Teegarden's Star system",
+    "systems.teegardens-star.description":
+        "An ultra-cool red dwarf 12.5 light-years away in Aries, hosting three confirmed planets",
     "systems.tz-arietis.name": "TZ Arietis System",
-    "systems.tz-arietis.description": "TZ Arietis system",
+    "systems.tz-arietis.description":
+        "A faint red dwarf 14.6 light-years away in Aries, with one known planet",
     "systems.wolf-1061.name": "Wolf 1061 System",
-    "systems.wolf-1061.description": "Wolf 1061 system",
+    "systems.wolf-1061.description":
+        "A red-dwarf system 14 light-years from Earth in Ophiuchus, orbited by three confirmed planets",
     "systems.yz-ceti.name": "YZ Ceti System",
-    "systems.yz-ceti.description": "YZ Ceti system",
+    "systems.yz-ceti.description":
+        "A red-dwarf system 12.1 light-years from Earth in Cetus, hosting three confirmed planets",
+    "systems.trappist-1.name": "TRAPPIST-1 System",
+    "systems.trappist-1.description":
+        "A remarkable system of seven Earth-sized planets orbiting an ultra-cool dwarf star, with several in the habitable zone",
+    "systems.wolf-359.name": "Wolf 359 System",
+    "systems.wolf-359.description":
+        "One of the nearest star systems to Earth, a red dwarf with recently discovered planetary companions",
 
     // Instructions
     "instructions.mouse": "🖱️ Mouse to rotate",

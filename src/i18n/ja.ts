@@ -276,74 +276,109 @@ export const ja = {
         "ケプラー442の居住可能ゾーンを公転するスーパーアース系外惑星",
 
     // Systems
-    "systems.unknown": "不明なシステム",
+    "systems.unknown": "不明な恒星系",
     "systems.solar.name": "太陽系",
     "systems.solar.description": "すべての惑星と太陽を含む太陽系",
-    "systems.alpha-centauri.name": "ケンタウルス座アルファ星系",
+    "systems.alpha-centauri.name": "ケンタウルス座アルファ恒星系",
     "systems.alpha-centauri.description": "太陽系に最も近い恒星系",
-    "systems.kepler-438.name": "ケプラー438星系",
+    "systems.kepler-438.name": "ケプラー438恒星系",
     "systems.kepler-438.description":
         "居住可能な世界を持つ可能性のある系外惑星系",
-    "systems.kepler-442.name": "ケプラー442星系",
+    "systems.kepler-442.name": "ケプラー442恒星系",
     "systems.kepler-442.description": "もう一つの魅力的な系外惑星系",
-    "systems.hd-219134.name": "HD 219134星系",
-    "systems.hd-219134.description": "HD 219134システム",
-    "systems.82-g-eridani.name": "82 G. Eridani星系",
-    "systems.82-g-eridani.description": "82 G. Eridaniシステム",
-    "systems.barnards-star.name": "バーナード星系",
-    "systems.barnards-star.description": "バーナード星システム",
-    "systems.epsilon-eridani.name": "エリダヌス座イプシロン星系",
-    "systems.epsilon-eridani.description": "エリダヌス座イプシロンシステム",
-    "systems.epsilon-indi.name": "インディアン座イプシロン星系",
-    "systems.epsilon-indi.description": "インディアン座イプシロンシステム",
-    "systems.eq-pegasi.name": "ペガサス座EQ星系",
-    "systems.eq-pegasi.description": "ペガサス座EQシステム",
-    "systems.gj-1002.name": "GJ 1002星系",
-    "systems.gj-1002.description": "GJ 1002システム",
-    "systems.gj-1061.name": "GJ 1061星系",
-    "systems.gj-1061.description": "GJ 1061システム",
-    "systems.gj-3323.name": "GJ 3323星系",
-    "systems.gj-3323.description": "GJ 3323システム",
-    "systems.gliese-251.name": "グリーゼ251星系",
-    "systems.gliese-251.description": "グリーゼ251システム",
-    "systems.gliese-338.name": "グリーゼ338星系",
-    "systems.gliese-338.description": "グリーゼ338システム",
-    "systems.gliese-581.name": "グリーゼ581星系",
-    "systems.gliese-581.description": "グリーゼ581システム",
-    "systems.gliese-625.name": "グリーゼ625星系",
-    "systems.gliese-625.description": "グリーゼ625システム",
-    "systems.gliese-674.name": "グリーゼ674星系",
-    "systems.gliese-674.description": "グリーゼ674システム",
-    "systems.gliese-687.name": "グリーゼ687星系",
-    "systems.gliese-687.description": "グリーゼ687システム",
-    "systems.gliese-725.name": "グリーゼ725星系",
-    "systems.gliese-725.description": "グリーゼ725システム",
-    "systems.gliese-752.name": "グリーゼ752星系",
-    "systems.gliese-752.description": "グリーゼ752システム",
-    "systems.gliese-832.name": "グリーゼ832星系",
-    "systems.gliese-832.description": "グリーゼ832システム",
-    "systems.gliese-876.name": "グリーゼ876星系",
-    "systems.gliese-876.description": "グリーゼ876システム",
-    "systems.gliese-887.name": "グリーゼ887星系",
-    "systems.gliese-887.description": "グリーゼ887システム",
-    "systems.groombridge-34.name": "グルームブリッジ34星系",
-    "systems.groombridge-34.description": "グルームブリッジ34システム",
-    "systems.hn-librae.name": "HN Librae星系",
-    "systems.hn-librae.description": "HN Libraeシステム",
-    "systems.lalande-21185.name": "ラランド21185星系",
-    "systems.lalande-21185.description": "ラランド21185システム",
-    "systems.luytens-star.name": "ライテン星系",
-    "systems.luytens-star.description": "ライテン星システム",
-    "systems.ross-128.name": "ロス128星系",
-    "systems.ross-128.description": "ロス128システム",
-    "systems.teegardens-star.name": "ティーガーデン星系",
-    "systems.teegardens-star.description": "ティーガーデン星システム",
-    "systems.tz-arietis.name": "TZ Arietis星系",
-    "systems.tz-arietis.description": "TZ Arietisシステム",
-    "systems.wolf-1061.name": "ウルフ1061星系",
-    "systems.wolf-1061.description": "ウルフ1061システム",
-    "systems.yz-ceti.name": "YZ Ceti星系",
-    "systems.yz-ceti.description": "YZ Cetiシステム",
+    "systems.hd-219134.name": "HD 219134恒星系",
+    "systems.hd-219134.description":
+        "地球から21.3光年のカシオペヤ座にある橙色矮星系で、6個の確認された惑星を持ちます",
+    "systems.82-g-eridani.name": "82 G. Eridani恒星系",
+    "systems.82-g-eridani.description":
+        "地球から19.7光年のエリダヌス座にある太陽型の黄色矮星で、3個の確認された惑星が公転しています",
+    "systems.barnards-star.name": "バーナード恒星系",
+    "systems.barnards-star.description":
+        "地球から5.96光年のへびつかい座にある赤色矮星系で、4個の確認された惑星が公転しています",
+    "systems.epsilon-eridani.name": "エリダヌス座イプシロン恒星系",
+    "systems.epsilon-eridani.description":
+        "地球から10.5光年のエリダヌス座にある橙色矮星で、1個の確認された惑星を持ちます",
+    "systems.epsilon-indi.name": "インディアン座イプシロン恒星系",
+    "systems.epsilon-indi.description":
+        "地球から11.9光年のインディアン座にある橙色矮星系で、1個の確認された惑星が公転しています",
+    "systems.eq-pegasi.name": "ペガサス座EQ恒星系",
+    "systems.eq-pegasi.description":
+        "地球から20.4光年のペガサス座にある赤色矮星の連星系で、1個の確認された惑星を持ちます",
+    "systems.gj-1002.name": "GJ 1002恒星系",
+    "systems.gj-1002.description":
+        "地球から15.8光年のくじら座にある小型の赤色矮星で、2個の確認された惑星が公転しています",
+    "systems.gj-1061.name": "GJ 1061恒星系",
+    "systems.gj-1061.description":
+        "地球から12光年のとけい座にある赤色矮星系で、3個の確認された惑星を持ちます",
+    "systems.gj-3323.name": "GJ 3323恒星系",
+    "systems.gj-3323.description":
+        "地球から17.5光年のエリダヌス座にある赤色矮星で、2個の確認された惑星が公転しています",
+    "systems.gliese-251.name": "グリーゼ251恒星系",
+    "systems.gliese-251.description":
+        "地球から18.2光年のふたご座にある赤色矮星系で、1個の確認された惑星を持ちます",
+    "systems.gliese-338.name": "グリーゼ338恒星系",
+    "systems.gliese-338.description":
+        "地球から20.7光年のおおぐま座にある赤色矮星の連星系で、1個の確認された惑星が公転しています",
+    "systems.gliese-581.name": "グリーゼ581恒星系",
+    "systems.gliese-581.description":
+        "地球から20.5光年のてんびん座にある赤色矮星系で、3個の確認された惑星を持ちます",
+    "systems.gliese-625.name": "グリーゼ625恒星系",
+    "systems.gliese-625.description":
+        "地球から21.1光年のりゅう座にある赤色矮星で、1個の確認された惑星を持ちます",
+    "systems.gliese-674.name": "グリーゼ674恒星系",
+    "systems.gliese-674.description":
+        "地球から14.8光年のさいだん座にある赤色矮星系で、1個の確認された惑星が公転しています",
+    "systems.gliese-687.name": "グリーゼ687恒星系",
+    "systems.gliese-687.description":
+        "地球から14.8光年のりゅう座にある赤色矮星で、2個の確認された惑星を持ちます",
+    "systems.gliese-725.name": "グリーゼ725恒星系",
+    "systems.gliese-725.description":
+        "地球から11.5光年のりゅう座にある赤色矮星の連星系で、2個の確認された惑星を持ちます",
+    "systems.gliese-752.name": "グリーゼ752恒星系",
+    "systems.gliese-752.description":
+        "地球から19.3光年のわし座にある赤色矮星の連星系で、1個の確認された惑星を持ちます",
+    "systems.gliese-832.name": "グリーゼ832恒星系",
+    "systems.gliese-832.description":
+        "地球から16.2光年のつる座にある赤色矮星系で、1個の確認された惑星が公転しています",
+    "systems.gliese-876.name": "グリーゼ876恒星系",
+    "systems.gliese-876.description":
+        "地球から15.2光年のみずがめ座にある赤色矮星で、4個の確認された惑星を持ちます",
+    "systems.gliese-887.name": "グリーゼ887恒星系",
+    "systems.gliese-887.description":
+        "地球から10.7光年のみなみのうお座にある赤色矮星系で、4個の確認された惑星を持ちます",
+    "systems.groombridge-34.name": "グルームブリッジ34恒星系",
+    "systems.groombridge-34.description":
+        "地球から11.6光年のアンドロメダ座にある赤色矮星の連星系で、2個の確認された惑星を持ちます",
+    "systems.hn-librae.name": "HN Librae恒星系",
+    "systems.hn-librae.description":
+        "地球から20.4光年のてんびん座にある赤色矮星系で、1個の確認された惑星が公転しています",
+    "systems.lalande-21185.name": "ラランド21185恒星系",
+    "systems.lalande-21185.description":
+        "地球から8.3光年のおおぐま座にある赤色矮星系で、2個の確認された惑星が公転しています",
+    "systems.luytens-star.name": "ライテン恒星系",
+    "systems.luytens-star.description":
+        "地球から12.3光年のこいぬ座にある赤色矮星で、2個の確認された惑星を持ちます",
+    "systems.ross-128.name": "ロス128恒星系",
+    "systems.ross-128.description":
+        "地球から11光年のおとめ座にある赤色矮星系で、1個の確認された惑星が公転しています",
+    "systems.teegardens-star.name": "ティーガーデン恒星系",
+    "systems.teegardens-star.description":
+        "地球から12.5光年のおひつじ座にある超低温の赤色矮星で、3個の確認された惑星を持ちます",
+    "systems.tz-arietis.name": "TZ Arietis恒星系",
+    "systems.tz-arietis.description":
+        "地球から14.6光年のおひつじ座にある暗い赤色矮星で、1個の確認された惑星を持ちます",
+    "systems.wolf-1061.name": "ウルフ1061恒星系",
+    "systems.wolf-1061.description":
+        "地球から14光年のへびつかい座にある赤色矮星系で、3個の確認された惑星が公転しています",
+    "systems.yz-ceti.name": "YZ Ceti恒星系",
+    "systems.yz-ceti.description":
+        "地球から12.1光年のくじら座にある赤色矮星系で、3個の確認された惑星を持ちます",
+    "systems.trappist-1.name": "TRAPPIST-1恒星系",
+    "systems.trappist-1.description":
+        "超低温の赤色矮星の周囲を公転する7つの地球サイズの惑星からなる驚くべき系で、複数がハビタブルゾーンに位置します",
+    "systems.wolf-359.name": "Wolf 359恒星系",
+    "systems.wolf-359.description":
+        "地球に最も近い恒星系の一つで、最近発見された惑星伴星を持つ赤色矮星です",
 
     // Instructions
     "instructions.mouse": "🖱️ マウスで回転",

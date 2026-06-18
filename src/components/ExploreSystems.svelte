@@ -15,6 +15,21 @@
   const PER_PAGE = 6;
   const allSystems = planetarySystemRegistry.getAllSystems();
 
+  // Resolve a system's display name via i18n, falling back to the registry
+  // name when no translation is available. Without this the explore modal
+  // always shows the English registry name, ignoring the active locale.
+  //
+  // The fallback must handle two "missing" shapes: `useTranslations` returns
+  // a falsy value for unknown keys, while the pre-computed translations prop
+  // path (see MainMenu.svelte / index.astro) returns the raw key string. We
+  // treat a returned raw key as "not translated" so users never see a literal
+  // "systems.<id>.name" label.
+  const systemName = (system: { id: string; name: string }) => {
+    const key = `systems.${system.id}.name`;
+    const translated = t(key);
+    return !translated || translated === key ? system.name : translated;
+  };
+
   let query = "";
   let page = 1;
 
@@ -67,7 +82,7 @@
           {#each pageResult.items as system (system.id)}
             <div class="hud-readout mb-0">
               <h4 class="hud-panel-title" style="font-size:13px;">
-                <GlitchText text={system.name.toUpperCase()} />
+                <GlitchText text={systemName(system).toUpperCase()} />
               </h4>
               <div class="readout-row">
                 <span class="readout-label">{t("explore.knownPlanets")}</span>
