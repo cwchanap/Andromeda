@@ -487,6 +487,8 @@
       <KeyboardNavigation 
         onPlanetSelect={(planet) => handleBodySelect(planet)}
         currentSelectedIndex={currentSelectedIndex}
+        {lang}
+        {translations}
       />
     {/if}
   {/if}

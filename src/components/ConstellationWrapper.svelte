@@ -488,7 +488,7 @@
   <!-- Loading/Error overlay -->
   {#if loading}
     <div class="absolute inset-0 z-30">
-      <BootSequence debugInfo={debugInfo} />
+      <BootSequence {debugInfo} {t} />
     </div>
   {:else if !webglSupported}
     <div class="absolute inset-0 z-30 pointer-events-none" style="background: transparent;">
@@ -563,7 +563,7 @@
           <!-- Location/time HUD readout -->
           <div class="hud-readout">
             <div class="readout-row">
-              <span class="readout-label">GEO-LOCK</span>
+              <span class="readout-label">{t('constellation.geoLock')}</span>
               <span class="readout-blink" data-state={viewState.locationPermissionGranted ? "live" : "fallback"}></span>
               <span class="readout-value">
                 {#if viewState.skyConfig}
@@ -573,7 +573,7 @@
               </span>
             </div>
             <div class="readout-row">
-              <span class="readout-label">UTC</span>
+              <span class="readout-label">{t('constellation.utc')}</span>
               <span></span>
               <span class="readout-value">{utcReadout}</span>
             </div>
@@ -581,8 +581,8 @@
 
           <!-- Visible constellations -->
           <div>
-            <h4 class="hud-section-label">VISIBLE</h4>
-            <ul class="hud-list" aria-label="Visible constellations">
+            <h4 class="hud-section-label">{t('constellation.visible')}</h4>
+            <ul class="hud-list" aria-label={t('constellation.visible')}>
               {#each viewState.visibleConstellations as constellationId}
                 {#each constellations.filter(c => c.id === constellationId) as constellation}
                   <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
@@ -596,7 +596,7 @@
                       <span class="row-abbr">[{constellation.abbreviation}]</span>
                       <span class="row-name">{constellationName(constellation)}</span>
                       <span class="row-leader"></span>
-                      <span class="row-count">{constellation.stars.length}★ <span class="sr-only">stars</span></span>
+                      <span class="row-count">{constellation.stars.length}★ <span class="sr-only">{t('constellation.stars')}</span></span>
                     </button>
                   </li>
                 {/each}
@@ -618,8 +618,8 @@
                 {#if constellation.mythology}
                   <p class="hud-details-myth">// {constellationMythology(constellation)}</p>
                 {/if}
-                <div class="hud-month-strip" aria-label="Best viewing months: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
-                  <span class="sr-only">Best viewing months: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}</span>
+                <div class="hud-month-strip" aria-label="{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
+                  <span class="sr-only">{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}</span>
                   {#each Array(12) as _, m}
                     <div
                       class="month-cell"
@@ -653,7 +653,7 @@
           x={hoverStarPos.x}
           y={hoverStarPos.y}
           title={hoverStarPos.name}
-          lines={[`MAG ${hoverStarPos.magnitude.toFixed(2)}`]}
+          lines={[`${t('constellation.mag')} ${hoverStarPos.magnitude.toFixed(2)}`]}
         />
       {/if}
       {#if selectedId && lockedPos && lockedPos.visible}

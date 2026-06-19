@@ -712,4 +712,50 @@ export const ja = {
     "common.unknown": "不明",
     "status.candidate": "候補",
     "status.controversial": "論争中",
+
+    // Keyboard navigation
+    "keyboard.controls": "キーボード操作",
+    "keyboard.arrowKeys": "矢印キー：惑星をナビゲート",
+    "keyboard.enterSpace": "Enter/Space：惑星を選択",
+    "keyboard.zoom": "+/-：ズームイン/アウト",
+    "keyboard.resetView": "0：ビューをリセット",
+    "keyboard.firstLast": "Home/End：最初/最後の惑星",
+    "keyboard.help": "H：ヘルプを表示",
+    "keyboard.escape": "Escape：選択をクリア",
+    "keyboard.srZoomedIn": "ズームインしました",
+    "keyboard.srZoomedOut": "ズームアウトしました",
+    "keyboard.srViewReset": "ビューをデフォルト位置にリセットしました",
+    "keyboard.srSelected": "{name}を選択しました。{description}",
+    "keyboard.srSelectedFirst":
+        "最初の天体を選択しました：{name}。{description}",
+    "keyboard.srSelectedLast":
+        "最後の天体を選択しました：{name}。{description}",
+    "keyboard.srOpenedInfo": "{name}の情報を開きました",
+    "keyboard.srSelectionCleared": "選択をクリアしました",
+    "keyboard.srHelp":
+        "キーボード操作：矢印キーで惑星間をナビゲート。EnterまたはSpaceで選択。プラスでズームイン、マイナスでズームアウト。ゼロでビューリセット。Homeで最初の惑星、Endで最後の惑星。Hでヘルプ、Escapeで選択クリア。",
+
+    // Constellation HUD labels
+    "constellation.geoLock": "地理ロック",
+    "constellation.utc": "UTC",
+    "constellation.visible": "可視",
+    "constellation.bestViewingMonths": "最適観測月",
+    "constellation.stars": "個の星",
+    "constellation.mag": "等級",
+
+    // Terrain explorer navigation
+    "terrain.navigationControls": "ナビゲーション操作",
+    "terrain.pan": "パン",
+    "terrain.panInstruction": "左クリック + ドラッグ",
+    "terrain.zoom": "ズーム",
+    "terrain.zoomInstruction": "マウスホイール",
+    "terrain.rotate": "回転",
+    "terrain.rotateInstruction": "右クリック + ドラッグ",
+
+    // Boot sequence
+    "boot.init": "> スカイマップ初期化 v2.5",
+    "boot.geoLock": "> 地理ロック ........... [OK]",
+    "boot.stellarDb": "> 恒星DB ......... 4,184 天体",
+    "boot.renderPipeline": "> レンダーパイプライン .... オンライン",
+    "boot.awaitingTarget": "> ターゲット待機",
 } as const;

@@ -1,13 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  export let debugInfo: string = "";
 
-  const baseLines = [
-    "> INIT SKYMAP v2.5",
-    "> GEO-LOCK ........... [OK]",
-    "> STELLAR DB ......... 4,184 OBJ",
-    "> RENDER PIPELINE .... ONLINE",
-    "> AWAITING TARGET",
+  export let debugInfo: string = "";
+  export let t: (key: string) => string = (key: string) => key;
+
+  $: baseLines = [
+    t("boot.init"),
+    t("boot.geoLock"),
+    t("boot.stellarDb"),
+    t("boot.renderPipeline"),
+    t("boot.awaitingTarget"),
   ];
 
   let revealedCount = 0;

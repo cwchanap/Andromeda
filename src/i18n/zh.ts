@@ -688,4 +688,48 @@ export const zh = {
     "common.unknown": "未知",
     "status.candidate": "候选",
     "status.controversial": "有争议",
+
+    // Keyboard navigation
+    "keyboard.controls": "键盘控制",
+    "keyboard.arrowKeys": "方向键：导航行星",
+    "keyboard.enterSpace": "回车/空格：选择行星",
+    "keyboard.zoom": "+/-：放大/缩小",
+    "keyboard.resetView": "0：重置视图",
+    "keyboard.firstLast": "Home/End：第一个/最后一个行星",
+    "keyboard.help": "H：显示帮助",
+    "keyboard.escape": "Escape：清除选择",
+    "keyboard.srZoomedIn": "已放大",
+    "keyboard.srZoomedOut": "已缩小",
+    "keyboard.srViewReset": "视图已重置为默认位置",
+    "keyboard.srSelected": "已选择 {name}。{description}",
+    "keyboard.srSelectedFirst": "已选择第一个天体：{name}。{description}",
+    "keyboard.srSelectedLast": "已选择最后一个天体：{name}。{description}",
+    "keyboard.srOpenedInfo": "已打开 {name} 的信息",
+    "keyboard.srSelectionCleared": "选择已清除",
+    "keyboard.srHelp":
+        "键盘控制：方向键在行星间导航。回车或空格选择。加号放大，减号缩小。零重置视图。Home第一个行星，End最后一个行星。H帮助，Escape清除选择。",
+
+    // Constellation HUD labels
+    "constellation.geoLock": "地理锁定",
+    "constellation.utc": "UTC",
+    "constellation.visible": "可见",
+    "constellation.bestViewingMonths": "最佳观测月份",
+    "constellation.stars": "颗星",
+    "constellation.mag": "星等",
+
+    // Terrain explorer navigation
+    "terrain.navigationControls": "导航控制",
+    "terrain.pan": "平移",
+    "terrain.panInstruction": "左键拖拽",
+    "terrain.zoom": "缩放",
+    "terrain.zoomInstruction": "鼠标滚轮",
+    "terrain.rotate": "旋转",
+    "terrain.rotateInstruction": "右键拖拽",
+
+    // Boot sequence
+    "boot.init": "> 初始化星图 v2.5",
+    "boot.geoLock": "> 地理锁定 ........... [就绪]",
+    "boot.stellarDb": "> 恒星数据库 ......... 4,184 个天体",
+    "boot.renderPipeline": "> 渲染管线 ......... 在线",
+    "boot.awaitingTarget": "> 等待目标",
 } as const;
