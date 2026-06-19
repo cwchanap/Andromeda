@@ -373,7 +373,7 @@ export const ja = {
     "systems.yz-ceti.name": "YZ Ceti恒星系",
     "systems.yz-ceti.description":
         "地球から12.1光年のくじら座にある赤色矮星系で、3個の確認された惑星を持ちます",
-    "systems.trappist-1.name": "TRAPPIST-1恒星系",
+    "systems.trappist-1.name": "トラピスト-1恒星系",
     "systems.trappist-1.description":
         "超低温の赤色矮星の周囲を公転する7つの地球サイズの惑星からなる驚くべき系で、複数がハビタブルゾーンに位置します",
     "systems.wolf-359.name": "ウルフ359恒星系",
