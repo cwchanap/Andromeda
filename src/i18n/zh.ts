@@ -301,52 +301,52 @@ export const zh = {
     "systems.gj-3323.name": "GJ 3323行星系统",
     "systems.gj-3323.description":
         "距地球17.5光年、位于波江座的红矮星，环绕着两颗已确认的行星",
-    "systems.gliese-251.name": "Gliese 251行星系统",
+    "systems.gliese-251.name": "格利泽251行星系统",
     "systems.gliese-251.description":
         "距地球18.2光年、位于双子座的红矮星系统，拥有一颗已知行星",
-    "systems.gliese-338.name": "Gliese 338行星系统",
+    "systems.gliese-338.name": "格利泽338行星系统",
     "systems.gliese-338.description":
         "距地球20.7光年、位于大熊座的双红矮星系统，环绕着一颗已确认的行星",
-    "systems.gliese-581.name": "Gliese 581行星系统",
+    "systems.gliese-581.name": "格利泽581行星系统",
     "systems.gliese-581.description":
         "距地球20.5光年、位于天秤座的红矮星系统，拥有三颗已确认的行星",
-    "systems.gliese-625.name": "Gliese 625行星系统",
+    "systems.gliese-625.name": "格利泽625行星系统",
     "systems.gliese-625.description":
         "距地球21.1光年、位于天龙座的红矮星，拥有一颗已知行星",
-    "systems.gliese-674.name": "Gliese 674行星系统",
+    "systems.gliese-674.name": "格利泽674行星系统",
     "systems.gliese-674.description":
         "距地球14.8光年、位于天坛座的红矮星系统，环绕着一颗已确认的行星",
-    "systems.gliese-687.name": "Gliese 687行星系统",
+    "systems.gliese-687.name": "格利泽687行星系统",
     "systems.gliese-687.description":
         "距地球14.8光年、位于天龙座的红矮星，拥有两颗已确认的行星",
-    "systems.gliese-725.name": "Gliese 725行星系统",
+    "systems.gliese-725.name": "格利泽725行星系统",
     "systems.gliese-725.description":
         "距地球11.5光年、位于天龙座的双红矮星系统，拥有两颗已确认的行星",
-    "systems.gliese-752.name": "Gliese 752行星系统",
+    "systems.gliese-752.name": "格利泽752行星系统",
     "systems.gliese-752.description":
         "距地球19.3光年、位于天鹰座的双红矮星系统，拥有一颗已知行星",
-    "systems.gliese-832.name": "Gliese 832行星系统",
+    "systems.gliese-832.name": "格利泽832行星系统",
     "systems.gliese-832.description":
         "距地球16.2光年、位于天鹤座的红矮星系统，环绕着一颗已确认的行星",
-    "systems.gliese-876.name": "Gliese 876行星系统",
+    "systems.gliese-876.name": "格利泽876行星系统",
     "systems.gliese-876.description":
         "距地球15.2光年、位于宝瓶座的红矮星，拥有四颗已确认的行星",
-    "systems.gliese-887.name": "Gliese 887行星系统",
+    "systems.gliese-887.name": "格利泽887行星系统",
     "systems.gliese-887.description":
         "距地球10.7光年、位于南鱼座的红矮星系统，拥有四颗已确认的行星",
-    "systems.groombridge-34.name": "Groombridge 34行星系统",
+    "systems.groombridge-34.name": "格鲁姆布里奇 34行星系统",
     "systems.groombridge-34.description":
         "距地球11.6光年、位于仙女座的双红矮星系统，拥有两颗已确认的行星",
     "systems.hn-librae.name": "HN Librae行星系统",
     "systems.hn-librae.description":
         "距地球20.4光年、位于天秤座的红矮星系统，环绕着一颗已确认的行星",
-    "systems.lalande-21185.name": "Lalande 21185行星系统",
+    "systems.lalande-21185.name": "拉朗德 21185行星系统",
     "systems.lalande-21185.description":
         "距地球8.3光年、位于大熊座的红矮星系统，环绕着两颗已确认的行星",
     "systems.luytens-star.name": "鲁坦星行星系统",
     "systems.luytens-star.description":
         "距地球12.3光年、位于小犬座的红矮星，拥有两颗已确认的行星",
-    "systems.ross-128.name": "Ross 128行星系统",
+    "systems.ross-128.name": "罗斯 128行星系统",
     "systems.ross-128.description":
         "距地球11光年、位于室女座的红矮星系统，环绕着一颗已确认的行星",
     "systems.teegardens-star.name": "蒂加登星行星系统",
@@ -355,7 +355,7 @@ export const zh = {
     "systems.tz-arietis.name": "TZ Arietis行星系统",
     "systems.tz-arietis.description":
         "距地球14.6光年、位于白羊座的暗弱红矮星，拥有一颗已知行星",
-    "systems.wolf-1061.name": "Wolf 1061行星系统",
+    "systems.wolf-1061.name": "沃尔夫 1061行星系统",
     "systems.wolf-1061.description":
         "距地球14光年、位于蛇夫座的红矮星系统，环绕着三颗已确认的行星",
     "systems.yz-ceti.name": "YZ Ceti行星系统",
@@ -364,7 +364,7 @@ export const zh = {
     "systems.trappist-1.name": "TRAPPIST-1行星系统",
     "systems.trappist-1.description":
         "由七颗地球大小的行星组成的非凡系统，环绕一颗超冷红矮星运行，其中数颗位于宜居带",
-    "systems.wolf-359.name": "Wolf 359行星系统",
+    "systems.wolf-359.name": "沃尔夫 359行星系统",
     "systems.wolf-359.description":
         "距离地球最近的恒星系统之一，一颗最近发现行星伴星的红矮星",
 

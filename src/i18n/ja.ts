@@ -376,7 +376,7 @@ export const ja = {
     "systems.trappist-1.name": "TRAPPIST-1恒星系",
     "systems.trappist-1.description":
         "超低温の赤色矮星の周囲を公転する7つの地球サイズの惑星からなる驚くべき系で、複数がハビタブルゾーンに位置します",
-    "systems.wolf-359.name": "Wolf 359恒星系",
+    "systems.wolf-359.name": "ウルフ359恒星系",
     "systems.wolf-359.description":
         "地球に最も近い恒星系の一つで、最近発見された惑星伴星を持つ赤色矮星です",
 
