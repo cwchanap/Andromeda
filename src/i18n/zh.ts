@@ -277,7 +277,7 @@ export const zh = {
     "systems.hd-219134.name": "HD 219134行星系统",
     "systems.hd-219134.description":
         "距地球21.3光年、位于仙后座的橙矮星系统，拥有六颗已确认的行星",
-    "systems.82-g-eridani.name": "82 G. Eridani行星系统",
+    "systems.82-g-eridani.name": "波江座82 G.行星系统",
     "systems.82-g-eridani.description":
         "距地球19.7光年、位于波江座的类太阳黄矮星，环绕着三颗已确认的行星",
     "systems.barnards-star.name": "巴纳德行星系统",
@@ -337,7 +337,7 @@ export const zh = {
     "systems.groombridge-34.name": "格鲁姆布里奇 34行星系统",
     "systems.groombridge-34.description":
         "距地球11.6光年、位于仙女座的双红矮星系统，拥有两颗已确认的行星",
-    "systems.hn-librae.name": "HN Librae行星系统",
+    "systems.hn-librae.name": "天秤座HN星行星系统",
     "systems.hn-librae.description":
         "距地球20.4光年、位于天秤座的红矮星系统，环绕着一颗已确认的行星",
     "systems.lalande-21185.name": "拉朗德 21185行星系统",
@@ -352,13 +352,13 @@ export const zh = {
     "systems.teegardens-star.name": "蒂加登星行星系统",
     "systems.teegardens-star.description":
         "距地球12.5光年、位于白羊座的超冷红矮星，拥有三颗已确认的行星",
-    "systems.tz-arietis.name": "TZ Arietis行星系统",
+    "systems.tz-arietis.name": "白羊座TZ星行星系统",
     "systems.tz-arietis.description":
         "距地球14.6光年、位于白羊座的暗弱红矮星，拥有一颗已知行星",
     "systems.wolf-1061.name": "沃尔夫 1061行星系统",
     "systems.wolf-1061.description":
         "距地球14光年、位于蛇夫座的红矮星系统，环绕着三颗已确认的行星",
-    "systems.yz-ceti.name": "YZ Ceti行星系统",
+    "systems.yz-ceti.name": "鲸鱼座YZ星行星系统",
     "systems.yz-ceti.description":
         "距地球12.1光年、位于鲸鱼座的红矮星系统，拥有三颗已确认的行星",
     "systems.trappist-1.name": "特拉普斯特-1行星系统",

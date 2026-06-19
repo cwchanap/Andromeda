@@ -289,7 +289,7 @@ export const ja = {
     "systems.hd-219134.name": "HD 219134恒星系",
     "systems.hd-219134.description":
         "地球から21.3光年のカシオペヤ座にある橙色矮星系で、6個の確認された惑星を持ちます",
-    "systems.82-g-eridani.name": "82 G. Eridani恒星系",
+    "systems.82-g-eridani.name": "エリダヌス座82 G.恒星系",
     "systems.82-g-eridani.description":
         "地球から19.7光年のエリダヌス座にある太陽型の黄色矮星で、3個の確認された惑星が公転しています",
     "systems.barnards-star.name": "バーナード恒星系",
@@ -349,7 +349,7 @@ export const ja = {
     "systems.groombridge-34.name": "グルームブリッジ34恒星系",
     "systems.groombridge-34.description":
         "地球から11.6光年のアンドロメダ座にある赤色矮星の連星系で、2個の確認された惑星を持ちます",
-    "systems.hn-librae.name": "HN Librae恒星系",
+    "systems.hn-librae.name": "てんびん座HN星恒星系",
     "systems.hn-librae.description":
         "地球から20.4光年のてんびん座にある赤色矮星系で、1個の確認された惑星が公転しています",
     "systems.lalande-21185.name": "ラランド21185恒星系",
@@ -364,13 +364,13 @@ export const ja = {
     "systems.teegardens-star.name": "ティーガーデン恒星系",
     "systems.teegardens-star.description":
         "地球から12.5光年のおひつじ座にある超低温の赤色矮星で、3個の確認された惑星を持ちます",
-    "systems.tz-arietis.name": "TZ Arietis恒星系",
+    "systems.tz-arietis.name": "おひつじ座TZ星恒星系",
     "systems.tz-arietis.description":
         "地球から14.6光年のおひつじ座にある暗い赤色矮星で、1個の確認された惑星を持ちます",
     "systems.wolf-1061.name": "ウルフ1061恒星系",
     "systems.wolf-1061.description":
         "地球から14光年のへびつかい座にある赤色矮星系で、3個の確認された惑星が公転しています",
-    "systems.yz-ceti.name": "YZ Ceti恒星系",
+    "systems.yz-ceti.name": "くじら座YZ星恒星系",
     "systems.yz-ceti.description":
         "地球から12.1光年のくじら座にある赤色矮星系で、3個の確認された惑星を持ちます",
     "systems.trappist-1.name": "トラピスト-1恒星系",
