@@ -63,6 +63,30 @@
   }
   t = useTranslations(currentLang);
 
+  // i18n helpers for constellation and star names — fall back to the
+  // hardcoded data values when no translation key exists (e.g. English).
+  const constellationName = (c: { id: string; name: string }) => {
+    const key = `constellations.${c.id}.name`;
+    const translated = t(key);
+    return !translated || translated === key ? c.name : translated;
+  };
+  const constellationDescription = (c: { id: string; description: string }) => {
+    const key = `constellations.${c.id}.description`;
+    const translated = t(key);
+    return !translated || translated === key ? c.description : translated;
+  };
+  const constellationMythology = (c: { id: string; mythology?: string }) => {
+    if (!c.mythology) return c.mythology;
+    const key = `constellations.${c.id}.mythology`;
+    const translated = t(key);
+    return !translated || translated === key ? c.mythology : translated;
+  };
+  const starName = (s: { id: string; name: string }) => {
+    const key = `stars.${s.id}.name`;
+    const translated = t(key);
+    return !translated || translated === key ? s.name : translated;
+  };
+
   async function initConstellationView(): Promise<void> {
     try {
       // Check WebGL support first
@@ -144,15 +168,21 @@
           },
           onStarHover: (star, screenPos) => {
             hoverStarPos = star && screenPos
-              ? { x: screenPos.x, y: screenPos.y, name: star.name, magnitude: star.magnitude }
+              ? { x: screenPos.x, y: screenPos.y, name: starName(star), magnitude: star.magnitude }
               : null;
           },
         });
 
-        // Get all stars from visible constellations
+        // Get all stars from visible constellations, with translated names
+        // for 3D label rendering
         const allStars = visibleConstellations.flatMap(constellation => constellation.stars);
+        const translatedStars = allStars.map(s => ({ ...s, name: starName(s) }));
+        const translatedConstellations = visibleConstellations.map(c => ({
+          ...c,
+          name: constellationName(c),
+        }));
 
-        await renderer.initialize(allStars, visibleConstellations, skyConfig);
+        await renderer.initialize(translatedStars, translatedConstellations, skyConfig);
       } catch (rendererError) {
         console.warn('WebGL renderer failed, falling back to 2D canvas:', rendererError);
         webglSupported = false;
@@ -414,7 +444,7 @@
           context.fillStyle = '#FFFFFF';
           context.font = '12px Arial';
           context.textAlign = 'center';
-          context.fillText(star.name, starX, starY - starSize - 8);
+          context.fillText(starName(star), starX, starY - starSize - 8);
         }
       });
 
@@ -422,7 +452,7 @@
       context.fillStyle = colors[constellationIndex % colors.length];
       context.font = 'bold 16px Arial';
       context.textAlign = 'center';
-      context.fillText(constellation.name, centerX, centerY - constellationHeight * 0.35);
+      context.fillText(constellationName(constellation), centerX, centerY - constellationHeight * 0.35);
     });
   }
 </script>
@@ -564,7 +594,7 @@
                       data-constellation-id={constellation.id}
                     >
                       <span class="row-abbr">[{constellation.abbreviation}]</span>
-                      <span class="row-name">{constellation.name}</span>
+                      <span class="row-name">{constellationName(constellation)}</span>
                       <span class="row-leader"></span>
                       <span class="row-count">{constellation.stars.length}★ <span class="sr-only">stars</span></span>
                     </button>
@@ -582,11 +612,11 @@
                   <span class="hud-divider-diamond"></span>
                 </div>
                 <h4 class="hud-details-name">
-                  <GlitchText text={constellation.name.toUpperCase()} />
+                  <GlitchText text={constellationName(constellation).toUpperCase()} />
                 </h4>
-                <p class="hud-details-desc">{constellation.description}</p>
+                <p class="hud-details-desc">{constellationDescription(constellation)}</p>
                 {#if constellation.mythology}
-                  <p class="hud-details-myth">// {constellation.mythology}</p>
+                  <p class="hud-details-myth">// {constellationMythology(constellation)}</p>
                 {/if}
                 <div class="hud-month-strip" aria-label="Best viewing months: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
                   <span class="sr-only">Best viewing months: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}</span>
@@ -630,7 +660,7 @@
         <TargetLockOverlay
           x={lockedPos.x}
           y={lockedPos.y}
-          name={constellations.find(c => c.id === selectedId)?.name ?? ""}
+          name={constellations.find(c => c.id === selectedId) ? constellationName(constellations.find(c => c.id === selectedId)!) : ""}
         />
       {/if}
     </div>

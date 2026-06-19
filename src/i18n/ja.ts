@@ -425,6 +425,158 @@ export const ja = {
     "constellation.panelOff": "パネル OFF",
     "constellation.dragInstructions": "ターゲット待機 — ドラッグで方向調整",
 
+    // Constellation names
+    "constellations.ursa_major.name": "おおぐま座",
+    "constellations.ursa_major.description": "おおぐま座，有名な北斗七星を含む",
+    "constellations.ursa_major.mythology":
+        "ギリシャ神話では、ゼウスの嫉妬深い妻ヘラによって熊に変えられたニュンペ、カリストを表します。",
+    "constellations.orion.name": "オリオン座",
+    "constellations.orion.description": "狩人座，最も認識しやすい星座の一つ",
+    "constellations.orion.mythology":
+        "オリオンはギリシャ神話の偉大な狩人です。星座は彼の帯、剣、掲げた棍棒を示しています。",
+    "constellations.cassiopeia.name": "カシオペヤ座",
+    "constellations.cassiopeia.description":
+        "王后座，空に特徴的な'W'形を形成する",
+    "constellations.cassiopeia.mythology":
+        "ギリシャ神話では、カシオペヤはエチオピアの虚栄心の強い王妃で、自分と娘が海のニュンペより美しいと自慢しました。",
+    "constellations.leo.name": "しし座",
+    "constellations.leo.description":
+        "獅子座，ヘラクレスが倒したネメアの獅子を表す",
+    "constellations.leo.mythology":
+        "この星座はネメアの獅子、皮が透せない猛獣を表し、ヘラクレスの最初の功績として倒されました。",
+    "constellations.cygnus.name": "はくちょう座",
+    "constellations.cygnus.description": "白鳥座，北十字としても知られる",
+    "constellations.cygnus.mythology":
+        "ギリシャ神話では、スパルタの王妃レダを誘惑するために白鳥に変装したゼウスを表します。",
+    "constellations.crux.name": "みなみじゅうじ座",
+    "constellations.crux.description": "南十字座，空で最も小さい星座",
+    "constellations.crux.mythology":
+        "現代の星座で、南十字座は古代文明に知られていましたが、16世紀に独立した星座となりました。",
+    "constellations.centaurus.name": "ケンタウルス座",
+    "constellations.centaurus.description":
+        "半人馬座，最も近い恒星の隣人を持つ",
+    "constellations.centaurus.mythology":
+        "アキレウスやイアソンなどの英雄を教えた賢いケンタウルス、ケイロンを表します。",
+    "constellations.scorpius.name": "さそり座",
+    "constellations.scorpius.description":
+        "蠍座，赤色超巨星アンタレスを特徴とする",
+    "constellations.scorpius.mythology":
+        "ギリシャ神話でオリオンを殺した蠍。彼らは空の反対側に置かれています。",
+    "constellations.sagittarius.name": "いて座",
+    "constellations.sagittarius.description": "射手座，銀河系の中心を指す",
+    "constellations.sagittarius.mythology":
+        "ギリシャ神話でケイロンやクロトスと同一視されるケンタウルスの弓射手を表します。",
+    "constellations.aquila.name": "わし座",
+    "constellations.aquila.description": "鷲座，明るい星アルタイルを特徴とする",
+    "constellations.aquila.mythology":
+        "ゼウスの鷲で、彼の雷を運び、ガニメデスを誘拐して神々の給仕役としました。",
+    "constellations.lyra.name": "こと座",
+    "constellations.lyra.description": "竪琴座，輝く星ベガを特徴とする",
+    "constellations.lyra.mythology":
+        "オルフェウスの竪琴で、その音楽は万物を魅了し、石をも動かしました。",
+    "constellations.bootes.name": "うしかい座",
+    "constellations.bootes.description":
+        "牛飼い座，明るい星アークトゥルスを特徴とする",
+    "constellations.bootes.mythology":
+        "牛で引く鋤を発明した農夫または牛飼いで、その功績により空に場所を与えられました。",
+    "constellations.virgo.name": "おとめ座",
+    "constellations.virgo.description": "乙女座，明るい星スピカを特徴とする",
+    "constellations.virgo.mythology":
+        "ペルセポネ（デメテルの娘）またはアストライア（正義の女神）と関連付けられることが多いです。",
+    "constellations.gemini.name": "ふたご座",
+    "constellations.gemini.description":
+        "双子座，カストルとポルックスを特徴とする",
+    "constellations.gemini.mythology":
+        "双子の兄弟カストルとポルックス、ディオスクーロイとして知られ、船乗りの守護者です。",
+    "constellations.auriga.name": "ぎょしゃ座",
+    "constellations.auriga.description": "御者座，明るい星カペラを特徴とする",
+    "constellations.auriga.mythology":
+        "アテネのエリクトニオスを表し、四頭戦車を発明しました。",
+    "constellations.taurus.name": "おうし座",
+    "constellations.taurus.description":
+        "牡牛座，明るい星アルデバランを特徴とする",
+    "constellations.taurus.mythology":
+        "ゼウスがエウロパを誘拐するために変装した牡牛、またはエウロパを海の向こうのクレタに運んだ牡牛。",
+    "constellations.canis_major.name": "おおいぬ座",
+    "constellations.canis_major.description":
+        "大犬座，シリウス（最も明るい星）を特徴とする",
+    "constellations.canis_major.mythology":
+        "オリオンの猟犬の一つで、狩人に従って空を横切ります。",
+    "constellations.canis_minor.name": "こいぬ座",
+    "constellations.canis_minor.description": "小犬座，プロキオンを特徴とする",
+    "constellations.canis_minor.mythology":
+        "オリオンの小さい方の猟犬で、これも狩人に従って空を横切ります。",
+
+    // Star names
+    "stars.dubhe.name": "ドゥベ",
+    "stars.merak.name": "メラク",
+    "stars.phecda.name": "フェクダ",
+    "stars.megrez.name": "メグレズ",
+    "stars.alioth.name": "アリオト",
+    "stars.mizar.name": "ミザール",
+    "stars.alkaid.name": "アルカイド",
+    "stars.betelgeuse.name": "ベテルギウス",
+    "stars.rigel.name": "リゲル",
+    "stars.bellatrix.name": "ベラトリックス",
+    "stars.mintaka.name": "ミンタカ",
+    "stars.alnilam.name": "アルニラム",
+    "stars.alnitak.name": "アルニタク",
+    "stars.saiph.name": "サイフ",
+    "stars.schedar.name": "シェダル",
+    "stars.caph.name": "カフ",
+    "stars.gamma_cas.name": "カシオペヤ座γ星",
+    "stars.ruchbah.name": "ルクバ",
+    "stars.segin.name": "セギン",
+    "stars.regulus.name": "レグルス",
+    "stars.denebola.name": "デネボラ",
+    "stars.algieba.name": "アルギエバ",
+    "stars.zosma.name": "ゾズマ",
+    "stars.deneb.name": "デネブ",
+    "stars.sadr.name": "サドル",
+    "stars.gienah.name": "ギエナ",
+    "stars.delta_cyg.name": "はくちょう座δ星",
+    "stars.albireo.name": "アルビレオ",
+    "stars.acrux.name": "アクルックス",
+    "stars.gacrux.name": "ガクルックス",
+    "stars.alpha_cen.name": "αケンタウリ",
+    "stars.beta_cen.name": "ハダル",
+    "stars.antares.name": "アンタレス",
+    "stars.shaula.name": "シャウラ",
+    "stars.nunki.name": "ヌンキ",
+    "stars.kaus_australis.name": "カウス・アウストラリス",
+    "stars.altair.name": "アルタイル",
+    "stars.vega.name": "ベガ",
+    "stars.arcturus.name": "アークトゥルス",
+    "stars.spica.name": "スピカ",
+    "stars.castor.name": "カストル",
+    "stars.pollux.name": "ポルックス",
+    "stars.capella.name": "カペラ",
+    "stars.aldebaran.name": "アルデバラン",
+    "stars.mirfak.name": "ミルファク",
+    "stars.alpheratz.name": "アルフェラッツ",
+    "stars.markab.name": "マルカブ",
+    "stars.scheat.name": "シェアト",
+    "stars.sadalsuud.name": "サダルスウド",
+    "stars.deneb_algedi.name": "デネブ・アルゲディ",
+    "stars.fomalhaut.name": "フォマルハウト",
+    "stars.hamal.name": "ハマル",
+    "stars.polaris.name": "ポラリス",
+    "stars.alphecca.name": "アルフェッカ",
+    "stars.thuban.name": "トゥバン",
+    "stars.etamin.name": "エタミン",
+    "stars.kornephoros.name": "コルネフォロス",
+    "stars.rasalhague.name": "ラサルハゲ",
+    "stars.unukalhai.name": "ウヌカルハイ",
+    "stars.zubeneschamali.name": "ズベネスカマリ",
+    "stars.sirius.name": "シリウス",
+    "stars.adhara.name": "アダラ",
+    "stars.procyon.name": "プロキオン",
+    "stars.alphard.name": "アルファルド",
+    "stars.gienah_corvi.name": "ギエナ（からす座）",
+    "stars.alkes.name": "アルケス",
+    "stars.achernar.name": "アケルナル",
+    "stars.epsilon_psa.name": "みなみのうお座ε星",
+
     // Common actions
     "action.start": "開始",
     "action.explore": "探索",
