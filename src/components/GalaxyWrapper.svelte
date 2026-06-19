@@ -21,6 +21,24 @@
         return t(key) !== key ? t(key) : type;
     };
 
+    // Resolve a system's display name via i18n, falling back to the registry
+    // name when no translation is available. Without this the galaxy view
+    // always shows the English hardcoded name from LocalGalaxy.ts, ignoring
+    // the active locale. Mirrors the pattern in ExploreSystems.svelte.
+    const systemName = (system: { id: string; name: string }) => {
+        const key = `systems.${system.id}.name`;
+        const translated = t(key);
+        return !translated || translated === key ? system.name : translated;
+    };
+
+    // Resolve a system's description via i18n, falling back to the hardcoded
+    // galaxy description when no translation is available.
+    const systemDescription = (system: { id: string; description: string }) => {
+        const key = `systems.${system.id}.description`;
+        const translated = t(key);
+        return !translated || translated === key ? system.description : translated;
+    };
+
     // Component state
     let container: HTMLElement;
     let renderer: GalaxyRenderer | null = null;
@@ -176,7 +194,7 @@
             window.location.href = routes.planetarySystem(routeSystemId, lang);
         } else {
             // Show placeholder message for unimplemented systems
-            alert(`Detailed view for ${selectedSystemData?.name || systemId} is coming soon!`);
+            alert(`Detailed view for ${systemName(selectedSystemData) || systemId} is coming soon!`);
         }
     };
     
@@ -311,7 +329,7 @@
                     <div class="system-list">
                         {#each localGalaxyData.starSystems as system}
                             <button class="system-item" on:click={() => handleSystemSelect(system.id)}>
-                                <span class="system-name">{system.name}</span>
+                                <span class="system-name">{systemName(system)}</span>
                                 <span class="system-distance">{system.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
                             </button>
                         {/each}
@@ -371,9 +389,9 @@
         <!-- System Info Tooltip -->
         {#if showSystemInfo && selectedSystemData}
             <div class="system-info-tooltip">
-                <HudPanel title={selectedSystemData.name}>
+                <HudPanel title={systemName(selectedSystemData)}>
                     <button class="close-button" on:click={closeSystemInfo} aria-label={t('action.close')}>×</button>
-                    <p class="system-description">{selectedSystemData.description}</p>
+                    <p class="system-description">{systemDescription(selectedSystemData)}</p>
 
                     <div class="system-details">
                         <div class="detail-item">
@@ -410,13 +428,13 @@
             <div class="system-dialog-overlay" on:click={closeSystemDialog}>
                 <div class="system-dialog" on:click|stopPropagation>
                     <div class="dialog-header">
-                        <h2>{selectedSystemData.name}</h2>
+                        <h2>{systemName(selectedSystemData)}</h2>
                         <button class="dialog-close-button" on:click={closeSystemDialog}>×</button>
                     </div>
                     
                     <div class="dialog-content">
                         <div class="system-overview">
-                            <p class="system-description-large">{selectedSystemData.description}</p>
+                            <p class="system-description-large">{systemDescription(selectedSystemData)}</p>
                         </div>
                         
                         <div class="system-stats-grid">
