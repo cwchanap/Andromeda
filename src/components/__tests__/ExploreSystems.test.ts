@@ -86,6 +86,22 @@ describe("ExploreSystems", () => {
         expect(labels).toContain("ALPHA CENTAURI");
     });
 
+    it("falls back to registry name when t returns the key unchanged", () => {
+        // Mirrors the pre-computed translations prop path where missing
+        // keys are returned as-is (identity function behaviour).
+        const t = (k: string) => k;
+        const { container } = render(ExploreSystems, { props: { t } });
+        const labels = Array.from(
+            container.querySelectorAll("[aria-label]"),
+        ).map((el) => el.getAttribute("aria-label") ?? "");
+        // Both systems lack translations, so both should show registry names.
+        expect(labels).toContain("SOLAR SYSTEM");
+        expect(labels).toContain("ALPHA CENTAURI");
+        // Ensure raw translation keys never leak into the UI.
+        expect(labels).not.toContain("SYSTEMS.SOLAR.NAME");
+        expect(labels).not.toContain("SYSTEMS.ALPHA-CENTAURI.NAME");
+    });
+
     it("calls onClose when close button is clicked", async () => {
         const onClose = vi.fn();
         const { container } = render(ExploreSystems, {
