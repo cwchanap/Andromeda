@@ -21,19 +21,19 @@
   export let onZoomOut: KeyboardNavigationProps['onZoomOut'] = undefined;
   export let onResetView: KeyboardNavigationProps['onResetView'] = undefined;
   export let currentSelectedIndex: number = -1;
-  export let lang: AppLocale = 'en';
+  export let lang: AppLocale | undefined = undefined;
   export let translations: Record<string, string> = {};
 
   // Translation function — uses prop translations if provided, otherwise
-  // resolves from the URL locale.
+  // resolves from an explicitly-passed lang prop, falling back to the URL locale.
   let t: (key: string) => string;
   $: if (Object.keys(translations).length > 0) {
     t = (key: string) => translations[key] || key;
   } else {
-    let currentLang = lang;
-    if (typeof window !== 'undefined') {
-      currentLang = getLangFromUrl(new URL(window.location.href));
-    }
+    const currentLang: AppLocale =
+      lang ?? (typeof window !== 'undefined'
+        ? getLangFromUrl(new URL(window.location.href))
+        : 'en');
     const tt = useTranslations(currentLang);
     t = (key: string) => tt(key) as string;
   }
