@@ -429,7 +429,7 @@
                 <div class="system-dialog" on:click|stopPropagation>
                     <div class="dialog-header">
                         <h2>{systemName(selectedSystemData)}</h2>
-                        <button class="dialog-close-button" on:click={closeSystemDialog}>×</button>
+                        <button class="dialog-close-button" on:click={closeSystemDialog} aria-label={t('action.close')}>×</button>
                     </div>
                     
                     <div class="dialog-content">
