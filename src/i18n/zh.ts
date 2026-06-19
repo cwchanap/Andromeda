@@ -361,7 +361,7 @@ export const zh = {
     "systems.yz-ceti.name": "YZ Ceti行星系统",
     "systems.yz-ceti.description":
         "距地球12.1光年、位于鲸鱼座的红矮星系统，拥有三颗已确认的行星",
-    "systems.trappist-1.name": "TRAPPIST-1行星系统",
+    "systems.trappist-1.name": "特拉普斯特-1行星系统",
     "systems.trappist-1.description":
         "由七颗地球大小的行星组成的非凡系统，环绕一颗超冷红矮星运行，其中数颗位于宜居带",
     "systems.wolf-359.name": "沃尔夫 359行星系统",
