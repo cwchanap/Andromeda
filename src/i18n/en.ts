@@ -575,4 +575,50 @@ export const en = {
     "common.unknown": "Unknown",
     "status.candidate": "Candidate",
     "status.controversial": "Disputed",
+
+    // Keyboard navigation
+    "keyboard.controls": "Keyboard Controls",
+    "keyboard.arrowKeys": "Arrow keys: Navigate planets",
+    "keyboard.enterSpace": "Enter/Space: Select planet",
+    "keyboard.zoom": "+/-: Zoom in/out",
+    "keyboard.resetView": "0: Reset view",
+    "keyboard.firstLast": "Home/End: First/last planet",
+    "keyboard.help": "H: Show help",
+    "keyboard.escape": "Escape: Clear selection",
+    "keyboard.srZoomedIn": "Zoomed in",
+    "keyboard.srZoomedOut": "Zoomed out",
+    "keyboard.srViewReset": "View reset to default position",
+    "keyboard.srSelected": "Selected {name}. {description}",
+    "keyboard.srSelectedFirst":
+        "Selected first celestial body: {name}. {description}",
+    "keyboard.srSelectedLast":
+        "Selected last celestial body: {name}. {description}",
+    "keyboard.srOpenedInfo": "Opened information for {name}",
+    "keyboard.srSelectionCleared": "Selection cleared",
+    "keyboard.srHelp":
+        "Keyboard controls: Arrow keys to navigate between planets. Enter or Space to select. Plus to zoom in, Minus to zoom out. Zero to reset view. Home for first planet, End for last planet. H for help, Escape to clear selection.",
+
+    // Constellation HUD labels
+    "constellation.geoLock": "GEO-LOCK",
+    "constellation.utc": "UTC",
+    "constellation.visible": "VISIBLE",
+    "constellation.bestViewingMonths": "Best viewing months",
+    "constellation.stars": "stars",
+    "constellation.mag": "MAG",
+
+    // Terrain explorer navigation
+    "terrain.navigationControls": "Navigation Controls",
+    "terrain.pan": "Pan",
+    "terrain.panInstruction": "Left click + drag",
+    "terrain.zoom": "Zoom",
+    "terrain.zoomInstruction": "Mouse wheel",
+    "terrain.rotate": "Rotate",
+    "terrain.rotateInstruction": "Right click + drag",
+
+    // Boot sequence
+    "boot.init": "> INIT SKYMAP v2.5",
+    "boot.geoLock": "> GEO-LOCK ........... [OK]",
+    "boot.stellarDb": "> STELLAR DB ......... 4,184 OBJ",
+    "boot.renderPipeline": "> RENDER PIPELINE .... ONLINE",
+    "boot.awaitingTarget": "> AWAITING TARGET",
 } as const;

@@ -403,16 +403,16 @@
     
     <!-- Instructions Panel -->
     <div class="instructions-panel">
-      <h4>Navigation Controls</h4>
+      <h4>{t('terrain.navigationControls')}</h4>
       <div class="instruction-list">
         <div class="instruction-item">
-          <strong>Pan:</strong> Left click + drag
+          <strong>{t('terrain.pan')}:</strong> {t('terrain.panInstruction')}
         </div>
         <div class="instruction-item">
-          <strong>Zoom:</strong> Mouse wheel
+          <strong>{t('terrain.zoom')}:</strong> {t('terrain.zoomInstruction')}
         </div>
         <div class="instruction-item">
-          <strong>Rotate:</strong> Right click + drag
+          <strong>{t('terrain.rotate')}:</strong> {t('terrain.rotateInstruction')}
         </div>
       </div>
     </div>

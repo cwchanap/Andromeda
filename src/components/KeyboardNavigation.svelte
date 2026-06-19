@@ -3,6 +3,8 @@
   import { settings, gameActions } from '../stores/gameStore';
   import { solarSystemData } from '../lib/planetary-system/SolarSystem';
   import type { CelestialBodyData } from '../types/game';
+  import { getLangFromUrl, useTranslations } from '../i18n/utils';
+  import type { AppLocale } from '../i18n/routes';
 
   interface KeyboardNavigationProps {
     onPlanetSelect?: (planet: CelestialBodyData) => void;
@@ -10,6 +12,8 @@
     onZoomOut?: () => void;
     onResetView?: () => void;
     currentSelectedIndex?: number;
+    lang?: AppLocale;
+    translations?: Record<string, string>;
   }
 
   export let onPlanetSelect: KeyboardNavigationProps['onPlanetSelect'] = undefined;
@@ -17,6 +21,31 @@
   export let onZoomOut: KeyboardNavigationProps['onZoomOut'] = undefined;
   export let onResetView: KeyboardNavigationProps['onResetView'] = undefined;
   export let currentSelectedIndex: number = -1;
+  export let lang: AppLocale = 'en';
+  export let translations: Record<string, string> = {};
+
+  // Translation function — uses prop translations if provided, otherwise
+  // resolves from the URL locale.
+  let t: (key: string) => string;
+  $: if (Object.keys(translations).length > 0) {
+    t = (key: string) => translations[key] || key;
+  } else {
+    let currentLang = lang;
+    if (typeof window !== 'undefined') {
+      currentLang = getLangFromUrl(new URL(window.location.href));
+    }
+    const tt = useTranslations(currentLang);
+    t = (key: string) => tt(key) as string;
+  }
+
+  // Interpolate {name} and {description} placeholders in i18n strings
+  const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(key);
+    for (const [k, v] of Object.entries(vars)) {
+      s = s.replace(`{${k}}`, v);
+    }
+    return s;
+  };
 
   let isEnabled = true;
   let celestialBodies: CelestialBodyData[] = [];
@@ -84,19 +113,19 @@
       case '=':
         event.preventDefault();
         if (onZoomIn) onZoomIn();
-        announceToScreenReader('Zoomed in');
+        announceToScreenReader(t('keyboard.srZoomedIn'));
         break;
       
       case '-':
         event.preventDefault();
         if (onZoomOut) onZoomOut();
-        announceToScreenReader('Zoomed out');
+        announceToScreenReader(t('keyboard.srZoomedOut'));
         break;
       
       case '0':
         event.preventDefault();
         if (onResetView) onResetView();
-        announceToScreenReader('View reset to default position');
+        announceToScreenReader(t('keyboard.srViewReset'));
         break;
       
       case 'h':
@@ -120,7 +149,7 @@
       : selectedIndex - 1;
     
     const body = celestialBodies[selectedIndex];
-    announceToScreenReader(`Selected ${body.name}. ${body.description}`);
+    announceToScreenReader(tf('keyboard.srSelected', { name: body.name, description: body.description }));
     
     if (onPlanetSelect) {
       onPlanetSelect(body);
@@ -135,7 +164,7 @@
       : selectedIndex + 1;
     
     const body = celestialBodies[selectedIndex];
-    announceToScreenReader(`Selected ${body.name}. ${body.description}`);
+    announceToScreenReader(tf('keyboard.srSelected', { name: body.name, description: body.description }));
     
     if (onPlanetSelect) {
       onPlanetSelect(body);
@@ -147,7 +176,7 @@
     
     selectedIndex = 0;
     const body = celestialBodies[selectedIndex];
-    announceToScreenReader(`Selected first celestial body: ${body.name}. ${body.description}`);
+    announceToScreenReader(tf('keyboard.srSelectedFirst', { name: body.name, description: body.description }));
     
     if (onPlanetSelect) {
       onPlanetSelect(body);
@@ -159,7 +188,7 @@
     
     selectedIndex = celestialBodies.length - 1;
     const body = celestialBodies[selectedIndex];
-    announceToScreenReader(`Selected last celestial body: ${body.name}. ${body.description}`);
+    announceToScreenReader(tf('keyboard.srSelectedLast', { name: body.name, description: body.description }));
     
     if (onPlanetSelect) {
       onPlanetSelect(body);
@@ -169,7 +198,7 @@
   function selectCurrentPlanet() {
     if (selectedIndex >= 0 && selectedIndex < celestialBodies.length) {
       const body = celestialBodies[selectedIndex];
-      announceToScreenReader(`Opened information for ${body.name}`);
+      announceToScreenReader(tf('keyboard.srOpenedInfo', { name: body.name }));
       gameActions.selectCelestialBody(body);
       gameActions.showInfoModal(true);
     }
@@ -177,21 +206,12 @@
 
   function clearSelection() {
     selectedIndex = -1;
-    announceToScreenReader('Selection cleared');
+    announceToScreenReader(t('keyboard.srSelectionCleared'));
     gameActions.showInfoModal(false);
   }
 
   function showHelp() {
-    const helpMessage = `
-      Keyboard controls: 
-      Arrow keys to navigate between planets. 
-      Enter or Space to select. 
-      Plus to zoom in, Minus to zoom out. 
-      Zero to reset view. 
-      Home for first planet, End for last planet. 
-      H for help, Escape to clear selection.
-    `;
-    announceToScreenReader(helpMessage);
+    announceToScreenReader(t('keyboard.srHelp'));
   }
 
   onMount(() => {
@@ -218,15 +238,15 @@
 <!-- Keyboard navigation instructions (visible when screen reader mode is enabled) -->
 {#if $settings.screenReaderMode}
   <div class="fixed bottom-4 left-4 max-w-md rounded-lg bg-black/80 p-4 text-white">
-    <h3 class="mb-2 text-sm font-semibold">Keyboard Controls</h3>
+    <h3 class="mb-2 text-sm font-semibold">{t('keyboard.controls')}</h3>
     <ul class="space-y-1 text-xs">
-      <li>Arrow keys: Navigate planets</li>
-      <li>Enter/Space: Select planet</li>
-      <li>+/-: Zoom in/out</li>
-      <li>0: Reset view</li>
-      <li>Home/End: First/last planet</li>
-      <li>H: Show help</li>
-      <li>Escape: Clear selection</li>
+      <li>{t('keyboard.arrowKeys')}</li>
+      <li>{t('keyboard.enterSpace')}</li>
+      <li>{t('keyboard.zoom')}</li>
+      <li>{t('keyboard.resetView')}</li>
+      <li>{t('keyboard.firstLast')}</li>
+      <li>{t('keyboard.help')}</li>
+      <li>{t('keyboard.escape')}</li>
     </ul>
   </div>
 {/if}
