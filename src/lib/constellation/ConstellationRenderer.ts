@@ -18,6 +18,8 @@ export class ConstellationRenderer {
     private constellationLines: THREE.Group | null = null;
     private labelSprites: THREE.Group | null = null;
     private constellationLabels: THREE.Group | null = null;
+    private horizonRing: THREE.LineLoop | null = null;
+    private cardinalLabels: THREE.Group | null = null;
     private isMouseDown: boolean = false;
     private mouseX: number = 0;
     private mouseY: number = 0;
@@ -622,6 +624,9 @@ export class ConstellationRenderer {
             this.createStarLabels(stars, skyConfig);
         }
 
+        // Create horizon ring + cardinal direction labels (N/E/S/W)
+        this.createOrientationGuides();
+
         // Setup camera for sky view
         this.setupSkyCamera();
 
@@ -968,6 +973,75 @@ export class ConstellationRenderer {
         });
 
         this.scene.add(this.constellationLabels);
+    }
+
+    /**
+     * Create orientation guides: a horizon ring on the y=0 plane and
+     * four cardinal direction labels (N/E/S/W). These are single-char
+     * labels only — the wrapper renders the localized "compass" / "view
+     * from earth" text in the HUD.
+     */
+    private createOrientationGuides(): void {
+        const radius = 100;
+        const segments = 128;
+        const points: number[] = [];
+        for (let i = 0; i < segments; i++) {
+            const a = (i / segments) * Math.PI * 2;
+            points.push(radius * Math.cos(a), 0, radius * Math.sin(a));
+        }
+        const ringGeom = new THREE.BufferGeometry();
+        ringGeom.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(points, 3),
+        );
+        const ringMat = new THREE.LineBasicMaterial({
+            color: 0x1b6b7a,
+            transparent: true,
+            opacity: 0.4,
+        });
+        this.horizonRing = new THREE.LineLoop(ringGeom, ringMat);
+        this.horizonRing.name = "horizon-ring";
+        this.horizonRing.renderOrder = 2;
+        this.scene.add(this.horizonRing);
+
+        this.cardinalLabels = new THREE.Group();
+        this.cardinalLabels.name = "cardinal-labels";
+        const dirs = [
+            { label: "N", az: 0 },
+            { label: "E", az: Math.PI / 2 },
+            { label: "S", az: Math.PI },
+            { label: "W", az: (3 * Math.PI) / 2 },
+        ];
+        for (const { label, az } of dirs) {
+            const x = radius * Math.sin(az);
+            const z = radius * Math.cos(az);
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d")!;
+            canvas.width = 128;
+            canvas.height = 128;
+            ctx.clearRect(0, 0, 128, 128);
+            ctx.fillStyle = "#4FC3F7";
+            ctx.font = "bold 64px Arial, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.shadowColor = "#4FC3F7";
+            ctx.shadowBlur = 12;
+            ctx.fillText(label, 64, 64);
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            const sprite = new THREE.Sprite(
+                new THREE.SpriteMaterial({
+                    map: texture,
+                    transparent: true,
+                    depthWrite: false,
+                }),
+            );
+            sprite.position.set(x, 0, z);
+            sprite.scale.set(6, 6, 1);
+            sprite.name = `cardinal-${label}`;
+            this.cardinalLabels.add(sprite);
+        }
+        this.scene.add(this.cardinalLabels);
     }
 
     /**
