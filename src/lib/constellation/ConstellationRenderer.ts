@@ -1256,6 +1256,16 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Get the camera's current azimuth as a normalized degree value in
+     * [0, 360), where 0 = North. Derived from the tracked yaw rotation.
+     */
+    public getCameraAzimuth(): number {
+        let deg = (this.cameraRotationY * 180) / Math.PI;
+        deg = ((deg % 360) + 360) % 360;
+        return deg;
+    }
+
+    /**
      * Advance time-based shader uniforms by deltaSec seconds.
      */
     public tickUniforms(deltaSec: number): void {
@@ -1470,6 +1480,26 @@ export class ConstellationRenderer {
                 }
             });
             this.constellationLabels = null;
+        }
+
+        if (this.horizonRing) {
+            this.horizonRing.geometry.dispose();
+            (this.horizonRing.material as THREE.Material).dispose();
+            this.scene.remove(this.horizonRing);
+            this.horizonRing = null;
+        }
+
+        if (this.cardinalLabels) {
+            this.cardinalLabels.traverse((obj) => {
+                const sprite = obj as THREE.Sprite;
+                const mat = sprite.material as THREE.SpriteMaterial | undefined;
+                if (mat) {
+                    mat.map?.dispose();
+                    mat.dispose();
+                }
+            });
+            this.scene.remove(this.cardinalLabels);
+            this.cardinalLabels = null;
         }
 
         this.selectedId = null;

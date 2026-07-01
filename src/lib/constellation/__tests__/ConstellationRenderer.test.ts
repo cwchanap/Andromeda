@@ -196,8 +196,10 @@ describe("ConstellationRenderer", () => {
         );
 
         // THREE.Sprite is the mock vi.fn() for sprite construction.
-        // It should have been called exactly once: for the bright star.
-        expect((THREE as any).Sprite).toHaveBeenCalledTimes(1);
+        // It should have been called 5 times: once for the bright star
+        // label, plus 4 cardinal-direction labels (N/E/S/W) created by
+        // createOrientationGuides().
+        expect((THREE as any).Sprite).toHaveBeenCalledTimes(5);
     });
 
     it("initialize can be called multiple times (re-initializes scene)", async () => {
@@ -1663,6 +1665,23 @@ describe("ConstellationRenderer", () => {
             expect(names).toContain("cardinal-S");
             expect(names).toContain("cardinal-W");
             expect(group.children.length).toBe(4);
+            renderer.dispose();
+            container.remove();
+        });
+    });
+
+    describe("ConstellationRenderer — compass", () => {
+        it("getCameraAzimuth returns a normalized 0-360 degree value", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const az = renderer.getCameraAzimuth();
+            expect(az).toBeGreaterThanOrEqual(0);
+            expect(az).toBeLessThan(360);
             renderer.dispose();
             container.remove();
         });

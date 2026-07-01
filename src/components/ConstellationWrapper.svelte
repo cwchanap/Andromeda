@@ -58,6 +58,14 @@
   // Cached world-space center for selected constellation (recomputed on selection change)
   let selectedCenter: { x: number; y: number; z: number } | null = null;
 
+  // Compass readout — camera azimuth in degrees, updated each HUD tick
+  let facingDeg = 0;
+  $: facingCardinal = facingDegToCardinal(facingDeg);
+  function facingDegToCardinal(deg: number): string {
+    const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    return dirs[Math.round(deg / 45) % 8];
+  }
+
   // Initialize translations
   if (typeof window !== 'undefined') {
     currentLang = getLangFromUrl(new URL(window.location.href));
@@ -226,6 +234,7 @@
         } else {
           lockedPos = null;
         }
+        if (renderer) facingDeg = renderer.getCameraAzimuth();
         hudRafId = requestAnimationFrame(tickHud);
       };
       tickHud();
@@ -486,6 +495,13 @@
                 <span class="readout-value">{utcReadout}</span>
               </div>
             </div>
+
+            <!-- Compass / orientation readout -->
+            <div class="compass-readout">
+              <span class="compass-label">{t('constellation.compass')}</span>
+              <span class="compass-value">{facingCardinal} ({Math.round(facingDeg)}°)</span>
+            </div>
+            <p class="view-from-earth">{t('constellation.viewFromEarth')}</p>
 
             <!-- Visible constellations -->
             <div>
@@ -759,5 +775,24 @@
     align-items: center;
     gap: 8px;
     padding: 2px 0;
+  }
+
+  .compass-readout {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 8px;
+  }
+  .compass-label {
+    letter-spacing: 0.2em;
+    color: var(--hud-cyan, #00f0ff);
+  }
+  .view-from-earth {
+    margin: 4px 0 0;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--hud-cyan, #00f0ff);
+    opacity: 0.8;
   }
 </style>
