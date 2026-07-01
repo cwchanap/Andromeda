@@ -20,6 +20,8 @@ vi.mock("@/lib/galaxy", () => {
         getCameraState: vi.fn(() => ({ zoom: 1 })),
         getStats: vi.fn(() => ({ fps: 60 })),
         updateConfig: vi.fn(),
+        setDistanceLinesVisible: vi.fn(),
+        setSolMarkerVisible: vi.fn(),
     };
 
     return {
@@ -143,6 +145,8 @@ describe("GalaxyWrapper – event callbacks", () => {
             getCameraState: vi.fn(() => ({ zoom: 1 })),
             getStats: vi.fn(() => ({ fps: 60 })),
             updateConfig: vi.fn(),
+            setDistanceLinesVisible: vi.fn(),
+            setSolMarkerVisible: vi.fn(),
         };
     }
 
