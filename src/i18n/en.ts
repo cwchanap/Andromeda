@@ -38,6 +38,21 @@ export const en = {
     "controls.showBarycenters": "Show barycenters",
     "controls.hideBarycenters": "Hide barycenters",
 
+    // View switcher (shared HUD)
+    "viewSwitcher.label": "VIEW",
+    "viewSwitcher.star": "Star",
+    "viewSwitcher.galaxy": "Galaxy",
+    "viewSwitcher.constellation": "Constellation",
+    "settings.language": "Language",
+
+    // Galaxy position indicator (used by Plan 2)
+    "galaxy.solMarkerLabel": "SOL · YOU ARE HERE",
+    "galaxy.distanceLines": "Distance Lines",
+
+    // Constellation orientation indicator (used by Plan 2)
+    "constellation.viewFromEarth": "View from Earth",
+    "constellation.compass": "FACING",
+
     // HUD search / explore / finder
     "explore.title": "Star Systems",
     "explore.searchPlaceholder": "SEARCH SYSTEMS…",
