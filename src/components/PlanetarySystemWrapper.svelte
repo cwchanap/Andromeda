@@ -10,12 +10,13 @@
   import HudButton from '@/components/hud/HudButton.svelte';
   import HudSearch from '@/components/hud/HudSearch.svelte';
   import TargetLockOverlay from '@/components/hud/TargetLockOverlay.svelte';
+  import ViewHud from '@/components/hud/ViewHud.svelte';
   import { matchesQuery } from '@/lib/hud/list';
   import { gameState, gameActions, settings } from '@/stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
   import { PlanetarySystemRenderer, planetarySystemRegistry } from '@/lib/planetary-system';
   import { getLangFromUrl, useTranslations } from '@/i18n/utils';
-  import { routes, type AppLocale } from '@/i18n/routes';
+  import type { AppLocale } from '@/i18n/routes';
   import type { PlanetarySystemConfig, PlanetarySystemEvents } from '@/lib/planetary-system/types';
   import type { CelestialBodyData } from '@/types/game';
   
@@ -49,6 +50,7 @@
   let isLoading = true;
   let loadingProgress = 0;
   let isSceneReady = false;
+  let currentView: "star" | "galaxy" | "constellation" = "star";
   let currentZoom = 50;
   let showFinder = false;
   let finderQuery = "";
@@ -99,20 +101,10 @@
     gameActions.addToComparison(body);
   };
 
-  const handleBackToMenu = () => {
-    gameActions.navigateToView("menu");
-    window.location.href = routes.home(currentLang);
-  };
-  
   const handleZoomChange = (zoom: number) => {
     currentZoom = zoom;
   };
 
-  const toggleBarycenterOverlay = () => {
-    showBarycenterOverlay = !showBarycenterOverlay;
-    planetarySystemRenderer?.setBarycenterOverlayVisible(showBarycenterOverlay);
-  };
-  
   const onKeyboardNavigate = (direction: 'next' | 'previous') => {
     if (!planetarySystemRenderer) return;
     
@@ -266,6 +258,11 @@
     });
   }
 
+  // Mirror the settings-slot barycenter checkbox (bind:checked) to the renderer
+  $: if (planetarySystemRenderer && isSceneReady) {
+    planetarySystemRenderer.setBarycenterOverlayVisible(showBarycenterOverlay);
+  }
+
   // All selectable bodies in the active system (star + planets + moons present in data).
   // Gated on isSceneReady so this re-evaluates after initialize() populates system data.
   $: allBodies = (() => {
@@ -387,33 +384,33 @@
   </div>
   
   {#if isSceneReady}
-    <!-- System readout (top-left) -->
-    <div class="hud-info">
-      <HudPanel title={t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')}>
-        <p class="hud-details-desc m-0">
-          {t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || ''}
-        </p>
-      </HudPanel>
-    </div>
+    <ViewHud currentView={currentView} {lang} {translations}>
+      <div slot="info">
+        <HudPanel title={t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')}>
+          <p class="hud-details-desc m-0">
+            {t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || ''}
+          </p>
+        </HudPanel>
+      </div>
 
-    <!-- Command rail (top-right) -->
-    <div class="hud-controls hud-rail">
-      <HudButton bracket on:click={handleBackToMenu}>{t('controls.backToMenu')}</HudButton>
-      <HudButton ariaLabel={t('finder.open')} on:click={() => { showFinder = true; focusedFinderIndex = 0; }}>{t('finder.title')}</HudButton>
-      {#if zoomControls}
-        <HudButton on:click={zoomControls.zoomIn}>{t('controls.zoomIn')}</HudButton>
-        <HudButton on:click={zoomControls.zoomOut}>{t('controls.zoomOut')}</HudButton>
-        <HudButton on:click={zoomControls.resetView}>{t('controls.resetView')}</HudButton>
-      {/if}
-      {#if hasBarycenterOverlay}
-        <HudButton ariaPressed={showBarycenterOverlay} on:click={toggleBarycenterOverlay}>
-          {showBarycenterOverlay ? t('controls.hideBarycenters') : t('controls.showBarycenters')}
-        </HudButton>
-      {/if}
-      {#if isSceneReady}
-        <OrbitSpeedControl {lang} {translations} />
-      {/if}
-    </div>
+      <div slot="controls" class="hud-rail">
+        <HudButton ariaLabel={t('finder.open')} on:click={() => { showFinder = true; focusedFinderIndex = 0; }}>{t('finder.title')}</HudButton>
+        {#if zoomControls}
+          <HudButton on:click={zoomControls.zoomIn}>{t('controls.zoomIn')}</HudButton>
+          <HudButton on:click={zoomControls.zoomOut}>{t('controls.zoomOut')}</HudButton>
+          <HudButton on:click={zoomControls.resetView}>{t('controls.resetView')}</HudButton>
+        {/if}
+      </div>
+
+      <div slot="settings">
+        {#if hasBarycenterOverlay}
+          <label class="hud-setting"><input type="checkbox" bind:checked={showBarycenterOverlay}> {showBarycenterOverlay ? t('controls.hideBarycenters') : t('controls.showBarycenters')}</label>
+        {/if}
+        {#if isSceneReady}
+          <OrbitSpeedControl {lang} {translations} />
+        {/if}
+      </div>
+    </ViewHud>
 
     <!-- JUMP TO finder (toggle-open) -->
     {#if showFinder}
@@ -530,18 +527,18 @@
     height: 100%;
   }
   
-  .hud-info {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    max-width: 320px;
-    z-index: 10;
+  .hud-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
   }
-  .hud-controls {
-    position: absolute;
-    top: 64px;
-    right: 20px;
-    z-index: 10;
+  .hud-setting {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
   }
   .hud-finder {
     position: absolute;
