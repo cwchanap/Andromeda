@@ -78,12 +78,13 @@
         performanceMode: "medium",
         starFieldDensity: 1.0,
         backgroundStarCount: 2000,
-        enableStarLabels: true,
-        enableDistanceIndicators: true,
+        enableStarLabels: enableStarLabels,
+        enableDistanceIndicators: enableDistanceLines,
         maxRenderDistance: 50,
         enableBloom: false,
         enableStarGlow: true,
         starGlowIntensity: 1.0,
+        solMarkerLabel: t('galaxy.solMarkerLabel'),
     };
 
     // Event handlers
@@ -235,6 +236,9 @@
     $: if (renderer) {
         updateRenderDistance();
     }
+
+    $: if (renderer) renderer.setDistanceLinesVisible(enableDistanceLines);
+    $: if (renderer) renderer.setSolMarkerVisible(enableStarLabels);
 
     // Lifecycle
     onMount(async () => {
