@@ -37,6 +37,21 @@ export const ja = {
     "controls.showBarycenters": "バリセンターを表示",
     "controls.hideBarycenters": "バリセンターを非表示",
 
+    // View switcher (shared HUD)
+    "viewSwitcher.label": "表示",
+    "viewSwitcher.star": "恒星",
+    "viewSwitcher.galaxy": "銀河",
+    "viewSwitcher.constellation": "星座",
+    "settings.language": "言語",
+
+    // Galaxy position indicator (used by Plan 2)
+    "galaxy.solMarkerLabel": "太陽系 · 現在地",
+    "galaxy.distanceLines": "距離線",
+
+    // Constellation orientation indicator (used by Plan 2)
+    "constellation.viewFromEarth": "地球からの眺望",
+    "constellation.compass": "方位",
+
     // HUD search / explore / finder
     "explore.title": "恒星系",
     "explore.searchPlaceholder": "システムを検索…",
