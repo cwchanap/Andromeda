@@ -24,6 +24,7 @@ vi.mock("@/lib/galaxy", () => {
         setSolMarkerVisible: vi.fn(),
         setSolLabelVisible: vi.fn(),
         setStarGlowVisible: vi.fn(),
+        setReducedMotion: vi.fn(),
     };
 
     return {
@@ -147,6 +148,7 @@ describe("GalaxyWrapper – event callbacks", () => {
             setSolMarkerVisible: vi.fn(),
             setSolLabelVisible: vi.fn(),
             setStarGlowVisible: vi.fn(),
+            setReducedMotion: vi.fn(),
         };
     }
 

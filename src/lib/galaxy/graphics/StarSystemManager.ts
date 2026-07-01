@@ -24,7 +24,16 @@ export class StarSystemManager {
 
     // Sol origin marker and distance lines
     private solMarkerGroup: THREE.Group | null = null;
+    private solRing: THREE.Mesh | null = null;
     private distanceLines: THREE.LineSegments | null = null;
+    // Cached star systems + config so distance lines can be lazily (re)created
+    // by setDistanceLinesVisible when enableDistanceIndicators was off at init.
+    private starSystemsCache: StarSystemData[] = [];
+    // Sol ring pulse accumulator (seconds). Drives a subtle scale + opacity
+    // oscillation so Sol stands out from the nearby-star meshes. Suppressed
+    // when reducedMotion is set.
+    private solPulseTime = 0;
+    private reducedMotion = false;
 
     constructor(scene: THREE.Scene, config: Required<GalaxyConfig>) {
         this.scene = scene;
@@ -38,6 +47,10 @@ export class StarSystemManager {
         for (const system of starSystems) {
             await this.createStarSystem(system);
         }
+
+        // Cache star systems so distance lines can be lazily (re)created by
+        // setDistanceLinesVisible when the flag was off at init time.
+        this.starSystemsCache = starSystems;
 
         this.solMarkerGroup = this.createSolMarker();
         this.scene.add(this.solMarkerGroup);
@@ -73,6 +86,7 @@ export class StarSystemManager {
             }),
         );
         ring.name = "sol-marker-ring";
+        this.solRing = ring;
         group.add(ring);
 
         if (this.config.enableStarLabels) {
@@ -166,9 +180,21 @@ export class StarSystemManager {
     }
 
     /**
-     * Set visibility of the distance lines
+     * Set visibility of the distance lines. Lazily (re)creates the line
+     * segments on first enable when enableDistanceIndicators was false at
+     * init time, so the runtime toggle is never a silent no-op.
      */
     setDistanceLinesVisible(visible: boolean): void {
+        if (
+            visible &&
+            !this.distanceLines &&
+            this.starSystemsCache.length > 0
+        ) {
+            this.distanceLines = this.createDistanceLines(
+                this.starSystemsCache,
+            );
+            this.scene.add(this.distanceLines);
+        }
         if (this.distanceLines) this.distanceLines.visible = visible;
     }
 
@@ -322,6 +348,11 @@ export class StarSystemManager {
      * Update star system animations
      */
     update(deltaTime: number, cameraPosition: THREE.Vector3): void {
+        // Sol ring pulse runs independently of the animations toggle (it is a
+        // position indicator, not ambient motion) but is suppressed under
+        // reduced-motion per the spec's accessibility note.
+        this.tickSolPulse(deltaTime);
+
         if (!this.config.enableAnimations) return;
 
         // Update glow shader uniforms
@@ -337,6 +368,36 @@ export class StarSystemManager {
         this.starMeshes.forEach((mesh) => {
             mesh.rotation.y += deltaTime * 0.0001; // Very slow rotation
         });
+    }
+
+    /**
+     * Animate the Sol marker ring with a subtle scale + opacity pulse so Sol
+     * is distinguishable from the nearby-star meshes. No-op under
+     * reduced-motion (ring stays at its base scale/opacity).
+     */
+    private tickSolPulse(deltaTime: number): void {
+        if (!this.solRing) return;
+        if (this.reducedMotion) return;
+        this.solPulseTime += deltaTime;
+        // 1.6s period sine wave; scale 0.9–1.15, opacity 0.45–0.85.
+        const phase = (this.solPulseTime % 1.6) / 1.6; // 0..1
+        const wave = Math.sin(phase * Math.PI * 2);
+        const scale = 1 + wave * 0.125;
+        this.solRing.scale.setScalar(scale);
+        const mat = this.solRing.material as THREE.MeshBasicMaterial;
+        mat.opacity = 0.65 + wave * 0.2;
+    }
+
+    /**
+     * Inform the manager of the user's reduced-motion preference. When true,
+     * the Sol ring pulse is frozen at its base state.
+     */
+    setReducedMotion(reduced: boolean): void {
+        this.reducedMotion = reduced;
+        if (reduced && this.solRing) {
+            this.solRing.scale.setScalar(1);
+            (this.solRing.material as THREE.MeshBasicMaterial).opacity = 0.8;
+        }
     }
 
     /**
@@ -434,6 +495,7 @@ export class StarSystemManager {
             });
             this.scene.remove(this.solMarkerGroup);
             this.solMarkerGroup = null;
+            this.solRing = null;
         }
 
         // Dispose distance lines

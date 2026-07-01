@@ -606,11 +606,65 @@ describe("StarSystemManager — distance lines", () => {
             ...mockConfig,
             enableDistanceIndicators: true,
         });
-        await manager.initialize([mockStarSystemData]);
+        // Three distinct systems at non-origin positions so we can assert
+        // that every system gets its own line segment from the origin.
+        const systems: StarSystemData[] = [
+            {
+                ...mockStarSystemData,
+                id: "alpha",
+                position: new THREE.Vector3(3, 0, 0),
+                distanceFromEarth: 3,
+            },
+            {
+                ...mockStarSystemData,
+                id: "beta",
+                position: new THREE.Vector3(0, 4, 0),
+                distanceFromEarth: 4,
+            },
+            {
+                ...mockStarSystemData,
+                id: "gamma",
+                position: new THREE.Vector3(0, 0, 5),
+                distanceFromEarth: 5,
+            },
+        ];
+        await manager.initialize(systems);
         const lines = scene.children.find(
             (c: any) => c.name === "sol-distance-lines",
-        );
+        ) as THREE.LineSegments;
         expect(lines).toBeTruthy();
+
+        // Each system contributes one segment (2 vertices): origin → system.
+        const attr = lines.geometry.getAttribute(
+            "position",
+        ) as THREE.BufferAttribute;
+        expect(attr.count).toBe(systems.length * 2);
+        expect(attr.array.length).toBe(systems.length * 6);
+
+        // Every other vertex must be the origin; the paired vertex must
+        // match one of the system positions exactly. Index the typed array
+        // directly (x=array[i*3], y=array[i*3+1], z=array[i*3+2]).
+        const arr = attr.array as Float32Array;
+        const systemPositions = systems.map(
+            (s) => [s.position.x, s.position.y, s.position.z] as const,
+        );
+        for (let i = 0; i < systems.length; i++) {
+            const o = i * 6; // origin vertex offset
+            expect(arr[o]).toBe(0);
+            expect(arr[o + 1]).toBe(0);
+            expect(arr[o + 2]).toBe(0);
+            const s = i * 6 + 3; // system vertex offset
+            const matched = systemPositions.some(
+                (p) =>
+                    p[0] === arr[s] &&
+                    p[1] === arr[s + 1] &&
+                    p[2] === arr[s + 2],
+            );
+            expect(
+                matched,
+                `segment ${i} should end at a system position`,
+            ).toBe(true);
+        }
     });
 
     it("does not create distance lines when disabled", async () => {

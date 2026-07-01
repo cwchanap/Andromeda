@@ -13,6 +13,10 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         tweenCameraTo: vi.fn(),
         worldToScreen: vi.fn(() => ({ x: 0, y: 0, visible: false })),
         getCameraAzimuth: vi.fn(() => 0),
+        setLabelsVisible: vi.fn(),
+        setAutoRotate: vi.fn(),
+        setAutoRotateSpeed: vi.fn(),
+        setReducedMotion: vi.fn(),
     };
     return {
         ConstellationRenderer: vi.fn().mockImplementation(() => mockRenderer),
@@ -27,6 +31,7 @@ vi.mock("@/utils/astronomy", () => ({
     isConstellationVisible: vi.fn(() => true),
     formatCoordinates: vi.fn(() => "40.71°N, 74.01°W"),
     celestialToSphere: vi.fn(() => ({ x: 0, y: 0, z: 100, visible: true })),
+    azimuthToCardinalKey: vi.fn(() => "compass.n"),
 }));
 
 // Mock constellation data

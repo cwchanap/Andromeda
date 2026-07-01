@@ -47,10 +47,20 @@ export const ja = {
     // Galaxy position indicator (used by Plan 2)
     "galaxy.solMarkerLabel": "太陽系 · 現在地",
     "galaxy.distanceLines": "距離線",
+    "galaxy.selectedSystem": "選択中の星系",
+    "galaxy.noSelection": "星系未選択",
 
     // Constellation orientation indicator (used by Plan 2)
     "constellation.viewFromEarth": "地球からの眺望",
     "constellation.compass": "方位",
+    "compass.n": "北",
+    "compass.ne": "北東",
+    "compass.e": "東",
+    "compass.se": "南東",
+    "compass.s": "南",
+    "compass.sw": "南西",
+    "compass.w": "西",
+    "compass.nw": "北西",
 
     // HUD search / explore / finder
     "explore.title": "恒星系",
@@ -440,6 +450,8 @@ export const ja = {
     "constellation.panelOff": "パネル OFF",
     "constellation.dragInstructions": "ターゲット待機 — ドラッグで方向調整",
     "constellation.scanlines": "スキャンライン",
+    "constellation.labels": "恒星・星座ラベル",
+    "constellation.autoRotate": "自動回転",
 
     // Constellation names
     "constellations.ursa_major.name": "おおぐま座",

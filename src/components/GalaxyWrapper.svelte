@@ -231,6 +231,12 @@
     $: if (renderer) renderer.setDistanceLinesVisible(enableDistanceLines);
     // Star labels toggle only the Sol marker label, not the whole marker group.
     $: if (renderer) renderer.setSolLabelVisible(enableStarLabels);
+    // Reduced-motion preference freezes the Sol ring pulse per the spec.
+    let reducedMotion = false;
+    if (typeof window !== 'undefined') {
+        reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    }
+    $: if (renderer) renderer.setReducedMotion(reducedMotion);
 
     // Lifecycle
     onMount(() => {
@@ -273,6 +279,24 @@
 
     {#if isSceneReady}
         <ViewHud currentView={currentView} {lang} translations={translations}>
+            <div slot="info" class="galaxy-info">
+                <HudPanel title={t('galaxy.selectedSystem')}>
+                    {#if selectedSystemData}
+                        <div class="info-system-name">{systemName(selectedSystemData)}</div>
+                        <div class="info-row">
+                            <span class="info-label">{t('galaxy.distanceFromEarth')}</span>
+                            <span class="info-value">{selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">{t('galaxy.systemType')}</span>
+                            <span class="info-value">{getSystemTypeLabel(selectedSystemData.systemType)}</span>
+                        </div>
+                    {:else}
+                        <div class="info-empty">{t('galaxy.noSelection')}</div>
+                    {/if}
+                </HudPanel>
+            </div>
+
             <div slot="controls" class="galaxy-nearby">
                 <HudPanel title={t('galaxy.starSystems')}>
                     <HudSearch bind:value={nearbyQuery} placeholder={t('explore.searchPlaceholder')} ariaLabel={t('explore.searchPlaceholder')} />
@@ -385,6 +409,12 @@
     .galaxy-wrapper { position: relative; width: 100%; height: 100vh; overflow: hidden; background: #000011; }
     .galaxy-container { width: 100%; height: 100%; position: relative; }
     .galaxy-nearby { width: min(340px, 90vw); max-height: 60vh; overflow-y: auto; }
+    .galaxy-info { width: min(280px, 80vw); }
+    .info-system-name { font-family: var(--hud-font-display, monospace); font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hud-cyan, #00f0ff); margin-bottom: 8px; }
+    .info-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 2px 0; color: rgba(255,255,255,0.85); }
+    .info-label { letter-spacing: 0.08em; opacity: 0.7; }
+    .info-value { color: var(--hud-cyan, #00f0ff); }
+    .info-empty { font-size: 12px; color: rgba(255,255,255,0.6); font-style: italic; }
     .hud-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
     .hud-list-row {
         display: flex; align-items: center; gap: 8px; width: 100%;

@@ -57,6 +57,20 @@ export class ConstellationRenderer {
     private shootingStarCount: number = 0;
     private nextShootingStarAt: number = 0;
     private shootingStarStarted: number = 0;
+    // Runtime-toggled label visibility (star + constellation name labels).
+    // Both label groups are always created in initialize() so the toggle can
+    // turn them on/off without re-running the (canvas-texture) creation path.
+    private labelsVisible: boolean = true;
+    // Auto-rotate state — when enabled and no user drag/tween is active, the
+    // camera yaw advances each frame to slowly pan the sky. Respects
+    // reduced-motion (disabled entirely when `reducedMotion` is true).
+    private autoRotate: boolean = false;
+    private autoRotateSpeed: number = 0.04; // radians per second
+    private reducedMotion: boolean = false;
+    // Cached init args so the runtime Labels toggle can lazily (re)create the
+    // star-label group without a full re-initialize.
+    private _skyConfig: SkyConfiguration | null = null;
+    private _constellations: Constellation[] = [];
 
     public readonly callbacks: {
         onStarHover?: (
@@ -619,10 +633,19 @@ export class ConstellationRenderer {
         // Create constellation name labels
         this.createConstellationLabels(constellations, skyConfig);
 
-        // Create star labels
+        // Create star labels (gated by showStarNames at init to preserve the
+        // pre-toggle creation behavior). The runtime Labels toggle can lazily
+        // (re)create them via setLabelsVisible() using the cached skyConfig.
         if (skyConfig.showStarNames) {
             this.createStarLabels(stars, skyConfig);
         }
+
+        // Cache skyConfig + constellations so the runtime Labels toggle can
+        // lazily create star labels without a full re-initialize.
+        this._skyConfig = skyConfig;
+        this._constellations = constellations;
+        this.labelsVisible = !!skyConfig.showStarNames;
+        this.applyLabelsVisibility();
 
         // Create horizon ring + cardinal direction labels (N/E/S/W)
         this.createOrientationGuides();
@@ -1175,6 +1198,53 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Apply the current `labelsVisible` state to both label groups. Star
+     * labels are lazily created on first enable when they were not created
+     * during initialize() (i.e. showStarNames was false at init).
+     */
+    private applyLabelsVisibility(): void {
+        if (this.labelsVisible && !this.labelSprites && this._skyConfig) {
+            this.createStarLabels(this._stars, this._skyConfig);
+        }
+        if (this.labelSprites) this.labelSprites.visible = this.labelsVisible;
+        if (this.constellationLabels)
+            this.constellationLabels.visible = this.labelsVisible;
+    }
+
+    /**
+     * Toggle visibility of star + constellation name labels at runtime.
+     * Lazily (re)creates the star-label group on first enable.
+     */
+    public setLabelsVisible(visible: boolean): void {
+        this.labelsVisible = visible;
+        this.applyLabelsVisibility();
+    }
+
+    /**
+     * Enable/disable slow automatic yaw rotation of the camera. Ignored while
+     * the user is dragging or a camera tween is in progress, and disabled
+     * entirely when reduced-motion is set via setReducedMotion().
+     */
+    public setAutoRotate(enabled: boolean): void {
+        this.autoRotate = enabled;
+    }
+
+    /**
+     * Set the auto-rotate angular speed in radians per second.
+     */
+    public setAutoRotateSpeed(radPerSec: number): void {
+        this.autoRotateSpeed = radPerSec;
+    }
+
+    /**
+     * Inform the renderer of the user's reduced-motion preference. When true,
+     * auto-rotate is disabled (the camera stays still) per WCAG §2.3.3.
+     */
+    public setReducedMotion(reduced: boolean): void {
+        this.reducedMotion = reduced;
+    }
+
+    /**
      * Smoothly pan the camera to the given rotation angles over durationMs milliseconds.
      * Cancels any active drag momentum so the tween runs uninterrupted.
      */
@@ -1384,7 +1454,22 @@ export class ConstellationRenderer {
 
         const now = performance.now();
         this.tickTween(now);
-        this.tickUniforms(this.clock.getDelta());
+        const delta = this.clock.getDelta();
+
+        // Auto-rotate: slowly pan the sky when enabled and no user drag or
+        // camera tween is active. Skipped entirely under reduced-motion.
+        if (
+            this.autoRotate &&
+            !this.reducedMotion &&
+            !this.isMouseDown &&
+            !this.isDragging &&
+            !this.tweenState.active
+        ) {
+            this.cameraRotationY += this.autoRotateSpeed * delta;
+            this.updateCameraRotation();
+        }
+
+        this.tickUniforms(delta);
         this.tickShootingStar(now);
         this.maybeSpawnShootingStar(now);
         this.renderer.render(this.scene, this.camera);

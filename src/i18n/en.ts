@@ -48,10 +48,20 @@ export const en = {
     // Galaxy position indicator (used by Plan 2)
     "galaxy.solMarkerLabel": "SOL · YOU ARE HERE",
     "galaxy.distanceLines": "Distance Lines",
+    "galaxy.selectedSystem": "SELECTED SYSTEM",
+    "galaxy.noSelection": "No system selected",
 
     // Constellation orientation indicator (used by Plan 2)
     "constellation.viewFromEarth": "View from Earth",
     "constellation.compass": "FACING",
+    "compass.n": "N",
+    "compass.ne": "NE",
+    "compass.e": "E",
+    "compass.se": "SE",
+    "compass.s": "S",
+    "compass.sw": "SW",
+    "compass.w": "W",
+    "compass.nw": "NW",
 
     // HUD search / explore / finder
     "explore.title": "Star Systems",
@@ -455,6 +465,8 @@ export const en = {
     "constellation.panelOff": "PANEL OFF",
     "constellation.dragInstructions": "AWAITING TARGET — DRAG TO ORIENT",
     "constellation.scanlines": "Scanlines",
+    "constellation.labels": "Star & Constellation Labels",
+    "constellation.autoRotate": "Auto-Rotate",
 
     // Common actions
     "action.start": "Start",
