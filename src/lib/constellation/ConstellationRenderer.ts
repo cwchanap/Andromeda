@@ -1336,6 +1336,16 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Get the camera's current elevation (pitch) in degrees, where 0 = horizon,
+     * positive = above horizon (toward zenith), negative = below (toward nadir).
+     * Derived from the tracked pitch rotation, which is clamped to ±π/2.2 so the
+     * value stays within roughly ±82°.
+     */
+    public getCameraElevation(): number {
+        return (this.cameraRotationX * 180) / Math.PI;
+    }
+
+    /**
      * Advance time-based shader uniforms by deltaSec seconds.
      */
     public tickUniforms(deltaSec: number): void {

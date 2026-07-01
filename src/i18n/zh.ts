@@ -625,7 +625,7 @@ export const zh = {
     "galaxy.useSettingsPanel": "使用设置面板调整视觉效果",
     "galaxy.controlsTitle": "银河系控制",
     "galaxy.starGlowEffects": "恒星发光效果",
-    "galaxy.starSystemLabels": "恒星系统标签",
+    "galaxy.solLabel": "Sol 标签",
     "galaxy.maxRenderDistance": "最大渲染距离:",
     "galaxy.distance": "距离",
     "galaxy.systemType": "系统类型",

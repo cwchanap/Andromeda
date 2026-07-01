@@ -3,6 +3,7 @@
   import { languages } from "@/i18n/ui";
   import { switchLocalePath, type AppLocale } from "@/i18n/routes";
   import { useTranslations } from "@/i18n/utils";
+  import { focusTrap } from "@/lib/hud/focusTrap";
   import HudPanel from "./HudPanel.svelte";
 
   export let isOpen = false;
@@ -38,44 +39,6 @@
     // Only react to Escape while the panel is open.
     if (isOpen && event.key === "Escape") dispatch("close");
   }
-
-  // Focus management: move focus into the dialog on open, trap Tab within it,
-  // and restore focus to the trigger when the dialog closes.
-  function focusTrap(node: HTMLElement) {
-    const trigger = document.activeElement as HTMLElement | null;
-    const target =
-      node.querySelector<HTMLElement>(".close-btn") ?? node;
-    // Defer slightly so slotted content is rendered before focusing.
-    requestAnimationFrame(() => target.focus());
-
-    const selector =
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-    function onKeydown(event: KeyboardEvent) {
-      if (event.key !== "Tab") return;
-      const focusables = Array.from(
-        node.querySelectorAll<HTMLElement>(selector),
-      ).filter((el) => !el.hasAttribute("disabled"));
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    node.addEventListener("keydown", onKeydown);
-    return {
-      destroy() {
-        node.removeEventListener("keydown", onKeydown);
-        trigger?.focus?.();
-      },
-    };
-  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -83,7 +46,7 @@
 {#if isOpen}
   <div
     class="settings-overlay"
-    use:focusTrap
+    use:focusTrap={".close-btn"}
     on:click={(e) => {
       if (e.target === e.currentTarget) dispatch("close");
     }}

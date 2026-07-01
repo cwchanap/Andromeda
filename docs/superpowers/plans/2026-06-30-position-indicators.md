@@ -12,7 +12,7 @@
 
 - **Shadows:** never enable.
 - **Three.js memory:** dispose every new geometry/material/texture in the renderer's `dispose()`.
-- **Reduced motion:** the Sol ring is static (no pulse) to respect reduced-motion; the compass is a readout, not an animation.
+- **Reduced motion:** the Sol ring pulses by default (subtle scale + opacity) to distinguish Sol from nearby-star meshes, but is frozen at its base state when the user's reduced-motion preference is active; the compass is a readout, not an animation.
 - **Framework-agnostic renderers:** no i18n inside renderer classes. Localizable strings come via config (`GalaxyConfig.solMarkerLabel`) or are rendered in Svelte (constellation compass).
 - **Sol stays out of the dataset:** `localGalaxyData.starSystems` is unchanged.
 - **Verify after every task:** `bun run lint && bun run type-check`; tests `bun run test:run`.
@@ -868,4 +868,3 @@ git add -A && git commit -m "chore: format" || echo "nothing to commit"
 - Smooth camera tween for `focusOnStarSystem` (the existing `GalaxyRenderer.ts:418` TODO).
 - Adding Sol as a selectable/navigable entry in `localGalaxyData.starSystems`.
 - Per-star labels across the galaxy (only the Sol label is added; `enableStarLabels` gates the Sol label).
-- Animating the Sol ring (kept static for reduced-motion compliance).
