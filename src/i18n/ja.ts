@@ -439,6 +439,7 @@ export const ja = {
     "constellation.panelOn": "パネル ON",
     "constellation.panelOff": "パネル OFF",
     "constellation.dragInstructions": "ターゲット待機 — ドラッグで方向調整",
+    "constellation.scanlines": "スキャンライン",
 
     // Constellation names
     "constellations.ursa_major.name": "おおぐま座",

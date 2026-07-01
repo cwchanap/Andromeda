@@ -454,6 +454,7 @@ export const en = {
     "constellation.panelOn": "PANEL ON",
     "constellation.panelOff": "PANEL OFF",
     "constellation.dragInstructions": "AWAITING TARGET — DRAG TO ORIENT",
+    "constellation.scanlines": "Scanlines",
 
     // Common actions
     "action.start": "Start",

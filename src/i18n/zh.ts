@@ -425,6 +425,7 @@ export const zh = {
     "constellation.panelOn": "面板 开",
     "constellation.panelOff": "面板 关",
     "constellation.dragInstructions": "等待目标 — 拖拽以定位",
+    "constellation.scanlines": "扫描线",
 
     // Constellation names
     "constellations.ursa_major.name": "大熊座",
