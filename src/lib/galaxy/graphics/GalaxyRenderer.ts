@@ -450,6 +450,13 @@ export class GalaxyRenderer {
     }
 
     /**
+     * Toggle Sol marker label visibility only (core/ring marker stays visible)
+     */
+    setSolLabelVisible(visible: boolean): void {
+        this.starSystemManager?.setSolLabelVisible(visible);
+    }
+
+    /**
      * Get current camera state
      */
     getCameraState(): GalaxyCameraState {
@@ -502,14 +509,19 @@ export class GalaxyRenderer {
      * Update configuration
      */
     updateConfig(newConfig: Partial<GalaxyConfig>): void {
-        this.config = { ...this.config, ...newConfig };
+        // Mutate the existing config object in place rather than reassigning,
+        // so managers (which hold the same reference) observe the updates.
+        Object.assign(this.config, newConfig);
 
         // Apply configuration changes
         if (newConfig.enableControls !== undefined) {
             this.controls.enabled = newConfig.enableControls;
         }
-
-        // TODO: Apply other configuration changes as needed
+        if (newConfig.enableStarGlow !== undefined) {
+            this.starSystemManager?.setStarGlowVisible(
+                newConfig.enableStarGlow,
+            );
+        }
     }
 
     /**

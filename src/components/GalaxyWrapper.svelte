@@ -125,17 +125,8 @@
             loadingProgress = 60;
 
             await renderer.initialize(localGalaxyData);
-
-            // Handle window resize
-            const handleResize = () => {
-                renderer?.onResize();
-            };
-            window.addEventListener('resize', handleResize);
-
-            // Cleanup function will remove the event listener
-            return () => {
-                window.removeEventListener('resize', handleResize);
-            };
+            // Window resize is handled by <svelte:window on:resize> below,
+            // so no manual addEventListener is needed here.
 
         } catch (err) {
             error = err instanceof Error ? err.message : t('error.unknown');
@@ -238,12 +229,12 @@
     }
 
     $: if (renderer) renderer.setDistanceLinesVisible(enableDistanceLines);
-    $: if (renderer) renderer.setSolMarkerVisible(enableStarLabels);
+    // Star labels toggle only the Sol marker label, not the whole marker group.
+    $: if (renderer) renderer.setSolLabelVisible(enableStarLabels);
 
     // Lifecycle
-    onMount(async () => {
-        const cleanupResize = await initializeRenderer();
-        return cleanupResize;
+    onMount(() => {
+        initializeRenderer();
     });
 
     onDestroy(() => {

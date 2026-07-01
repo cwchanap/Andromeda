@@ -2,7 +2,7 @@
   import { createEventDispatcher } from "svelte";
   import { languages } from "@/i18n/ui";
   import { switchLocalePath, type AppLocale } from "@/i18n/routes";
-  import { getLangFromUrl, useTranslations } from "@/i18n/utils";
+  import { useTranslations } from "@/i18n/utils";
   import HudPanel from "./HudPanel.svelte";
 
   export let isOpen = false;
@@ -13,21 +13,17 @@
 
   type Translate = (key: string) => string;
 
-  const hasOverride =
-    translations && Object.keys(translations).length > 0;
+  // Reactive translation helper — recomputes when lang/translations change.
+  let t: Translate;
+  $: t =
+    translations && Object.keys(translations).length
+      ? (key: string) => translations[key] || key
+      : (useTranslations(lang) as Translate);
 
-  const t: Translate = hasOverride
-    ? (key: string) => translations[key] || key
-    : (useTranslations(lang) as Translate);
-
-  let currentLang: AppLocale = lang;
-  if (typeof window !== "undefined") {
-    try {
-      currentLang = getLangFromUrl(new URL(window.location.href));
-    } catch {
-      /* keep prop fallback */
-    }
-  }
+  // Derive current language from the prop reactively instead of re-reading
+  // window.location once at init (which could go stale on client nav).
+  let currentLang: AppLocale;
+  $: currentLang = lang;
 
   function changeLanguage(newLang: AppLocale) {
     if (typeof window === "undefined") return;
@@ -39,7 +35,46 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape") dispatch("close");
+    // Only react to Escape while the panel is open.
+    if (isOpen && event.key === "Escape") dispatch("close");
+  }
+
+  // Focus management: move focus into the dialog on open, trap Tab within it,
+  // and restore focus to the trigger when the dialog closes.
+  function focusTrap(node: HTMLElement) {
+    const trigger = document.activeElement as HTMLElement | null;
+    const target =
+      node.querySelector<HTMLElement>(".close-btn") ?? node;
+    // Defer slightly so slotted content is rendered before focusing.
+    requestAnimationFrame(() => target.focus());
+
+    const selector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    function onKeydown(event: KeyboardEvent) {
+      if (event.key !== "Tab") return;
+      const focusables = Array.from(
+        node.querySelectorAll<HTMLElement>(selector),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    node.addEventListener("keydown", onKeydown);
+    return {
+      destroy() {
+        node.removeEventListener("keydown", onKeydown);
+        trigger?.focus?.();
+      },
+    };
   }
 </script>
 
@@ -48,12 +83,14 @@
 {#if isOpen}
   <div
     class="settings-overlay"
+    use:focusTrap
     on:click={(e) => {
       if (e.target === e.currentTarget) dispatch("close");
     }}
     role="dialog"
     aria-modal="true"
     aria-label={t("settings.title")}
+    tabindex="-1"
   >
     <div class="settings-panel">
       <HudPanel title={t("settings.title")} color="var(--hud-cyan)">

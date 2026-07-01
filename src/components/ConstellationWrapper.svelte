@@ -16,7 +16,7 @@
   import HudFrame from "@/components/hud/HudFrame.svelte";
   import GlitchText from "@/components/hud/GlitchText.svelte";
   import ViewHud from "./hud/ViewHud.svelte";
-  import { getCurrentView } from "@/lib/view/currentView";
+  import { getCurrentView, type ViewId } from "@/lib/view/currentView";
 
   export let lang: AppLocale = "en";
 
@@ -72,7 +72,10 @@
   }
   t = useTranslations(currentLang);
 
-  let currentView = getCurrentView(window.location.pathname) ?? "constellation";
+  let currentView: ViewId = "constellation";
+  if (typeof window !== 'undefined') {
+    currentView = getCurrentView(window.location.pathname) ?? "constellation";
+  }
   let scanlinesOn = true;
 
   // i18n helpers for constellation and star names — fall back to the

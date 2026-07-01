@@ -404,7 +404,7 @@
 
       <div slot="settings">
         {#if hasBarycenterOverlay}
-          <label class="hud-setting"><input type="checkbox" bind:checked={showBarycenterOverlay}> {showBarycenterOverlay ? t('controls.hideBarycenters') : t('controls.showBarycenters')}</label>
+          <label class="hud-setting"><input type="checkbox" bind:checked={showBarycenterOverlay}> {t('controls.showBarycenters')}</label>
         {/if}
         {#if isSceneReady}
           <OrbitSpeedControl {lang} {translations} />
