@@ -3,11 +3,13 @@
     import { GalaxyRenderer, localGalaxyData, type GalaxyConfig, type GalaxyEvents } from '@/lib/galaxy';
     import { planetarySystemRegistry } from '@/lib/planetary-system';
     import { routes, type AppLocale } from '@/i18n/routes';
+    import { getCurrentView } from '@/lib/view/currentView';
     import LoadingAnimation from '@/components/LoadingAnimation.svelte';
     import ErrorBoundary from '@/components/ErrorBoundary.svelte';
     import AccessibilityManager from '@/components/AccessibilityManager.svelte';
-    import HudButton from '@/components/hud/HudButton.svelte';
+    import ViewHud from '@/components/hud/ViewHud.svelte';
     import HudPanel from '@/components/hud/HudPanel.svelte';
+    import HudSearch from '@/components/hud/HudSearch.svelte';
 
     export let lang: AppLocale = 'en';
     export let translations: Record<string, string> = {};
@@ -39,6 +41,13 @@
         return !translated || translated === key ? system.description : translated;
     };
 
+    // Active view + nearby system search state
+    let currentView = getCurrentView(window.location.pathname) ?? 'galaxy';
+    let nearbyQuery = '';
+    $: nearbyResults = localGalaxyData.starSystems.filter((s) =>
+        systemName(s).toLowerCase().includes(nearbyQuery.toLowerCase())
+    );
+
     // Component state
     let container: HTMLElement;
     let renderer: GalaxyRenderer | null = null;
@@ -47,21 +56,19 @@
     let error: string | null = null;
     let isSceneReady = false;
     let loadingMessage = t('galaxy.loading');
-    
-    // UI state
-    let showHamburgerMenu = false;
-    let showControls = false;
-    let showSystemInfo = false;
+
+    // Dialog state
     let showSystemDialog = false;
     let selectedSystemId: string | null = null;
     let selectedSystemData: any = null;
-    
+
     // Configuration state
     let enableAnimations = true;
     let enableStarGlow = true;
     let enableStarLabels = true;
+    let enableDistanceLines = true;
     let maxRenderDistance = 50;
-    
+
     // Default configuration
     const defaultConfig: Partial<GalaxyConfig> = {
         enableControls: true,
@@ -78,7 +85,7 @@
         enableStarGlow: true,
         starGlowIntensity: 1.0,
     };
-    
+
     // Event handlers
     const events: GalaxyEvents = {
         onSystemLoad: () => {
@@ -94,18 +101,17 @@
         onStarSystemSelect: (system) => {
             selectedSystemId = system.id;
             selectedSystemData = system;
-            showSystemInfo = true;
             showSystemDialog = true;
         },
         onCameraChange: (position, zoom) => {
             // Handle camera changes if needed
         }
     };
-    
+
     // Initialize renderer
     async function initializeRenderer() {
         if (!container || renderer) return;
-        
+
         try {
             isLoading = true;
             error = null;
@@ -116,27 +122,27 @@
 
             loadingMessage = t('galaxy.loadingSystems');
             loadingProgress = 60;
-            
+
             await renderer.initialize(localGalaxyData);
-            
+
             // Handle window resize
             const handleResize = () => {
                 renderer?.onResize();
             };
             window.addEventListener('resize', handleResize);
-            
+
             // Cleanup function will remove the event listener
             return () => {
                 window.removeEventListener('resize', handleResize);
             };
-            
+
         } catch (err) {
             error = err instanceof Error ? err.message : t('error.unknown');
             isLoading = false;
             console.error('Failed to initialize galaxy renderer:', err);
         }
     }
-    
+
     // Cleanup renderer
     function cleanup() {
         if (renderer) {
@@ -144,37 +150,11 @@
             renderer = null;
         }
     }
-    
-    // Navigation handlers
-    const handleBackToMenu = () => {
-        window.location.href = routes.home(lang);
-    };
-    
-    const toggleHamburgerMenu = () => {
-        showHamburgerMenu = !showHamburgerMenu;
-        if (showHamburgerMenu) {
-            showControls = false;
-        }
-    };
-    
-    const toggleControls = () => {
-        showControls = !showControls;
-        if (showControls) {
-            showHamburgerMenu = false;
-        }
-    };
-    
-    const closeSystemInfo = () => {
-        showSystemInfo = false;
-        selectedSystemId = null;
-        selectedSystemData = null;
-    };
-    
+
     const closeSystemDialog = () => {
         showSystemDialog = false;
-        // Keep selectedSystemId and selectedSystemData for tooltip
     };
-    
+
     // Resolve the route-safe id for a given galaxy system id, mirroring the
     // mapping used by navigateToSystem so the CTA label stays in sync with
     // actual navigability.
@@ -197,77 +177,75 @@
             alert(`Detailed view for ${systemName(selectedSystemData) || systemId} is coming soon!`);
         }
     };
-    
+
     // Star system selection handlers
     const handleSystemSelect = (systemId: string) => {
         if (renderer) {
             renderer.focusOnStarSystem(systemId, true);
             renderer.highlightStarSystem(systemId, true);
-            
+
             // Find system data
             const systemData = localGalaxyData.starSystems.find(s => s.id === systemId);
             if (systemData) {
                 selectedSystemId = systemId;
                 selectedSystemData = systemData;
-                showSystemInfo = true;
                 showSystemDialog = true;
             }
         }
-        showHamburgerMenu = false;
     };
-    
+
     // Configuration change handlers
     const updateAnimations = () => {
         if (renderer) {
             renderer.updateConfig({ enableAnimations });
         }
     };
-    
+
     const updateStarGlow = () => {
         if (renderer) {
             renderer.updateConfig({ enableStarGlow });
         }
     };
-    
+
     const updateStarLabels = () => {
         if (renderer) {
             renderer.updateConfig({ enableStarLabels });
         }
     };
-    
+
     const updateRenderDistance = () => {
         if (renderer) {
             renderer.updateConfig({ maxRenderDistance });
         }
     };
-    
+
     // Reactive updates
     $: if (renderer) {
         updateAnimations();
     }
-    
+
     $: if (renderer) {
         updateStarGlow();
     }
-    
+
     $: if (renderer) {
         updateStarLabels();
     }
-    
+
     $: if (renderer) {
         updateRenderDistance();
     }
-    
+
     // Lifecycle
     onMount(async () => {
         const cleanupResize = await initializeRenderer();
         return cleanupResize;
     });
-    
+
     onDestroy(() => {
         cleanup();
     });
-    
+
     // Handle container changes
     $: if (container && !renderer) {
         initializeRenderer();
@@ -277,14 +255,14 @@
 <svelte:window on:resize={() => renderer?.onResize()} />
 
 <div class="galaxy-wrapper">
-        <div id="galaxy-renderer" class="galaxy-container" bind:this={container}>
+    <div id="galaxy-renderer" class="galaxy-container" bind:this={container}>
         {#if isLoading}
-            <LoadingAnimation 
-                progress={loadingProgress} 
-                message={loadingMessage} 
+            <LoadingAnimation
+                progress={loadingProgress}
+                message={loadingMessage}
             />
         {/if}
-        
+
         {#if error}
             <div class="error-overlay">
                 <div class="error-content">
@@ -299,144 +277,47 @@
     </div>
 
     {#if isSceneReady}
-        <!-- Hamburger Menu Button -->
-        <button class="hamburger-button" on:click={toggleHamburgerMenu} aria-label={t('nav.menu')}>
-            <div class="hamburger-line" class:active={showHamburgerMenu}></div>
-            <div class="hamburger-line" class:active={showHamburgerMenu}></div>
-            <div class="hamburger-line" class:active={showHamburgerMenu}></div>
-        </button>
-        
-        <!-- Controls Button -->
-        <button class="controls-button" on:click={toggleControls} aria-label={t('nav.controls')}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
-            </svg>
-        </button>
-        
-        <!-- Back Button -->
-        <div class="galaxy-back">
-            <HudButton bracket on:click={handleBackToMenu}>{t('controls.backToMenu')}</HudButton>
-        </div>
-        
-        <!-- Hamburger Menu -->
-        {#if showHamburgerMenu}
-            <div class="hamburger-menu">
-                <div class="menu-section">
-                    <h3>{t('galaxy.aboutTitle')}</h3>
-                    <p>{t('galaxy.aboutDescription')}</p>
-
-                    <h4>{t('galaxy.starSystems')}</h4>
-                    <div class="system-list">
-                        {#each localGalaxyData.starSystems as system}
-                            <button class="system-item" on:click={() => handleSystemSelect(system.id)}>
-                                <span class="system-name">{systemName(system)}</span>
-                                <span class="system-distance">{system.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
-                            </button>
+        <ViewHud currentView={currentView} {lang} translations={translations}>
+            <div slot="controls" class="galaxy-nearby">
+                <HudPanel title={t('galaxy.starSystems')}>
+                    <HudSearch bind:value={nearbyQuery} placeholder={t('explore.searchPlaceholder')} ariaLabel={t('explore.searchPlaceholder')} />
+                    <ul class="hud-list mt-2">
+                        {#each nearbyResults as system (system.id)}
+                            <li>
+                                <button type="button" class="hud-list-row" on:click={() => handleSystemSelect(system.id)}>
+                                    <span class="row-name">{systemName(system)}</span>
+                                    <span class="row-leader"></span>
+                                    <span class="row-count">{system.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
+                                </button>
+                            </li>
                         {/each}
-                    </div>
-
-                    <h4>{t('galaxy.navigationTips')}</h4>
-                    <ul class="tips-list">
-                        <li><strong>{t('galaxy.mouseTouch')}:</strong> {t('galaxy.dragToRotate')}</li>
-                        <li><strong>{t('galaxy.scrollPinch')}:</strong> {t('galaxy.zoomInOut')}</li>
-                        <li><strong>{t('galaxy.starSystems')}:</strong> {t('galaxy.clickToFocus')}</li>
-                        <li><strong>{t('nav.controls')}:</strong> {t('galaxy.useSettingsPanel')}</li>
                     </ul>
-                </div>
-            </div>
-        {/if}
-        
-        <!-- Controls Panel -->
-        {#if showControls}
-            <div class="controls-panel">
-                <HudPanel title={t('galaxy.controlsTitle')}>
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" bind:checked={enableAnimations}>
-                            {t('settings.enableAnimations')}
-                        </label>
-                    </div>
-
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" bind:checked={enableStarGlow}>
-                            {t('galaxy.starGlowEffects')}
-                        </label>
-                    </div>
-
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" bind:checked={enableStarLabels}>
-                            {t('galaxy.starSystemLabels')}
-                        </label>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="distance-slider">{t('galaxy.maxRenderDistance')}</label>
-                        <input
-                            type="range"
-                            id="distance-slider"
-                            min="10"
-                            max="100"
-                            bind:value={maxRenderDistance}
-                        >
-                        <span class="distance-value">{maxRenderDistance} {t('unit.lightYears')}</span>
-                    </div>
                 </HudPanel>
             </div>
-        {/if}
-        
-        <!-- System Info Tooltip -->
-        {#if showSystemInfo && selectedSystemData}
-            <div class="system-info-tooltip">
-                <HudPanel title={systemName(selectedSystemData)}>
-                    <button class="close-button" on:click={closeSystemInfo} aria-label={t('action.close')}>×</button>
-                    <p class="system-description">{systemDescription(selectedSystemData)}</p>
 
-                    <div class="system-details">
-                        <div class="detail-item">
-                            <strong>{t('galaxy.distance')}:</strong> {selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}
-                        </div>
-                        <div class="detail-item">
-                            <strong>{t('galaxy.systemType')}:</strong> {getSystemTypeLabel(selectedSystemData.systemType)}
-                        </div>
-                        {#if selectedSystemData.metadata.spectralClass}
-                            <div class="detail-item">
-                                <strong>{t('galaxy.spectralClass')}:</strong> {selectedSystemData.metadata.spectralClass}
-                            </div>
-                        {/if}
-                        {#if selectedSystemData.metadata.constellation}
-                            <div class="detail-item">
-                                <strong>{t('galaxy.constellation')}:</strong> {selectedSystemData.metadata.constellation}
-                            </div>
-                        {/if}
-                        <div class="detail-item">
-                            <strong>{t('galaxy.stars')}:</strong> {selectedSystemData.stars.length}
-                        </div>
-                        {#if selectedSystemData.metadata.hasExoplanets}
-                            <div class="detail-item">
-                                <strong>{t('galaxy.knownExoplanets')}:</strong> {selectedSystemData.metadata.numberOfPlanets ?? t('common.yes')}
-                            </div>
-                        {/if}
-                    </div>
-                </HudPanel>
+            <div slot="settings">
+                <label class="hud-setting"><input type="checkbox" bind:checked={enableAnimations}> {t('settings.enableAnimations')}</label>
+                <label class="hud-setting"><input type="checkbox" bind:checked={enableStarGlow}> {t('galaxy.starGlowEffects')}</label>
+                <label class="hud-setting"><input type="checkbox" bind:checked={enableStarLabels}> {t('galaxy.starSystemLabels')}</label>
+                <label class="hud-setting"><input type="checkbox" bind:checked={enableDistanceLines}> {t('galaxy.distanceLines')}</label>
+                <label class="hud-setting">
+                    {t('galaxy.maxRenderDistance')}
+                    <input type="range" min="10" max="100" bind:value={maxRenderDistance}>
+                    <span>{maxRenderDistance} {t('unit.lightYears')}</span>
+                </label>
             </div>
-        {/if}
-        
-        <!-- System Details Dialog -->
+        </ViewHud>
+
         {#if showSystemDialog && selectedSystemData}
-            <div class="system-dialog-overlay" on:click={closeSystemDialog}>
+            <div class="system-dialog-overlay" on:click={closeSystemDialog} role="dialog" aria-modal="true">
                 <div class="system-dialog" on:click|stopPropagation>
                     <div class="dialog-header">
                         <h2>{systemName(selectedSystemData)}</h2>
                         <button class="dialog-close-button" on:click={closeSystemDialog} aria-label={t('action.close')}>×</button>
                     </div>
-                    
                     <div class="dialog-content">
-                        <div class="system-overview">
-                            <p class="system-description-large">{systemDescription(selectedSystemData)}</p>
-                        </div>
-                        
+                        <p class="system-overview">{systemDescription(selectedSystemData)}</p>
+
                         <div class="system-stats-grid">
                             <div class="stat-card">
                                 <div class="stat-label">{t('galaxy.distanceFromEarth')}</div>
@@ -493,590 +374,44 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="dialog-actions">
-                        <button class="action-button secondary" on:click={closeSystemDialog}>
-                            {t('action.close')}
-                        </button>
-                        <button class="action-button primary" on:click={() => navigateToSystem(selectedSystemId!)}>
-                            {canExplore ? t('action.explore') : t('common.comingSoon')}
-                        </button>
+                        <button class="action-button secondary" on:click={closeSystemDialog}>{t('action.close')}</button>
+                        <button class="action-button primary" on:click={() => navigateToSystem(selectedSystemId!)}>{canExplore ? t('action.explore') : t('common.comingSoon')}</button>
                     </div>
                 </div>
             </div>
         {/if}
     {/if}
-    
-    <!-- Accessibility Manager -->
+
     <AccessibilityManager />
 </div>
 
 <style>
-    .galaxy-wrapper {
-        position: relative;
-        width: 100%;
-        height: 100vh;
-        overflow: hidden;
-        background: #000011;
-    }
-    
-    .galaxy-container {
-        width: 100%;
-        height: 100%;
-        position: relative;
-    }
-    
-    /* Loading and Error States */
-    .error-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 17, 0.9);
-        color: white;
-        z-index: 10;
-    }
-    
-    .error-content {
-        text-align: center;
-        max-width: 400px;
-        padding: 2rem;
-    }
-    
-    .error-content h3 {
-        color: #ff6b6b;
-        margin-bottom: 1rem;
-    }
-    
-    .error-content button {
-        background: #007acc;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-top: 1rem;
-    }
-    
-    /* UI Buttons */
-    .hamburger-button {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        width: 50px;
-        height: 50px;
-        background: color-mix(in srgb, var(--hud-void) 65%, transparent);
-        -webkit-backdrop-filter: blur(8px);
-        backdrop-filter: blur(8px);
-        border: 1px solid var(--hud-cyan-dim);
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        transition: all 0.3s ease;
-        z-index: 1000;
-    }
-
-    .hamburger-button:hover {
-        background: color-mix(in srgb, var(--hud-cyan) 12%, transparent);
-        border-color: var(--hud-cyan);
-        box-shadow: 0 0 8px color-mix(in srgb, var(--hud-cyan) 35%, transparent);
-    }
-
-    .hamburger-line {
-        width: 20px;
-        height: 2px;
-        background: var(--hud-cyan);
-        box-shadow: 0 0 4px var(--hud-cyan);
-        transition: all 0.3s ease;
-    }
-
-    .hamburger-line.active:nth-child(1) {
-        transform: rotate(45deg) translate(5px, 5px);
-    }
-
-    .hamburger-line.active:nth-child(2) {
-        opacity: 0;
-    }
-
-    .hamburger-line.active:nth-child(3) {
-        transform: rotate(-45deg) translate(7px, -6px);
-    }
-
-    .controls-button {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        background: color-mix(in srgb, var(--hud-void) 65%, transparent);
-        -webkit-backdrop-filter: blur(8px);
-        backdrop-filter: blur(8px);
-        border: 1px solid var(--hud-cyan-dim);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--hud-cyan);
-        text-shadow: 0 0 4px var(--hud-cyan);
-        transition: all 0.3s ease;
-        z-index: 1000;
-    }
-
-    .controls-button:hover {
-        background: color-mix(in srgb, var(--hud-cyan) 12%, transparent);
-        border-color: var(--hud-cyan);
-        box-shadow: 0 0 8px color-mix(in srgb, var(--hud-cyan) 35%, transparent);
-    }
-
-    .galaxy-back {
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
-        z-index: 1000;
-    }
-
-    /* Hamburger Menu */
-    .hamburger-menu {
-        position: absolute;
-        top: 80px;
-        left: 20px;
-        width: 350px;
-        max-height: calc(100vh - 120px);
-        background: rgba(0, 0, 0, 0.9);
-        border: 2px solid rgba(100, 181, 246, 0.3);
-        border-radius: 12px;
-        padding: 1.5rem;
-        overflow-y: auto;
-        z-index: 999;
-        color: white;
-    }
-    
-    .menu-section h3 {
-        color: #64b5f6;
-        margin-top: 0;
-        margin-bottom: 0.75rem;
-        font-size: 1.2rem;
-    }
-    
-    .menu-section h4 {
-        color: #64b5f6;
-        margin-top: 1.5rem;
-        margin-bottom: 0.5rem;
-        font-size: 1rem;
-    }
-    
-    .menu-section p {
-        color: #d0d0d0;
-        line-height: 1.5;
-        margin-bottom: 1rem;
-    }
-    
-    .system-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .system-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid #444;
-        border-radius: 6px;
-        padding: 0.75rem;
-        color: white;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    
-    .system-item:hover {
-        background: rgba(100, 181, 246, 0.2);
-        border-color: #64b5f6;
-    }
-    
-    .system-name {
-        font-weight: 500;
-    }
-    
-    .system-distance {
-        font-size: 0.85rem;
-        color: #b0b0b0;
-    }
-    
-    .tips-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .tips-list li {
-        color: #d0d0d0;
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-        line-height: 1.4;
-    }
-    
-    /* Controls Panel */
-    .controls-panel {
-        position: absolute;
-        top: 80px;
-        right: 20px;
-        width: 280px;
-        z-index: 999;
-        color: white;
-    }
-
-    .control-group {
-        margin-bottom: 1rem;
-    }
-    
-    .control-group label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-        color: #d0d0d0;
-    }
-    
-    .control-group input[type="checkbox"] {
-        accent-color: #64b5f6;
-    }
-    
-    .control-group input[type="range"] {
-        width: 100%;
-        margin: 0.5rem 0;
-        accent-color: #64b5f6;
-    }
-    
-    .distance-value {
-        font-size: 0.8rem;
-        color: #b0b0b0;
-        margin-left: 0.5rem;
-    }
-    
-    /* System Info Tooltip */
-    .system-info-tooltip {
-        position: absolute;
-        top: 20px;
-        right: 80px;
-        width: 320px;
-        z-index: 1001;
-        color: white;
-    }
-
-    .close-button {
-        position: absolute;
-        top: 10px;
-        right: 15px;
-        background: none;
-        border: none;
-        color: var(--hud-cyan-dim);
-        font-size: 1.5rem;
-        cursor: pointer;
-        padding: 0;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1;
-    }
-
-    .close-button:hover {
-        color: var(--hud-cyan);
-        text-shadow: 0 0 4px var(--hud-cyan);
-    }
-
-    .system-description {
-        color: #d0d0d0;
-        line-height: 1.5;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
-    }
-    
-    .system-details {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .detail-item {
-        font-size: 0.9rem;
-        color: #d0d0d0;
-    }
-    
-    .detail-item strong {
-        color: #64b5f6;
-    }
-    
-    /* System Details Dialog */
-    .system-dialog-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2000;
-        backdrop-filter: blur(2px);
-    }
-    
-    .system-dialog {
-        background: rgba(0, 0, 17, 0.95);
-        border: 2px solid rgba(100, 181, 246, 0.5);
-        border-radius: 16px;
-        width: 90vw;
-        max-width: 700px;
-        max-height: 85vh;
-        overflow-y: auto;
-        color: white;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    }
-    
-    .dialog-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid rgba(100, 181, 246, 0.2);
-    }
-    
-    .dialog-header h2 {
-        color: #64b5f6;
-        margin: 0;
-        font-size: 1.8rem;
-    }
-    
-    .dialog-close-button {
-        background: none;
-        border: none;
-        color: #999;
-        font-size: 2rem;
-        cursor: pointer;
-        padding: 0;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        transition: all 0.2s;
-    }
-    
-    .dialog-close-button:hover {
-        color: #64b5f6;
-        background: rgba(100, 181, 246, 0.1);
-    }
-    
-    .dialog-content {
-        padding: 2rem;
-    }
-    
-    .system-overview {
-        margin-bottom: 2rem;
-    }
-    
-    .system-description-large {
-        font-size: 1.1rem;
-        line-height: 1.6;
-        color: #d0d0d0;
-        margin: 0;
-    }
-    
-    .system-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-    
-    .stat-card {
-        background: rgba(100, 181, 246, 0.1);
-        border: 1px solid rgba(100, 181, 246, 0.2);
-        border-radius: 8px;
-        padding: 1rem;
-        text-align: center;
-    }
-    
-    .stat-label {
-        font-size: 0.9rem;
-        color: #b0b0b0;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-value {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #64b5f6;
-    }
-    
-    .additional-info {
-        margin-bottom: 1.5rem;
-    }
-    
-    .additional-info h4 {
-        color: #64b5f6;
-        margin-bottom: 0.5rem;
-        font-size: 1.1rem;
-    }
-    
-    .additional-info p {
-        color: #d0d0d0;
-        margin: 0;
-    }
-    
-    .star-details h4 {
-        color: #64b5f6;
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
-    }
-    
-    .stars-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-    
-    .star-card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid #444;
-        border-radius: 8px;
-        padding: 1rem;
-    }
-    
-    .star-name {
-        font-weight: 600;
-        color: #64b5f6;
-        margin-bottom: 0.5rem;
-    }
-    
-    .star-type,
-    .star-temp,
-    .star-mass {
-        font-size: 0.9rem;
-        color: #d0d0d0;
-        margin-bottom: 0.25rem;
-    }
-    
-    .dialog-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-        padding: 1.5rem 2rem;
-        border-top: 1px solid rgba(100, 181, 246, 0.2);
-    }
-    
-    .action-button {
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-size: 1rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 2px solid transparent;
-    }
-    
-    .action-button.secondary {
-        background: transparent;
-        color: #d0d0d0;
-        border-color: #666;
-    }
-    
-    .action-button.secondary:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: #64b5f6;
-        color: white;
-    }
-    
-    .action-button.primary {
-        background: linear-gradient(135deg, #64b5f6, #42a5f5);
-        color: white;
-        border: none;
-    }
-    
-    .action-button.primary:hover {
-        background: linear-gradient(135deg, #42a5f5, #1e88e5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(100, 181, 246, 0.3);
-    }
-    
-    .action-button.primary:disabled {
-        background: #666;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-    
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .hamburger-menu,
-        .controls-panel {
-            width: calc(100vw - 40px);
-            left: 20px;
-            right: 20px;
-        }
-        
-        .system-info-tooltip {
-            width: calc(100vw - 40px);
-            left: 20px;
-            right: 20px;
-            top: 80px;
-        }
-        
-        .controls-button {
-            top: 80px;
-            right: 20px;
-        }
-        
-        /* Dialog responsive styles */
-        .system-dialog {
-            width: 95vw;
-            max-height: 90vh;
-        }
-        
-        .dialog-header {
-            padding: 1rem 1.5rem;
-        }
-        
-        .dialog-header h2 {
-            font-size: 1.4rem;
-        }
-        
-        .dialog-content {
-            padding: 1.5rem;
-        }
-        
-        .system-stats-grid {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 0.75rem;
-        }
-        
-        .stars-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .dialog-actions {
-            padding: 1rem 1.5rem;
-            flex-direction: column-reverse;
-        }
-        
-        .action-button {
-            width: 100%;
-            justify-content: center;
-        }
-    }
+    .galaxy-wrapper { position: relative; width: 100%; height: 100vh; overflow: hidden; background: #000011; }
+    .galaxy-container { width: 100%; height: 100%; position: relative; }
+    .galaxy-nearby { width: min(340px, 90vw); max-height: 60vh; overflow-y: auto; }
+    .hud-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    .hud-list-row {
+        display: flex; align-items: center; gap: 8px; width: 100%;
+        background: transparent; border: 1px solid transparent; color: rgba(255,255,255,0.8);
+        padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; text-align: left;
+    }
+    .hud-list-row:hover { border-color: var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
+    .row-name { white-space: nowrap; }
+    .row-leader { flex: 1; border-bottom: 1px dotted rgba(0,240,255,0.3); }
+    .row-count { font-size: 11px; opacity: 0.8; }
+    .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
+    .hud-setting input[type="range"] { flex: 1; }
+    .system-dialog-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.8); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; }
+    .system-dialog { background: rgba(0,0,17,0.95); border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 12px; width: min(700px, 90vw); max-height: 85vh; overflow-y: auto; padding: 20px; color: #e0f7ff; }
+    .dialog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dialog-header h2 { margin: 0; color: var(--hud-cyan, #00f0ff); }
+    .dialog-close-button { background: transparent; border: none; color: var(--hud-cyan, #00f0ff); font-size: 24px; cursor: pointer; }
+    .dialog-content { display: flex; flex-direction: column; gap: 12px; }
+    .system-overview { margin: 0; color: rgba(255,255,255,0.85); line-height: 1.5; }
+    .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+    .action-button { padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; letter-spacing: 0.08em; }
+    .action-button.secondary { background: transparent; border: 1px solid var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
+    .action-button.primary { background: var(--hud-cyan, #00f0ff); border: 1px solid var(--hud-cyan, #00f0ff); color: #001011; }
+    .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
