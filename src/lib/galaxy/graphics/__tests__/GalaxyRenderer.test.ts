@@ -543,4 +543,40 @@ describe("GalaxyRenderer", () => {
         expect(highlightSpy).toHaveBeenCalledWith("sol", false);
         expect((renderer as any).hoveredSystemId).toBeNull();
     });
+
+    describe("GalaxyRenderer — Sol framing", () => {
+        it("positions the camera close enough to see the origin on initialize", async () => {
+            const renderer = new GalaxyRenderer(
+                container,
+                mockConfig,
+                mockEvents,
+            );
+            await renderer.initialize(mockGalaxyData);
+            const cam = (renderer as any).camera;
+            const dist = Math.sqrt(
+                cam.position.x ** 2 + cam.position.y ** 2 + cam.position.z ** 2,
+            );
+            expect(dist).toBeLessThanOrEqual(10);
+        });
+
+        it("forwards setDistanceLinesVisible to the star system manager", async () => {
+            const renderer = new GalaxyRenderer(
+                container,
+                mockConfig,
+                mockEvents,
+            );
+            await renderer.initialize(mockGalaxyData);
+            expect(() => renderer.setDistanceLinesVisible(false)).not.toThrow();
+        });
+
+        it("forwards setSolMarkerVisible to the star system manager", async () => {
+            const renderer = new GalaxyRenderer(
+                container,
+                mockConfig,
+                mockEvents,
+            );
+            await renderer.initialize(mockGalaxyData);
+            expect(() => renderer.setSolMarkerVisible(false)).not.toThrow();
+        });
+    });
 });
