@@ -216,6 +216,34 @@ export function isConstellationVisible(
 }
 
 /**
+ * Cardinal direction i18n keys, indexed by the 8-point compass rose in
+ * clockwise order starting at North. Kept in sync with the `compass.*`
+ * keys defined in src/i18n/{en,zh,ja}.ts.
+ */
+export const COMPASS_DIRECTION_KEYS = [
+    "compass.n",
+    "compass.ne",
+    "compass.e",
+    "compass.se",
+    "compass.s",
+    "compass.sw",
+    "compass.w",
+    "compass.nw",
+] as const;
+
+/**
+ * Map a camera azimuth in degrees [0, 360) to the i18n key of the nearest
+ * 8-point cardinal direction. Values exactly on a boundary (e.g. 0, 45,
+ * 90) round to that cardinal; 360 wraps to North. Returns a translation
+ * key (e.g. "compass.ne") so callers can localize the result.
+ */
+export function azimuthToCardinalKey(deg: number): string {
+    const normalized = ((deg % 360) + 360) % 360;
+    const index = Math.round(normalized / 45) % 8;
+    return COMPASS_DIRECTION_KEYS[index];
+}
+
+/**
  * Format coordinates for display
  */
 export function formatCoordinates(ra: number, dec: number): string {

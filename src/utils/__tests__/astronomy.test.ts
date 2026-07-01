@@ -7,6 +7,8 @@ import {
     formatCoordinates,
     isConstellationVisible,
     getCurrentLocation,
+    azimuthToCardinalKey,
+    COMPASS_DIRECTION_KEYS,
 } from "../astronomy";
 import type { LocationData } from "../../types/constellation";
 
@@ -249,6 +251,51 @@ describe("astronomy", () => {
             await expect(getCurrentLocation()).rejects.toThrow(
                 "Geolocation error: User denied",
             );
+        });
+    });
+
+    describe("azimuthToCardinalKey", () => {
+        // Expected mapping at the 8 cardinal boundaries and midpoints.
+        const expected: Array<[number, string]> = [
+            [0, "compass.n"],
+            [22.5, "compass.ne"],
+            [45, "compass.ne"],
+            [67.5, "compass.e"],
+            [90, "compass.e"],
+            [112.5, "compass.se"],
+            [135, "compass.se"],
+            [157.5, "compass.s"],
+            [180, "compass.s"],
+            [202.5, "compass.sw"],
+            [225, "compass.sw"],
+            [247.5, "compass.w"],
+            [270, "compass.w"],
+            [292.5, "compass.nw"],
+            [315, "compass.nw"],
+            [337.5, "compass.n"],
+        ];
+
+        it.each(expected)("maps azimuth %f° to %s", (deg, key) => {
+            expect(azimuthToCardinalKey(deg)).toBe(key);
+        });
+
+        it("wraps 360° back to North", () => {
+            expect(azimuthToCardinalKey(360)).toBe("compass.n");
+            expect(azimuthToCardinalKey(359.9)).toBe("compass.n");
+        });
+
+        it("wraps negative azimuthes into [0,360)", () => {
+            expect(azimuthToCardinalKey(-1)).toBe("compass.n");
+            expect(azimuthToCardinalKey(-45)).toBe("compass.nw");
+            expect(azimuthToCardinalKey(-90)).toBe("compass.w");
+        });
+
+        it("only returns keys that exist in the compass key set", () => {
+            for (let deg = 0; deg < 360; deg += 1) {
+                expect(COMPASS_DIRECTION_KEYS).toContain(
+                    azimuthToCardinalKey(deg),
+                );
+            }
         });
     });
 });

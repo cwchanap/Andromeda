@@ -457,6 +457,14 @@ export class GalaxyRenderer {
     }
 
     /**
+     * Forward the user's reduced-motion preference to the star system manager,
+     * which freezes the Sol ring pulse when enabled.
+     */
+    setReducedMotion(reduced: boolean): void {
+        this.starSystemManager?.setReducedMotion(reduced);
+    }
+
+    /**
      * Get current camera state
      */
     getCameraState(): GalaxyCameraState {

@@ -6,7 +6,7 @@
   import Button from "@/components/ui/Button.svelte";
   import { ConstellationRenderer } from "@/lib/constellation/ConstellationRenderer";
   import { constellations, getVisibleConstellations } from "@/data/constellations";
-  import { getCurrentLocation, isConstellationVisible, formatCoordinates, celestialToSphere } from "@/utils/astronomy";
+  import { getCurrentLocation, isConstellationVisible, formatCoordinates, celestialToSphere, azimuthToCardinalKey } from "@/utils/astronomy";
   import type { ConstellationViewState, SkyConfiguration, LocationData } from "@/types/constellation";
   import ScanLines from "@/components/hud/ScanLines.svelte";
   import HudReticle from "@/components/hud/HudReticle.svelte";
@@ -58,13 +58,12 @@
   // Cached world-space center for selected constellation (recomputed on selection change)
   let selectedCenter: { x: number; y: number; z: number } | null = null;
 
-  // Compass readout — camera azimuth in degrees, updated each HUD tick
+  // Compass readout — camera azimuth in degrees, updated each HUD tick.
+  // Cardinal direction is localized via the compass.* i18n keys; the degree
+  // readout is wrapped to [0,360) so a value of 359.5°+ never displays as "360°".
   let facingDeg = 0;
-  $: facingCardinal = facingDegToCardinal(facingDeg);
-  function facingDegToCardinal(deg: number): string {
-    const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-    return dirs[Math.round(deg / 45) % 8];
-  }
+  $: facingCardinal = t(azimuthToCardinalKey(facingDeg));
+  $: facingDegDisplay = Math.round(((facingDeg % 360) + 360) % 360);
 
   // Initialize translations
   if (typeof window !== 'undefined') {
@@ -77,6 +76,21 @@
     currentView = getCurrentView(window.location.pathname) ?? "constellation";
   }
   let scanlinesOn = true;
+  // Settings toggles wired to the renderer. Defaults match the skyConfig
+  // passed to initialize() (showStarNames=true → labels on; auto-rotate off).
+  let labelsOn = true;
+  let autoRotateOn = false;
+  // Reduced-motion preference — disables auto-rotate per WCAG §2.3.3.
+  let reducedMotion = false;
+  if (typeof window !== 'undefined') {
+    reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+  }
+  // Push toggle state to the renderer whenever it (or the renderer) changes.
+  $: if (renderer) {
+    renderer.setLabelsVisible(labelsOn);
+    renderer.setAutoRotate(autoRotateOn && !reducedMotion);
+    renderer.setReducedMotion(reducedMotion);
+  }
 
   // i18n helpers for constellation and star names — fall back to the
   // hardcoded data values when no translation key exists (e.g. English).
@@ -502,7 +516,7 @@
             <!-- Compass / orientation readout -->
             <div class="compass-readout">
               <span class="compass-label">{t('constellation.compass')}</span>
-              <span class="compass-value">{facingCardinal} ({Math.round(facingDeg)}°)</span>
+              <span class="compass-value">{facingCardinal} ({facingDegDisplay}°)</span>
             </div>
             <p class="view-from-earth">{t('constellation.viewFromEarth')}</p>
 
@@ -592,6 +606,14 @@
       <label class="hud-setting">
         <input type="checkbox" bind:checked={scanlinesOn} />
         {t('constellation.scanlines')}
+      </label>
+      <label class="hud-setting">
+        <input type="checkbox" bind:checked={labelsOn} />
+        {t('constellation.labels')}
+      </label>
+      <label class="hud-setting" class:is-disabled={reducedMotion}>
+        <input type="checkbox" bind:checked={autoRotateOn} disabled={reducedMotion} />
+        {t('constellation.autoRotate')}
       </label>
     </div>
   </ViewHud>
@@ -798,4 +820,7 @@
     color: var(--hud-cyan, #00f0ff);
     opacity: 0.8;
   }
+
+  .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
+  .hud-setting.is-disabled { opacity: 0.5; }
 </style>

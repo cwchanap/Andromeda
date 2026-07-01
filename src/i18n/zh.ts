@@ -47,10 +47,20 @@ export const zh = {
     // Galaxy position indicator (used by Plan 2)
     "galaxy.solMarkerLabel": "太阳系 · 你在这里",
     "galaxy.distanceLines": "距离线",
+    "galaxy.selectedSystem": "所选系统",
+    "galaxy.noSelection": "未选择系统",
 
     // Constellation orientation indicator (used by Plan 2)
     "constellation.viewFromEarth": "从地球观看",
     "constellation.compass": "朝向",
+    "compass.n": "北",
+    "compass.ne": "东北",
+    "compass.e": "东",
+    "compass.se": "东南",
+    "compass.s": "南",
+    "compass.sw": "西南",
+    "compass.w": "西",
+    "compass.nw": "西北",
 
     // HUD search / explore / finder
     "explore.title": "恒星系统",
@@ -426,6 +436,8 @@ export const zh = {
     "constellation.panelOff": "面板 关",
     "constellation.dragInstructions": "等待目标 — 拖拽以定位",
     "constellation.scanlines": "扫描线",
+    "constellation.labels": "恒星与星座标签",
+    "constellation.autoRotate": "自动旋转",
 
     // Constellation names
     "constellations.ursa_major.name": "大熊座",
