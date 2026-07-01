@@ -505,7 +505,7 @@ export const en = {
     "galaxy.useSettingsPanel": "Use the settings panel to adjust visuals",
     "galaxy.controlsTitle": "Galaxy Controls",
     "galaxy.starGlowEffects": "Star Glow Effects",
-    "galaxy.starSystemLabels": "Star System Labels",
+    "galaxy.solLabel": "Sol Label",
     "galaxy.maxRenderDistance": "Max Render Distance:",
     "galaxy.distance": "Distance",
     "galaxy.systemType": "System Type",

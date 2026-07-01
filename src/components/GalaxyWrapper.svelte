@@ -10,6 +10,7 @@
     import ViewHud from '@/components/hud/ViewHud.svelte';
     import HudPanel from '@/components/hud/HudPanel.svelte';
     import HudSearch from '@/components/hud/HudSearch.svelte';
+    import { focusTrap } from '@/lib/hud/focusTrap';
 
     export let lang: AppLocale = 'en';
     export let translations: Record<string, string> = {};
@@ -147,6 +148,11 @@
         showSystemDialog = false;
     };
 
+    // Escape closes the system dialog (mirrors SettingsPanel's pattern).
+    function handleDialogKeydown(event: KeyboardEvent) {
+        if (showSystemDialog && event.key === 'Escape') closeSystemDialog();
+    }
+
     // Resolve the route-safe id for a given galaxy system id, mirroring the
     // mapping used by navigateToSystem so the CTA label stays in sync with
     // actual navigability.
@@ -211,24 +217,16 @@
         }
     };
 
-    // Reactive updates
+    // Reactive updates — push all config toggles to the renderer in one
+    // reactive block so a single state change doesn't trigger N redundant
+    // updateConfig calls.
     $: if (renderer) {
         updateAnimations();
-    }
-
-    $: if (renderer) {
         updateStarGlow();
-    }
-
-    $: if (renderer) {
         updateStarLabels();
-    }
-
-    $: if (renderer) {
         updateRenderDistance();
+        renderer.setDistanceLinesVisible(enableDistanceLines);
     }
-
-    $: if (renderer) renderer.setDistanceLinesVisible(enableDistanceLines);
     // Star labels toggle only the Sol marker label, not the whole marker group.
     $: if (renderer) renderer.setSolLabelVisible(enableStarLabels);
     // Reduced-motion preference freezes the Sol ring pulse per the spec.
@@ -253,7 +251,7 @@
     }
 </script>
 
-<svelte:window on:resize={() => renderer?.onResize()} />
+<svelte:window on:resize={() => renderer?.onResize()} on:keydown={handleDialogKeydown} />
 
 <div class="galaxy-wrapper">
     <div id="galaxy-renderer" class="galaxy-container" bind:this={container}>
@@ -317,7 +315,7 @@
             <div slot="settings">
                 <label class="hud-setting"><input type="checkbox" bind:checked={enableAnimations}> {t('settings.enableAnimations')}</label>
                 <label class="hud-setting"><input type="checkbox" bind:checked={enableStarGlow}> {t('galaxy.starGlowEffects')}</label>
-                <label class="hud-setting"><input type="checkbox" bind:checked={enableStarLabels}> {t('galaxy.starSystemLabels')}</label>
+                <label class="hud-setting"><input type="checkbox" bind:checked={enableStarLabels}> {t('galaxy.solLabel')}</label>
                 <label class="hud-setting"><input type="checkbox" bind:checked={enableDistanceLines}> {t('galaxy.distanceLines')}</label>
                 <label class="hud-setting">
                     {t('galaxy.maxRenderDistance')}
@@ -328,7 +326,15 @@
         </ViewHud>
 
         {#if showSystemDialog && selectedSystemData}
-            <div class="system-dialog-overlay" on:click={closeSystemDialog} role="dialog" aria-modal="true">
+            <div
+                class="system-dialog-overlay"
+                use:focusTrap={".dialog-close-button"}
+                on:click={closeSystemDialog}
+                role="dialog"
+                aria-modal="true"
+                aria-label={systemName(selectedSystemData)}
+                tabindex="-1"
+            >
                 <div class="system-dialog" on:click|stopPropagation>
                     <div class="dialog-header">
                         <h2>{systemName(selectedSystemData)}</h2>

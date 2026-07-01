@@ -13,6 +13,7 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         tweenCameraTo: vi.fn(),
         worldToScreen: vi.fn(() => ({ x: 0, y: 0, visible: false })),
         getCameraAzimuth: vi.fn(() => 0),
+        getCameraElevation: vi.fn(() => 0),
         setLabelsVisible: vi.fn(),
         setAutoRotate: vi.fn(),
         setAutoRotateSpeed: vi.fn(),

@@ -1685,5 +1685,21 @@ describe("ConstellationRenderer", () => {
             renderer.dispose();
             container.remove();
         });
+
+        it("getCameraElevation returns a degree value within the clamp range", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const el = renderer.getCameraElevation();
+            // cameraRotationX is clamped to ±π/2.2 ≈ ±81.8°.
+            expect(el).toBeGreaterThanOrEqual(-82);
+            expect(el).toBeLessThanOrEqual(82);
+            renderer.dispose();
+            container.remove();
+        });
     });
 });

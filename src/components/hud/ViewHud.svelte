@@ -116,9 +116,4 @@
     bottom: 16px;
     right: 16px;
   }
-  @media (max-width: 768px) {
-    .hud-top-center {
-      display: none;
-    }
-  }
 </style>

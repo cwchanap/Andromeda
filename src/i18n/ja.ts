@@ -642,7 +642,7 @@ export const ja = {
     "galaxy.useSettingsPanel": "設定パネルを使用して視覚効果を調整",
     "galaxy.controlsTitle": "銀河のコントロール",
     "galaxy.starGlowEffects": "星のグロー効果",
-    "galaxy.starSystemLabels": "恒星系ラベル",
+    "galaxy.solLabel": "Sol ラベル",
     "galaxy.maxRenderDistance": "最大レンダリング距離:",
     "galaxy.distance": "距離",
     "galaxy.systemType": "システムタイプ",

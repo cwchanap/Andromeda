@@ -58,12 +58,16 @@
   // Cached world-space center for selected constellation (recomputed on selection change)
   let selectedCenter: { x: number; y: number; z: number } | null = null;
 
-  // Compass readout — camera azimuth in degrees, updated each HUD tick.
-  // Cardinal direction is localized via the compass.* i18n keys; the degree
-  // readout is wrapped to [0,360) so a value of 359.5°+ never displays as "360°".
+  // Compass readout — camera azimuth + elevation in degrees, updated each
+  // HUD tick. Cardinal direction is localized via the compass.* i18n keys;
+  // the azimuth readout is wrapped to [0,360) so 359.5°+ never shows as "360°".
+  // Elevation (pitch) is shown with a sign so up/down is unambiguous even when
+  // the azimuth becomes less meaningful near the pitch clamp (±~82°).
   let facingDeg = 0;
+  let facingElev = 0;
   $: facingCardinal = t(azimuthToCardinalKey(facingDeg));
   $: facingDegDisplay = Math.round(((facingDeg % 360) + 360) % 360);
+  $: facingElevDisplay = `${facingElev >= 0 ? "+" : ""}${Math.round(facingElev)}°`;
 
   // Initialize translations
   if (typeof window !== 'undefined') {
@@ -251,7 +255,10 @@
         } else {
           lockedPos = null;
         }
-        if (renderer) facingDeg = renderer.getCameraAzimuth();
+        if (renderer) {
+          facingDeg = renderer.getCameraAzimuth();
+          facingElev = renderer.getCameraElevation();
+        }
         hudRafId = requestAnimationFrame(tickHud);
       };
       tickHud();
@@ -516,7 +523,7 @@
             <!-- Compass / orientation readout -->
             <div class="compass-readout">
               <span class="compass-label">{t('constellation.compass')}</span>
-              <span class="compass-value">{facingCardinal} ({facingDegDisplay}°)</span>
+              <span class="compass-value">{facingCardinal} ({facingDegDisplay}°) {facingElevDisplay}</span>
             </div>
             <p class="view-from-earth">{t('constellation.viewFromEarth')}</p>
 
