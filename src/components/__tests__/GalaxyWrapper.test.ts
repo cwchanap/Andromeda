@@ -86,37 +86,29 @@ describe("GalaxyWrapper", () => {
         expect(mockInstance?.initialize).toHaveBeenCalled();
     });
 
-    it("shows hamburger button after scene ready", async () => {
+    it("shows shared HUD chrome after scene ready", async () => {
         const { container } = render(GalaxyWrapper);
         await new Promise((r) => setTimeout(r, 50));
 
-        expect(container.querySelector(".hamburger-button")).not.toBeNull();
+        expect(container.querySelector(".view-hud")).not.toBeNull();
     });
 
-    it("toggles hamburger menu on click", async () => {
+    it("shows nearby-systems search after scene ready", async () => {
         const { container } = render(GalaxyWrapper);
         await new Promise((r) => setTimeout(r, 50));
 
-        const hamburger = container.querySelector(
-            ".hamburger-button",
-        ) as HTMLElement;
-        expect(hamburger).not.toBeNull();
-        await fireEvent.click(hamburger);
-        await fireEvent.click(hamburger);
-        expect(container.firstElementChild).not.toBeNull();
+        expect(container.querySelector(".galaxy-nearby")).not.toBeNull();
     });
 
-    it("toggles controls panel on click", async () => {
+    it("renders settings panel structure", async () => {
         const { container } = render(GalaxyWrapper);
         await new Promise((r) => setTimeout(r, 50));
 
-        const controlsBtn = container.querySelector(
-            ".controls-button",
-        ) as HTMLElement;
-        expect(controlsBtn).not.toBeNull();
-        await fireEvent.click(controlsBtn);
-        await fireEvent.click(controlsBtn);
-        expect(container.firstElementChild).not.toBeNull();
+        // ViewHud is present with its corner chrome (back + settings buttons)
+        expect(container.querySelector(".view-hud")).not.toBeNull();
+        expect(
+            container.querySelector(".hud-top-right .hud-btn"),
+        ).not.toBeNull();
     });
 
     it("unmounts cleanly", () => {
@@ -219,11 +211,11 @@ describe("GalaxyWrapper – event callbacks", () => {
         const { container } = render(GalaxyWrapper);
         await new Promise((r) => setTimeout(r, 50));
 
-        // The system info tooltip should appear
-        expect(container.querySelector(".system-info-tooltip")).not.toBeNull();
+        // The system dialog should appear
+        expect(container.querySelector(".system-dialog")).not.toBeNull();
     });
 
-    it("closeSystemInfo hides the tooltip", async () => {
+    it("closeSystemDialog hides the dialog", async () => {
         const mockSystem = {
             id: "solar-system",
             name: "Solar System",
@@ -253,10 +245,10 @@ describe("GalaxyWrapper – event callbacks", () => {
         await new Promise((r) => setTimeout(r, 50));
 
         const closeBtn = container.querySelector(
-            ".system-info-tooltip .close-button",
+            ".system-dialog .dialog-close-button",
         ) as HTMLElement;
         expect(closeBtn).not.toBeNull();
         await fireEvent.click(closeBtn);
-        expect(container.querySelector(".system-info-tooltip")).toBeNull();
+        expect(container.querySelector(".system-dialog")).toBeNull();
     });
 });
