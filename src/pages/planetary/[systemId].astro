@@ -1,7 +1,6 @@
 ---
 import GlobalStyles from "@/components/GlobalStyles.astro";
 import PlanetarySystemWrapper from "@/components/PlanetarySystemWrapper.svelte";
-import GlobalLanguageSelector from "@/components/GlobalLanguageSelector.svelte";
 import { planetarySystemRegistry } from "@/lib/planetary-system";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import { routes } from "@/i18n/routes";
@@ -33,8 +32,6 @@ const title =
   </head>
 
   <body>
-    <GlobalLanguageSelector client:only="svelte" />
-
     <div id="planetary-system-container">
       <PlanetarySystemWrapper
         systemId={systemId}
