@@ -258,7 +258,7 @@ describe("PlanetarySystemWrapper", () => {
     });
 
     it("shows a barycenter overlay toggle for systems with orbit anchors", async () => {
-        const { getByRole } = render(PlanetarySystemWrapper, {
+        const { getByRole, getByLabelText } = render(PlanetarySystemWrapper, {
             props: {
                 systemId: "alpha-centauri",
                 translations: mockTranslations,
@@ -266,14 +266,17 @@ describe("PlanetarySystemWrapper", () => {
         });
 
         await waitFor(() =>
-            expect(
-                getByRole("button", { name: t("controls.showBarycenters") }),
-            ).toBeTruthy(),
+            expect(getByRole("button", { name: "nav.settings" })).toBeTruthy(),
+        );
+        await fireEvent.click(getByRole("button", { name: "nav.settings" }));
+
+        await waitFor(() =>
+            expect(getByLabelText(t("controls.showBarycenters"))).toBeTruthy(),
         );
     });
 
     it("toggles barycenter overlay visibility through the renderer", async () => {
-        const { getByRole } = render(PlanetarySystemWrapper, {
+        const { getByRole, getByLabelText } = render(PlanetarySystemWrapper, {
             props: {
                 systemId: "alpha-centauri",
                 translations: mockTranslations,
@@ -281,25 +284,24 @@ describe("PlanetarySystemWrapper", () => {
         });
 
         await waitFor(() =>
-            expect(
-                getByRole("button", { name: t("controls.showBarycenters") }),
-            ).toBeTruthy(),
+            expect(getByRole("button", { name: "nav.settings" })).toBeTruthy(),
+        );
+        await fireEvent.click(getByRole("button", { name: "nav.settings" }));
+
+        const checkbox = await waitFor(() =>
+            getByLabelText(t("controls.showBarycenters")),
         );
 
         const mockInstance = (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mock.results[0]?.value;
 
-        await fireEvent.click(
-            getByRole("button", { name: t("controls.showBarycenters") }),
-        );
+        await fireEvent.click(checkbox);
 
         expect(mockInstance.setBarycenterOverlayVisible).toHaveBeenCalledWith(
             true,
         );
-        expect(
-            getByRole("button", { name: t("controls.hideBarycenters") }),
-        ).toBeTruthy();
+        expect(getByLabelText(t("controls.hideBarycenters"))).toBeTruthy();
     });
 });
 
