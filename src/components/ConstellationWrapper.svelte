@@ -15,6 +15,8 @@
   import BootSequence from "@/components/hud/BootSequence.svelte";
   import HudFrame from "@/components/hud/HudFrame.svelte";
   import GlitchText from "@/components/hud/GlitchText.svelte";
+  import ViewHud from "./hud/ViewHud.svelte";
+  import { getCurrentView } from "@/lib/view/currentView";
 
   export let lang: AppLocale = "en";
 
@@ -44,7 +46,6 @@
   };
 
   // UI state
-  let showControls = true;
   let showDragInstructions = true;
 
   // HUD state
@@ -57,11 +58,22 @@
   // Cached world-space center for selected constellation (recomputed on selection change)
   let selectedCenter: { x: number; y: number; z: number } | null = null;
 
+  // Compass readout — camera azimuth in degrees, updated each HUD tick
+  let facingDeg = 0;
+  $: facingCardinal = facingDegToCardinal(facingDeg);
+  function facingDegToCardinal(deg: number): string {
+    const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    return dirs[Math.round(deg / 45) % 8];
+  }
+
   // Initialize translations
   if (typeof window !== 'undefined') {
     currentLang = getLangFromUrl(new URL(window.location.href));
   }
   t = useTranslations(currentLang);
+
+  let currentView = getCurrentView(window.location.pathname) ?? "constellation";
+  let scanlinesOn = true;
 
   // i18n helpers for constellation and star names — fall back to the
   // hardcoded data values when no translation key exists (e.g. English).
@@ -222,6 +234,7 @@
         } else {
           lockedPos = null;
         }
+        if (renderer) facingDeg = renderer.getCameraAzimuth();
         hudRafId = requestAnimationFrame(tickHud);
       };
       tickHud();
@@ -269,10 +282,6 @@
 
   const handleBackToMenu = () => {
     window.location.href = routes.home(currentLang);
-  };
-
-  const handleToggleControls = () => {
-    showControls = !showControls;
   };
 
   const handleSelectConstellation = (constellationId: string) => {
@@ -458,32 +467,131 @@
 </script>
 
 <div class="constellation-view">
-  <!-- Back button -->
-  <div class="absolute top-4 left-4 z-20">
-    <HudFrame color="var(--hud-cyan)" bracketLength={12}>
-      <button
-        type="button"
-        class="hud-btn"
-        on:click={handleBackToMenu}
-      >
-        <span class="hud-btn-bracket">&lt;</span> {t('constellation.return')}
-      </button>
-    </HudFrame>
-  </div>
+  <ViewHud currentView={currentView} lang={currentLang} translations={{}}>
+    <div slot="controls" class="hud-panel-anim">
+      {#if !loading && !error}
+        <HudFrame color="var(--hud-cyan)" bracketLength={18} glow={true}>
+          <div class="hud-panel">
+            <div class="hud-panel-header">
+              <h3 class="hud-panel-title">{t('constellation.title')}</h3>
+              <span class="hud-panel-tick"></span>
+            </div>
 
-  <!-- Controls toggle -->
-  <div class="absolute top-16 right-4 z-20">
-    <HudFrame color="var(--hud-cyan)" bracketLength={12}>
-      <button
-        type="button"
-        class="hud-btn"
-        aria-pressed={showControls}
-        on:click={handleToggleControls}
-      >
-        {showControls ? t('constellation.panelOff') : t('constellation.panelOn')}
-      </button>
-    </HudFrame>
-  </div>
+            <!-- Location/time HUD readout -->
+            <div class="hud-readout">
+              <div class="readout-row">
+                <span class="readout-label">{t('constellation.geoLock')}</span>
+                <span class="readout-blink" data-state={viewState.locationPermissionGranted ? "live" : "fallback"}></span>
+                <span class="readout-value">
+                  {#if viewState.skyConfig}
+                    {Math.abs(viewState.skyConfig.location.latitude).toFixed(4)}°{viewState.skyConfig.location.latitude >= 0 ? "N" : "S"}
+                    {Math.abs(viewState.skyConfig.location.longitude).toFixed(4)}°{viewState.skyConfig.location.longitude >= 0 ? "E" : "W"}
+                  {/if}
+                </span>
+              </div>
+              <div class="readout-row">
+                <span class="readout-label">{t('constellation.utc')}</span>
+                <span></span>
+                <span class="readout-value">{utcReadout}</span>
+              </div>
+            </div>
+
+            <!-- Compass / orientation readout -->
+            <div class="compass-readout">
+              <span class="compass-label">{t('constellation.compass')}</span>
+              <span class="compass-value">{facingCardinal} ({Math.round(facingDeg)}°)</span>
+            </div>
+            <p class="view-from-earth">{t('constellation.viewFromEarth')}</p>
+
+            <!-- Visible constellations -->
+            <div>
+              <h4 class="hud-section-label">{t('constellation.visible')}</h4>
+              <ul class="hud-list" aria-label={t('constellation.visible')}>
+                {#each viewState.visibleConstellations as constellationId}
+                  {#each constellations.filter(c => c.id === constellationId) as constellation}
+                    <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
+                      <button
+                        type="button"
+                        class="hud-list-row"
+                        class:is-selected={viewState.selectedConstellation === constellation.id}
+                        on:click={() => handleSelectConstellation(constellation.id)}
+                        data-constellation-id={constellation.id}
+                      >
+                        <span class="row-abbr">[{constellation.abbreviation}]</span>
+                        <span class="row-name">{constellationName(constellation)}</span>
+                        <span class="row-leader"></span>
+                        <span class="row-count">{constellation.stars.length}★ <span class="sr-only">{t('constellation.stars')}</span></span>
+                      </button>
+                    </li>
+                  {/each}
+                {/each}
+              </ul>
+            </div>
+
+            <!-- Selected constellation info -->
+            {#if viewState.selectedConstellation}
+              {#each constellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
+                <div class="hud-details">
+                  <div class="hud-divider">
+                    <span class="hud-divider-diamond"></span>
+                  </div>
+                  <h4 class="hud-details-name">
+                    <GlitchText text={constellationName(constellation).toUpperCase()} />
+                  </h4>
+                  <p class="hud-details-desc">{constellationDescription(constellation)}</p>
+                  {#if constellation.mythology}
+                    <p class="hud-details-myth">// {constellationMythology(constellation)}</p>
+                  {/if}
+                  <div class="hud-month-strip" aria-label="{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
+                    <span class="sr-only">{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}</span>
+                    {#each Array(12) as _, m}
+                      <div
+                        class="month-cell"
+                        class:is-best={constellation.visibility.bestMonths.includes(m + 1)}
+                        title={new Date(2000, m).toLocaleDateString(currentLang, { month: "short" })}
+                      ></div>
+                    {/each}
+                  </div>
+                </div>
+              {/each}
+            {/if}
+          </div>
+        </HudFrame>
+      {/if}
+    </div>
+
+    <div slot="overlay">
+      {#if scanlinesOn}
+        <ScanLines />
+      {/if}
+      {#if hoveredConstellationId && hoverPos}
+        <HudReticle x={hoverPos.x} y={hoverPos.y} state="hover"
+          label={constellations.find(c => c.id === hoveredConstellationId)?.abbreviation ?? ""} />
+      {/if}
+      {#if hoverStarPos}
+        <HudCallout
+          x={hoverStarPos.x}
+          y={hoverStarPos.y}
+          title={hoverStarPos.name}
+          lines={[`${t('constellation.mag')} ${hoverStarPos.magnitude.toFixed(2)}`]}
+        />
+      {/if}
+      {#if selectedId && lockedPos && lockedPos.visible}
+        <TargetLockOverlay
+          x={lockedPos.x}
+          y={lockedPos.y}
+          name={constellations.find(c => c.id === selectedId) ? constellationName(constellations.find(c => c.id === selectedId)!) : ""}
+        />
+      {/if}
+    </div>
+
+    <div slot="settings">
+      <label class="hud-setting">
+        <input type="checkbox" bind:checked={scanlinesOn} />
+        {t('constellation.scanlines')}
+      </label>
+    </div>
+  </ViewHud>
 
   <!-- Loading/Error overlay -->
   {#if loading}
@@ -550,120 +658,10 @@
     </div>
   {/if}
 
-  <!-- Controls panel -->
-  {#if showControls && !loading && !error}
-    <div class="absolute top-28 right-4 z-20 w-80 hud-panel-anim">
-      <HudFrame color="var(--hud-cyan)" bracketLength={18} glow={true}>
-        <div class="hud-panel">
-          <div class="hud-panel-header">
-            <h3 class="hud-panel-title">{t('constellation.title')}</h3>
-            <span class="hud-panel-tick"></span>
-          </div>
-
-          <!-- Location/time HUD readout -->
-          <div class="hud-readout">
-            <div class="readout-row">
-              <span class="readout-label">{t('constellation.geoLock')}</span>
-              <span class="readout-blink" data-state={viewState.locationPermissionGranted ? "live" : "fallback"}></span>
-              <span class="readout-value">
-                {#if viewState.skyConfig}
-                  {Math.abs(viewState.skyConfig.location.latitude).toFixed(4)}°{viewState.skyConfig.location.latitude >= 0 ? "N" : "S"}
-                  {Math.abs(viewState.skyConfig.location.longitude).toFixed(4)}°{viewState.skyConfig.location.longitude >= 0 ? "E" : "W"}
-                {/if}
-              </span>
-            </div>
-            <div class="readout-row">
-              <span class="readout-label">{t('constellation.utc')}</span>
-              <span></span>
-              <span class="readout-value">{utcReadout}</span>
-            </div>
-          </div>
-
-          <!-- Visible constellations -->
-          <div>
-            <h4 class="hud-section-label">{t('constellation.visible')}</h4>
-            <ul class="hud-list" aria-label={t('constellation.visible')}>
-              {#each viewState.visibleConstellations as constellationId}
-                {#each constellations.filter(c => c.id === constellationId) as constellation}
-                  <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
-                    <button
-                      type="button"
-                      class="hud-list-row"
-                      class:is-selected={viewState.selectedConstellation === constellation.id}
-                      on:click={() => handleSelectConstellation(constellation.id)}
-                      data-constellation-id={constellation.id}
-                    >
-                      <span class="row-abbr">[{constellation.abbreviation}]</span>
-                      <span class="row-name">{constellationName(constellation)}</span>
-                      <span class="row-leader"></span>
-                      <span class="row-count">{constellation.stars.length}★ <span class="sr-only">{t('constellation.stars')}</span></span>
-                    </button>
-                  </li>
-                {/each}
-              {/each}
-            </ul>
-          </div>
-
-          <!-- Selected constellation info -->
-          {#if viewState.selectedConstellation}
-            {#each constellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
-              <div class="hud-details">
-                <div class="hud-divider">
-                  <span class="hud-divider-diamond"></span>
-                </div>
-                <h4 class="hud-details-name">
-                  <GlitchText text={constellationName(constellation).toUpperCase()} />
-                </h4>
-                <p class="hud-details-desc">{constellationDescription(constellation)}</p>
-                {#if constellation.mythology}
-                  <p class="hud-details-myth">// {constellationMythology(constellation)}</p>
-                {/if}
-                <div class="hud-month-strip" aria-label="{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
-                  <span class="sr-only">{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}</span>
-                  {#each Array(12) as _, m}
-                    <div
-                      class="month-cell"
-                      class:is-best={constellation.visibility.bestMonths.includes(m + 1)}
-                      title={new Date(2000, m).toLocaleDateString(currentLang, { month: "short" })}
-                    ></div>
-                  {/each}
-                </div>
-              </div>
-            {/each}
-          {/if}
-        </div>
-      </HudFrame>
-    </div>
-  {/if}
-
   <!-- Main Content Area -->
   <div class="constellation-main-content">
     <!-- 3D Container (background) -->
     <div bind:this={container} class="constellation-container"></div>
-
-    <!-- HUD overlay layer (z-index: 5) -->
-    <div class="hud-layer" aria-hidden="true">
-      <ScanLines />
-      {#if hoveredConstellationId && hoverPos}
-        <HudReticle x={hoverPos.x} y={hoverPos.y} state="hover"
-          label={constellations.find(c => c.id === hoveredConstellationId)?.abbreviation ?? ""} />
-      {/if}
-      {#if hoverStarPos}
-        <HudCallout
-          x={hoverStarPos.x}
-          y={hoverStarPos.y}
-          title={hoverStarPos.name}
-          lines={[`${t('constellation.mag')} ${hoverStarPos.magnitude.toFixed(2)}`]}
-        />
-      {/if}
-      {#if selectedId && lockedPos && lockedPos.visible}
-        <TargetLockOverlay
-          x={lockedPos.x}
-          y={lockedPos.y}
-          name={constellations.find(c => c.id === selectedId) ? constellationName(constellations.find(c => c.id === selectedId)!) : ""}
-        />
-      {/if}
-    </div>
   </div>
 </div>
 
@@ -694,14 +692,6 @@
 
   .constellation-container:active {
     cursor: grabbing;
-  }
-
-  .hud-layer {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    pointer-events: none;
-    overflow: hidden;
   }
 
   .hud-drag-card {
@@ -785,5 +775,24 @@
     align-items: center;
     gap: 8px;
     padding: 2px 0;
+  }
+
+  .compass-readout {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 8px;
+  }
+  .compass-label {
+    letter-spacing: 0.2em;
+    color: var(--hud-cyan, #00f0ff);
+  }
+  .view-from-earth {
+    margin: 4px 0 0;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--hud-cyan, #00f0ff);
+    opacity: 0.8;
   }
 </style>

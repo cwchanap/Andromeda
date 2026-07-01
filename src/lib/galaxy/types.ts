@@ -62,6 +62,7 @@ export interface GalaxyConfig {
     enableBloom: boolean;
     enableStarGlow: boolean;
     starGlowIntensity: number;
+    solMarkerLabel: string;
 }
 
 /**

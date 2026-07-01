@@ -25,6 +25,7 @@ describe("GalaxySceneManager", () => {
             enableBloom: false,
             enableStarGlow: true,
             starGlowIntensity: 1.0,
+            solMarkerLabel: "SOL · YOU ARE HERE",
         };
 
         // Reset mocks

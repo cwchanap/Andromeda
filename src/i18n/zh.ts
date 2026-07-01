@@ -37,6 +37,21 @@ export const zh = {
     "controls.showBarycenters": "显示质心",
     "controls.hideBarycenters": "隐藏质心",
 
+    // View switcher (shared HUD)
+    "viewSwitcher.label": "视图",
+    "viewSwitcher.star": "恒星",
+    "viewSwitcher.galaxy": "星系",
+    "viewSwitcher.constellation": "星座",
+    "settings.language": "语言",
+
+    // Galaxy position indicator (used by Plan 2)
+    "galaxy.solMarkerLabel": "太阳系 · 你在这里",
+    "galaxy.distanceLines": "距离线",
+
+    // Constellation orientation indicator (used by Plan 2)
+    "constellation.viewFromEarth": "从地球观看",
+    "constellation.compass": "朝向",
+
     // HUD search / explore / finder
     "explore.title": "恒星系统",
     "explore.searchPlaceholder": "搜索系统…",
@@ -410,6 +425,7 @@ export const zh = {
     "constellation.panelOn": "面板 开",
     "constellation.panelOff": "面板 关",
     "constellation.dragInstructions": "等待目标 — 拖拽以定位",
+    "constellation.scanlines": "扫描线",
 
     // Constellation names
     "constellations.ursa_major.name": "大熊座",

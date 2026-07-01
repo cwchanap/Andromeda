@@ -68,6 +68,7 @@ export class GalaxyRenderer {
             enableBloom: false,
             enableStarGlow: true,
             starGlowIntensity: 1.0,
+            solMarkerLabel: "SOL · YOU ARE HERE",
             ...config,
         };
 
@@ -123,7 +124,7 @@ export class GalaxyRenderer {
             await this.starSystemManager.initialize(galaxyData.starSystems);
 
             // Position camera for good initial view
-            this.camera.position.set(10, 10, 10);
+            this.camera.position.set(6, 4, 6);
             this.camera.lookAt(0, 0, 0);
             this.controls.update();
 
@@ -165,7 +166,7 @@ export class GalaxyRenderer {
      * Setup camera configuration
      */
     private setupCamera(): void {
-        this.camera.position.set(10, 10, 10);
+        this.camera.position.set(6, 4, 6);
         this.camera.lookAt(0, 0, 0);
         this.camera.near = 0.1;
         this.camera.far = 1000;
@@ -432,6 +433,20 @@ export class GalaxyRenderer {
      */
     highlightStarSystem(systemId: string, highlight = true): void {
         this.starSystemManager.highlightStarSystem(systemId, highlight);
+    }
+
+    /**
+     * Toggle distance line indicators visibility
+     */
+    setDistanceLinesVisible(visible: boolean): void {
+        this.starSystemManager?.setDistanceLinesVisible(visible);
+    }
+
+    /**
+     * Toggle Sol marker visibility
+     */
+    setSolMarkerVisible(visible: boolean): void {
+        this.starSystemManager?.setSolMarkerVisible(visible);
     }
 
     /**

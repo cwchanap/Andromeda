@@ -1,7 +1,6 @@
 ---
 import ConstellationWrapper from "../components/ConstellationWrapper.svelte";
 import GlobalStyles from "../components/GlobalStyles.astro";
-import GlobalLanguageSelector from "../components/GlobalLanguageSelector.svelte";
 import { getLangFromUrl, useTranslations } from "../i18n/utils";
 
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
@@ -20,9 +19,6 @@ const t = useTranslations(lang);
   </head>
 
   <body>
-    <!-- Global Language Selector -->
-    <GlobalLanguageSelector client:load />
-
     <div id="constellation-container">
       <ConstellationWrapper {lang} client:only="svelte" />
     </div>

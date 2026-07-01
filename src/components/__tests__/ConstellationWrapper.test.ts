@@ -12,6 +12,7 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         setHovered: vi.fn(),
         tweenCameraTo: vi.fn(),
         worldToScreen: vi.fn(() => ({ x: 0, y: 0, visible: false })),
+        getCameraAzimuth: vi.fn(() => 0),
     };
     return {
         ConstellationRenderer: vi.fn().mockImplementation(() => mockRenderer),
