@@ -42,7 +42,7 @@ Two related usability issues across the three main 3D views:
 
 ## Section 1 — Shared HUD shell & corner conventions
 
-A new `ViewHud.svelte` becomes the single owner of the consistent chrome. It wraps each page's 3D canvas and exposes **named snippets** (Svelte 5) for view-specific content. The three wrappers stop hand-rolling their own corners and instead mount inside this shell.
+A new `ViewHud.svelte` becomes the single owner of the consistent chrome. It wraps each page's 3D canvas and exposes **named slots** (Svelte 4 legacy `<slot name="...">` syntax — the codebase uses Svelte 4 conventions throughout: `export let`, `on:click`, `createEventDispatcher`, `$:`) for view-specific content. The three wrappers stop hand-rolling their own corners and instead mount inside this shell.
 
 ### Fixed chrome owned by `ViewHud.svelte` (identical on all 3 views)
 
