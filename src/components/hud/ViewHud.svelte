@@ -13,7 +13,9 @@
   export let lang: AppLocale = "en";
   export let translations: Record<string, string> = {};
 
-  let t: Translate =
+  let t: Translate;
+  // Reactive: recompute when lang or translations change.
+  $: t =
     translations && Object.keys(translations).length
       ? (key) => translations[key] || key
       : (useTranslations(lang) as Translate);

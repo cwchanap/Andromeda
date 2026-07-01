@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/svelte";
+import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import GalaxyWrapper from "@/components/GalaxyWrapper.svelte";
 import { GalaxyRenderer } from "@/lib/galaxy";
 
@@ -22,6 +22,8 @@ vi.mock("@/lib/galaxy", () => {
         updateConfig: vi.fn(),
         setDistanceLinesVisible: vi.fn(),
         setSolMarkerVisible: vi.fn(),
+        setSolLabelVisible: vi.fn(),
+        setStarGlowVisible: vi.fn(),
     };
 
     return {
@@ -75,39 +77,37 @@ describe("GalaxyWrapper", () => {
 
     it("constructs GalaxyRenderer on mount", async () => {
         render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
-        expect(GalaxyRenderer).toHaveBeenCalled();
+        await waitFor(() => expect(GalaxyRenderer).toHaveBeenCalled());
     });
 
     it("calls initialize on GalaxyRenderer", async () => {
         render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
-
         const mockInstance = (GalaxyRenderer as ReturnType<typeof vi.fn>).mock
             .results[0]?.value;
-        expect(mockInstance?.initialize).toHaveBeenCalled();
+        await waitFor(() =>
+            expect(mockInstance?.initialize).toHaveBeenCalled(),
+        );
     });
 
     it("shows shared HUD chrome after scene ready", async () => {
         const { container } = render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
-
-        expect(container.querySelector(".view-hud")).not.toBeNull();
+        await waitFor(() =>
+            expect(container.querySelector(".view-hud")).not.toBeNull(),
+        );
     });
 
     it("shows nearby-systems search after scene ready", async () => {
         const { container } = render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
-
-        expect(container.querySelector(".galaxy-nearby")).not.toBeNull();
+        await waitFor(() =>
+            expect(container.querySelector(".galaxy-nearby")).not.toBeNull(),
+        );
     });
 
     it("renders settings panel structure", async () => {
         const { container } = render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
-
-        // ViewHud is present with its corner chrome (back + settings buttons)
-        expect(container.querySelector(".view-hud")).not.toBeNull();
+        await waitFor(() =>
+            expect(container.querySelector(".view-hud")).not.toBeNull(),
+        );
         expect(
             container.querySelector(".hud-top-right .hud-btn"),
         ).not.toBeNull();
@@ -120,13 +120,11 @@ describe("GalaxyWrapper", () => {
 
     it("calls dispose on GalaxyRenderer during destroy", async () => {
         const { unmount } = render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
-
+        await waitFor(() => expect(GalaxyRenderer).toHaveBeenCalled());
         unmount();
-
         const mockInstance = (GalaxyRenderer as ReturnType<typeof vi.fn>).mock
             .results[0]?.value;
-        expect(mockInstance?.dispose).toHaveBeenCalled();
+        await waitFor(() => expect(mockInstance?.dispose).toHaveBeenCalled());
     });
 });
 
@@ -147,6 +145,8 @@ describe("GalaxyWrapper – event callbacks", () => {
             updateConfig: vi.fn(),
             setDistanceLinesVisible: vi.fn(),
             setSolMarkerVisible: vi.fn(),
+            setSolLabelVisible: vi.fn(),
+            setStarGlowVisible: vi.fn(),
         };
     }
 
@@ -162,9 +162,9 @@ describe("GalaxyWrapper – event callbacks", () => {
         );
 
         const { container } = render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
-
-        expect(container.querySelector(".error-overlay")).not.toBeNull();
+        await waitFor(() =>
+            expect(container.querySelector(".error-overlay")).not.toBeNull(),
+        );
     });
 
     it("does not call onClose when onError fires (no crash)", async () => {
@@ -179,10 +179,8 @@ describe("GalaxyWrapper – event callbacks", () => {
         );
 
         const { container } = render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
-
         // Component should still be mounted
-        expect(container.firstElementChild).not.toBeNull();
+        await waitFor(() => expect(container.firstElementChild).not.toBeNull());
     });
 
     it("fires onStarSystemSelect callback without throwing", async () => {
@@ -213,10 +211,10 @@ describe("GalaxyWrapper – event callbacks", () => {
         );
 
         const { container } = render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
-
         // The system dialog should appear
-        expect(container.querySelector(".system-dialog")).not.toBeNull();
+        await waitFor(() =>
+            expect(container.querySelector(".system-dialog")).not.toBeNull(),
+        );
     });
 
     it("closeSystemDialog hides the dialog", async () => {
@@ -246,13 +244,17 @@ describe("GalaxyWrapper – event callbacks", () => {
         );
 
         const { container } = render(GalaxyWrapper);
-        await new Promise((r) => setTimeout(r, 50));
+        await waitFor(() =>
+            expect(container.querySelector(".system-dialog")).not.toBeNull(),
+        );
 
         const closeBtn = container.querySelector(
             ".system-dialog .dialog-close-button",
         ) as HTMLElement;
         expect(closeBtn).not.toBeNull();
         await fireEvent.click(closeBtn);
-        expect(container.querySelector(".system-dialog")).toBeNull();
+        await waitFor(() =>
+            expect(container.querySelector(".system-dialog")).toBeNull(),
+        );
     });
 });

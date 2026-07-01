@@ -266,9 +266,11 @@ describe("PlanetarySystemWrapper", () => {
         });
 
         await waitFor(() =>
-            expect(getByRole("button", { name: "nav.settings" })).toBeTruthy(),
+            expect(
+                getByRole("button", { name: t("nav.settings") }),
+            ).toBeTruthy(),
         );
-        await fireEvent.click(getByRole("button", { name: "nav.settings" }));
+        await fireEvent.click(getByRole("button", { name: t("nav.settings") }));
 
         await waitFor(() =>
             expect(getByLabelText(t("controls.showBarycenters"))).toBeTruthy(),
@@ -284,9 +286,11 @@ describe("PlanetarySystemWrapper", () => {
         });
 
         await waitFor(() =>
-            expect(getByRole("button", { name: "nav.settings" })).toBeTruthy(),
+            expect(
+                getByRole("button", { name: t("nav.settings") }),
+            ).toBeTruthy(),
         );
-        await fireEvent.click(getByRole("button", { name: "nav.settings" }));
+        await fireEvent.click(getByRole("button", { name: t("nav.settings") }));
 
         const checkbox = await waitFor(() =>
             getByLabelText(t("controls.showBarycenters")),
@@ -301,7 +305,11 @@ describe("PlanetarySystemWrapper", () => {
         expect(mockInstance.setBarycenterOverlayVisible).toHaveBeenCalledWith(
             true,
         );
-        expect(getByLabelText(t("controls.hideBarycenters"))).toBeTruthy();
+        // Label stays stable ("Show barycenters"); the checkbox state conveys on/off.
+        expect(
+            (getByLabelText(t("controls.showBarycenters")) as HTMLInputElement)
+                .checked,
+        ).toBe(true);
     });
 });
 

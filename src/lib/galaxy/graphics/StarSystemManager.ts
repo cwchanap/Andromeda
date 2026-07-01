@@ -122,6 +122,25 @@ export class StarSystemManager {
     }
 
     /**
+     * Set visibility of the Sol origin marker label only (the core/ring
+     * marker stays visible). Falls back to no-op when no label was created.
+     */
+    setSolLabelVisible(visible: boolean): void {
+        if (!this.solMarkerGroup) return;
+        const label = this.solMarkerGroup.getObjectByName("sol-marker-label");
+        if (label) label.visible = visible;
+    }
+
+    /**
+     * Set visibility of all star glow halos at runtime.
+     */
+    setStarGlowVisible(visible: boolean): void {
+        this.glowMeshes.forEach((mesh) => {
+            mesh.visible = visible;
+        });
+    }
+
+    /**
      * Create distance lines from origin to every star system
      */
     private createDistanceLines(
@@ -402,8 +421,16 @@ export class StarSystemManager {
                 const mesh = obj as THREE.Mesh;
                 if (mesh.geometry) mesh.geometry.dispose();
                 const mat = mesh.material as THREE.Material | THREE.Material[];
-                if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
-                else if (mat) mat.dispose();
+                const disposeMaterial = (m: THREE.Material) => {
+                    // Sprite materials carry a CanvasTexture map that is not
+                    // auto-disposed by material.dispose() — release it
+                    // explicitly to avoid a texture leak on the Sol label.
+                    const spriteMat = m as THREE.SpriteMaterial;
+                    if (spriteMat.map) spriteMat.map.dispose();
+                    m.dispose();
+                };
+                if (Array.isArray(mat)) mat.forEach(disposeMaterial);
+                else if (mat) disposeMaterial(mat);
             });
             this.scene.remove(this.solMarkerGroup);
             this.solMarkerGroup = null;

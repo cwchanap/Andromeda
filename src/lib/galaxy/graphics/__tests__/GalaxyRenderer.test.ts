@@ -566,7 +566,10 @@ describe("GalaxyRenderer", () => {
                 mockEvents,
             );
             await renderer.initialize(mockGalaxyData);
-            expect(() => renderer.setDistanceLinesVisible(false)).not.toThrow();
+            const ssm = (renderer as any).starSystemManager;
+            const spy = vi.spyOn(ssm, "setDistanceLinesVisible");
+            renderer.setDistanceLinesVisible(false);
+            expect(spy).toHaveBeenCalledWith(false);
         });
 
         it("forwards setSolMarkerVisible to the star system manager", async () => {
@@ -576,7 +579,10 @@ describe("GalaxyRenderer", () => {
                 mockEvents,
             );
             await renderer.initialize(mockGalaxyData);
-            expect(() => renderer.setSolMarkerVisible(false)).not.toThrow();
+            const ssm = (renderer as any).starSystemManager;
+            const spy = vi.spyOn(ssm, "setSolMarkerVisible");
+            renderer.setSolMarkerVisible(false);
+            expect(spy).toHaveBeenCalledWith(false);
         });
     });
 });

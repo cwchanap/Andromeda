@@ -9,7 +9,9 @@
   export let lang: AppLocale = "en";
   export let translations: Record<string, string> = {};
 
-  let t = translations && Object.keys(translations).length
+  let t: (key: string) => string;
+  // Reactive: recompute when lang or translations change.
+  $: t = translations && Object.keys(translations).length
     ? (key: string) => translations[key] || key
     : useTranslations(lang);
 
@@ -18,19 +20,38 @@
     { view: "galaxy", key: "viewSwitcher.galaxy", go: () => { window.location.href = routes.galaxy(lang); } },
     { view: "constellation", key: "viewSwitcher.constellation", go: () => { window.location.href = routes.constellation(lang); } },
   ];
+
+  // WAI-ARIA Tabs keyboard model: roving tabindex + arrow-key activation.
+  function onTabKeydown(event: KeyboardEvent, index: number) {
+    const handled = ["ArrowRight", "ArrowLeft", "Home", "End"];
+    if (!handled.includes(event.key)) return;
+    event.preventDefault();
+    let next = index;
+    if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+    else if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = tabs.length - 1;
+    const tablist = (event.currentTarget as HTMLElement).parentElement;
+    const buttons = tablist?.querySelectorAll<HTMLButtonElement>(
+      'button[role="tab"]',
+    );
+    buttons?.[next]?.focus();
+    tabs[next].go();
+  }
 </script>
 
 <div class="view-switcher" role="tablist" aria-label={t("viewSwitcher.label")}>
   <span class="vs-label">{t("viewSwitcher.label")}</span>
-  {#each tabs as tab (tab.view)}
+  {#each tabs as tab, i (tab.view)}
     <button
       type="button"
       role="tab"
       aria-selected={currentView === tab.view}
       class="vs-tab"
       class:is-active={currentView === tab.view}
-      disabled={currentView === tab.view}
+      tabindex={currentView === tab.view ? 0 : -1}
       on:click={tab.go}
+      on:keydown={(e) => onTabKeydown(e, i)}
     >
       {t(tab.key)}
     </button>
