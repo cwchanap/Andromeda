@@ -22,6 +22,10 @@ export class StarSystemManager {
     // Mapping from star ID to system ID for efficient lookups
     private starToSystemMap = new Map<string, string>();
 
+    // Sol origin marker and distance lines
+    private solMarkerGroup: THREE.Group | null = null;
+    private distanceLines: THREE.LineSegments | null = null;
+
     constructor(scene: THREE.Scene, config: Required<GalaxyConfig>) {
         this.scene = scene;
         this.config = config;
@@ -34,6 +38,119 @@ export class StarSystemManager {
         for (const system of starSystems) {
             await this.createStarSystem(system);
         }
+
+        this.solMarkerGroup = this.createSolMarker();
+        this.scene.add(this.solMarkerGroup);
+
+        if (this.config.enableDistanceIndicators) {
+            this.distanceLines = this.createDistanceLines(starSystems);
+            this.scene.add(this.distanceLines);
+        }
+    }
+
+    /**
+     * Create the Sol origin marker (sphere + ring + optional label)
+     */
+    private createSolMarker(): THREE.Group {
+        const group = new THREE.Group();
+        group.name = "sol-marker";
+        group.position.set(0, 0, 0);
+
+        const core = new THREE.Mesh(
+            new THREE.SphereGeometry(0.35, 16, 16),
+            new THREE.MeshBasicMaterial({ color: "#7dd3fc" }),
+        );
+        core.name = "sol-marker-core";
+        group.add(core);
+
+        const ring = new THREE.Mesh(
+            new THREE.RingGeometry(0.6, 0.8, 32),
+            new THREE.MeshBasicMaterial({
+                color: "#00f0ff",
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8,
+            }),
+        );
+        ring.name = "sol-marker-ring";
+        group.add(ring);
+
+        if (this.config.enableStarLabels) {
+            group.add(this.createSolLabel(this.config.solMarkerLabel));
+        }
+
+        return group;
+    }
+
+    /**
+     * Create the Sol marker label sprite
+     */
+    private createSolLabel(text: string): THREE.Sprite {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d")!;
+        canvas.width = 256;
+        canvas.height = 64;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#7dd3fc";
+        ctx.font = "bold 24px Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "#7dd3fc";
+        ctx.shadowBlur = 10;
+        ctx.fillText(text, 128, 32);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        const sprite = new THREE.Sprite(
+            new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthWrite: false,
+            }),
+        );
+        sprite.position.set(0, 1.2, 0);
+        sprite.scale.set(3, 0.75, 1);
+        sprite.name = "sol-marker-label";
+        return sprite;
+    }
+
+    /**
+     * Set visibility of the Sol origin marker
+     */
+    setSolMarkerVisible(visible: boolean): void {
+        if (this.solMarkerGroup) this.solMarkerGroup.visible = visible;
+    }
+
+    /**
+     * Create distance lines from origin to every star system
+     */
+    private createDistanceLines(
+        starSystems: StarSystemData[],
+    ): THREE.LineSegments {
+        const positions: number[] = [];
+        starSystems.forEach((s) => {
+            positions.push(0, 0, 0, s.position.x, s.position.y, s.position.z);
+        });
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(positions, 3),
+        );
+        const material = new THREE.LineBasicMaterial({
+            color: 0x1b6b7a,
+            transparent: true,
+            opacity: 0.35,
+        });
+        const lines = new THREE.LineSegments(geometry, material);
+        lines.name = "sol-distance-lines";
+        return lines;
+    }
+
+    /**
+     * Set visibility of the distance lines
+     */
+    setDistanceLinesVisible(visible: boolean): void {
+        if (this.distanceLines) this.distanceLines.visible = visible;
     }
 
     /**
@@ -278,6 +395,27 @@ export class StarSystemManager {
         this.glowMaterials.forEach((material) => {
             material.dispose();
         });
+
+        // Dispose Sol origin marker
+        if (this.solMarkerGroup) {
+            this.solMarkerGroup.traverse((obj) => {
+                const mesh = obj as THREE.Mesh;
+                if (mesh.geometry) mesh.geometry.dispose();
+                const mat = mesh.material as THREE.Material | THREE.Material[];
+                if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+                else if (mat) mat.dispose();
+            });
+            this.scene.remove(this.solMarkerGroup);
+            this.solMarkerGroup = null;
+        }
+
+        // Dispose distance lines
+        if (this.distanceLines) {
+            this.distanceLines.geometry.dispose();
+            (this.distanceLines.material as THREE.Material).dispose();
+            this.scene.remove(this.distanceLines);
+            this.distanceLines = null;
+        }
 
         // Clear maps
         this.starSystemGroups.clear();

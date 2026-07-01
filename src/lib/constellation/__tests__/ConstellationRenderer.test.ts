@@ -1623,4 +1623,48 @@ describe("ConstellationRenderer", () => {
             expect(result.y).toBeGreaterThanOrEqual(0);
         });
     });
+
+    describe("ConstellationRenderer — orientation guides", () => {
+        it("adds a horizon ring on the y=0 plane", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const ring = (renderer as any).scene.children.find(
+                (c: any) => c.name === "horizon-ring",
+            );
+            expect(ring).toBeTruthy();
+            const attr = ring.geometry.getAttribute("position");
+            for (let i = 1; i < attr.count * 3; i += 3) {
+                expect(attr.array[i]).toBe(0);
+            }
+            renderer.dispose();
+            container.remove();
+        });
+
+        it("adds four cardinal labels N/E/S/W", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            const group = (renderer as any).scene.children.find(
+                (c: any) => c.name === "cardinal-labels",
+            );
+            expect(group).toBeTruthy();
+            const names = group.children.map((c: any) => c.name);
+            expect(names).toContain("cardinal-N");
+            expect(names).toContain("cardinal-E");
+            expect(names).toContain("cardinal-S");
+            expect(names).toContain("cardinal-W");
+            expect(group.children.length).toBe(4);
+            renderer.dispose();
+            container.remove();
+        });
+    });
 });

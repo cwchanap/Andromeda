@@ -26,6 +26,7 @@ describe("StarSystemManager", () => {
             enableBloom: false,
             enableStarGlow: true,
             starGlowIntensity: 1.0,
+            solMarkerLabel: "SOL · YOU ARE HERE",
         };
 
         mockStarSystemData = {
@@ -410,5 +411,230 @@ describe("StarSystemManager", () => {
         const stats = manager.getStats();
         expect(stats.systemCount).toBe(2);
         expect(stats.starCount).toBe(2);
+    });
+});
+
+describe("StarSystemManager — Sol marker", () => {
+    let scene: THREE.Scene;
+    let mockConfig: Required<GalaxyConfig>;
+    let mockStarSystemData: StarSystemData;
+
+    beforeEach(() => {
+        scene = new THREE.Scene();
+        mockConfig = {
+            enableControls: true,
+            enableAnimations: true,
+            enableMobileOptimization: false,
+            antialiasing: true,
+            performanceMode: "medium",
+            starFieldDensity: 1.0,
+            backgroundStarCount: 2000,
+            enableStarLabels: true,
+            enableDistanceIndicators: true,
+            maxRenderDistance: 50,
+            enableBloom: false,
+            enableStarGlow: true,
+            starGlowIntensity: 1.0,
+            solMarkerLabel: "SOL · YOU ARE HERE",
+        };
+
+        mockStarSystemData = {
+            id: "sol",
+            name: "Solar System",
+            description: "Our solar system",
+            systemType: "solar",
+            position: new THREE.Vector3(0, 0, 0),
+            distanceFromEarth: 0,
+            stars: [
+                {
+                    id: "sun",
+                    name: "Sun",
+                    type: "star",
+                    description: "The star at the center of our solar system",
+                    keyFacts: {
+                        diameter: "1,392,700 km",
+                        distanceFromSun: "0 km",
+                        orbitalPeriod: "N/A",
+                        composition: ["Hydrogen", "Helium"],
+                        temperature: "5,500°C",
+                    },
+                    images: ["/images/sun.jpg"],
+                    scale: 1.0,
+                    position: new THREE.Vector3(0, 0, 0),
+                    material: {
+                        color: "#FFFF00",
+                        emissive: "#444400",
+                    },
+                },
+            ],
+            metadata: {
+                spectralClass: "G2V",
+                hasExoplanets: true,
+                numberOfPlanets: 8,
+                habitableZone: true,
+            },
+            visual: {
+                brightness: 1.0,
+                colorIndex: 0.65,
+                scale: 1.0,
+                glowIntensity: 0.5,
+            },
+        };
+    });
+
+    it("adds a sol-marker group at the origin on initialize", async () => {
+        const manager = new StarSystemManager(scene, { ...mockConfig });
+        await manager.initialize([mockStarSystemData]);
+        const marker = scene.children.find((c: any) => c.name === "sol-marker");
+        expect(marker).toBeTruthy();
+        expect(marker!.position.x).toBe(0);
+        expect(marker!.position.y).toBe(0);
+        expect(marker!.position.z).toBe(0);
+        const core = (marker as any).children.find(
+            (c: any) => c.name === "sol-marker-core",
+        );
+        expect(core).toBeTruthy();
+    });
+
+    it("adds the localized label sprite only when enableStarLabels is true", async () => {
+        const sceneOn = new THREE.Scene();
+        const mgrOn = new StarSystemManager(sceneOn, {
+            ...mockConfig,
+            enableStarLabels: true,
+        });
+        await mgrOn.initialize([mockStarSystemData]);
+        const on = sceneOn.children.find((c: any) => c.name === "sol-marker");
+        const labelOn = (on as any).children.find(
+            (c: any) => c.name === "sol-marker-label",
+        );
+        expect(labelOn).toBeTruthy();
+
+        const sceneOff = new THREE.Scene();
+        const mgrOff = new StarSystemManager(sceneOff, {
+            ...mockConfig,
+            enableStarLabels: false,
+        });
+        await mgrOff.initialize([mockStarSystemData]);
+        const off = sceneOff.children.find((c: any) => c.name === "sol-marker");
+        const labelOff = (off as any).children.find(
+            (c: any) => c.name === "sol-marker-label",
+        );
+        expect(labelOff).toBeUndefined();
+    });
+
+    it("setSolMarkerVisible toggles the marker group visibility", async () => {
+        const manager = new StarSystemManager(scene, { ...mockConfig });
+        await manager.initialize([mockStarSystemData]);
+        manager.setSolMarkerVisible(false);
+        const marker = scene.children.find((c: any) => c.name === "sol-marker");
+        expect(marker!.visible).toBe(false);
+        manager.setSolMarkerVisible(true);
+        expect(marker!.visible).toBe(true);
+    });
+});
+
+describe("StarSystemManager — distance lines", () => {
+    let scene: THREE.Scene;
+    let mockConfig: Required<GalaxyConfig>;
+    let mockStarSystemData: StarSystemData;
+
+    beforeEach(() => {
+        scene = new THREE.Scene();
+        mockConfig = {
+            enableControls: true,
+            enableAnimations: true,
+            enableMobileOptimization: false,
+            antialiasing: true,
+            performanceMode: "medium",
+            starFieldDensity: 1.0,
+            backgroundStarCount: 2000,
+            enableStarLabels: true,
+            enableDistanceIndicators: true,
+            maxRenderDistance: 50,
+            enableBloom: false,
+            enableStarGlow: true,
+            starGlowIntensity: 1.0,
+            solMarkerLabel: "SOL · YOU ARE HERE",
+        };
+
+        mockStarSystemData = {
+            id: "sol",
+            name: "Solar System",
+            description: "Our solar system",
+            systemType: "solar",
+            position: new THREE.Vector3(0, 0, 0),
+            distanceFromEarth: 0,
+            stars: [
+                {
+                    id: "sun",
+                    name: "Sun",
+                    type: "star",
+                    description: "The star at the center of our solar system",
+                    keyFacts: {
+                        diameter: "1,392,700 km",
+                        distanceFromSun: "0 km",
+                        orbitalPeriod: "N/A",
+                        composition: ["Hydrogen", "Helium"],
+                        temperature: "5,500°C",
+                    },
+                    images: ["/images/sun.jpg"],
+                    scale: 1.0,
+                    position: new THREE.Vector3(0, 0, 0),
+                    material: {
+                        color: "#FFFF00",
+                        emissive: "#444400",
+                    },
+                },
+            ],
+            metadata: {
+                spectralClass: "G2V",
+                hasExoplanets: true,
+                numberOfPlanets: 8,
+                habitableZone: true,
+            },
+            visual: {
+                brightness: 1.0,
+                colorIndex: 0.65,
+                scale: 1.0,
+                glowIntensity: 0.5,
+            },
+        };
+    });
+
+    it("creates distance lines from origin to every system when enabled", async () => {
+        const manager = new StarSystemManager(scene, {
+            ...mockConfig,
+            enableDistanceIndicators: true,
+        });
+        await manager.initialize([mockStarSystemData]);
+        const lines = scene.children.find(
+            (c: any) => c.name === "sol-distance-lines",
+        );
+        expect(lines).toBeTruthy();
+    });
+
+    it("does not create distance lines when disabled", async () => {
+        const manager = new StarSystemManager(scene, {
+            ...mockConfig,
+            enableDistanceIndicators: false,
+        });
+        await manager.initialize([mockStarSystemData]);
+        const lines = scene.children.find(
+            (c: any) => c.name === "sol-distance-lines",
+        );
+        expect(lines).toBeUndefined();
+    });
+
+    it("setDistanceLinesVisible toggles visibility", async () => {
+        const manager = new StarSystemManager(scene, {
+            ...mockConfig,
+            enableDistanceIndicators: true,
+        });
+        await manager.initialize([mockStarSystemData]);
+        manager.setDistanceLinesVisible(false);
+        const lines = scene.children.find(
+            (c: any) => c.name === "sol-distance-lines",
+        );
+        expect(lines!.visible).toBe(false);
     });
 });
