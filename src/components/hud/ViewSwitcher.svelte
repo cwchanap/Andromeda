@@ -126,7 +126,6 @@
     bind:this={triggerEl}
     aria-expanded={mobileOpen}
     aria-haspopup="menu"
-    aria-label={t("viewSwitcher.label")}
     on:click={toggleMobile}
     on:keydown={(e) => { if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") { e.preventDefault(); openMenu(); } }}
   >
