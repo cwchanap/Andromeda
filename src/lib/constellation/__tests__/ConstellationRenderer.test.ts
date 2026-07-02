@@ -1627,7 +1627,7 @@ describe("ConstellationRenderer", () => {
     });
 
     describe("ConstellationRenderer — orientation guides", () => {
-        it("adds a horizon ring on the y=0 plane", async () => {
+        it("adds a horizon ring on the y=0 plane at radius ~100", async () => {
             const container = makeContainer();
             const renderer = new ConstellationRenderer(container);
             await renderer.initialize(
@@ -1640,8 +1640,15 @@ describe("ConstellationRenderer", () => {
             );
             expect(ring).toBeTruthy();
             const attr = ring.geometry.getAttribute("position");
-            for (let i = 1; i < attr.count * 3; i += 3) {
-                expect(attr.array[i]).toBe(0);
+            for (let i = 0; i < attr.count; i++) {
+                const x = attr.array[i * 3];
+                const y = attr.array[i * 3 + 1];
+                const z = attr.array[i * 3 + 2];
+                // Ring lies on the y=0 plane.
+                expect(y).toBe(0);
+                // And at radius ~100 (spec: "radius ~100, matching the star sphere").
+                const r = Math.sqrt(x * x + z * z);
+                expect(r).toBeCloseTo(100, 0);
             }
             renderer.dispose();
             container.remove();
