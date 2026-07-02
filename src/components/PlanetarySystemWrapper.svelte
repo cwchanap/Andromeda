@@ -19,6 +19,7 @@
   import type { AppLocale } from '@/i18n/routes';
   import type { PlanetarySystemConfig, PlanetarySystemEvents } from '@/lib/planetary-system/types';
   import type { CelestialBodyData } from '@/types/game';
+  import { getCurrentView, type ViewId } from '@/lib/view/currentView';
   
   // Props
   export let systemId: string;
@@ -50,7 +51,10 @@
   let isLoading = true;
   let loadingProgress = 0;
   let isSceneReady = false;
-  let currentView: "star" | "galaxy" | "constellation" = "star";
+  let currentView: ViewId = "star";
+  if (typeof window !== 'undefined') {
+    currentView = getCurrentView(window.location.pathname) ?? "star";
+  }
   let currentZoom = 50;
   let showFinder = false;
   let finderQuery = "";

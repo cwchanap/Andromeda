@@ -15,15 +15,19 @@
     ? (key: string) => translations[key] || key
     : useTranslations(lang);
 
-  const tabs: { view: ViewId; key: UiKey; go: () => void }[] = [
-    { view: "star", key: "viewSwitcher.star", go: () => { window.location.href = routes.planetarySystem("solar", lang); } },
-    { view: "galaxy", key: "viewSwitcher.galaxy", go: () => { window.location.href = routes.galaxy(lang); } },
-    { view: "constellation", key: "viewSwitcher.constellation", go: () => { window.location.href = routes.constellation(lang); } },
+  // Each entry is a full-page navigation target (no client router — see spec
+  // "Non-goals"). Using real <a href> links gives correct navigation semantics
+  // (role="link" + aria-current="page") and works without JS, replacing the
+  // earlier role="tablist" which is semantically wrong for page navigation.
+  const tabs: { view: ViewId; key: UiKey; href: () => string }[] = [
+    { view: "star", key: "viewSwitcher.star", href: () => routes.planetarySystem("solar", lang) },
+    { view: "galaxy", key: "viewSwitcher.galaxy", href: () => routes.galaxy(lang) },
+    { view: "constellation", key: "viewSwitcher.constellation", href: () => routes.constellation(lang) },
   ];
 
-  // Mobile dropdown state. Desktop keeps the always-visible horizontal
-  // tablist; on narrow viewports the switcher collapses to a button that
-  // reveals the tabs in a vertical dropdown.
+  // Mobile dropdown state. Desktop keeps the always-visible horizontal nav;
+  // on narrow viewports the switcher collapses to a button that reveals the
+  // links in a vertical dropdown.
   let mobileOpen = false;
   $: activeTab = tabs.find((tab) => tab.view === currentView) ?? tabs[0];
 
@@ -34,44 +38,22 @@
   function onMobileKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") mobileOpen = false;
   }
-
-  // WAI-ARIA Tabs keyboard model: roving tabindex + arrow-key activation.
-  function onTabKeydown(event: KeyboardEvent, index: number) {
-    const handled = ["ArrowRight", "ArrowLeft", "Home", "End"];
-    if (!handled.includes(event.key)) return;
-    event.preventDefault();
-    let next = index;
-    if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
-    else if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
-    else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = tabs.length - 1;
-    const tablist = (event.currentTarget as HTMLElement).parentElement;
-    const buttons = tablist?.querySelectorAll<HTMLButtonElement>(
-      'button[role="tab"]',
-    );
-    buttons?.[next]?.focus();
-    tabs[next].go();
-  }
 </script>
 
-<!-- Desktop: horizontal tablist (always visible). -->
-<div class="view-switcher" role="tablist" aria-label={t("viewSwitcher.label")}>
+<!-- Desktop: horizontal navigation (always visible). -->
+<nav class="view-switcher" aria-label={t("viewSwitcher.label")}>
   <span class="vs-label">{t("viewSwitcher.label")}</span>
-  {#each tabs as tab, i (tab.view)}
-    <button
-      type="button"
-      role="tab"
-      aria-selected={currentView === tab.view}
+  {#each tabs as tab (tab.view)}
+    <a
       class="vs-tab"
       class:is-active={currentView === tab.view}
-      tabindex={currentView === tab.view ? 0 : -1}
-      on:click={tab.go}
-      on:keydown={(e) => onTabKeydown(e, i)}
+      href={tab.href()}
+      aria-current={currentView === tab.view ? "page" : undefined}
     >
       {t(tab.key)}
-    </button>
+    </a>
   {/each}
-</div>
+</nav>
 
 <!-- Mobile: collapsed dropdown button + popover panel. -->
 <div class="view-switcher-mobile" on:keydown={onMobileKeydown}>
@@ -79,7 +61,7 @@
     type="button"
     class="vs-mobile-toggle"
     aria-expanded={mobileOpen}
-    aria-haspopup="menu"
+    aria-haspopup="true"
     aria-label={t("viewSwitcher.label")}
     on:click={toggleMobile}
   >
@@ -88,21 +70,19 @@
     <span class="vs-mobile-chevron" aria-hidden="true">{mobileOpen ? "▲" : "▼"}</span>
   </button>
   {#if mobileOpen}
-    <div class="vs-mobile-menu" role="menu" aria-label={t("viewSwitcher.label")}>
-      {#each tabs as tab, i (tab.view)}
-        <button
-          type="button"
-          role="menuitem"
+    <nav class="vs-mobile-menu" aria-label={t("viewSwitcher.label")}>
+      {#each tabs as tab (tab.view)}
+        <a
           class="vs-mobile-item"
           class:is-active={currentView === tab.view}
+          href={tab.href()}
           aria-current={currentView === tab.view ? "page" : undefined}
-          on:click={() => { mobileOpen = false; tab.go(); }}
-          on:keydown={(e) => onTabKeydown(e, i)}
+          on:click={() => (mobileOpen = false)}
         >
           {t(tab.key)}
-        </button>
+        </a>
       {/each}
-    </div>
+    </nav>
   {/if}
 </div>
 
@@ -125,6 +105,7 @@
     margin-right: 4px;
   }
   .vs-tab {
+    display: inline-block;
     background: transparent;
     border: 1px solid transparent;
     color: rgba(255, 255, 255, 0.7);
@@ -135,7 +116,7 @@
     cursor: pointer;
     transition: color 0.15s, border-color 0.15s, background 0.15s;
   }
-  .vs-tab:hover:not(:disabled) {
+  .vs-tab:hover {
     color: var(--hud-cyan, #00f0ff);
     border-color: var(--hud-cyan, #00f0ff);
   }

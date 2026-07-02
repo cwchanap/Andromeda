@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
-    import { GalaxyRenderer, localGalaxyData, type GalaxyConfig, type GalaxyEvents } from '@/lib/galaxy';
+    import { GalaxyRenderer, localGalaxyData, type GalaxyConfig, type GalaxyEvents, type StarSystemData } from '@/lib/galaxy';
     import { planetarySystemRegistry } from '@/lib/planetary-system';
     import { routes, type AppLocale } from '@/i18n/routes';
     import { getCurrentView } from '@/lib/view/currentView';
@@ -61,7 +61,7 @@
     // Dialog state
     let showSystemDialog = false;
     let selectedSystemId: string | null = null;
-    let selectedSystemData: any = null;
+    let selectedSystemData: StarSystemData | null = null;
 
     // Configuration state
     let enableAnimations = true;
@@ -205,12 +205,6 @@
         }
     };
 
-    const updateStarLabels = () => {
-        if (renderer) {
-            renderer.updateConfig({ enableStarLabels });
-        }
-    };
-
     const updateRenderDistance = () => {
         if (renderer) {
             renderer.updateConfig({ maxRenderDistance });
@@ -223,7 +217,6 @@
     $: if (renderer) {
         updateAnimations();
         updateStarGlow();
-        updateStarLabels();
         updateRenderDistance();
         renderer.setDistanceLinesVisible(enableDistanceLines);
     }

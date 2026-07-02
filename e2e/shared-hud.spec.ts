@@ -23,15 +23,43 @@ test.describe("Shared HUD @smoke", () => {
         await expect(page.getByLabel("Settings")).toBeVisible();
     });
 
-    test("view switcher has all three tabs", async ({ page }) => {
+    test("view switcher has all three nav links", async ({ page }) => {
         await page.goto("/galaxy");
-        await expect(page.getByRole("tab", { name: /galaxy/i })).toBeVisible({
+        await expect(page.getByRole("link", { name: /galaxy/i })).toBeVisible({
             timeout: 10000,
         });
-        await expect(page.getByRole("tab", { name: /star/i })).toBeVisible();
+        await expect(page.getByRole("link", { name: /star/i })).toBeVisible();
         await expect(
-            page.getByRole("tab", { name: /constellation/i }),
+            page.getByRole("link", { name: /constellation/i }),
         ).toBeVisible();
+    });
+
+    // Goal #2 from the spec: Star ↔ Galaxy ↔ Constellation direct nav
+    // without bouncing through Home. Clicking a switcher link must actually
+    // change the URL, not just toggle UI state.
+    test("view switcher navigates directly between views @smoke", async ({
+        page,
+    }) => {
+        await page.goto("/galaxy");
+        // Wait for the switcher to mount.
+        await expect(
+            page.getByRole("link", { name: /constellation/i }),
+        ).toBeVisible({ timeout: 10000 });
+        // Galaxy → Constellation
+        await page.getByRole("link", { name: /constellation/i }).click();
+        await expect(page).toHaveURL(/\/constellation/);
+        // Constellation → Star
+        await expect(page.getByRole("link", { name: /star/i })).toBeVisible({
+            timeout: 10000,
+        });
+        await page.getByRole("link", { name: /star/i }).click();
+        await expect(page).toHaveURL(/\/planetary\//);
+        // Star → Galaxy
+        await expect(page.getByRole("link", { name: /galaxy/i })).toBeVisible({
+            timeout: 10000,
+        });
+        await page.getByRole("link", { name: /galaxy/i }).click();
+        await expect(page).toHaveURL(/\/galaxy/);
     });
 
     test("language is reachable via settings panel", async ({ page }) => {
