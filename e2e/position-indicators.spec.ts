@@ -83,7 +83,7 @@ test.describe("Position indicators @smoke", () => {
         await expect(distanceLinesCheckbox).toBeChecked();
         if (!dlBefore) await distanceLinesCheckbox.uncheck();
 
-        // Sol Label toggle — maps to enableStarLabels (Sol marker label).
+        // Sol Label toggle — maps to enableSolLabel (Sol marker label).
         const solLabelLabel = page.getByText(/sol label|sol marker/i, {
             exact: false,
         });

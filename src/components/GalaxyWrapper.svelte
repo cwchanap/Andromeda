@@ -66,7 +66,7 @@
     // Configuration state
     let enableAnimations = true;
     let enableStarGlow = true;
-    let enableStarLabels = true;
+    let enableSolLabel = true;
     let enableDistanceLines = true;
     let maxRenderDistance = 50;
 
@@ -79,7 +79,7 @@
         performanceMode: "medium",
         starFieldDensity: 1.0,
         backgroundStarCount: 2000,
-        enableStarLabels: enableStarLabels,
+        enableSolLabel: enableSolLabel,
         enableDistanceIndicators: enableDistanceLines,
         maxRenderDistance: 50,
         enableBloom: false,
@@ -202,7 +202,7 @@
         renderer.setDistanceLinesVisible(enableDistanceLines);
     }
     // Star labels toggle only the Sol marker label, not the whole marker group.
-    $: if (renderer) renderer.setSolLabelVisible(enableStarLabels);
+    $: if (renderer) renderer.setSolLabelVisible(enableSolLabel);
     // Reduced-motion preference freezes the Sol ring pulse per the spec.
     // Subscribed (not read once) so an OS toggle mid-session applies live.
     let reducedMotion = false;
@@ -297,7 +297,7 @@
             <div slot="settings">
                 <label class="hud-setting"><input type="checkbox" bind:checked={enableAnimations}> {t('settings.enableAnimations')}</label>
                 <label class="hud-setting"><input type="checkbox" bind:checked={enableStarGlow}> {t('galaxy.starGlowEffects')}</label>
-                <label class="hud-setting"><input type="checkbox" bind:checked={enableStarLabels}> {t('galaxy.solLabel')}</label>
+                <label class="hud-setting"><input type="checkbox" bind:checked={enableSolLabel}> {t('galaxy.solLabel')}</label>
                 <label class="hud-setting"><input type="checkbox" bind:checked={enableDistanceLines}> {t('galaxy.distanceLines')}</label>
                 <label class="hud-setting">
                     {t('galaxy.maxRenderDistance')}
@@ -311,13 +311,15 @@
             <div
                 class="system-dialog-overlay"
                 use:focusTrap={".dialog-close-button"}
-                on:click={closeSystemDialog}
+                on:click={(e) => {
+                    if (e.target === e.currentTarget) closeSystemDialog();
+                }}
                 role="dialog"
                 aria-modal="true"
                 aria-label={systemName(selectedSystemData)}
                 tabindex="-1"
             >
-                <div class="system-dialog" on:click|stopPropagation>
+                <div class="system-dialog">
                     <div class="dialog-header">
                         <h2>{systemName(selectedSystemData)}</h2>
                         <button class="dialog-close-button" on:click={closeSystemDialog} aria-label={t('action.close')}>×</button>

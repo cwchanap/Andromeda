@@ -775,6 +775,27 @@ class MockLineLoop {
             new MockLineLoop(geometry, material),
     );
 
+class MockLine {
+    geometry: any;
+    material: any;
+    name = "";
+    renderOrder = 0;
+    castShadow = false;
+    receiveShadow = false;
+    visible = true;
+    userData: Record<string, any> = {};
+    constructor(geometry?: any, material?: any) {
+        this.geometry = geometry;
+        this.material = material;
+        Object.setPrototypeOf(this, (THREE as any).Line.prototype);
+    }
+}
+(THREE as any).Line = vi
+    .fn()
+    .mockImplementation(
+        (geometry?: any, material?: any) => new MockLine(geometry, material),
+    );
+
 // SpriteMaterial and Sprite for labels
 (THREE as any).SpriteMaterial = vi.fn().mockImplementation((_cfg?: any) => {
     const mat = {

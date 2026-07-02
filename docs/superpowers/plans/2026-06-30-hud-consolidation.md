@@ -784,7 +784,7 @@ Add:
   );
 ```
 
-Remove the legacy UI state that `ViewHud` now owns: `showHamburgerMenu`, `showControls`, `showSystemInfo`, `toggleHamburgerMenu`, `toggleControls`, `closeSystemInfo`. Keep `showSystemDialog`, `selectedSystemId`, `selectedSystemData`, and the existing settings booleans (`enableAnimations`, `enableStarGlow`, `enableStarLabels`, `maxRenderDistance`) — these move into the settings slot. Add `let enableDistanceLines = true;` (wired in Plan 2; harmless default here).
+Remove the legacy UI state that `ViewHud` now owns: `showHamburgerMenu`, `showControls`, `showSystemInfo`, `toggleHamburgerMenu`, `toggleControls`, `closeSystemInfo`. Keep `showSystemDialog`, `selectedSystemId`, `selectedSystemData`, and the existing settings booleans (`enableAnimations`, `enableStarGlow`, `enableSolLabel`, `maxRenderDistance`) — these move into the settings slot. Add `let enableDistanceLines = true;` (wired in Plan 2; harmless default here).
 
 - [ ] **Step 2: Replace the legacy template (inside `{#if isSceneReady}`)**
 
@@ -812,7 +812,7 @@ Delete the hamburger button, controls button, `.galaxy-back`, hamburger menu, co
       <div slot="settings">
         <label class="hud-setting"><input type="checkbox" bind:checked={enableAnimations}> {t('settings.enableAnimations')}</label>
         <label class="hud-setting"><input type="checkbox" bind:checked={enableStarGlow}> {t('galaxy.starGlowEffects')}</label>
-        <label class="hud-setting"><input type="checkbox" bind:checked={enableStarLabels}> {t('galaxy.starSystemLabels')}</label>
+        <label class="hud-setting"><input type="checkbox" bind:checked={enableSolLabel}> {t('galaxy.starSystemLabels')}</label>
         <label class="hud-setting"><input type="checkbox" bind:checked={enableDistanceLines}> {t('galaxy.distanceLines')}</label>
         <label class="hud-setting">
           {t('galaxy.maxRenderDistance')}

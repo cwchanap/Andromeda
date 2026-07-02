@@ -54,7 +54,7 @@ export interface GalaxyConfig {
     // Galaxy-specific settings
     starFieldDensity: number;
     backgroundStarCount: number;
-    enableStarLabels: boolean;
+    enableSolLabel: boolean;
     enableDistanceIndicators: boolean;
     maxRenderDistance: number; // Light-years
 

@@ -19,6 +19,7 @@
   import { getCurrentView, type ViewId } from "@/lib/view/currentView";
 
   export let lang: AppLocale = "en";
+  export let translations: Record<string, string> = {};
 
   let container: HTMLElement;
   let renderer: ConstellationRenderer | null = null;
@@ -33,7 +34,7 @@
   
   // Current language and translations
   let currentLang: AppLocale = lang;
-  let t: (key: any) => string;
+  let t: (key: string) => string;
 
   // Constellation view state
   let viewState: ConstellationViewState = {
@@ -73,7 +74,11 @@
   if (typeof window !== 'undefined') {
     currentLang = getLangFromUrl(new URL(window.location.href));
   }
-  t = useTranslations(currentLang);
+  if (Object.keys(translations).length > 0) {
+    t = (key: string) => translations[key] || key;
+  } else {
+    t = useTranslations(currentLang);
+  }
 
   let currentView: ViewId = "constellation";
   if (typeof window !== 'undefined') {
@@ -499,7 +504,7 @@
 </script>
 
 <div class="constellation-view">
-  <ViewHud currentView={currentView} lang={currentLang} translations={{}}>
+  <ViewHud currentView={currentView} lang={currentLang} {translations}>
     <div slot="controls" class="hud-panel-anim">
       {#if !loading && !error}
         <HudFrame color="var(--hud-cyan)" bracketLength={18} glow={true}>
