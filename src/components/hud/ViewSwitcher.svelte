@@ -110,7 +110,7 @@
     <a
       class="vs-tab"
       class:is-active={currentView === tab.view}
-      href={currentView === tab.view ? undefined : tab.href()}
+      href={tab.href()}
       aria-current={currentView === tab.view ? "page" : undefined}
     >
       {t(tab.key)}
