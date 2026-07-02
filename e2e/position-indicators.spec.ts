@@ -118,9 +118,33 @@ test.describe("Position indicators @smoke", () => {
         await page.keyboard.press("Escape");
         await expect(dialog).not.toBeVisible({ timeout: 5000 });
 
-        // Wait for loading to complete — the compass readout + view-from-earth
-        // label render inside {#if !loading && !error}. The 2D-canvas fallback
-        // also sets loading=false, so this passes without WebGL.
+        // The compass readout + view-from-earth label render inside
+        // {#if !loading && !error}. When WebGL is fundamentally unsupported,
+        // the constellation component throws during init (checkWebGLSupport()
+        // returns false), sets `error`, and never reaches the 2D-canvas
+        // fallback — so .compass-readout is not rendered. Gate these
+        // assertions on WebGL availability to avoid CI timeouts on no-WebGL
+        // hosts. (The 2D fallback only runs when WebGL passes the capability
+        // check but renderer construction later fails.)
+        const webgl = await pageHasWebGL(page);
+        if (!webgl) {
+            // Assert the WebGL-not-available overlay is shown instead of
+            // silently passing. The heading text is locale-dependent; the
+            // test navigates to the English default route (/constellation),
+            // matching the English-only patterns used elsewhere in this file
+            // (e.g. /settings/i, /distance lines/i).
+            const overlayHeading = page.getByRole("heading", {
+                name: /3D Graphics Not Available/i,
+            });
+            await expect(overlayHeading).toBeVisible({ timeout: 15000 });
+            test.info().annotations.push({
+                type: "skip-reason",
+                description:
+                    "WebGL unavailable — asserted WebGL-not-available overlay, skipped compass readout assertions",
+            });
+            return;
+        }
+
         const compassReadout = page.locator(".compass-readout");
         await expect(compassReadout).toBeVisible({ timeout: 20000 });
         // Compass must show a cardinal direction + degree value, not empty.
