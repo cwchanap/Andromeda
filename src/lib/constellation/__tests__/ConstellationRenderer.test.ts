@@ -1786,5 +1786,34 @@ describe("ConstellationRenderer", () => {
             renderer.dispose();
             container.remove();
         });
+
+        it("init points the tracked rotation at the zenith so the compass and auto-rotate start consistent", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            await renderer.initialize(
+                [makeStar()],
+                [makeConstellation()],
+                makeSkyConfig(),
+            );
+            // setupSkyCamera() faces the camera toward the zenith. The tracked
+            // cameraRotationX must reflect that, otherwise:
+            //   - getCameraElevation() reports 0° (horizon) for a zenith view,
+            //     so the HUD compass lies until the first drag/selection.
+            //   - auto-rotate calls updateCameraRotation() with cameraRotationX=0,
+            //     snapping the view from zenith to horizon on the first frame.
+            const elevDeg = renderer.getCameraElevation();
+            // Near-zenith: the elevation clamp max is π/2.2 ≈ 81.8°.
+            expect(elevDeg).toBeGreaterThan(70);
+            expect(elevDeg).toBeLessThanOrEqual(82);
+            // And the camera's last lookAt target must derive from that tracked
+            // rotation (high Y), not from a hardcoded zenith bypass.
+            const cam = (renderer as any).camera as THREE.PerspectiveCamera;
+            const lookAtCalls = (cam.lookAt as any).mock.calls;
+            const lastCall = lookAtCalls[lookAtCalls.length - 1];
+            // _getCameraForward at cameraRotationX=π/2.2, Y=0 → y ≈ 0.99, scaled ×10.
+            expect(lastCall[1]).toBeGreaterThan(9);
+            renderer.dispose();
+            container.remove();
+        });
     });
 });

@@ -7,6 +7,11 @@ import type {
 import { celestialToSphere, magnitudeToSize } from "../../utils/astronomy";
 
 const HUD_CYAN = 0x00f0ff;
+// Maximum elevation (pitch) the camera can reach, in radians. Slightly below
+// π/2 to avoid gimbal lock at the zenith while keeping a near-overhead view.
+// Used both as the drag/tween clamp and as the initial sky-camera elevation so
+// the tracked rotation stays consistent with the actual camera orientation.
+const MAX_ELEVATION_RAD = Math.PI / 2.2;
 
 export class ConstellationRenderer {
     private scene: THREE.Scene;
@@ -352,8 +357,8 @@ export class ConstellationRenderer {
 
                 // Limit vertical rotation
                 this.cameraRotationX = Math.max(
-                    -Math.PI / 2.2,
-                    Math.min(Math.PI / 2.2, this.cameraRotationX),
+                    -MAX_ELEVATION_RAD,
+                    Math.min(MAX_ELEVATION_RAD, this.cameraRotationX),
                 );
 
                 this.updateCameraRotation();
@@ -430,8 +435,8 @@ export class ConstellationRenderer {
 
             // Limit vertical rotation to prevent over-rotation (allow looking behind)
             this.cameraRotationX = Math.max(
-                -Math.PI / 2.2,
-                Math.min(Math.PI / 2.2, this.cameraRotationX),
+                -MAX_ELEVATION_RAD,
+                Math.min(MAX_ELEVATION_RAD, this.cameraRotationX),
             );
 
             this.updateCameraRotation();
@@ -563,8 +568,8 @@ export class ConstellationRenderer {
 
             // Limit vertical rotation
             this.cameraRotationX = Math.max(
-                -Math.PI / 2.2,
-                Math.min(Math.PI / 2.2, this.cameraRotationX),
+                -MAX_ELEVATION_RAD,
+                Math.min(MAX_ELEVATION_RAD, this.cameraRotationX),
             );
 
             this.updateCameraRotation();
@@ -1144,11 +1149,19 @@ export class ConstellationRenderer {
      * Setup camera for 360-degree sky viewing with observer at center
      */
     private setupSkyCamera(): void {
-        // Position camera as observer on the ground looking up at the sky
-        // Camera at origin (observer position), looking upward (positive Y)
+        // Position camera as observer on the ground looking up at the sky.
+        // Camera at origin (observer position), Y-up for natural orientation.
         this.camera.position.set(0, 0, 0);
-        this.camera.lookAt(0, 10, 0); // Look upward toward the sky
-        this.camera.up.set(0, 1, 0); // Y-up coordinate system for natural orientation
+        this.camera.up.set(0, 1, 0);
+        // Drive the orientation through the tracked rotation values so the
+        // HUD compass (getCameraElevation/Azimuth) and auto-rotate start in
+        // sync with the actual camera. Bypassing updateCameraRotation() with a
+        // direct lookAt(0,10,0) left cameraRotationX at 0 (horizon), so the
+        // compass reported a horizon-facing pitch for a zenith-facing camera
+        // and auto-rotate snapped the view down on its first frame.
+        this.cameraRotationX = MAX_ELEVATION_RAD; // near-zenith
+        this.cameraRotationY = 0; // facing North (+z)
+        this.updateCameraRotation();
     }
 
     /**
@@ -1274,8 +1287,8 @@ export class ConstellationRenderer {
             window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
         ) {
             this.cameraRotationX = Math.max(
-                -Math.PI / 2.2,
-                Math.min(Math.PI / 2.2, targetRotX),
+                -MAX_ELEVATION_RAD,
+                Math.min(MAX_ELEVATION_RAD, targetRotX),
             );
             this.cameraRotationY = targetRotY;
             this.updateCameraRotation();
