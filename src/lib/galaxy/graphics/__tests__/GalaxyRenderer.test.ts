@@ -584,5 +584,32 @@ describe("GalaxyRenderer", () => {
             renderer.setSolMarkerVisible(false);
             expect(spy).toHaveBeenCalledWith(false);
         });
+
+        it("replays reduced-motion preference set before initialize()", async () => {
+            // GalaxyWrapper's reactive `$: if (renderer) renderer.setReducedMotion(...)`
+            // fires when the renderer is assigned, which happens BEFORE `await
+            // initialize()` resolves and creates starSystemManager. The cached
+            // value must be replayed once the manager exists, otherwise the Sol
+            // marker pulse animates for reduced-motion users on first load.
+            const renderer = new GalaxyRenderer(
+                container,
+                mockConfig,
+                mockEvents,
+            );
+            // Called before initialize() — manager does not exist yet.
+            renderer.setReducedMotion(true);
+            expect((renderer as any).reducedMotion).toBe(true);
+
+            await renderer.initialize(mockGalaxyData);
+            const ssm = (renderer as any).starSystemManager;
+            // The manager must have received the preference during init.
+            expect(ssm.reducedMotion).toBe(true);
+
+            // Subsequent calls still forward live.
+            const spy = vi.spyOn(ssm, "setReducedMotion");
+            renderer.setReducedMotion(false);
+            expect(spy).toHaveBeenCalledWith(false);
+            expect((renderer as any).reducedMotion).toBe(false);
+        });
     });
 });

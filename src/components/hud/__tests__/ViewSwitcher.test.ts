@@ -31,16 +31,20 @@ describe("ViewSwitcher", () => {
             nav!.querySelectorAll<HTMLAnchorElement>("a.vs-tab"),
         );
         expect(links).toHaveLength(3);
-        // Inactive tabs carry real hrefs; the active tab (galaxy) omits
-        // href so clicking it does not reload the current page.
+        // All tabs carry real hrefs (including the active one) so every
+        // entry is exposed as a navigation link and remains keyboard-
+        // focusable; aria-current="page" marks the current view.
         const hrefs = links.map((a) => a.getAttribute("href"));
-        expect(hrefs).toContain(expectedHrefs.star);
-        expect(hrefs).toContain(expectedHrefs.constellation);
+        expect(hrefs).toEqual([
+            expectedHrefs.star,
+            expectedHrefs.galaxy,
+            expectedHrefs.constellation,
+        ]);
         const active = links.find(
             (a) => a.getAttribute("aria-current") === "page",
         );
         expect(active).toBeTruthy();
-        expect(active?.getAttribute("href")).toBeNull();
+        expect(active?.getAttribute("href")).toBe(expectedHrefs.galaxy);
     });
 
     it("marks only the current view link with aria-current=page", () => {
@@ -164,15 +168,13 @@ describe("ViewSwitcher", () => {
         for (const a of Array.from(
             nav.querySelectorAll<HTMLAnchorElement>("a.vs-tab"),
         )) {
-            // Every tab must be an <a> (no role=tab, no button fallback).
+            // Every tab must be an <a> (no role=tab, no button fallback)
+            // and carry a real href so navigation works without JS —
+            // including the active tab, which stays a link per the
+            // shared-HUD contract (aria-current="page" marks it).
             expect(a.tagName).toBe("A");
             expect(a.getAttribute("role")).toBeNull();
-            // Inactive tabs must have a real href so they work without JS.
-            // The active tab intentionally omits href (clicking it would
-            // only reload the current page).
-            if (a.getAttribute("aria-current") !== "page") {
-                expect(a.getAttribute("href")).toBeTruthy();
-            }
+            expect(a.getAttribute("href")).toBeTruthy();
         }
     });
 });

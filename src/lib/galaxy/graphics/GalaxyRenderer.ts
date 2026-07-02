@@ -35,6 +35,14 @@ export class GalaxyRenderer {
     private container: HTMLElement;
     private galaxyData: GalaxyData | null = null;
 
+    // Cached accessibility preference. setReducedMotion() may be called
+    // before initialize() creates starSystemManager (GalaxyWrapper's
+    // reactive statement fires when the renderer is assigned, which
+    // happens before `await initialize()` resolves). Cache the value
+    // here and replay it once the manager exists so the Sol marker pulse
+    // is frozen from the first frame for reduced-motion users.
+    private reducedMotion = false;
+
     // Performance monitoring
     private lastFrameTime = 0;
     private frameCount = 0;
@@ -122,6 +130,12 @@ export class GalaxyRenderer {
 
             await this.sceneManager.initialize();
             await this.starSystemManager.initialize(galaxyData.starSystems);
+
+            // Replay any accessibility preference captured before the
+            // manager existed (see setReducedMotion).
+            if (this.reducedMotion) {
+                this.starSystemManager.setReducedMotion(true);
+            }
 
             // Position camera for good initial view
             this.camera.position.set(6, 4, 6);
@@ -458,9 +472,11 @@ export class GalaxyRenderer {
 
     /**
      * Forward the user's reduced-motion preference to the star system manager,
-     * which freezes the Sol ring pulse when enabled.
+     * which freezes the Sol ring pulse when enabled. Safe to call before
+     * initialize(): the value is cached and replayed once the manager exists.
      */
     setReducedMotion(reduced: boolean): void {
+        this.reducedMotion = reduced;
         this.starSystemManager?.setReducedMotion(reduced);
     }
 
