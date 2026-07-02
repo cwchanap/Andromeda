@@ -494,6 +494,15 @@ describe("StarSystemManager — Sol marker", () => {
             (c: any) => c.name === "sol-marker-core",
         );
         expect(core).toBeTruthy();
+        // Shadow flags must be disabled per project-wide convention.
+        expect(core.castShadow).toBe(false);
+        expect(core.receiveShadow).toBe(false);
+        const ring = (marker as any).children.find(
+            (c: any) => c.name === "sol-marker-ring",
+        );
+        expect(ring).toBeTruthy();
+        expect(ring.castShadow).toBe(false);
+        expect(ring.receiveShadow).toBe(false);
     });
 
     it("adds the localized label sprite only when enableStarLabels is true", async () => {

@@ -85,9 +85,15 @@
   let labelsOn = true;
   let autoRotateOn = false;
   // Reduced-motion preference — disables auto-rotate per WCAG §2.3.3.
+  // Subscribed (not read once) so an OS toggle mid-session applies live.
   let reducedMotion = false;
+  let reducedMotionMql: MediaQueryList | null = null;
+  const handleReducedMotionChange = (e: MediaQueryListEvent) => {
+    reducedMotion = e.matches;
+  };
   if (typeof window !== 'undefined') {
-    reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    reducedMotionMql = window.matchMedia?.("(prefers-reduced-motion: reduce)") ?? null;
+    reducedMotion = reducedMotionMql?.matches ?? false;
   }
   // Push toggle state to the renderer whenever it (or the renderer) changes.
   $: if (renderer) {
@@ -292,9 +298,11 @@
 
   onMount(() => {
     initConstellationView();
+    reducedMotionMql?.addEventListener("change", handleReducedMotionChange);
   });
 
   onDestroy(() => {
+    reducedMotionMql?.removeEventListener("change", handleReducedMotionChange);
     if (hudRafId !== null) cancelAnimationFrame(hudRafId);
     if (renderer) {
       renderer.dispose();

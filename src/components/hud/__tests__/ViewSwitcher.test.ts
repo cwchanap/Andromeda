@@ -100,8 +100,54 @@ describe("ViewSwitcher", () => {
         const toggle = container.querySelector(".vs-mobile-toggle");
         expect(toggle).toBeTruthy();
         expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+        expect(toggle?.getAttribute("aria-haspopup")).toBe("menu");
         // Mobile menu links are not rendered until expanded.
         expect(container.querySelector(".vs-mobile-menu")).toBeNull();
+    });
+
+    it("expands the mobile menu with role=menu and role=menuitem on click", async () => {
+        const { container } = render(ViewSwitcher, {
+            props: { currentView: "galaxy", lang: "en", translations },
+        });
+        const toggle =
+            container.querySelector<HTMLButtonElement>(".vs-mobile-toggle")!;
+        toggle.click();
+        // Svelte needs a microtask to flush the {#if mobileOpen} block.
+        await new Promise((r) => setTimeout(r, 0));
+        const menu = container.querySelector(".vs-mobile-menu");
+        expect(menu).toBeTruthy();
+        expect(menu?.getAttribute("role")).toBe("menu");
+        const items = Array.from(
+            menu!.querySelectorAll<HTMLAnchorElement>("a.vs-mobile-item"),
+        );
+        expect(items).toHaveLength(3);
+        for (const item of items) {
+            expect(item.getAttribute("role")).toBe("menuitem");
+        }
+    });
+
+    it("applies roving tabindex — one item tabbable, rest at -1", async () => {
+        const { container } = render(ViewSwitcher, {
+            props: { currentView: "galaxy", lang: "en", translations },
+        });
+        const toggle =
+            container.querySelector<HTMLButtonElement>(".vs-mobile-toggle")!;
+        toggle.click();
+        await new Promise((r) => setTimeout(r, 0));
+        const items = Array.from(
+            container.querySelectorAll<HTMLAnchorElement>("a.vs-mobile-item"),
+        );
+        const tabbable = items.filter(
+            (a) => a.getAttribute("tabindex") === "0",
+        );
+        const removed = items.filter(
+            (a) => a.getAttribute("tabindex") === "-1",
+        );
+        // Exactly one item is in the tab order (the active view's item).
+        expect(tabbable).toHaveLength(1);
+        expect(removed).toHaveLength(items.length - 1);
+        // The active (galaxy) item should be the tabbable one.
+        expect(tabbable[0]?.textContent?.trim()).toBe("Galaxy");
     });
 
     it("uses the link href (no JS-only navigation attribute) so links work without JS", () => {

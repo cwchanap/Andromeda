@@ -192,49 +192,38 @@
         }
     };
 
-    // Configuration change handlers
-    const updateAnimations = () => {
-        if (renderer) {
-            renderer.updateConfig({ enableAnimations });
-        }
-    };
-
-    const updateStarGlow = () => {
-        if (renderer) {
-            renderer.updateConfig({ enableStarGlow });
-        }
-    };
-
-    const updateRenderDistance = () => {
-        if (renderer) {
-            renderer.updateConfig({ maxRenderDistance });
-        }
-    };
-
-    // Reactive updates — push all config toggles to the renderer in one
-    // reactive block so a single state change doesn't trigger N redundant
-    // updateConfig calls.
+    // Reactive updates — each toggle variable is directly referenced in a
+    // reactive block so Svelte's static dependency analysis re-runs the block
+    // when that variable changes. (Reading a var inside a called function does
+    // NOT register a dependency, so the previous combined block silently
+    // no-op'd for enableAnimations / enableStarGlow / maxRenderDistance.)
     $: if (renderer) {
-        updateAnimations();
-        updateStarGlow();
-        updateRenderDistance();
+        renderer.updateConfig({ enableAnimations, enableStarGlow, maxRenderDistance });
         renderer.setDistanceLinesVisible(enableDistanceLines);
     }
     // Star labels toggle only the Sol marker label, not the whole marker group.
     $: if (renderer) renderer.setSolLabelVisible(enableStarLabels);
     // Reduced-motion preference freezes the Sol ring pulse per the spec.
+    // Subscribed (not read once) so an OS toggle mid-session applies live.
     let reducedMotion = false;
+    let reducedMotionMql: MediaQueryList | null = null;
+    const handleReducedMotionChange = (e: MediaQueryListEvent) => {
+        reducedMotion = e.matches;
+    };
     if (typeof window !== 'undefined') {
-        reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+        reducedMotionMql = window.matchMedia?.("(prefers-reduced-motion: reduce)") ?? null;
+        reducedMotion = reducedMotionMql?.matches ?? false;
     }
     $: if (renderer) renderer.setReducedMotion(reducedMotion);
 
     // Lifecycle
     onMount(() => {
         initializeRenderer();
+        reducedMotionMql?.addEventListener("change", handleReducedMotionChange);
     });
 
     onDestroy(() => {
+        reducedMotionMql?.removeEventListener("change", handleReducedMotionChange);
         cleanup();
     });
 
