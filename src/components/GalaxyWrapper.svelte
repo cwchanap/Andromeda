@@ -403,6 +403,10 @@
 <style>
     .galaxy-wrapper { position: relative; width: 100%; height: 100vh; overflow: hidden; background: #000011; }
     .galaxy-container { width: 100%; height: 100%; position: relative; }
+    .error-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 17, 0.9); color: #fff; z-index: 10; }
+    .error-content { text-align: center; max-width: 400px; padding: 2rem; }
+    .error-content h3 { color: #ff6b6b; margin-bottom: 1rem; }
+    .error-content button { background: #007acc; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; }
     .galaxy-nearby { width: min(340px, 90vw); max-height: 60vh; overflow-y: auto; }
     .galaxy-info { width: min(280px, 80vw); }
     .info-system-name { font-family: var(--hud-font-display, monospace); font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hud-cyan, #00f0ff); margin-bottom: 8px; }
