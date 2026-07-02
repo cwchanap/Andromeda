@@ -105,6 +105,11 @@
     padding: 70px 20px 20px;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
+    /* Re-enable pointer events: the shared Settings panel is rendered inside
+       .view-hud, which sets pointer-events: none and only re-enables it for
+       .hud-corner/.hud-slot children. Without this, clicks on the language
+       buttons, close button, and slotted controls pass through to the scene. */
+    pointer-events: auto;
   }
   .settings-panel {
     width: min(320px, 90vw);

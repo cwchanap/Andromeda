@@ -66,7 +66,7 @@
   let facingDeg = 0;
   let facingElev = 0;
   $: facingCardinal = t(azimuthToCardinalKey(facingDeg));
-  $: facingDegDisplay = Math.round(((facingDeg % 360) + 360) % 360);
+  $: facingDegDisplay = Math.round(((facingDeg % 360) + 360) % 360) % 360;
   $: facingElevDisplay = `${facingElev >= 0 ? "+" : ""}${Math.round(facingElev)}°`;
 
   // Initialize translations
