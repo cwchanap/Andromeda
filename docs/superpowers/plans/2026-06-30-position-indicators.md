@@ -4,7 +4,7 @@
 
 **Goal:** Make the user's location legible in the Galaxy and Constellation views — a Sol marker + label + distance-lines at the galactic origin (Earth/Sol), and a horizon ring + cardinal compass in the Earth-observer constellation view.
 
-**Architecture:** Pure renderer-layer changes. Galaxy: `StarSystemManager` gains a Sol marker group (sphere + ring) at `(0,0,0)` and a `LineSegments` of distance lines from the origin to each system, gated by the existing-but-dead `enableStarLabels` / `enableDistanceIndicators` config flags. `GalaxyRenderer` frames the camera on Sol at init and exposes runtime toggles. Constellation: `ConstellationRenderer` gains a `LineLoop` horizon ring on the `y=0` plane + `Sprite` cardinal labels (N/E/S/W) and exposes `getCameraAzimuth()` for a HUD compass strip. Sol is a renderer-managed marker only — never added to `localGalaxyData.starSystems`.
+**Architecture:** Pure renderer-layer changes. Galaxy: `StarSystemManager` gains a Sol marker group (sphere + ring) at `(0,0,0)` and a `LineSegments` of distance lines from the origin to each system, gated by the existing-but-dead `enableSolLabel` / `enableDistanceIndicators` config flags. `GalaxyRenderer` frames the camera on Sol at init and exposes runtime toggles. Constellation: `ConstellationRenderer` gains a `LineLoop` horizon ring on the `y=0` plane + `Sprite` cardinal labels (N/E/S/W) and exposes `getCameraAzimuth()` for a HUD compass strip. Sol is a renderer-managed marker only — never added to `localGalaxyData.starSystems`.
 
 **Tech Stack:** Three.js, Vitest (jsdom + `src/test/setup.ts` three mock), Playwright (Chromium). Renderer tests follow the established pattern: per-file `makeContainer()`, `mockConfig`/`makeStar()` fixtures, assert via `scene.children.find(c => c.name === …)`, `(mgr as any).someMap.size`, and `expect((THREE as any).Sprite).toHaveBeenCalledTimes(n)`.
 
@@ -27,7 +27,7 @@
 - `src/lib/galaxy/graphics/StarSystemManager.ts` — Sol marker + label + distance lines + toggles + dispose.
 - `src/lib/galaxy/graphics/__tests__/StarSystemManager.test.ts` — new tests.
 - `src/lib/galaxy/graphics/GalaxyRenderer.ts` — default `solMarkerLabel`, init camera framing, forward toggle methods.
-- `src/components/GalaxyWrapper.svelte` — wire `enableDistanceLines`/`enableStarLabels` toggles to renderer; pass `solMarkerLabel`.
+- `src/components/GalaxyWrapper.svelte` — wire `enableDistanceLines`/`enableSolLabel` toggles to renderer; pass `solMarkerLabel`.
 - `src/lib/constellation/ConstellationRenderer.ts` — horizon ring + cardinal labels + `getCameraAzimuth()` + dispose.
 - `src/lib/constellation/__tests__/ConstellationRenderer.test.ts` — new tests.
 - `src/components/ConstellationWrapper.svelte` — render "View from Earth" label + compass strip.
@@ -91,7 +91,7 @@ git commit -m "feat(galaxy): add solMarkerLabel to GalaxyConfig"
 - Test: `src/lib/galaxy/graphics/__tests__/StarSystemManager.test.ts`
 
 **Interfaces:**
-- Consumes: `Required<GalaxyConfig>` (now incl. `solMarkerLabel`, `enableStarLabels`), `StarSystemData`.
+- Consumes: `Required<GalaxyConfig>` (now incl. `solMarkerLabel`, `enableSolLabel`), `StarSystemData`.
 - Produces: private `solMarkerGroup: THREE.Group | null`; public `setSolMarkerVisible(visible: boolean): void`; marker added to `this.scene` during `initialize()`.
 
 - [ ] **Step 1: Add the failing tests**
@@ -115,16 +115,16 @@ describe("StarSystemManager — Sol marker", () => {
         expect(core).toBeTruthy();
     });
 
-    it("adds the localized label sprite only when enableStarLabels is true", async () => {
+    it("adds the localized label sprite only when enableSolLabel is true", async () => {
         const sceneOn = new THREE.Scene();
-        const mgrOn = new StarSystemManager(sceneOn, { ...mockConfig, enableStarLabels: true });
+        const mgrOn = new StarSystemManager(sceneOn, { ...mockConfig, enableSolLabel: true });
         await mgrOn.initialize([mockStarSystemData]);
         const on = sceneOn.children.find((c: any) => c.name === "sol-marker");
         const labelOn = (on as any).children.find((c: any) => c.name === "sol-marker-label");
         expect(labelOn).toBeTruthy();
 
         const sceneOff = new THREE.Scene();
-        const mgrOff = new StarSystemManager(sceneOff, { ...mockConfig, enableStarLabels: false });
+        const mgrOff = new StarSystemManager(sceneOff, { ...mockConfig, enableSolLabel: false });
         await mgrOff.initialize([mockStarSystemData]);
         const off = sceneOff.children.find((c: any) => c.name === "sol-marker");
         const labelOff = (off as any).children.find((c: any) => c.name === "sol-marker-label");
@@ -186,7 +186,7 @@ In `src/lib/galaxy/graphics/StarSystemManager.ts`:
         ring.name = "sol-marker-ring";
         group.add(ring);
 
-        if (this.config.enableStarLabels) {
+        if (this.config.enableSolLabel) {
             group.add(this.createSolLabel(this.config.solMarkerLabel));
         }
         return group;
@@ -473,7 +473,7 @@ In `GalaxyWrapper.svelte`, in the `defaultConfig` object literal, add (alongside
 
 ```ts
     solMarkerLabel: t("galaxy.solMarkerLabel"),
-    enableStarLabels: enableStarLabels,
+    enableSolLabel: enableSolLabel,
     enableDistanceIndicators: enableDistanceLines,
 ```
 
@@ -483,7 +483,7 @@ After the renderer is created/initialized (near the existing `$: if (container &
 
 ```ts
   $: if (renderer) renderer.setDistanceLinesVisible(enableDistanceLines);
-  $: if (renderer) renderer.setSolMarkerVisible(enableStarLabels);
+  $: if (renderer) renderer.setSolMarkerVisible(enableSolLabel);
 ```
 
 - [ ] **Step 3: Verify**
@@ -867,4 +867,4 @@ git add -A && git commit -m "chore: format" || echo "nothing to commit"
 ## Out of Scope
 - Smooth camera tween for `focusOnStarSystem` (the existing `GalaxyRenderer.ts:418` TODO).
 - Adding Sol as a selectable/navigable entry in `localGalaxyData.starSystems`.
-- Per-star labels across the galaxy (only the Sol label is added; `enableStarLabels` gates the Sol label).
+- Per-star labels across the galaxy (only the Sol label is added; `enableSolLabel` gates the Sol label).

@@ -25,7 +25,12 @@ export class StarSystemManager {
     // Sol origin marker and distance lines
     private solMarkerGroup: THREE.Group | null = null;
     private solRing: THREE.Mesh | null = null;
-    private distanceLines: THREE.LineSegments | null = null;
+    // Distance lines are parented into each system's group so that
+    // updateVisibility's group.visible toggle culls them automatically —
+    // otherwise lines float to invisible endpoints when the render-distance
+    // slider hides the target system.
+    private distanceLinesBySystem = new Map<string, THREE.Line>();
+    private distanceLinesMaterial: THREE.LineBasicMaterial | null = null;
     // Cached star systems + config so distance lines can be lazily (re)created
     // by setDistanceLinesVisible when enableDistanceIndicators was off at init.
     private starSystemsCache: StarSystemData[] = [];
@@ -56,8 +61,7 @@ export class StarSystemManager {
         this.scene.add(this.solMarkerGroup);
 
         if (this.config.enableDistanceIndicators) {
-            this.distanceLines = this.createDistanceLines(starSystems);
-            this.scene.add(this.distanceLines);
+            this.createDistanceLines(starSystems);
         }
     }
 
@@ -93,7 +97,7 @@ export class StarSystemManager {
         this.solRing = ring;
         group.add(ring);
 
-        if (this.config.enableStarLabels) {
+        if (this.config.enableSolLabel) {
             group.add(this.createSolLabel(this.config.solMarkerLabel));
         }
 
@@ -159,47 +163,57 @@ export class StarSystemManager {
     }
 
     /**
-     * Create distance lines from origin to every star system
+     * Create distance lines from the galactic origin (Sol) to every star
+     * system. Each line is parented into its system's group so that
+     * `updateVisibility` culls the line together with the system when the
+     * group is hidden — preventing lines from floating to invisible
+     * endpoints when the render-distance slider is lowered.
      */
-    private createDistanceLines(
-        starSystems: StarSystemData[],
-    ): THREE.LineSegments {
-        const positions: number[] = [];
-        starSystems.forEach((s) => {
-            positions.push(0, 0, 0, s.position.x, s.position.y, s.position.z);
-        });
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute(
-            "position",
-            new THREE.Float32BufferAttribute(positions, 3),
-        );
+    private createDistanceLines(starSystems: StarSystemData[]): void {
         const material = new THREE.LineBasicMaterial({
             color: 0x1b6b7a,
             transparent: true,
             opacity: 0.35,
         });
-        const lines = new THREE.LineSegments(geometry, material);
-        lines.name = "sol-distance-lines";
-        return lines;
+        this.distanceLinesMaterial = material;
+
+        for (const s of starSystems) {
+            const group = this.starSystemGroups.get(s.id);
+            if (!group) continue;
+            // Local-space vertices: (-system.position) → (0,0,0). Because the
+            // group is positioned at system.position, these map to world-space
+            // origin → system.position.
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute(
+                "position",
+                new THREE.Float32BufferAttribute(
+                    [-s.position.x, -s.position.y, -s.position.z, 0, 0, 0],
+                    3,
+                ),
+            );
+            const line = new THREE.Line(geometry, material);
+            line.name = "sol-distance-line";
+            group.add(line);
+            this.distanceLinesBySystem.set(s.id, line);
+        }
     }
 
     /**
-     * Set visibility of the distance lines. Lazily (re)creates the line
-     * segments on first enable when enableDistanceIndicators was false at
-     * init time, so the runtime toggle is never a silent no-op.
+     * Set visibility of the distance lines. Lazily (re)creates the per-system
+     * lines on first enable when enableDistanceIndicators was false at init
+     * time, so the runtime toggle is never a silent no-op.
      */
     setDistanceLinesVisible(visible: boolean): void {
         if (
             visible &&
-            !this.distanceLines &&
+            this.distanceLinesBySystem.size === 0 &&
             this.starSystemsCache.length > 0
         ) {
-            this.distanceLines = this.createDistanceLines(
-                this.starSystemsCache,
-            );
-            this.scene.add(this.distanceLines);
+            this.createDistanceLines(this.starSystemsCache);
         }
-        if (this.distanceLines) this.distanceLines.visible = visible;
+        this.distanceLinesBySystem.forEach((line) => {
+            line.visible = visible;
+        });
     }
 
     /**
@@ -502,13 +516,13 @@ export class StarSystemManager {
             this.solRing = null;
         }
 
-        // Dispose distance lines
-        if (this.distanceLines) {
-            this.distanceLines.geometry.dispose();
-            (this.distanceLines.material as THREE.Material).dispose();
-            this.scene.remove(this.distanceLines);
-            this.distanceLines = null;
-        }
+        // Dispose distance lines (geometries are per-line; material is shared)
+        this.distanceLinesBySystem.forEach((line) => {
+            line.geometry.dispose();
+        });
+        this.distanceLinesMaterial?.dispose();
+        this.distanceLinesMaterial = null;
+        this.distanceLinesBySystem.clear();
 
         // Clear maps
         this.starSystemGroups.clear();

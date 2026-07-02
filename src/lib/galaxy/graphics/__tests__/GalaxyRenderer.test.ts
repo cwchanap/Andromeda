@@ -89,7 +89,7 @@ describe("GalaxyRenderer", () => {
             performanceMode: "medium",
             starFieldDensity: 1.0,
             backgroundStarCount: 2000,
-            enableStarLabels: true,
+            enableSolLabel: true,
             enableDistanceIndicators: true,
             maxRenderDistance: 50,
             enableBloom: false,

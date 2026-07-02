@@ -62,7 +62,7 @@ export class GalaxyRenderer {
             performanceMode: "medium",
             starFieldDensity: 1.0,
             backgroundStarCount: 2000,
-            enableStarLabels: true,
+            enableSolLabel: true,
             enableDistanceIndicators: true,
             maxRenderDistance: 50, // 50 light-years max render distance
             enableBloom: false,

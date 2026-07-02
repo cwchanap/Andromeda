@@ -9,7 +9,7 @@
 Two related usability issues across the three main 3D views:
 
 1. **Scattered, overlapping HUD controls.** Each view has a completely different HUD layout and styling system. The Galaxy view is the worst offender: it still uses legacy bespoke CSS, its top-right gear button literally overlaps the global language selector, and selecting a star opens both a corner tooltip *and* a full-screen dialog showing the same data. "Back to Menu" lives in a different corner on every view, settings are reimplemented three different ways, and switching views always requires bouncing through the Home hub.
-2. **No position indication in Galaxy/Constellation.** Earth/Sol is implicitly at the origin `(0,0,0)` in galaxy space, but there is no marker, label, or highlight anywhere. The Solar System is not even in the galaxy dataset. The config flags `enableStarLabels` and `enableDistanceIndicators` were scaffolded but never implemented. In the Constellation view, Earth *is* the camera (observer-centric), so "you are here" means something different there, and orientation is not legible.
+2. **No position indication in Galaxy/Constellation.** Earth/Sol is implicitly at the origin `(0,0,0)` in galaxy space, but there is no marker, label, or highlight anywhere. The Solar System is not even in the galaxy dataset. The config flags `enableSolLabel` and `enableDistanceIndicators` were scaffolded but never implemented. In the Constellation view, Earth *is* the camera (observer-centric), so "you are here" means something different there, and orientation is not legible.
 
 ## Goals
 
@@ -115,7 +115,7 @@ A `THREE.Group` + `MeshBasicMaterial` sphere mirroring `CelestialBodyManager.reg
 
 ### Label "Sol · You are here"
 
-A `CanvasTexture` `THREE.Sprite` using the exact pattern from `ConstellationRenderer.createConstellationLabels()` (`ConstellationRenderer.ts:889`). The galaxy renderer currently draws zero labels, so this also begins using the long-dead `enableStarLabels` flag.
+A `CanvasTexture` `THREE.Sprite` using the exact pattern from `ConstellationRenderer.createConstellationLabels()` (`ConstellationRenderer.ts:889`). The galaxy renderer currently draws zero labels, so this also begins using the long-dead `enableSolLabel` flag.
 
 ### Distance lines
 
@@ -176,7 +176,7 @@ The ring + cardinal labels + compass together make "where am I and which way am 
 - `src/components/GalaxyWrapper.svelte` — adopt `ViewHud` + tactical-HUD kit; delete `.hamburger-button`/`.controls-button` legacy CSS and the redundant tooltip; collapse to single details dialog
 - `src/components/ConstellationWrapper.svelte` — adopt `ViewHud`; render side panel via snippets; add compass strip to `info`
 - `src/pages/galaxy.astro`, `src/pages/constellation.astro`, `src/pages/planetary/[systemId].astro` — remove `GlobalLanguageSelector` overlay (now inside shell)
-- `src/lib/galaxy/graphics/StarSystemManager.ts` — implement Sol marker + label; consume `enableStarLabels`
+- `src/lib/galaxy/graphics/StarSystemManager.ts` — implement Sol marker + label; consume `enableSolLabel`
 - `src/lib/galaxy/graphics/GalaxyRenderer.ts` — implement distance lines; consume `enableDistanceIndicators`; adjust initial camera framing
 - `src/i18n/` — add keys for "Sol · You are here", "View from Earth", "Distance Lines" toggle, compass directions (en/zh/ja)
 

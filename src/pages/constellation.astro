@@ -2,9 +2,11 @@
 import ConstellationWrapper from "../components/ConstellationWrapper.svelte";
 import GlobalStyles from "../components/GlobalStyles.astro";
 import { getLangFromUrl, useTranslations } from "../i18n/utils";
+import { ui } from "../i18n/ui";
 
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
+const translations = ui[lang] || ui.en;
 ---
 
 <html lang={lang}>
@@ -20,7 +22,7 @@ const t = useTranslations(lang);
 
   <body>
     <div id="constellation-container">
-      <ConstellationWrapper {lang} client:only="svelte" />
+      <ConstellationWrapper {lang} {translations} client:only="svelte" />
     </div>
 
     <style>

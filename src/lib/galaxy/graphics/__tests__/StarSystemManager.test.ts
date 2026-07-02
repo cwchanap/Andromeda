@@ -5,6 +5,72 @@ import * as THREE from "three";
 import { StarSystemManager } from "../StarSystemManager";
 import type { StarSystemData, GalaxyConfig } from "../../types";
 
+// Shared fixture factories — used by every describe block so the mock
+// config and star-system data are defined once instead of triplicated.
+function createMockConfig(): Required<GalaxyConfig> {
+    return {
+        enableControls: true,
+        enableAnimations: true,
+        enableMobileOptimization: false,
+        antialiasing: true,
+        performanceMode: "medium",
+        starFieldDensity: 1.0,
+        backgroundStarCount: 2000,
+        enableSolLabel: true,
+        enableDistanceIndicators: true,
+        maxRenderDistance: 50,
+        enableBloom: false,
+        enableStarGlow: true,
+        starGlowIntensity: 1.0,
+        solMarkerLabel: "SOL · YOU ARE HERE",
+    };
+}
+
+function createMockStarSystemData(): StarSystemData {
+    return {
+        id: "sol",
+        name: "Solar System",
+        description: "Our solar system",
+        systemType: "solar",
+        position: new THREE.Vector3(0, 0, 0),
+        distanceFromEarth: 0,
+        stars: [
+            {
+                id: "sun",
+                name: "Sun",
+                type: "star",
+                description: "The star at the center of our solar system",
+                keyFacts: {
+                    diameter: "1,392,700 km",
+                    distanceFromSun: "0 km",
+                    orbitalPeriod: "N/A",
+                    composition: ["Hydrogen", "Helium"],
+                    temperature: "5,500°C",
+                },
+                images: ["/images/sun.jpg"],
+                scale: 1.0,
+                position: new THREE.Vector3(0, 0, 0),
+                material: {
+                    color: "#FFFF00",
+                    emissive: "#444400",
+                },
+            },
+        ],
+        metadata: {
+            spectralClass: "G2V",
+            hasExoplanets: true,
+            numberOfPlanets: 8,
+            habitableZone: true,
+        },
+        visual: {
+            brightness: 1.0,
+            colorIndex: 0.65,
+            scale: 1.0,
+            glowIntensity: 0.5,
+        },
+    };
+}
+
 describe("StarSystemManager", () => {
     let scene: THREE.Scene;
     let mockConfig: Required<GalaxyConfig>;
@@ -12,66 +78,8 @@ describe("StarSystemManager", () => {
 
     beforeEach(() => {
         scene = new THREE.Scene();
-        mockConfig = {
-            enableControls: true,
-            enableAnimations: true,
-            enableMobileOptimization: false,
-            antialiasing: true,
-            performanceMode: "medium",
-            starFieldDensity: 1.0,
-            backgroundStarCount: 2000,
-            enableStarLabels: true,
-            enableDistanceIndicators: true,
-            maxRenderDistance: 50,
-            enableBloom: false,
-            enableStarGlow: true,
-            starGlowIntensity: 1.0,
-            solMarkerLabel: "SOL · YOU ARE HERE",
-        };
-
-        mockStarSystemData = {
-            id: "sol",
-            name: "Solar System",
-            description: "Our solar system",
-            systemType: "solar",
-            position: new THREE.Vector3(0, 0, 0),
-            distanceFromEarth: 0,
-            stars: [
-                {
-                    id: "sun",
-                    name: "Sun",
-                    type: "star",
-                    description: "The star at the center of our solar system",
-                    keyFacts: {
-                        diameter: "1,392,700 km",
-                        distanceFromSun: "0 km",
-                        orbitalPeriod: "N/A",
-                        composition: ["Hydrogen", "Helium"],
-                        temperature: "5,500°C",
-                    },
-                    images: ["/images/sun.jpg"],
-                    scale: 1.0,
-                    position: new THREE.Vector3(0, 0, 0),
-                    material: {
-                        color: "#FFFF00",
-                        emissive: "#444400",
-                    },
-                },
-            ],
-            metadata: {
-                spectralClass: "G2V",
-                hasExoplanets: true,
-                numberOfPlanets: 8,
-                habitableZone: true,
-            },
-            visual: {
-                brightness: 1.0,
-                colorIndex: 0.65,
-                scale: 1.0,
-                glowIntensity: 0.5,
-            },
-        };
-
+        mockConfig = createMockConfig();
+        mockStarSystemData = createMockStarSystemData();
         // Reset mocks
         vi.clearAllMocks();
     });
@@ -421,65 +429,8 @@ describe("StarSystemManager — Sol marker", () => {
 
     beforeEach(() => {
         scene = new THREE.Scene();
-        mockConfig = {
-            enableControls: true,
-            enableAnimations: true,
-            enableMobileOptimization: false,
-            antialiasing: true,
-            performanceMode: "medium",
-            starFieldDensity: 1.0,
-            backgroundStarCount: 2000,
-            enableStarLabels: true,
-            enableDistanceIndicators: true,
-            maxRenderDistance: 50,
-            enableBloom: false,
-            enableStarGlow: true,
-            starGlowIntensity: 1.0,
-            solMarkerLabel: "SOL · YOU ARE HERE",
-        };
-
-        mockStarSystemData = {
-            id: "sol",
-            name: "Solar System",
-            description: "Our solar system",
-            systemType: "solar",
-            position: new THREE.Vector3(0, 0, 0),
-            distanceFromEarth: 0,
-            stars: [
-                {
-                    id: "sun",
-                    name: "Sun",
-                    type: "star",
-                    description: "The star at the center of our solar system",
-                    keyFacts: {
-                        diameter: "1,392,700 km",
-                        distanceFromSun: "0 km",
-                        orbitalPeriod: "N/A",
-                        composition: ["Hydrogen", "Helium"],
-                        temperature: "5,500°C",
-                    },
-                    images: ["/images/sun.jpg"],
-                    scale: 1.0,
-                    position: new THREE.Vector3(0, 0, 0),
-                    material: {
-                        color: "#FFFF00",
-                        emissive: "#444400",
-                    },
-                },
-            ],
-            metadata: {
-                spectralClass: "G2V",
-                hasExoplanets: true,
-                numberOfPlanets: 8,
-                habitableZone: true,
-            },
-            visual: {
-                brightness: 1.0,
-                colorIndex: 0.65,
-                scale: 1.0,
-                glowIntensity: 0.5,
-            },
-        };
+        mockConfig = createMockConfig();
+        mockStarSystemData = createMockStarSystemData();
     });
 
     it("adds a sol-marker group at the origin on initialize", async () => {
@@ -505,11 +456,11 @@ describe("StarSystemManager — Sol marker", () => {
         expect(ring.receiveShadow).toBe(false);
     });
 
-    it("adds the localized label sprite only when enableStarLabels is true", async () => {
+    it("adds the localized label sprite only when enableSolLabel is true", async () => {
         const sceneOn = new THREE.Scene();
         const mgrOn = new StarSystemManager(sceneOn, {
             ...mockConfig,
-            enableStarLabels: true,
+            enableSolLabel: true,
         });
         await mgrOn.initialize([mockStarSystemData]);
         const on = sceneOn.children.find((c: any) => c.name === "sol-marker");
@@ -521,7 +472,7 @@ describe("StarSystemManager — Sol marker", () => {
         const sceneOff = new THREE.Scene();
         const mgrOff = new StarSystemManager(sceneOff, {
             ...mockConfig,
-            enableStarLabels: false,
+            enableSolLabel: false,
         });
         await mgrOff.initialize([mockStarSystemData]);
         const off = sceneOff.children.find((c: any) => c.name === "sol-marker");
@@ -549,74 +500,17 @@ describe("StarSystemManager — distance lines", () => {
 
     beforeEach(() => {
         scene = new THREE.Scene();
-        mockConfig = {
-            enableControls: true,
-            enableAnimations: true,
-            enableMobileOptimization: false,
-            antialiasing: true,
-            performanceMode: "medium",
-            starFieldDensity: 1.0,
-            backgroundStarCount: 2000,
-            enableStarLabels: true,
-            enableDistanceIndicators: true,
-            maxRenderDistance: 50,
-            enableBloom: false,
-            enableStarGlow: true,
-            starGlowIntensity: 1.0,
-            solMarkerLabel: "SOL · YOU ARE HERE",
-        };
-
-        mockStarSystemData = {
-            id: "sol",
-            name: "Solar System",
-            description: "Our solar system",
-            systemType: "solar",
-            position: new THREE.Vector3(0, 0, 0),
-            distanceFromEarth: 0,
-            stars: [
-                {
-                    id: "sun",
-                    name: "Sun",
-                    type: "star",
-                    description: "The star at the center of our solar system",
-                    keyFacts: {
-                        diameter: "1,392,700 km",
-                        distanceFromSun: "0 km",
-                        orbitalPeriod: "N/A",
-                        composition: ["Hydrogen", "Helium"],
-                        temperature: "5,500°C",
-                    },
-                    images: ["/images/sun.jpg"],
-                    scale: 1.0,
-                    position: new THREE.Vector3(0, 0, 0),
-                    material: {
-                        color: "#FFFF00",
-                        emissive: "#444400",
-                    },
-                },
-            ],
-            metadata: {
-                spectralClass: "G2V",
-                hasExoplanets: true,
-                numberOfPlanets: 8,
-                habitableZone: true,
-            },
-            visual: {
-                brightness: 1.0,
-                colorIndex: 0.65,
-                scale: 1.0,
-                glowIntensity: 0.5,
-            },
-        };
+        mockConfig = createMockConfig();
+        mockStarSystemData = createMockStarSystemData();
     });
 
-    it("creates distance lines from origin to every system when enabled", async () => {
+    it("creates a distance line parented into each system group when enabled", async () => {
         const manager = new StarSystemManager(scene, {
             ...mockConfig,
             enableDistanceIndicators: true,
         });
         // Three distinct systems at non-origin positions so we can assert
-        // that every system gets its own line segment from the origin.
+        // that every system gets its own line from the origin.
         const systems: StarSystemData[] = [
             {
                 ...mockStarSystemData,
@@ -638,41 +532,37 @@ describe("StarSystemManager — distance lines", () => {
             },
         ];
         await manager.initialize(systems);
-        const lines = scene.children.find(
-            (c: any) => c.name === "sol-distance-lines",
-        ) as THREE.LineSegments;
-        expect(lines).toBeTruthy();
 
-        // Each system contributes one segment (2 vertices): origin → system.
-        const attr = lines.geometry.getAttribute(
-            "position",
-        ) as THREE.BufferAttribute;
-        expect(attr.count).toBe(systems.length * 2);
-        expect(attr.array.length).toBe(systems.length * 6);
-
-        // Every other vertex must be the origin; the paired vertex must
-        // match one of the system positions exactly. Index the typed array
-        // directly (x=array[i*3], y=array[i*3+1], z=array[i*3+2]).
-        const arr = attr.array as Float32Array;
-        const systemPositions = systems.map(
-            (s) => [s.position.x, s.position.y, s.position.z] as const,
-        );
-        for (let i = 0; i < systems.length; i++) {
-            const o = i * 6; // origin vertex offset
-            expect(arr[o]).toBe(0);
-            expect(arr[o + 1]).toBe(0);
-            expect(arr[o + 2]).toBe(0);
-            const s = i * 6 + 3; // system vertex offset
-            const matched = systemPositions.some(
-                (p) =>
-                    p[0] === arr[s] &&
-                    p[1] === arr[s + 1] &&
-                    p[2] === arr[s + 2],
-            );
+        // Each line is a child of its system group (not a scene child), so
+        // updateVisibility culls it together with the system.
+        const groups = (manager as any).starSystemGroups as Map<
+            string,
+            THREE.Group
+        >;
+        for (const s of systems) {
+            const group = groups.get(s.id);
+            expect(group).toBeTruthy();
+            const line = group!.children.find(
+                (c: any) => c.name === "sol-distance-line",
+            ) as THREE.Line | undefined;
             expect(
-                matched,
-                `segment ${i} should end at a system position`,
-            ).toBe(true);
+                line,
+                `system ${s.id} should have a distance line`,
+            ).toBeTruthy();
+
+            // Local-space vertices: (-position) → (0,0,0). In world space
+            // (group at system.position) these map to origin → system.position.
+            const attr = line!.geometry.getAttribute(
+                "position",
+            ) as THREE.BufferAttribute;
+            expect(attr.count).toBe(2);
+            const arr = attr.array as Float32Array;
+            expect(arr[0]).toBe(-s.position.x);
+            expect(arr[1]).toBe(-s.position.y);
+            expect(arr[2]).toBe(-s.position.z);
+            expect(arr[3]).toBe(0);
+            expect(arr[4]).toBe(0);
+            expect(arr[5]).toBe(0);
         }
     });
 
@@ -682,22 +572,64 @@ describe("StarSystemManager — distance lines", () => {
             enableDistanceIndicators: false,
         });
         await manager.initialize([mockStarSystemData]);
-        const lines = scene.children.find(
-            (c: any) => c.name === "sol-distance-lines",
+        const group = (manager as any).starSystemGroups.get("sol");
+        const line = group.children.find(
+            (c: any) => c.name === "sol-distance-line",
         );
-        expect(lines).toBeUndefined();
+        expect(line).toBeUndefined();
     });
 
-    it("setDistanceLinesVisible toggles visibility", async () => {
+    it("setDistanceLinesVisible toggles visibility of every distance line", async () => {
         const manager = new StarSystemManager(scene, {
             ...mockConfig,
             enableDistanceIndicators: true,
         });
         await manager.initialize([mockStarSystemData]);
         manager.setDistanceLinesVisible(false);
-        const lines = scene.children.find(
-            (c: any) => c.name === "sol-distance-lines",
-        );
-        expect(lines!.visible).toBe(false);
+        const group = (manager as any).starSystemGroups.get("sol");
+        const line = group.children.find(
+            (c: any) => c.name === "sol-distance-line",
+        ) as THREE.Line;
+        expect(line.visible).toBe(false);
+        manager.setDistanceLinesVisible(true);
+        expect(line.visible).toBe(true);
+    });
+
+    it("distance lines are culled when updateVisibility hides the system group", async () => {
+        const manager = new StarSystemManager(scene, {
+            ...mockConfig,
+            enableDistanceIndicators: true,
+            maxRenderDistance: 10,
+        });
+        const near = {
+            ...mockStarSystemData,
+            id: "near",
+            position: new THREE.Vector3(5, 0, 0),
+            distanceFromEarth: 5,
+        };
+        const far = {
+            ...mockStarSystemData,
+            id: "far",
+            position: new THREE.Vector3(50, 0, 0),
+            distanceFromEarth: 50,
+        };
+        await manager.initialize([near, far]);
+
+        // Camera at origin: near (5ly) is within 10ly, far (50ly) is not.
+        manager.updateVisibility(new THREE.Vector3(0, 0, 0));
+        const groups = (manager as any).starSystemGroups as Map<
+            string,
+            THREE.Group
+        >;
+        expect(groups.get("near")!.visible).toBe(true);
+        expect(groups.get("far")!.visible).toBe(false);
+        // The far system's line is hidden because it is parented to the
+        // (now-invisible) group — no floating line to an invisible endpoint.
+        const farLine = groups
+            .get("far")!
+            .children.find((c: any) => c.name === "sol-distance-line");
+        expect(farLine).toBeTruthy();
+        // Three.js effective visibility: child hidden when ancestor is hidden.
+        expect(groups.get("far")!.visible).toBe(false);
     });
 });
