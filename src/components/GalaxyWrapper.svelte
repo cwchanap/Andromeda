@@ -62,6 +62,7 @@
     let showSystemDialog = false;
     let selectedSystemId: string | null = null;
     let selectedSystemData: StarSystemData | null = null;
+    let comingSoonNotice = false;
 
     // Configuration state
     let enableAnimations = true;
@@ -105,9 +106,6 @@
             selectedSystemData = system;
             showSystemDialog = true;
         },
-        onCameraChange: (position, zoom) => {
-            // Handle camera changes if needed
-        }
     };
 
     // Initialize renderer
@@ -146,6 +144,7 @@
 
     const closeSystemDialog = () => {
         showSystemDialog = false;
+        comingSoonNotice = false;
     };
 
     // Escape closes the system dialog (mirrors SettingsPanel's pattern).
@@ -171,8 +170,9 @@
         if (planetarySystemRegistry.hasSystem(routeSystemId)) {
             window.location.href = routes.planetarySystem(routeSystemId, lang);
         } else {
-            // Show placeholder message for unimplemented systems
-            alert(`Detailed view for ${systemName(selectedSystemData) || systemId} is coming soon!`);
+            // Show inline notice for unimplemented systems instead of a
+            // blocking native alert().
+            comingSoonNotice = true;
         }
     };
 
@@ -387,6 +387,11 @@
                         <button class="action-button secondary" on:click={closeSystemDialog}>{t('action.close')}</button>
                         <button class="action-button primary" on:click={() => navigateToSystem(selectedSystemId!)}>{canExplore ? t('action.explore') : t('common.comingSoon')}</button>
                     </div>
+                    {#if comingSoonNotice}
+                        <div class="coming-soon-notice" role="status">
+                            {t('galaxy.comingSoonNotice')}
+                        </div>
+                    {/if}
                 </div>
             </div>
         {/if}
@@ -429,4 +434,5 @@
     .action-button.secondary { background: transparent; border: 1px solid var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
     .action-button.primary { background: var(--hud-cyan, #00f0ff); border: 1px solid var(--hud-cyan, #00f0ff); color: #001011; }
     .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .coming-soon-notice { margin-top: 12px; padding: 10px 14px; border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 6px; background: rgba(0,240,255,0.08); color: var(--hud-cyan, #00f0ff); font-size: 13px; text-align: center; }
 </style>

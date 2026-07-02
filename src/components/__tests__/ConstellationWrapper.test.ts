@@ -80,10 +80,11 @@ describe("ConstellationWrapper", () => {
         expect(backBtn).not.toBeNull();
     });
 
-    it("renders the controls toggle button", () => {
+    it("renders multiple buttons in the HUD", () => {
         const { container } = render(ConstellationWrapper);
         const buttons = container.querySelectorAll("button");
-        // At least 2 buttons: back and controls toggle
+        // At least 2 buttons: constellation list rows + fallback/retry
+        // buttons depending on the loading/error state.
         expect(buttons.length).toBeGreaterThanOrEqual(2);
     });
 

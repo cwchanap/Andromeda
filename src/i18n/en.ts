@@ -506,6 +506,7 @@ export const en = {
     "galaxy.controlsTitle": "Galaxy Controls",
     "galaxy.starGlowEffects": "Star Glow Effects",
     "galaxy.solLabel": "Sol Label",
+    "galaxy.comingSoonNotice": "Detailed view for this system is coming soon!",
     "galaxy.maxRenderDistance": "Max Render Distance:",
     "galaxy.distance": "Distance",
     "galaxy.systemType": "System Type",

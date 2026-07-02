@@ -145,11 +145,18 @@ export class StarSystemManager {
 
     /**
      * Set visibility of the Sol origin marker label only (the core/ring
-     * marker stays visible). Falls back to no-op when no label was created.
+     * marker stays visible). Lazily creates the label on first enable when
+     * enableSolLabel was false at init time, so the runtime toggle is never
+     * a silent no-op — mirrors the lazy-create path in
+     * setDistanceLinesVisible.
      */
     setSolLabelVisible(visible: boolean): void {
         if (!this.solMarkerGroup) return;
-        const label = this.solMarkerGroup.getObjectByName("sol-marker-label");
+        let label = this.solMarkerGroup.getObjectByName("sol-marker-label");
+        if (!label && visible) {
+            label = this.createSolLabel(this.config.solMarkerLabel);
+            this.solMarkerGroup.add(label);
+        }
         if (label) label.visible = visible;
     }
 
@@ -523,6 +530,13 @@ export class StarSystemManager {
         this.distanceLinesMaterial?.dispose();
         this.distanceLinesMaterial = null;
         this.distanceLinesBySystem.clear();
+
+        // Remove star system groups from the scene before clearing the map.
+        // Without this, disposed groups remain in the scene graph and can
+        // trigger WebGL warnings on the next render frame.
+        this.starSystemGroups.forEach((group) => {
+            this.scene.remove(group);
+        });
 
         // Clear maps
         this.starSystemGroups.clear();
