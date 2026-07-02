@@ -61,6 +61,12 @@ export class ConstellationRenderer {
     // Both label groups are always created in initialize() so the toggle can
     // turn them on/off without re-running the (canvas-texture) creation path.
     private labelsVisible: boolean = true;
+    // True once the runtime has called setLabelsVisible(). When set, a
+    // subsequent initialize()/updateSky() must NOT overwrite labelsVisible
+    // from skyConfig.showStarNames — the user's runtime choice wins even if
+    // it arrived before init completed (e.g. toggling labels off while the
+    // view is still loading).
+    private _labelsVisibleUserSet: boolean = false;
     // Auto-rotate state — when enabled and no user drag/tween is active, the
     // camera yaw advances each frame to slowly pan the sky. Respects
     // reduced-motion (disabled entirely when `reducedMotion` is true).
@@ -644,7 +650,14 @@ export class ConstellationRenderer {
         // lazily create star labels without a full re-initialize.
         this._skyConfig = skyConfig;
         this._constellations = constellations;
-        this.labelsVisible = !!skyConfig.showStarNames;
+        // Preserve a runtime toggle that arrived before init completed (e.g.
+        // the user opened Settings during loading and turned labels off).
+        // Without this guard, init would overwrite the user's choice with
+        // skyConfig.showStarNames, leaving the checkbox unchecked while
+        // labels are visible.
+        if (!this._labelsVisibleUserSet) {
+            this.labelsVisible = !!skyConfig.showStarNames;
+        }
         this.applyLabelsVisibility();
 
         // Create horizon ring + cardinal direction labels (N/E/S/W)
@@ -1217,6 +1230,7 @@ export class ConstellationRenderer {
      */
     public setLabelsVisible(visible: boolean): void {
         this.labelsVisible = visible;
+        this._labelsVisibleUserSet = true;
         this.applyLabelsVisibility();
     }
 

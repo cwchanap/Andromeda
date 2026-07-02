@@ -1677,6 +1677,84 @@ describe("ConstellationRenderer", () => {
         });
     });
 
+    describe("ConstellationRenderer — labels toggle", () => {
+        it("setLabelsVisible(false) before initialize() is preserved across init", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                // Simulate the user toggling labels OFF while the view is
+                // still loading (before initialize() runs). The Svelte
+                // reactive block fires setLabelsVisible as soon as the
+                // renderer instance exists.
+                renderer.setLabelsVisible(false);
+
+                await renderer.initialize(
+                    [makeStar({ magnitude: 1.0 })],
+                    [makeConstellation()],
+                    // skyConfig defaults showStarNames=true, which would
+                    // overwrite the user's OFF choice without the fix.
+                    makeSkyConfig({ showStarNames: true }),
+                );
+
+                const labelSprites = (renderer as any).labelSprites;
+                const constellationLabels = (renderer as any)
+                    .constellationLabels;
+                // Star labels should either be absent (lazy) or hidden.
+                if (labelSprites) {
+                    expect(labelSprites.visible).toBe(false);
+                }
+                if (constellationLabels) {
+                    expect(constellationLabels.visible).toBe(false);
+                }
+                // Internal state must reflect the user's choice, not skyConfig.
+                expect((renderer as any).labelsVisible).toBe(false);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("setLabelsVisible(true) before initialize() is preserved across init", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                renderer.setLabelsVisible(true);
+
+                await renderer.initialize(
+                    [makeStar({ magnitude: 1.0 })],
+                    [makeConstellation()],
+                    makeSkyConfig({ showStarNames: false }),
+                );
+
+                expect((renderer as any).labelsVisible).toBe(true);
+                const labelSprites = (renderer as any).labelSprites;
+                if (labelSprites) {
+                    expect(labelSprites.visible).toBe(true);
+                }
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("initialize() without a prior setLabelsVisible uses skyConfig.showStarNames", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar({ magnitude: 1.0 })],
+                    [makeConstellation()],
+                    makeSkyConfig({ showStarNames: false }),
+                );
+
+                expect((renderer as any).labelsVisible).toBe(false);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
     describe("ConstellationRenderer — compass", () => {
         it("getCameraAzimuth returns a normalized 0-360 degree value", async () => {
             const container = makeContainer();
