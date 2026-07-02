@@ -643,6 +643,7 @@ export const ja = {
     "galaxy.controlsTitle": "銀河のコントロール",
     "galaxy.starGlowEffects": "星のグロー効果",
     "galaxy.solLabel": "Sol ラベル",
+    "galaxy.comingSoonNotice": "このシステムの詳細ビューは近日公開予定です！",
     "galaxy.maxRenderDistance": "最大レンダリング距離:",
     "galaxy.distance": "距離",
     "galaxy.systemType": "システムタイプ",

@@ -31,10 +31,16 @@ describe("ViewSwitcher", () => {
             nav!.querySelectorAll<HTMLAnchorElement>("a.vs-tab"),
         );
         expect(links).toHaveLength(3);
+        // Inactive tabs carry real hrefs; the active tab (galaxy) omits
+        // href so clicking it does not reload the current page.
         const hrefs = links.map((a) => a.getAttribute("href"));
         expect(hrefs).toContain(expectedHrefs.star);
-        expect(hrefs).toContain(expectedHrefs.galaxy);
         expect(hrefs).toContain(expectedHrefs.constellation);
+        const active = links.find(
+            (a) => a.getAttribute("aria-current") === "page",
+        );
+        expect(active).toBeTruthy();
+        expect(active?.getAttribute("href")).toBeNull();
     });
 
     it("marks only the current view link with aria-current=page", () => {
@@ -158,10 +164,15 @@ describe("ViewSwitcher", () => {
         for (const a of Array.from(
             nav.querySelectorAll<HTMLAnchorElement>("a.vs-tab"),
         )) {
-            // Every link must have a real href (no role=tab, no button fallback).
+            // Every tab must be an <a> (no role=tab, no button fallback).
             expect(a.tagName).toBe("A");
-            expect(a.getAttribute("href")).toBeTruthy();
             expect(a.getAttribute("role")).toBeNull();
+            // Inactive tabs must have a real href so they work without JS.
+            // The active tab intentionally omits href (clicking it would
+            // only reload the current page).
+            if (a.getAttribute("aria-current") !== "page") {
+                expect(a.getAttribute("href")).toBeTruthy();
+            }
         }
     });
 });

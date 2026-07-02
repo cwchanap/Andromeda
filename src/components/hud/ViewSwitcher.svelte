@@ -39,6 +39,7 @@
   let focusIndex = 0;
   let triggerEl: HTMLButtonElement | null = null;
   let menuItems: HTMLAnchorElement[] = [];
+  let mobileEl: HTMLElement | null = null;
 
   function openMenu() {
     mobileOpen = true;
@@ -89,7 +90,18 @@
         break;
     }
   }
+
+  // Close the mobile menu when clicking outside of it. Uses a contains()
+  // check rather than stopPropagation so the toggle's own click handler
+  // (which opens/closes the menu) is not interfered with.
+  function onWindowClick(event: MouseEvent) {
+    if (mobileOpen && mobileEl && !mobileEl.contains(event.target as Node)) {
+      closeMenu();
+    }
+  }
 </script>
+
+<svelte:window on:click={onWindowClick} />
 
 <!-- Desktop: horizontal navigation (always visible). -->
 <nav class="view-switcher" aria-label={t("viewSwitcher.label")}>
@@ -98,7 +110,7 @@
     <a
       class="vs-tab"
       class:is-active={currentView === tab.view}
-      href={tab.href()}
+      href={currentView === tab.view ? undefined : tab.href()}
       aria-current={currentView === tab.view ? "page" : undefined}
     >
       {t(tab.key)}
@@ -107,7 +119,7 @@
 </nav>
 
 <!-- Mobile: collapsed dropdown button + popover menu. -->
-<div class="view-switcher-mobile">
+<div class="view-switcher-mobile" bind:this={mobileEl}>
   <button
     type="button"
     class="vs-mobile-toggle"
