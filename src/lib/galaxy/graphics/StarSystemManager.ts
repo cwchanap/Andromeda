@@ -74,6 +74,8 @@ export class StarSystemManager {
             new THREE.MeshBasicMaterial({ color: "#7dd3fc" }),
         );
         core.name = "sol-marker-core";
+        core.castShadow = false;
+        core.receiveShadow = false;
         group.add(core);
 
         const ring = new THREE.Mesh(
@@ -86,6 +88,8 @@ export class StarSystemManager {
             }),
         );
         ring.name = "sol-marker-ring";
+        ring.castShadow = false;
+        ring.receiveShadow = false;
         this.solRing = ring;
         group.add(ring);
 
