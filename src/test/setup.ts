@@ -4,6 +4,7 @@
 import { vi } from "vitest";
 import { cleanup } from "@testing-library/svelte";
 import { afterEach, beforeAll } from "vitest";
+import { gameActions } from "@/stores/gameStore";
 
 // Mock Three.js
 vi.mock("three", () => ({
@@ -996,6 +997,10 @@ Object.defineProperty(global, "cancelAnimationFrame", {
 afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    // Reset the shared gameStore so wrapper components that write
+    // hudView/hudLang during render don't leak state into subsequent
+    // test files that render HUD components directly with props.
+    gameActions.resetGameState();
 });
 
 // Global test setup

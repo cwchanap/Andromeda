@@ -17,9 +17,14 @@
   import GlitchText from "@/components/hud/GlitchText.svelte";
   import ViewHud from "./hud/ViewHud.svelte";
   import { getCurrentView, type ViewId } from "@/lib/view/currentView";
+  import { gameActions } from "@/stores/gameStore";
 
   export let lang: AppLocale = "en";
   export let translations: Record<string, string> = {};
+
+  // Publish HUD lang to the shared store so the HUD shell can subscribe
+  // via $gameState instead of receiving drilled props.
+  gameActions.setHudLang(lang);
 
   let container: HTMLElement;
   let renderer: ConstellationRenderer | null = null;
@@ -84,6 +89,7 @@
   if (typeof window !== 'undefined') {
     currentView = getCurrentView(window.location.pathname) ?? "constellation";
   }
+  gameActions.setHudView(currentView);
   let scanlinesOn = true;
   // Settings toggles wired to the renderer. Defaults match the skyConfig
   // passed to initialize() (showStarNames=true → labels on; auto-rotate off).

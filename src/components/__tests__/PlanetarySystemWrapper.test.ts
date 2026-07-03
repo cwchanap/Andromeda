@@ -17,6 +17,7 @@ const mockTranslations: Record<string, string> = {
     "controls.resetView": "Reset View",
     "controls.showBarycenters": "Show barycenters",
     "controls.hideBarycenters": "Hide barycenters",
+    "nav.settings": "Settings",
     "finder.title": "Jump To",
     "finder.placeholder": "Search bodies…",
     "finder.empty": "No bodies found",

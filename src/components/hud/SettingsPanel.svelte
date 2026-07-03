@@ -4,6 +4,7 @@
   import { switchLocalePath, type AppLocale } from "@/i18n/routes";
   import { useTranslations } from "@/i18n/utils";
   import { focusTrap } from "@/lib/hud/focusTrap";
+  import { gameState } from "@/stores/gameStore";
   import HudPanel from "./HudPanel.svelte";
 
   export let isOpen = false;
@@ -14,17 +15,20 @@
 
   type Translate = (key: string) => string;
 
-  // Reactive translation helper — recomputes when lang/translations change.
+  // Effective lang: prefer the shared $gameState store (written by wrapper
+  // components on mount), fall back to the prop for direct/test usage.
+  $: effectiveLang = ($gameState.hudLang as AppLocale | undefined) ?? lang;
+
+  // Reactive translation helper — recomputes when effective lang/translations change.
   let t: Translate;
   $: t =
     translations && Object.keys(translations).length
       ? (key: string) => translations[key] || key
-      : (useTranslations(lang) as Translate);
+      : (useTranslations(effectiveLang) as Translate);
 
-  // Derive current language from the prop reactively instead of re-reading
-  // window.location once at init (which could go stale on client nav).
+  // Derive current language reactively from the effective lang.
   let currentLang: AppLocale;
-  $: currentLang = lang;
+  $: currentLang = effectiveLang;
 
   function changeLanguage(newLang: AppLocale) {
     if (typeof window === "undefined") return;
