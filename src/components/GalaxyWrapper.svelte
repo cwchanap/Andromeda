@@ -3,7 +3,7 @@
     import { GalaxyRenderer, localGalaxyData, type GalaxyConfig, type GalaxyEvents, type StarSystemData } from '@/lib/galaxy';
     import { planetarySystemRegistry } from '@/lib/planetary-system';
     import { routes, type AppLocale } from '@/i18n/routes';
-    import { getCurrentView } from '@/lib/view/currentView';
+    import { getCurrentView, type ViewId } from '@/lib/view/currentView';
     import { gameActions } from '@/stores/gameStore';
     import LoadingAnimation from '@/components/LoadingAnimation.svelte';
     import ErrorBoundary from '@/components/ErrorBoundary.svelte';
@@ -49,7 +49,10 @@
     };
 
     // Active view + nearby system search state
-    let currentView = getCurrentView(window.location.pathname) ?? 'galaxy';
+    let currentView: ViewId = 'galaxy';
+    if (typeof window !== 'undefined') {
+        currentView = getCurrentView(window.location.pathname) ?? 'galaxy';
+    }
     gameActions.setHudView(currentView);
     let nearbyQuery = '';
     $: nearbyResults = localGalaxyData.starSystems.filter((s) =>
