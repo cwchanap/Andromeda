@@ -39,17 +39,14 @@
 
   // Screen-reader announcement text for the aria-live region. Updates when
   // the active view or settings panel visibility changes so SR users get a
-  // spoken cue equivalent to the visual HUD chrome.
+  // spoken cue equivalent to the visual HUD chrome. View labels are sourced
+  // from the existing viewSwitcher.* translations so non-English locales get
+  // localized announcements matching the visible switcher.
   let announcement = "";
-  const viewLabel: Record<ViewId, string> = {
-    star: "Solar System",
-    galaxy: "Galaxy",
-    constellation: "Constellation",
-  };
   $: if (showSettings) {
     announcement = `${t("nav.settings")} ${t("action.open") || "opened"}`;
   } else {
-    announcement = `${viewLabel[effectiveView] ?? effectiveView} view`;
+    announcement = t(`viewSwitcher.${effectiveView}`) || effectiveView;
   }
 
   function goHome() {
