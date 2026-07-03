@@ -4,6 +4,7 @@
     import { planetarySystemRegistry } from '@/lib/planetary-system';
     import { routes, type AppLocale } from '@/i18n/routes';
     import { getCurrentView } from '@/lib/view/currentView';
+    import { gameActions } from '@/stores/gameStore';
     import LoadingAnimation from '@/components/LoadingAnimation.svelte';
     import ErrorBoundary from '@/components/ErrorBoundary.svelte';
     import AccessibilityManager from '@/components/AccessibilityManager.svelte';
@@ -17,6 +18,11 @@
 
     // Translation function
     const t = (key: string) => translations[key] || key;
+
+    // Publish HUD view + lang to the shared store so the HUD shell
+    // (ViewHud/ViewSwitcher/SettingsPanel) can subscribe via $gameState
+    // instead of receiving drilled props.
+    gameActions.setHudLang(lang);
 
     // Translate system type raw value
     const getSystemTypeLabel = (type: string) => {
@@ -44,6 +50,7 @@
 
     // Active view + nearby system search state
     let currentView = getCurrentView(window.location.pathname) ?? 'galaxy';
+    gameActions.setHudView(currentView);
     let nearbyQuery = '';
     $: nearbyResults = localGalaxyData.starSystems.filter((s) =>
         systemName(s).toLowerCase().includes(nearbyQuery.toLowerCase())

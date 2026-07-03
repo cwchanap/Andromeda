@@ -20,12 +20,16 @@
   import type { PlanetarySystemConfig, PlanetarySystemEvents } from '@/lib/planetary-system/types';
   import type { CelestialBodyData } from '@/types/game';
   import { getCurrentView, type ViewId } from '@/lib/view/currentView';
-  
+
   // Props
   export let systemId: string;
   export let lang: AppLocale = 'en';
   export let translations: Record<string, string> = {};
-  
+
+  // Publish HUD lang to the shared store so the HUD shell can subscribe
+  // via $gameState instead of receiving drilled props.
+  gameActions.setHudLang(lang);
+
   // Translation function (initialized with no-op fallback; overwritten by reactive block)
   let t: (key: string) => string = (key: string) => key;
   let currentLang: AppLocale = lang;
@@ -55,6 +59,7 @@
   if (typeof window !== 'undefined') {
     currentView = getCurrentView(window.location.pathname) ?? "star";
   }
+  gameActions.setHudView(currentView);
   let currentZoom = 50;
   let showFinder = false;
   let finderQuery = "";

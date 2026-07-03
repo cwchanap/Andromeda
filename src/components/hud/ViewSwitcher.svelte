@@ -5,25 +5,31 @@
   import type { UiKey } from "@/i18n/ui";
   import { useTranslations } from "@/i18n/utils";
   import type { ViewId } from "@/lib/view/currentView";
+  import { gameState } from "@/stores/gameStore";
 
-  export let currentView: ViewId;
+  // Props are optional fallbacks; the shared $gameState store is the
+  // primary source so wrappers don't need to drill currentView/lang.
+  export let currentView: ViewId = "star";
   export let lang: AppLocale = "en";
   export let translations: Record<string, string> = {};
 
+  $: effectiveView = ($gameState.hudView as ViewId | undefined) ?? currentView;
+  $: effectiveLang = ($gameState.hudLang as AppLocale | undefined) ?? lang;
+
   let t: (key: string) => string;
-  // Reactive: recompute when lang or translations change.
+  // Reactive: recompute when effective lang or translations change.
   $: t = translations && Object.keys(translations).length
     ? (key: string) => translations[key] || key
-    : useTranslations(lang);
+    : useTranslations(effectiveLang);
 
   // Each entry is a full-page navigation target (no client router — see spec
   // "Non-goals"). Using real <a href> links gives correct navigation semantics
   // (role="link" + aria-current="page") and works without JS, replacing the
   // earlier role="tablist" which is semantically wrong for page navigation.
   const tabs: { view: ViewId; key: UiKey; href: () => string }[] = [
-    { view: "star", key: "viewSwitcher.star", href: () => routes.planetarySystem("solar", lang) },
-    { view: "galaxy", key: "viewSwitcher.galaxy", href: () => routes.galaxy(lang) },
-    { view: "constellation", key: "viewSwitcher.constellation", href: () => routes.constellation(lang) },
+    { view: "star", key: "viewSwitcher.star", href: () => routes.planetarySystem("solar", effectiveLang) },
+    { view: "galaxy", key: "viewSwitcher.galaxy", href: () => routes.galaxy(effectiveLang) },
+    { view: "constellation", key: "viewSwitcher.constellation", href: () => routes.constellation(effectiveLang) },
   ];
 
   // Mobile dropdown state. Desktop keeps the always-visible horizontal nav;
@@ -31,7 +37,7 @@
   // links in a vertical dropdown with full WAI-ARIA menu semantics
   // (role="menu" + role="menuitem", arrow-key navigation, roving tabindex).
   let mobileOpen = false;
-  $: activeTab = tabs.find((tab) => tab.view === currentView) ?? tabs[0];
+  $: activeTab = tabs.find((tab) => tab.view === effectiveView) ?? tabs[0];
 
   // Roving tabindex: the active (or first) item is tabbable; the rest are
   // focusable only via arrow keys. focusIndex tracks which item the menu
@@ -43,7 +49,7 @@
 
   function openMenu() {
     mobileOpen = true;
-    focusIndex = tabs.findIndex((tab) => tab.view === currentView);
+    focusIndex = tabs.findIndex((tab) => tab.view === effectiveView);
     if (focusIndex < 0) focusIndex = 0;
     // Wait for the {#if mobileOpen} block to render the menu items, then
     // move focus to the resting item (roving tabindex entry point).
@@ -109,9 +115,9 @@
   {#each tabs as tab (tab.view)}
     <a
       class="vs-tab"
-      class:is-active={currentView === tab.view}
+      class:is-active={effectiveView === tab.view}
       href={tab.href()}
-      aria-current={currentView === tab.view ? "page" : undefined}
+      aria-current={effectiveView === tab.view ? "page" : undefined}
     >
       {t(tab.key)}
     </a>
@@ -144,11 +150,11 @@
       {#each tabs as tab, i (tab.view)}
         <a
           class="vs-mobile-item"
-          class:is-active={currentView === tab.view}
+          class:is-active={effectiveView === tab.view}
           href={tab.href()}
           role="menuitem"
           tabindex={i === focusIndex ? 0 : -1}
-          aria-current={currentView === tab.view ? "page" : undefined}
+          aria-current={effectiveView === tab.view ? "page" : undefined}
           bind:this={menuItems[i]}
           on:click={() => (mobileOpen = false)}
           on:focus={() => (focusIndex = i)}

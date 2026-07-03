@@ -78,6 +78,16 @@ export const gameActions = {
         gameState.update((state) => ({ ...state, currentView: view }));
     },
 
+    // HUD shell state — written by wrapper components so the shared HUD
+    // (ViewHud/ViewSwitcher/SettingsPanel) can subscribe via $gameState
+    // instead of receiving currentView/lang as drilled props.
+    setHudView: (view: "star" | "galaxy" | "constellation") => {
+        gameState.update((state) => ({ ...state, hudView: view }));
+    },
+    setHudLang: (lang: "en" | "zh" | "ja") => {
+        gameState.update((state) => ({ ...state, hudLang: lang }));
+    },
+
     showInfoModal: (show: boolean) => {
         gameState.update((state) => ({
             ...state,
