@@ -611,5 +611,63 @@ describe("GalaxyRenderer", () => {
             expect(spy).toHaveBeenCalledWith(false);
             expect((renderer as any).reducedMotion).toBe(false);
         });
+
+        it("replays setSolLabelVisible(false) called before initialize()", async () => {
+            // GalaxyWrapper's reactive `$: if (renderer) renderer.setSolLabelVisible(...)`
+            // fires when the renderer is assigned, which happens BEFORE `await
+            // initialize()` resolves and creates starSystemManager. Without
+            // caching, the call is a no-op and init creates the Sol label
+            // visible (per default config), losing the user's toggle. The
+            // cached value must be replayed once the manager exists.
+            const renderer = new GalaxyRenderer(
+                container,
+                mockConfig,
+                mockEvents,
+            );
+            // Called before initialize() — manager does not exist yet.
+            renderer.setSolLabelVisible(false);
+
+            await renderer.initialize(mockGalaxyData);
+            const ssm = (renderer as any).starSystemManager;
+            // The label must have been hidden during init replay.
+            const label =
+                ssm.solMarkerGroup.getObjectByName("sol-marker-label");
+            expect(label).toBeDefined();
+            expect(label.visible).toBe(false);
+
+            // Subsequent calls still forward live.
+            const spy = vi.spyOn(ssm, "setSolLabelVisible");
+            renderer.setSolLabelVisible(true);
+            expect(spy).toHaveBeenCalledWith(true);
+        });
+
+        it("replays setDistanceLinesVisible(false) called before initialize()", async () => {
+            // Same race as Sol Label: the reactive block fires before init
+            // creates the distance lines, so the no-op call is lost and init
+            // creates the lines visible. The cached value must be replayed.
+            const renderer = new GalaxyRenderer(
+                container,
+                mockConfig,
+                mockEvents,
+            );
+            // Called before initialize() — manager does not exist yet.
+            renderer.setDistanceLinesVisible(false);
+
+            await renderer.initialize(mockGalaxyData);
+            const ssm = (renderer as any).starSystemManager;
+            // Every distance line must have been hidden during init replay.
+            const lines = Array.from(
+                ssm.distanceLinesBySystem.values() as IterableIterator<any>,
+            );
+            expect(lines.length).toBeGreaterThan(0);
+            for (const line of lines) {
+                expect(line.visible).toBe(false);
+            }
+
+            // Subsequent calls still forward live.
+            const spy = vi.spyOn(ssm, "setDistanceLinesVisible");
+            renderer.setDistanceLinesVisible(true);
+            expect(spy).toHaveBeenCalledWith(true);
+        });
     });
 });
