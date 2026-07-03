@@ -8,8 +8,8 @@
 
 Two related usability issues across the three main 3D views:
 
-1. **Scattered, overlapping HUD controls.** Each view has a completely different HUD layout and styling system. The Galaxy view is the worst offender: it still uses legacy bespoke CSS, its top-right gear button literally overlaps the global language selector, and selecting a star opens both a corner tooltip *and* a full-screen dialog showing the same data. "Back to Menu" lives in a different corner on every view, settings are reimplemented three different ways, and switching views always requires bouncing through the Home hub.
-2. **No position indication in Galaxy/Constellation.** Earth/Sol is implicitly at the origin `(0,0,0)` in galaxy space, but there is no marker, label, or highlight anywhere. The Solar System is not even in the galaxy dataset. The config flags `enableSolLabel` and `enableDistanceIndicators` were scaffolded but never implemented. In the Constellation view, Earth *is* the camera (observer-centric), so "you are here" means something different there, and orientation is not legible.
+1. **Scattered, overlapping HUD controls.** Each view has a completely different HUD layout and styling system. The Galaxy view is the worst offender: it still uses legacy bespoke CSS, its top-right gear button literally overlaps the global language selector, and selecting a star opens both a corner tooltip _and_ a full-screen dialog showing the same data. "Back to Menu" lives in a different corner on every view, settings are reimplemented three different ways, and switching views always requires bouncing through the Home hub.
+2. **No position indication in Galaxy/Constellation.** Earth/Sol is implicitly at the origin `(0,0,0)` in galaxy space, but there is no marker, label, or highlight anywhere. The Solar System is not even in the galaxy dataset. The config flags `enableSolLabel` and `enableDistanceIndicators` were scaffolded but never implemented. In the Constellation view, Earth _is_ the camera (observer-centric), so "you are here" means something different there, and orientation is not legible.
 
 ## Goals
 
@@ -30,13 +30,13 @@ Two related usability issues across the three main 3D views:
 
 ## Key Design Decisions (approved)
 
-| Decision | Choice |
-|----------|--------|
-| HUD consolidation philosophy | **Unified shared chrome** — one consistent frame/layout on all three views |
-| Cross-view navigation | **Persistent view-switcher** in the HUD (Star · Galaxy · Constellation) |
-| Galaxy position indicator | **Marker + label + distance lines** |
-| Constellation position indicator | **Horizon ring + compass** |
-| Implementation approach | **A — Shared HUD shell component with slots** |
+| Decision                         | Choice                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| HUD consolidation philosophy     | **Unified shared chrome** — one consistent frame/layout on all three views |
+| Cross-view navigation            | **Persistent view-switcher** in the HUD (Star · Galaxy · Constellation)    |
+| Galaxy position indicator        | **Marker + label + distance lines**                                        |
+| Constellation position indicator | **Horizon ring + compass**                                                 |
+| Implementation approach          | **A — Shared HUD shell component with slots**                              |
 
 ---
 
@@ -46,13 +46,13 @@ A new `ViewHud.svelte` becomes the single owner of the consistent chrome. It wra
 
 ### Fixed chrome owned by `ViewHud.svelte` (identical on all 3 views)
 
-| Corner | Element |
-|--------|---------|
-| **Top-left** | `Back` button → Home |
-| **Top-center** | Persistent view-switcher: **Star · Galaxy · Constellation** (highlights current view) |
-| **Top-right** | Settings gear → opens unified `SettingsPanel`; language selector (🌐) moves *inside* this panel |
-| **Bottom-left** | reserved snippet slot (pinned-body chip / drag-hint) |
-| **Bottom-right** | reserved snippet slot |
+| Corner           | Element                                                                                         |
+| ---------------- | ----------------------------------------------------------------------------------------------- |
+| **Top-left**     | `Back` button → Home                                                                            |
+| **Top-center**   | Persistent view-switcher: **Star · Galaxy · Constellation** (highlights current view)           |
+| **Top-right**    | Settings gear → opens unified `SettingsPanel`; language selector (🌐) moves _inside_ this panel |
+| **Bottom-left**  | reserved snippet slot (pinned-body chip / drag-hint)                                            |
+| **Bottom-right** | reserved snippet slot                                                                           |
 
 ### Snippet slots each wrapper provides
 
@@ -76,14 +76,15 @@ Galaxy's legacy `.hamburger-button` / `.controls-button` / blue `#64b5f6` CSS is
 ### Unified `SettingsPanel` (top-right gear, same component on all views)
 
 Always contains:
+
 - **Language** selector (en/zh/ja) — the relocated 🌐 function
 - **View-specific toggles**, injected via a `settings` snippet so each view owns its own options without reinventing the panel
 
-| View | Settings options |
-|------|------------------|
-| Star | Toggle Barycenters; Orbit-speed slider (with Reset) |
-| Galaxy | Animations; Star Glow; Star Labels; **Distance Lines** (new); max render distance |
-| Constellation | Scan lines; star/constellation labels; auto-rotate |
+| View          | Settings options                                                                  |
+| ------------- | --------------------------------------------------------------------------------- |
+| Star          | Toggle Barycenters; Orbit-speed slider (with Reset)                               |
+| Galaxy        | Animations; Star Glow; Star Labels; **Distance Lines** (new); max render distance |
+| Constellation | Scan lines; star/constellation labels; auto-rotate                                |
 
 This replaces the three different settings implementations with one shared component + a per-view snippet.
 
@@ -127,13 +128,13 @@ Adjust `GalaxyRenderer.initialize()` so the camera starts aimed at — and close
 
 ### No data model change
 
-Sol is *not* added to `localGalaxyData.starSystems` (which is explicitly "30 nearest systems to Earth"); it stays a standalone renderer-managed marker, keeping the dataset semantics clean.
+Sol is _not_ added to `localGalaxyData.starSystems` (which is explicitly "30 nearest systems to Earth"); it stays a standalone renderer-managed marker, keeping the dataset semantics clean.
 
 ---
 
 ## Section 4 — Constellation orientation indicator (horizon ring + compass)
 
-Here Earth *is* the camera (observer at origin looking up `+y`), so the indicator is about **orientation**, not a point. Built in `ConstellationRenderer.ts`.
+Here Earth _is_ the camera (observer at origin looking up `+y`), so the indicator is about **orientation**, not a point. Built in `ConstellationRenderer.ts`.
 
 ### Horizon ring
 

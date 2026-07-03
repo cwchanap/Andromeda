@@ -23,6 +23,7 @@
 ## File Structure
 
 **Modified files:**
+
 - `src/lib/galaxy/types.ts` — add `solMarkerLabel: string` to `GalaxyConfig`.
 - `src/lib/galaxy/graphics/StarSystemManager.ts` — Sol marker + label + distance lines + toggles + dispose.
 - `src/lib/galaxy/graphics/__tests__/StarSystemManager.test.ts` — new tests.
@@ -48,9 +49,11 @@ Run: `rg -n "galaxy.solMarkerLabel" src/i18n/en.ts`
 ### Task 1: Add `solMarkerLabel` to `GalaxyConfig`
 
 **Files:**
+
 - Modify: `src/lib/galaxy/types.ts`
 
 **Interfaces:**
+
 - Produces: `GalaxyConfig.solMarkerLabel: string` (consumed by `StarSystemManager` in Task 2).
 
 - [ ] **Step 1: Add the field**
@@ -58,8 +61,8 @@ Run: `rg -n "galaxy.solMarkerLabel" src/i18n/en.ts`
 In `src/lib/galaxy/types.ts`, inside `export interface GalaxyConfig { … }`, after `starGlowIntensity: number;`, add:
 
 ```ts
-    // Label text for the Sol / "you are here" origin marker (localized by caller)
-    solMarkerLabel: string;
+// Label text for the Sol / "you are here" origin marker (localized by caller)
+solMarkerLabel: string;
 ```
 
 - [ ] **Step 2: Update the `Required<GalaxyConfig>` default in `GalaxyRenderer.ts`**
@@ -87,10 +90,12 @@ git commit -m "feat(galaxy): add solMarkerLabel to GalaxyConfig"
 ### Task 2: StarSystemManager — Sol marker + label (TDD)
 
 **Files:**
+
 - Modify: `src/lib/galaxy/graphics/StarSystemManager.ts`
 - Test: `src/lib/galaxy/graphics/__tests__/StarSystemManager.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Required<GalaxyConfig>` (now incl. `solMarkerLabel`, `enableSolLabel`), `StarSystemData`.
 - Produces: private `solMarkerGroup: THREE.Group | null`; public `setSolMarkerVisible(visible: boolean): void`; marker added to `this.scene` during `initialize()`.
 
@@ -100,47 +105,59 @@ Append to `src/lib/galaxy/graphics/__tests__/StarSystemManager.test.ts`. First e
 
 ```ts
 describe("StarSystemManager — Sol marker", () => {
-    it("adds a sol-marker group at the origin on initialize", async () => {
-        const scene = new THREE.Scene();
-        const manager = new StarSystemManager(scene, { ...mockConfig });
-        await manager.initialize([mockStarSystemData]);
+  it("adds a sol-marker group at the origin on initialize", async () => {
+    const scene = new THREE.Scene();
+    const manager = new StarSystemManager(scene, { ...mockConfig });
+    await manager.initialize([mockStarSystemData]);
 
-        const marker = scene.children.find((c: any) => c.name === "sol-marker");
-        expect(marker).toBeTruthy();
-        expect(marker!.position.x).toBe(0);
-        expect(marker!.position.y).toBe(0);
-        expect(marker!.position.z).toBe(0);
+    const marker = scene.children.find((c: any) => c.name === "sol-marker");
+    expect(marker).toBeTruthy();
+    expect(marker!.position.x).toBe(0);
+    expect(marker!.position.y).toBe(0);
+    expect(marker!.position.z).toBe(0);
 
-        const core = (marker as any).children.find((c: any) => c.name === "sol-marker-core");
-        expect(core).toBeTruthy();
+    const core = (marker as any).children.find(
+      (c: any) => c.name === "sol-marker-core",
+    );
+    expect(core).toBeTruthy();
+  });
+
+  it("adds the localized label sprite only when enableSolLabel is true", async () => {
+    const sceneOn = new THREE.Scene();
+    const mgrOn = new StarSystemManager(sceneOn, {
+      ...mockConfig,
+      enableSolLabel: true,
     });
+    await mgrOn.initialize([mockStarSystemData]);
+    const on = sceneOn.children.find((c: any) => c.name === "sol-marker");
+    const labelOn = (on as any).children.find(
+      (c: any) => c.name === "sol-marker-label",
+    );
+    expect(labelOn).toBeTruthy();
 
-    it("adds the localized label sprite only when enableSolLabel is true", async () => {
-        const sceneOn = new THREE.Scene();
-        const mgrOn = new StarSystemManager(sceneOn, { ...mockConfig, enableSolLabel: true });
-        await mgrOn.initialize([mockStarSystemData]);
-        const on = sceneOn.children.find((c: any) => c.name === "sol-marker");
-        const labelOn = (on as any).children.find((c: any) => c.name === "sol-marker-label");
-        expect(labelOn).toBeTruthy();
-
-        const sceneOff = new THREE.Scene();
-        const mgrOff = new StarSystemManager(sceneOff, { ...mockConfig, enableSolLabel: false });
-        await mgrOff.initialize([mockStarSystemData]);
-        const off = sceneOff.children.find((c: any) => c.name === "sol-marker");
-        const labelOff = (off as any).children.find((c: any) => c.name === "sol-marker-label");
-        expect(labelOff).toBeUndefined();
+    const sceneOff = new THREE.Scene();
+    const mgrOff = new StarSystemManager(sceneOff, {
+      ...mockConfig,
+      enableSolLabel: false,
     });
+    await mgrOff.initialize([mockStarSystemData]);
+    const off = sceneOff.children.find((c: any) => c.name === "sol-marker");
+    const labelOff = (off as any).children.find(
+      (c: any) => c.name === "sol-marker-label",
+    );
+    expect(labelOff).toBeUndefined();
+  });
 
-    it("setSolMarkerVisible toggles the marker group visibility", async () => {
-        const scene = new THREE.Scene();
-        const manager = new StarSystemManager(scene, { ...mockConfig });
-        await manager.initialize([mockStarSystemData]);
-        manager.setSolMarkerVisible(false);
-        const marker = scene.children.find((c: any) => c.name === "sol-marker");
-        expect(marker!.visible).toBe(false);
-        manager.setSolMarkerVisible(true);
-        expect(marker!.visible).toBe(true);
-    });
+  it("setSolMarkerVisible toggles the marker group visibility", async () => {
+    const scene = new THREE.Scene();
+    const manager = new StarSystemManager(scene, { ...mockConfig });
+    await manager.initialize([mockStarSystemData]);
+    manager.setSolMarkerVisible(false);
+    const marker = scene.children.find((c: any) => c.name === "sol-marker");
+    expect(marker!.visible).toBe(false);
+    manager.setSolMarkerVisible(true);
+    expect(marker!.visible).toBe(true);
+  });
 });
 ```
 
@@ -224,8 +241,8 @@ In `src/lib/galaxy/graphics/StarSystemManager.ts`:
 (c) Call it at the end of `initialize()`. Locate `async initialize(starSystems: StarSystemData[])` (it loops calling `this.createStarSystem(system)`). Immediately after that loop completes (before the method returns), insert:
 
 ```ts
-        this.solMarkerGroup = this.createSolMarker();
-        this.scene.add(this.solMarkerGroup);
+this.solMarkerGroup = this.createSolMarker();
+this.scene.add(this.solMarkerGroup);
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -245,10 +262,12 @@ git commit -m "feat(galaxy): add Sol origin marker + localized label"
 ### Task 3: StarSystemManager — distance lines (TDD)
 
 **Files:**
+
 - Modify: `src/lib/galaxy/graphics/StarSystemManager.ts`
 - Test: `src/lib/galaxy/graphics/__tests__/StarSystemManager.test.ts`
 
 **Interfaces:**
+
 - Produces: private `distanceLines: THREE.LineSegments | null`; public `setDistanceLinesVisible(visible: boolean): void`. Created during `initialize()` only when `config.enableDistanceIndicators` is true.
 
 - [ ] **Step 1: Add the failing tests**
@@ -257,30 +276,45 @@ Append to the StarSystemManager test file:
 
 ```ts
 describe("StarSystemManager — distance lines", () => {
-    it("creates distance lines from origin to every system when enabled", async () => {
-        const scene = new THREE.Scene();
-        const manager = new StarSystemManager(scene, { ...mockConfig, enableDistanceIndicators: true });
-        await manager.initialize([mockStarSystemData]);
-        const lines = scene.children.find((c: any) => c.name === "sol-distance-lines");
-        expect(lines).toBeTruthy();
+  it("creates distance lines from origin to every system when enabled", async () => {
+    const scene = new THREE.Scene();
+    const manager = new StarSystemManager(scene, {
+      ...mockConfig,
+      enableDistanceIndicators: true,
     });
+    await manager.initialize([mockStarSystemData]);
+    const lines = scene.children.find(
+      (c: any) => c.name === "sol-distance-lines",
+    );
+    expect(lines).toBeTruthy();
+  });
 
-    it("does not create distance lines when disabled", async () => {
-        const scene = new THREE.Scene();
-        const manager = new StarSystemManager(scene, { ...mockConfig, enableDistanceIndicators: false });
-        await manager.initialize([mockStarSystemData]);
-        const lines = scene.children.find((c: any) => c.name === "sol-distance-lines");
-        expect(lines).toBeUndefined();
+  it("does not create distance lines when disabled", async () => {
+    const scene = new THREE.Scene();
+    const manager = new StarSystemManager(scene, {
+      ...mockConfig,
+      enableDistanceIndicators: false,
     });
+    await manager.initialize([mockStarSystemData]);
+    const lines = scene.children.find(
+      (c: any) => c.name === "sol-distance-lines",
+    );
+    expect(lines).toBeUndefined();
+  });
 
-    it("setDistanceLinesVisible toggles visibility", async () => {
-        const scene = new THREE.Scene();
-        const manager = new StarSystemManager(scene, { ...mockConfig, enableDistanceIndicators: true });
-        await manager.initialize([mockStarSystemData]);
-        manager.setDistanceLinesVisible(false);
-        const lines = scene.children.find((c: any) => c.name === "sol-distance-lines");
-        expect(lines!.visible).toBe(false);
+  it("setDistanceLinesVisible toggles visibility", async () => {
+    const scene = new THREE.Scene();
+    const manager = new StarSystemManager(scene, {
+      ...mockConfig,
+      enableDistanceIndicators: true,
     });
+    await manager.initialize([mockStarSystemData]);
+    manager.setDistanceLinesVisible(false);
+    const lines = scene.children.find(
+      (c: any) => c.name === "sol-distance-lines",
+    );
+    expect(lines!.visible).toBe(false);
+  });
 });
 ```
 
@@ -330,10 +364,10 @@ In `StarSystemManager.ts`:
 (c) In `initialize()`, right after the Sol marker is added, insert:
 
 ```ts
-        if (this.config.enableDistanceIndicators) {
-            this.distanceLines = this.createDistanceLines(starSystems);
-            this.scene.add(this.distanceLines);
-        }
+if (this.config.enableDistanceIndicators) {
+  this.distanceLines = this.createDistanceLines(starSystems);
+  this.scene.add(this.distanceLines);
+}
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -346,23 +380,23 @@ Expected: PASS.
 In `StarSystemManager.dispose()` (find the existing method), before it clears its maps, add disposal for the new objects:
 
 ```ts
-        if (this.solMarkerGroup) {
-            this.solMarkerGroup.traverse((obj) => {
-                const mesh = obj as THREE.Mesh;
-                if (mesh.geometry) mesh.geometry.dispose();
-                const mat = mesh.material as THREE.Material | THREE.Material[];
-                if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
-                else if (mat) mat.dispose();
-            });
-            this.scene.remove(this.solMarkerGroup);
-            this.solMarkerGroup = null;
-        }
-        if (this.distanceLines) {
-            this.distanceLines.geometry.dispose();
-            (this.distanceLines.material as THREE.Material).dispose();
-            this.scene.remove(this.distanceLines);
-            this.distanceLines = null;
-        }
+if (this.solMarkerGroup) {
+  this.solMarkerGroup.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (mesh.geometry) mesh.geometry.dispose();
+    const mat = mesh.material as THREE.Material | THREE.Material[];
+    if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+    else if (mat) mat.dispose();
+  });
+  this.scene.remove(this.solMarkerGroup);
+  this.solMarkerGroup = null;
+}
+if (this.distanceLines) {
+  this.distanceLines.geometry.dispose();
+  (this.distanceLines.material as THREE.Material).dispose();
+  this.scene.remove(this.distanceLines);
+  this.distanceLines = null;
+}
 ```
 
 - [ ] **Step 6: Run full galaxy test suite**
@@ -382,10 +416,12 @@ git commit -m "feat(galaxy): add distance lines from Sol to star systems"
 ### Task 4: GalaxyRenderer — camera framing + toggle forwarding
 
 **Files:**
+
 - Modify: `src/lib/galaxy/graphics/GalaxyRenderer.ts`
 - Test: `src/lib/galaxy/graphics/__tests__/GalaxyRenderer.test.ts`
 
 **Interfaces:**
+
 - Produces: public `setDistanceLinesVisible(visible): void` and `setSolMarkerVisible(visible): void` delegating to `starSystemManager`. Initial camera moved closer to frame Sol.
 
 - [ ] **Step 1: Add a failing test for camera framing**
@@ -394,20 +430,20 @@ Append to `src/lib/galaxy/graphics/__tests__/GalaxyRenderer.test.ts`:
 
 ```ts
 describe("GalaxyRenderer — Sol framing", () => {
-    it("positions the camera close enough to see the origin on initialize", async () => {
-        const renderer = new GalaxyRenderer(container, mockConfig, mockEvents);
-        await renderer.initialize(mockGalaxyData);
-        const dist = Math.sqrt(
-            camera.position.x ** 2 + camera.position.y ** 2 + camera.position.z ** 2,
-        );
-        expect(dist).toBeLessThanOrEqual(10);
-    });
+  it("positions the camera close enough to see the origin on initialize", async () => {
+    const renderer = new GalaxyRenderer(container, mockConfig, mockEvents);
+    await renderer.initialize(mockGalaxyData);
+    const dist = Math.sqrt(
+      camera.position.x ** 2 + camera.position.y ** 2 + camera.position.z ** 2,
+    );
+    expect(dist).toBeLessThanOrEqual(10);
+  });
 
-    it("forwards setDistanceLinesVisible to the star system manager", async () => {
-        const renderer = new GalaxyRenderer(container, mockConfig, mockEvents);
-        await renderer.initialize(mockGalaxyData);
-        expect(() => renderer.setDistanceLinesVisible(false)).not.toThrow();
-    });
+  it("forwards setDistanceLinesVisible to the star system manager", async () => {
+    const renderer = new GalaxyRenderer(container, mockConfig, mockEvents);
+    await renderer.initialize(mockGalaxyData);
+    expect(() => renderer.setDistanceLinesVisible(false)).not.toThrow();
+  });
 });
 ```
 
@@ -425,10 +461,10 @@ In `src/lib/galaxy/graphics/GalaxyRenderer.ts`:
 (a) In `initialize()`, replace the camera framing block:
 
 ```ts
-        // Position camera to frame the Sol marker at the origin
-        this.camera.position.set(6, 4, 6);
-        this.camera.lookAt(0, 0, 0);
-        this.controls.update();
+// Position camera to frame the Sol marker at the origin
+this.camera.position.set(6, 4, 6);
+this.camera.lookAt(0, 0, 0);
+this.controls.update();
 ```
 
 Also apply the same `this.camera.position.set(6, 4, 6); this.camera.lookAt(0, 0, 0);` in `setupCamera()` (keep `near`/`far`/`updateProjectionMatrix` lines).
@@ -462,9 +498,11 @@ git commit -m "feat(galaxy): frame Sol on init + expose indicator toggles"
 ### Task 5: Wire Galaxy HUD toggles to the renderer
 
 **Files:**
+
 - Modify: `src/components/GalaxyWrapper.svelte`
 
 **Interfaces:**
+
 - Consumes: `GalaxyRenderer.setDistanceLinesVisible`, `setSolMarkerVisible`; i18n key `galaxy.solMarkerLabel`.
 
 - [ ] **Step 1: Pass localized label + initial toggles into the renderer config**
@@ -482,8 +520,8 @@ In `GalaxyWrapper.svelte`, in the `defaultConfig` object literal, add (alongside
 After the renderer is created/initialized (near the existing `$: if (container && !renderer) initializeRenderer();`), add:
 
 ```ts
-  $: if (renderer) renderer.setDistanceLinesVisible(enableDistanceLines);
-  $: if (renderer) renderer.setSolMarkerVisible(enableSolLabel);
+$: if (renderer) renderer.setDistanceLinesVisible(enableDistanceLines);
+$: if (renderer) renderer.setSolMarkerVisible(enableSolLabel);
 ```
 
 - [ ] **Step 3: Verify**
@@ -503,10 +541,12 @@ git commit -m "feat(galaxy): wire distance-lines + Sol-label toggles to renderer
 ### Task 6: ConstellationRenderer — horizon ring + cardinal labels (TDD)
 
 **Files:**
+
 - Modify: `src/lib/constellation/ConstellationRenderer.ts`
 - Test: `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
 
 **Interfaces:**
+
 - Consumes: existing `initialize(stars, constellations, skyConfig)`.
 - Produces: private `horizonRing: THREE.LineLoop`, `cardinalLabels: THREE.Group`; a `createOrientationGuides()` method called from `initialize()`; both added to `this.scene`.
 
@@ -516,40 +556,44 @@ Append to `src/lib/constellation/__tests__/ConstellationRenderer.test.ts` (reuse
 
 ```ts
 describe("ConstellationRenderer — orientation guides", () => {
-    it("adds a horizon ring on the y=0 plane", async () => {
-        const container = makeContainer();
-        const renderer = new ConstellationRenderer(container);
-        await renderer.initialize(
-            [makeStar()],
-            [makeConstellation()],
-            makeSkyConfig(),
-        );
-        const ring = (renderer as any).scene.children.find(
-            (c: any) => c.name === "horizon-ring",
-        );
-        expect(ring).toBeTruthy();
-        // every vertex sits at y = 0 (horizon plane)
-        const attr = ring.geometry.getAttribute("position");
-        for (let i = 1; i < attr.count * 3; i += 3) {
-            expect(attr.array[i]).toBe(0);
-        }
-    });
+  it("adds a horizon ring on the y=0 plane", async () => {
+    const container = makeContainer();
+    const renderer = new ConstellationRenderer(container);
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
+    const ring = (renderer as any).scene.children.find(
+      (c: any) => c.name === "horizon-ring",
+    );
+    expect(ring).toBeTruthy();
+    // every vertex sits at y = 0 (horizon plane)
+    const attr = ring.geometry.getAttribute("position");
+    for (let i = 1; i < attr.count * 3; i += 3) {
+      expect(attr.array[i]).toBe(0);
+    }
+  });
 
-    it("adds four cardinal labels N/E/S/W", async () => {
-        const container = makeContainer();
-        const renderer = new ConstellationRenderer(container);
-        await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
-        const group = (renderer as any).scene.children.find(
-            (c: any) => c.name === "cardinal-labels",
-        );
-        expect(group).toBeTruthy();
-        const names = group.children.map((c: any) => c.name);
-        expect(names).toContain("cardinal-N");
-        expect(names).toContain("cardinal-E");
-        expect(names).toContain("cardinal-S");
-        expect(names).toContain("cardinal-W");
-        expect(group.children.length).toBe(4);
-    });
+  it("adds four cardinal labels N/E/S/W", async () => {
+    const container = makeContainer();
+    const renderer = new ConstellationRenderer(container);
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
+    const group = (renderer as any).scene.children.find(
+      (c: any) => c.name === "cardinal-labels",
+    );
+    expect(group).toBeTruthy();
+    const names = group.children.map((c: any) => c.name);
+    expect(names).toContain("cardinal-N");
+    expect(names).toContain("cardinal-E");
+    expect(names).toContain("cardinal-S");
+    expect(names).toContain("cardinal-W");
+    expect(group.children.length).toBe(4);
+  });
 });
 ```
 
@@ -643,7 +687,7 @@ In `src/lib/constellation/ConstellationRenderer.ts`:
 (c) Call it from `initialize()`. Locate `async initialize(stars, constellations, skyConfig)` and call, after the existing star/line/label creation steps (near the end, before the render loop starts):
 
 ```ts
-        this.createOrientationGuides();
+this.createOrientationGuides();
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -656,24 +700,24 @@ Expected: PASS.
 In `ConstellationRenderer.dispose()` (or its `clearScene()` helper), add removal + disposal of the new objects. In the section that removes `constellationLines`/labels, add:
 
 ```ts
-        if (this.horizonRing) {
-            this.horizonRing.geometry.dispose();
-            (this.horizonRing.material as THREE.Material).dispose();
-            this.scene.remove(this.horizonRing);
-            this.horizonRing = null;
-        }
-        if (this.cardinalLabels) {
-            this.cardinalLabels.traverse((obj) => {
-                const sprite = obj as THREE.Sprite;
-                const mat = sprite.material as THREE.SpriteMaterial | undefined;
-                if (mat) {
-                    mat.map?.dispose();
-                    mat.dispose();
-                }
-            });
-            this.scene.remove(this.cardinalLabels);
-            this.cardinalLabels = null;
-        }
+if (this.horizonRing) {
+  this.horizonRing.geometry.dispose();
+  (this.horizonRing.material as THREE.Material).dispose();
+  this.scene.remove(this.horizonRing);
+  this.horizonRing = null;
+}
+if (this.cardinalLabels) {
+  this.cardinalLabels.traverse((obj) => {
+    const sprite = obj as THREE.Sprite;
+    const mat = sprite.material as THREE.SpriteMaterial | undefined;
+    if (mat) {
+      mat.map?.dispose();
+      mat.dispose();
+    }
+  });
+  this.scene.remove(this.cardinalLabels);
+  this.cardinalLabels = null;
+}
 ```
 
 - [ ] **Step 6: Run full constellation suite**
@@ -693,11 +737,13 @@ git commit -m "feat(constellation): add horizon ring + cardinal labels"
 ### Task 7: ConstellationRenderer — expose camera azimuth + compass in HUD
 
 **Files:**
+
 - Modify: `src/lib/constellation/ConstellationRenderer.ts`
 - Modify: `src/components/ConstellationWrapper.svelte`
 - Test: `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
 
 **Interfaces:**
+
 - Produces: `public getCameraAzimuth(): number` (degrees, 0–360, 0 = North/+z).
 
 - [ ] **Step 1: Add failing test**
@@ -706,14 +752,18 @@ Append:
 
 ```ts
 describe("ConstellationRenderer — compass", () => {
-    it("getCameraAzimuth returns a normalized 0-360 degree value", async () => {
-        const container = makeContainer();
-        const renderer = new ConstellationRenderer(container);
-        await renderer.initialize([makeStar()], [makeConstellation()], makeSkyConfig());
-        const az = renderer.getCameraAzimuth();
-        expect(az).toBeGreaterThanOrEqual(0);
-        expect(az).toBeLessThan(360);
-    });
+  it("getCameraAzimuth returns a normalized 0-360 degree value", async () => {
+    const container = makeContainer();
+    const renderer = new ConstellationRenderer(container);
+    await renderer.initialize(
+      [makeStar()],
+      [makeConstellation()],
+      makeSkyConfig(),
+    );
+    const az = renderer.getCameraAzimuth();
+    expect(az).toBeGreaterThanOrEqual(0);
+    expect(az).toBeLessThan(360);
+  });
 });
 ```
 
@@ -744,19 +794,19 @@ Expected: PASS.
 In `src/components/ConstellationWrapper.svelte`, add a reactive azimuth updated on the existing HUD rAF loop (the `tickHud` function already runs each frame). Add near the other UI state:
 
 ```ts
-  let facingDeg = 0;
-  $: facingCardinal = facingDegToCardinal(facingDeg);
+let facingDeg = 0;
+$: facingCardinal = facingDegToCardinal(facingDeg);
 
-  function facingDegToCardinal(deg: number): string {
-    const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-    return dirs[Math.round(deg / 45) % 8];
-  }
+function facingDegToCardinal(deg: number): string {
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  return dirs[Math.round(deg / 45) % 8];
+}
 ```
 
 Inside the existing `tickHud` rAF callback (which already reads `renderer`), add:
 
 ```ts
-    if (renderer) facingDeg = renderer.getCameraAzimuth();
+if (renderer) facingDeg = renderer.getCameraAzimuth();
 ```
 
 Then render the readout next to the existing geo-lock/UTC block (in the side panel — wherever `constellation.geoLock` is shown). Add:
@@ -772,9 +822,23 @@ Then render the readout next to the existing geo-lock/UTC block (in the side pan
 Add minimal styles (in the component `<style>` or as Tailwind utilities):
 
 ```css
-  .compass-readout { display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.85); }
-  .compass-label { letter-spacing: 0.2em; color: var(--hud-cyan, #00f0ff); }
-  .view-from-earth { margin: 4px 0 0; font-size: 11px; letter-spacing: 0.15em; color: var(--hud-cyan, #00f0ff); opacity: 0.8; }
+.compass-readout {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+.compass-label {
+  letter-spacing: 0.2em;
+  color: var(--hud-cyan, #00f0ff);
+}
+.view-from-earth {
+  margin: 4px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--hud-cyan, #00f0ff);
+  opacity: 0.8;
+}
 ```
 
 - [ ] **Step 6: Verify**
@@ -794,6 +858,7 @@ git commit -m "feat(constellation): add compass readout + View from Earth label"
 ### Task 8: E2E smoke for position indicators
 
 **Files:**
+
 - Create: `e2e/position-indicators.spec.ts`
 
 - [ ] **Step 1: Add smoke tests**
@@ -812,15 +877,23 @@ test.describe("Position indicators @smoke", () => {
       await expect(page.locator("#galaxy-renderer canvas")).toBeVisible();
     } catch {
       const content = await page.content();
-      expect(content.includes("galaxy") || content.includes("loading")).toBeTruthy();
+      expect(
+        content.includes("galaxy") || content.includes("loading"),
+      ).toBeTruthy();
     }
   });
 
-  test("constellation shows View from Earth + compass readout", async ({ page }) => {
+  test("constellation shows View from Earth + compass readout", async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/constellation`);
     try {
-      await page.waitForSelector(".constellation-container", { timeout: 15000 });
-      await expect(page.getByText(/view from earth/i)).toBeVisible({ timeout: 10000 });
+      await page.waitForSelector(".constellation-container", {
+        timeout: 15000,
+      });
+      await expect(page.getByText(/view from earth/i)).toBeVisible({
+        timeout: 10000,
+      });
       await expect(page.getByText(/FACING|朝向|方位/i)).toBeVisible();
     } catch {
       // headless no-WebGL: assert page loaded
@@ -865,6 +938,7 @@ git add -A && git commit -m "chore: format" || echo "nothing to commit"
 ---
 
 ## Out of Scope
+
 - Smooth camera tween for `focusOnStarSystem` (the existing `GalaxyRenderer.ts:418` TODO).
 - Adding Sol as a selectable/navigable entry in `localGalaxyData.starSystems`.
 - Per-star labels across the galaxy (only the Sol label is added; `enableSolLabel` gates the Sol label).

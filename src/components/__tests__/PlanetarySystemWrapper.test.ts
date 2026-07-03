@@ -1020,21 +1020,25 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
 
-        // Before init completes, no HUD controls are visible
-        expect(container.querySelector(".hud-controls")).toBeNull();
+        // HUD chrome (incl. language selector in SettingsPanel) must remain
+        // available even before the scene is ready, so users on the loading
+        // or error screen can still switch languages.
+        expect(container.querySelector(".hud-controls")).not.toBeNull();
+        const jumpBtn = findJumpBtn(container);
+        expect(jumpBtn).not.toBeNull();
 
         // Resolve init — triggers onSystemLoad → isSceneReady → allBodies re-runs
         resolveInit!();
 
-        await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
-        );
-
         // Open finder and verify it contains bodies (not "No bodies found")
-        const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
             expect(container.querySelector(".hud-finder")).not.toBeNull(),
+        );
+        await waitFor(() =>
+            expect(
+                container.querySelectorAll(".hud-list-row").length,
+            ).toBeGreaterThan(0),
         );
 
         const rows = container.querySelectorAll(".hud-list-row");
