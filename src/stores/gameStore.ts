@@ -41,7 +41,7 @@ const defaultGameState: GameState = {
     },
 };
 
-const defaultSettings: GameSettings = {
+export const defaultSettings: GameSettings = {
     enableAnimations: true,
     audioEnabled: true,
     controlSensitivity: 1.0,

@@ -597,6 +597,9 @@ export const zh = {
     "action.save": "保存",
     "action.open": "打开",
 
+    // HUD screen-reader announcements
+    "hud.settingsOpened": "设置已打开",
+
     // Screen reader
     "sr.mainMenuLoaded":
         "主菜单已加载。使用Tab键在按钮间导航，或使用方向键快速导航。",

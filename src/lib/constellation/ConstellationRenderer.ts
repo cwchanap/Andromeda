@@ -1291,10 +1291,7 @@ export class ConstellationRenderer {
     ): void {
         this.dragVelocityX = 0;
         this.dragVelocityY = 0;
-        if (
-            typeof window !== "undefined" &&
-            window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-        ) {
+        if (this.reducedMotion || this.prefersReducedMotion()) {
             this.cameraRotationX = Math.max(
                 -MAX_ELEVATION_RAD,
                 Math.min(MAX_ELEVATION_RAD, targetRotX),
@@ -1316,8 +1313,8 @@ export class ConstellationRenderer {
             startX: this.cameraRotationX,
             startY: startY,
             targetX: Math.max(
-                -Math.PI / 2.2,
-                Math.min(Math.PI / 2.2, targetRotX),
+                -MAX_ELEVATION_RAD,
+                Math.min(MAX_ELEVATION_RAD, targetRotX),
             ),
             targetY: normalizedTargetY,
             startedAt: performance.now(),
@@ -1415,7 +1412,7 @@ export class ConstellationRenderer {
     }
 
     private maybeSpawnShootingStar(now: number): void {
-        if (this.prefersReducedMotion()) return;
+        if (this.reducedMotion || this.prefersReducedMotion()) return;
         if (this.shootingStarCount > 0) return;
         if (this.nextShootingStarAt === 0) {
             this.nextShootingStarAt = now + (8000 + Math.random() * 6000);
