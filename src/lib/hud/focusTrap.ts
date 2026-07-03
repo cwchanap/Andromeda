@@ -35,8 +35,11 @@ export function focusTrap(
             : null) ??
         focusables()[0] ??
         node;
-    // Defer slightly so slotted content is rendered before focusing.
-    requestAnimationFrame(() => target.focus());
+    // Defer slightly so slotted content is rendered before focusing. Keep
+    // the frame id so destroy() can cancel a pending callback — otherwise
+    // the deferred focus can fire after teardown and steal focus back from
+    // the restored trigger element.
+    const focusFrame = requestAnimationFrame(() => target.focus());
 
     function onKeydown(event: KeyboardEvent) {
         if (event.key !== "Tab") return;
@@ -56,6 +59,7 @@ export function focusTrap(
     node.addEventListener("keydown", onKeydown);
     return {
         destroy() {
+            cancelAnimationFrame(focusFrame);
             node.removeEventListener("keydown", onKeydown);
             trigger?.focus?.();
         },

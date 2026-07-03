@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/svelte";
 import ViewHud from "@/components/hud/ViewHud.svelte";
+import { settings, defaultSettings } from "@/stores/gameStore";
 
 const translations: Record<string, string> = {
     "controls.backToMenu": "← Back to Menu",
@@ -8,6 +9,7 @@ const translations: Record<string, string> = {
     "settings.title": "Settings",
     "settings.language": "Language",
     "action.close": "Close",
+    "hud.settingsOpened": "Settings opened",
     "viewSwitcher.label": "VIEW",
     "viewSwitcher.star": "Star",
     "viewSwitcher.galaxy": "Galaxy",
@@ -16,6 +18,9 @@ const translations: Record<string, string> = {
 
 afterEach(() => {
     cleanup();
+    // Reset the shared settings store so accessibility-flag tests don't
+    // leak reduced-motion/high-contrast state into sibling tests.
+    settings.set({ ...defaultSettings });
 });
 
 describe("ViewHud", () => {
@@ -92,6 +97,54 @@ describe("ViewHud", () => {
                 ?.querySelector("a.is-active")
                 ?.textContent?.trim(),
         ).toBe("Galaxy");
+    });
+
+    it("announces the active view label in the aria-live region", () => {
+        const { container } = render(ViewHud, {
+            props: { currentView: "galaxy", lang: "en", translations },
+        });
+        const live = container.querySelector(".hud-sr-live");
+        expect(live).toBeTruthy();
+        expect(live?.getAttribute("aria-live")).toBe("polite");
+        expect(live?.getAttribute("aria-atomic")).toBe("true");
+        expect(live?.textContent?.trim()).toBe("Galaxy");
+    });
+
+    it("announces the settings-opened message when the settings panel opens", async () => {
+        const { container, getByRole } = render(ViewHud, {
+            props: { currentView: "galaxy", lang: "en", translations },
+        });
+        const live = container.querySelector(".hud-sr-live");
+        expect(live?.textContent?.trim()).toBe("Galaxy");
+        await fireEvent.click(getByRole("button", { name: "Settings" }));
+        expect(live?.textContent?.trim()).toBe("Settings opened");
+    });
+
+    it("toggles the high-contrast class from the shared settings store", () => {
+        settings.set({ ...defaultSettings, highContrastMode: true });
+        const { container } = render(ViewHud, {
+            props: { currentView: "galaxy", lang: "en", translations },
+        });
+        const hud = container.querySelector(".view-hud");
+        expect(hud?.classList.contains("high-contrast")).toBe(true);
+    });
+
+    it("toggles the reduced-motion class from the shared settings store", () => {
+        settings.set({ ...defaultSettings, reducedMotion: true });
+        const { container } = render(ViewHud, {
+            props: { currentView: "galaxy", lang: "en", translations },
+        });
+        const hud = container.querySelector(".view-hud");
+        expect(hud?.classList.contains("reduced-motion")).toBe(true);
+    });
+
+    it("omits accessibility classes when settings flags are false", () => {
+        const { container } = render(ViewHud, {
+            props: { currentView: "galaxy", lang: "en", translations },
+        });
+        const hud = container.querySelector(".view-hud");
+        expect(hud?.classList.contains("high-contrast")).toBe(false);
+        expect(hud?.classList.contains("reduced-motion")).toBe(false);
     });
 });
 

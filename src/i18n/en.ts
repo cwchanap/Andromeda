@@ -477,6 +477,9 @@ export const en = {
     "action.save": "Save",
     "action.open": "Open",
 
+    // HUD screen-reader announcements
+    "hud.settingsOpened": "Settings opened",
+
     // Screen reader
     "sr.mainMenuLoaded":
         "Main menu loaded. Use Tab key to navigate between buttons, or arrow keys for quick navigation.",

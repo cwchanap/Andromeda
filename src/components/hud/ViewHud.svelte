@@ -44,7 +44,7 @@
   // localized announcements matching the visible switcher.
   let announcement = "";
   $: if (showSettings) {
-    announcement = `${t("nav.settings")} ${t("action.open") || "opened"}`;
+    announcement = t("hud.settingsOpened");
   } else {
     announcement = t(`viewSwitcher.${effectiveView}`) || effectiveView;
   }

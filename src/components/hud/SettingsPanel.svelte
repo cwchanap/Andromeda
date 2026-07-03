@@ -26,10 +26,6 @@
       ? (key: string) => translations[key] || key
       : (useTranslations(effectiveLang) as Translate);
 
-  // Derive current language reactively from the effective lang.
-  let currentLang: AppLocale;
-  $: currentLang = effectiveLang;
-
   function changeLanguage(newLang: AppLocale) {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
@@ -69,8 +65,8 @@
                 <button
                   type="button"
                   class="lang-btn"
-                  class:is-active={currentLang === code}
-                  aria-pressed={currentLang === code}
+                  class:is-active={effectiveLang === code}
+                  aria-pressed={effectiveLang === code}
                   on:click={() => changeLanguage(code as AppLocale)}
                 >
                   {name}

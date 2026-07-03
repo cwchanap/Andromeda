@@ -614,6 +614,9 @@ export const ja = {
     "action.save": "保存",
     "action.open": "開く",
 
+    // HUD screen-reader announcements
+    "hud.settingsOpened": "設定を開きました",
+
     // Screen reader
     "sr.mainMenuLoaded":
         "メインメニューが読み込まれました。Tabキーでボタン間を移動するか、矢印キーで素早くナビゲートしてください。",
