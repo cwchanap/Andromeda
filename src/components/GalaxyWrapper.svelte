@@ -257,57 +257,56 @@
         {/if}
     </div>
 
-    {#if isSceneReady}
-        <ViewHud currentView={currentView} {lang} translations={translations}>
-            <div slot="info" class="galaxy-info">
-                <HudPanel title={t('galaxy.selectedSystem')}>
-                    {#if selectedSystemData}
-                        <div class="info-system-name">{systemName(selectedSystemData)}</div>
-                        <div class="info-row">
-                            <span class="info-label">{t('galaxy.distanceFromEarth')}</span>
-                            <span class="info-value">{selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">{t('galaxy.systemType')}</span>
-                            <span class="info-value">{getSystemTypeLabel(selectedSystemData.systemType)}</span>
-                        </div>
-                    {:else}
-                        <div class="info-empty">{t('galaxy.noSelection')}</div>
-                    {/if}
-                </HudPanel>
-            </div>
+    <ViewHud currentView={currentView} {lang} translations={translations}>
+        <div slot="info" class="galaxy-info">
+            <HudPanel title={t('galaxy.selectedSystem')}>
+                {#if selectedSystemData}
+                    <div class="info-system-name">{systemName(selectedSystemData)}</div>
+                    <div class="info-row">
+                        <span class="info-label">{t('galaxy.distanceFromEarth')}</span>
+                        <span class="info-value">{selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">{t('galaxy.systemType')}</span>
+                        <span class="info-value">{getSystemTypeLabel(selectedSystemData.systemType)}</span>
+                    </div>
+                {:else}
+                    <div class="info-empty">{t('galaxy.noSelection')}</div>
+                {/if}
+            </HudPanel>
+        </div>
 
-            <div slot="controls" class="galaxy-nearby">
-                <HudPanel title={t('galaxy.starSystems')}>
-                    <HudSearch bind:value={nearbyQuery} placeholder={t('explore.searchPlaceholder')} ariaLabel={t('explore.searchPlaceholder')} />
-                    <ul class="hud-list mt-2">
-                        {#each nearbyResults as system (system.id)}
-                            <li>
-                                <button type="button" class="hud-list-row" on:click={() => handleSystemSelect(system.id)}>
-                                    <span class="row-name">{systemName(system)}</span>
-                                    <span class="row-leader"></span>
-                                    <span class="row-count">{system.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
-                                </button>
-                            </li>
-                        {/each}
-                    </ul>
-                </HudPanel>
-            </div>
+        <div slot="controls" class="galaxy-nearby">
+            <HudPanel title={t('galaxy.starSystems')}>
+                <HudSearch bind:value={nearbyQuery} placeholder={t('explore.searchPlaceholder')} ariaLabel={t('explore.searchPlaceholder')} />
+                <ul class="hud-list mt-2">
+                    {#each nearbyResults as system (system.id)}
+                        <li>
+                            <button type="button" class="hud-list-row" on:click={() => handleSystemSelect(system.id)}>
+                                <span class="row-name">{systemName(system)}</span>
+                                <span class="row-leader"></span>
+                                <span class="row-count">{system.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
+                            </button>
+                        </li>
+                    {/each}
+                </ul>
+            </HudPanel>
+        </div>
 
-            <div slot="settings">
-                <label class="hud-setting"><input type="checkbox" bind:checked={enableAnimations}> {t('settings.enableAnimations')}</label>
-                <label class="hud-setting"><input type="checkbox" bind:checked={enableStarGlow}> {t('galaxy.starGlowEffects')}</label>
-                <label class="hud-setting"><input type="checkbox" bind:checked={enableSolLabel}> {t('galaxy.solLabel')}</label>
-                <label class="hud-setting"><input type="checkbox" bind:checked={enableDistanceLines}> {t('galaxy.distanceLines')}</label>
-                <label class="hud-setting">
-                    {t('galaxy.maxRenderDistance')}
-                    <input type="range" min="10" max="100" bind:value={maxRenderDistance}>
-                    <span>{maxRenderDistance} {t('unit.lightYears')}</span>
-                </label>
-            </div>
-        </ViewHud>
+        <div slot="settings">
+            <label class="hud-setting"><input type="checkbox" bind:checked={enableAnimations}> {t('settings.enableAnimations')}</label>
+            <label class="hud-setting"><input type="checkbox" bind:checked={enableStarGlow}> {t('galaxy.starGlowEffects')}</label>
+            <label class="hud-setting"><input type="checkbox" bind:checked={enableSolLabel}> {t('galaxy.solLabel')}</label>
+            <label class="hud-setting"><input type="checkbox" bind:checked={enableDistanceLines}> {t('galaxy.distanceLines')}</label>
+            <label class="hud-setting">
+                {t('galaxy.maxRenderDistance')}
+                <input type="range" min="10" max="100" bind:value={maxRenderDistance}>
+                <span>{maxRenderDistance} {t('unit.lightYears')}</span>
+            </label>
+        </div>
+    </ViewHud>
 
-        {#if showSystemDialog && selectedSystemData}
+    {#if isSceneReady && showSystemDialog && selectedSystemData}
             <div
                 class="system-dialog-overlay"
                 use:focusTrap={".dialog-close-button"}
@@ -395,7 +394,6 @@
                 </div>
             </div>
         {/if}
-    {/if}
 
     <AccessibilityManager />
 </div>

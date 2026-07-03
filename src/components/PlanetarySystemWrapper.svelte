@@ -546,7 +546,7 @@
   }
   .hud-finder {
     position: absolute;
-    top: 20px;
+    top: 64px;
     left: 50%;
     transform: translateX(-50%);
     width: min(420px, 90vw);
