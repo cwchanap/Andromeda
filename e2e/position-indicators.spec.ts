@@ -57,15 +57,15 @@ test.describe("Position indicators @smoke", () => {
         }
 
         // WebGL available — wait for the scene to become ready so the HUD
-        // (including the settings button) renders.
-        await expect(
-            page.getByRole("button", { name: /settings/i }),
-        ).toBeVisible({
+        // (including the settings button) renders. Scope to the HUD's
+        // aria-labelled button to avoid colliding with the Astro dev
+        // toolbar's "Settings" item in strict mode (see shared-hud.spec.ts).
+        await expect(page.getByLabel("Settings")).toBeVisible({
             timeout: 20000,
         });
 
         // Open the settings panel to reveal the indicator toggles.
-        await page.getByRole("button", { name: /settings/i }).click();
+        await page.getByLabel("Settings").click();
         const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
@@ -100,13 +100,15 @@ test.describe("Position indicators @smoke", () => {
         await page.goto("/constellation");
 
         // The ViewHud (with settings button) renders regardless of WebGL.
-        await expect(
-            page.getByRole("button", { name: /settings/i }),
-        ).toBeVisible({ timeout: 15000 });
+        // Scope to the HUD's aria-labelled button to avoid colliding with
+        // the Astro dev toolbar's "Settings" item in strict mode.
+        await expect(page.getByLabel("Settings")).toBeVisible({
+            timeout: 15000,
+        });
 
         // Open settings and assert the constellation indicator toggles exist
         // (labels + auto-rotate). These are DOM elements independent of WebGL.
-        await page.getByRole("button", { name: /settings/i }).click();
+        await page.getByLabel("Settings").click();
         const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
