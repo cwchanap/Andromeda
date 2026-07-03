@@ -376,12 +376,16 @@ export class ConstellationRenderer {
             this.isMouseDown = false;
             this.canvas.style.cursor = "grab";
 
-            // Start momentum animation if there was significant movement
+            // Start momentum animation if there was significant movement.
+            // See onMouseUp for why isDragging must be cleared on the
+            // non-momentum path (auto-rotate gate in animate()).
             if (
                 Math.abs(this.dragVelocityX) > 0.5 ||
                 Math.abs(this.dragVelocityY) > 0.5
             ) {
                 this.startMomentumAnimation();
+            } else {
+                this.isDragging = false;
             }
         };
     }
@@ -520,12 +524,17 @@ export class ConstellationRenderer {
         // Restore cursor style
         this.canvas.style.cursor = "grab";
 
-        // Start momentum animation if there was significant movement
+        // Start momentum animation if there was significant movement.
+        // The momentum loop clears isDragging when it settles; for a click
+        // or low-velocity drag (no momentum started) we must clear it here
+        // so the auto-rotate gate in animate() doesn't stay latched forever.
         if (
             Math.abs(this.dragVelocityX) > 0.5 ||
             Math.abs(this.dragVelocityY) > 0.5
         ) {
             this.startMomentumAnimation();
+        } else {
+            this.isDragging = false;
         }
     }
 

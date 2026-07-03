@@ -439,6 +439,54 @@ describe("ConstellationRenderer", () => {
         ).not.toThrow();
     });
 
+    it("clears isDragging on mouseup without momentum so auto-rotate can resume", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        const anyRenderer = renderer as unknown as {
+            isDragging: boolean;
+            isMouseDown: boolean;
+        };
+        // Mousedown latches isDragging
+        canvas.dispatchEvent(
+            new MouseEvent("mousedown", {
+                clientX: 100,
+                clientY: 100,
+                bubbles: true,
+            }),
+        );
+        expect(anyRenderer.isDragging).toBe(true);
+        // Tiny move → velocity stays near zero, no momentum started
+        canvas.dispatchEvent(
+            new MouseEvent("mousemove", {
+                clientX: 100,
+                clientY: 100,
+                bubbles: true,
+            }),
+        );
+        canvas.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        // Regression: previously isDragging stayed true forever, blocking
+        // the auto-rotate gate in animate().
+        expect(anyRenderer.isDragging).toBe(false);
+        expect(anyRenderer.isMouseDown).toBe(false);
+    });
+
+    it("clears isDragging on touchend without momentum so auto-rotate can resume", () => {
+        renderer = new ConstellationRenderer(container);
+        const canvas = container.querySelector("canvas") as HTMLCanvasElement;
+        const anyRenderer = renderer as unknown as {
+            isDragging: boolean;
+            isMouseDown: boolean;
+        };
+        // touchstart latches isDragging
+        const touch = { clientX: 50, clientY: 50 } as unknown as Touch;
+        canvas.dispatchEvent(createTouchEvent("touchstart", [touch]));
+        expect(anyRenderer.isDragging).toBe(true);
+        // touchend with zero velocity → no momentum, must clear isDragging
+        canvas.dispatchEvent(createTouchEvent("touchend", []));
+        expect(anyRenderer.isDragging).toBe(false);
+        expect(anyRenderer.isMouseDown).toBe(false);
+    });
+
     it("wheel event on canvas adjusts field of view without throwing", () => {
         renderer = new ConstellationRenderer(container);
         const canvas = container.querySelector("canvas") as HTMLCanvasElement;
