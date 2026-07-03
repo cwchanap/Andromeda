@@ -23,6 +23,7 @@
 ## File Structure
 
 **New files:**
+
 - `src/lib/view/currentView.ts` — pure util `getCurrentView(pathname): ViewId | null` (unit-tested).
 - `src/lib/view/__tests__/currentView.test.ts`
 - `src/components/hud/ViewSwitcher.svelte` — persistent Star · Galaxy · Constellation switcher.
@@ -30,6 +31,7 @@
 - `src/components/hud/ViewHud.svelte` — shared chrome shell with named slots.
 
 **Modified files:**
+
 - `src/i18n/en.ts`, `src/i18n/zh.ts`, `src/i18n/ja.ts` — new keys.
 - `src/components/PlanetarySystemWrapper.svelte` — adopt `ViewHud`; move barycenter + orbit-speed into settings slot.
 - `src/components/ConstellationWrapper.svelte` — adopt `ViewHud`; render side panel via slots.
@@ -41,9 +43,11 @@
 ### Task 1: Add i18n keys
 
 **Files:**
+
 - Modify: `src/i18n/en.ts`, `src/i18n/zh.ts`, `src/i18n/ja.ts`
 
 **Interfaces:**
+
 - Produces: keys `viewSwitcher.*`, `galaxy.solMarkerLabel`/`galaxy.distanceLines` (used by Plan 2 too — added here so the type exists), `constellation.viewFromEarth`/`constellation.compass`, `settings.language`.
 
 - [ ] **Step 1: Add keys to `src/i18n/en.ts`**
@@ -115,10 +119,12 @@ git commit -m "feat(i18n): add view-switcher and position-indicator keys"
 ### Task 2: `getCurrentView` pure util (TDD)
 
 **Files:**
+
 - Create: `src/lib/view/currentView.ts`
 - Test: `src/lib/view/__tests__/currentView.test.ts`
 
 **Interfaces:**
+
 - Consumes: `stripLocaleFromPath(pathname)` from `@/i18n/routes`.
 - Produces: `export type ViewId = "star" | "galaxy" | "constellation";` and `export function getCurrentView(pathname: string): ViewId | null`.
 
@@ -131,29 +137,29 @@ import { describe, it, expect } from "vitest";
 import { getCurrentView } from "../currentView";
 
 describe("getCurrentView", () => {
-    it("detects galaxy from unlocalized path", () => {
-        expect(getCurrentView("/galaxy")).toBe("galaxy");
-    });
+  it("detects galaxy from unlocalized path", () => {
+    expect(getCurrentView("/galaxy")).toBe("galaxy");
+  });
 
-    it("detects galaxy from localized path", () => {
-        expect(getCurrentView("/zh/galaxy")).toBe("galaxy");
-    });
+  it("detects galaxy from localized path", () => {
+    expect(getCurrentView("/zh/galaxy")).toBe("galaxy");
+  });
 
-    it("detects constellation", () => {
-        expect(getCurrentView("/constellation")).toBe("constellation");
-        expect(getCurrentView("/ja/constellation")).toBe("constellation");
-    });
+  it("detects constellation", () => {
+    expect(getCurrentView("/constellation")).toBe("constellation");
+    expect(getCurrentView("/ja/constellation")).toBe("constellation");
+  });
 
-    it("detects star (planetary) view", () => {
-        expect(getCurrentView("/planetary/solar")).toBe("star");
-        expect(getCurrentView("/zh/planetary/trappist-1")).toBe("star");
-    });
+  it("detects star (planetary) view", () => {
+    expect(getCurrentView("/planetary/solar")).toBe("star");
+    expect(getCurrentView("/zh/planetary/trappist-1")).toBe("star");
+  });
 
-    it("returns null for home / unknown", () => {
-        expect(getCurrentView("/")).toBeNull();
-        expect(getCurrentView("/zh/")).toBeNull();
-        expect(getCurrentView("/unknown")).toBeNull();
-    });
+  it("returns null for home / unknown", () => {
+    expect(getCurrentView("/")).toBeNull();
+    expect(getCurrentView("/zh/")).toBeNull();
+    expect(getCurrentView("/unknown")).toBeNull();
+  });
 });
 ```
 
@@ -172,11 +178,11 @@ import { stripLocaleFromPath } from "@/i18n/routes";
 export type ViewId = "star" | "galaxy" | "constellation";
 
 export function getCurrentView(pathname: string): ViewId | null {
-    const p = stripLocaleFromPath(pathname || "/");
-    if (p.startsWith("/galaxy")) return "galaxy";
-    if (p.startsWith("/constellation")) return "constellation";
-    if (p.startsWith("/planetary")) return "star";
-    return null;
+  const p = stripLocaleFromPath(pathname || "/");
+  if (p.startsWith("/galaxy")) return "galaxy";
+  if (p.startsWith("/constellation")) return "constellation";
+  if (p.startsWith("/planetary")) return "star";
+  return null;
 }
 ```
 
@@ -197,9 +203,11 @@ git commit -m "feat(view): add getCurrentView pathname util"
 ### Task 3: `ViewSwitcher.svelte`
 
 **Files:**
+
 - Create: `src/components/hud/ViewSwitcher.svelte`
 
 **Interfaces:**
+
 - Consumes: `getCurrentView` from `@/lib/view/currentView`; `routes` from `@/i18n/routes`; `getLangFromUrl`, `useTranslations` from `@/i18n/utils`; `ViewId` type.
 - Produces: a presentational component (props: `currentView: ViewId`, `lang: AppLocale`, `translations: Record<string,string>`). Clicking a non-current tab navigates via `window.location.href = routes.<view>(lang)`.
 
@@ -306,9 +314,11 @@ git commit -m "feat(hud): add ViewSwitcher component"
 ### Task 4: `SettingsPanel.svelte` (unified, with language)
 
 **Files:**
+
 - Create: `src/components/hud/SettingsPanel.svelte`
 
 **Interfaces:**
+
 - Consumes: `languages` from `@/i18n/ui`; `switchLocalePath`, `type AppLocale` from `@/i18n/routes`; `getLangFromUrl`, `useTranslations` from `@/i18n/utils`.
 - Produces: props `isOpen: boolean`, `lang: AppLocale`, `translations: Record<string,string>`; a `<slot name="settings" />` for per-view toggles; dispatches `close`. Language change navigates via `switchLocalePath`.
 
@@ -470,9 +480,11 @@ git commit -m "feat(hud): add unified SettingsPanel with language"
 ### Task 5: `ViewHud.svelte` shell
 
 **Files:**
+
 - Create: `src/components/hud/ViewHud.svelte`
 
 **Interfaces:**
+
 - Consumes: `ViewSwitcher`, `SettingsPanel`, `HudButton`; `routes` + `AppLocale` from `@/i18n/routes`; `useTranslations` from `@/i18n/utils`; `ViewId` from `@/lib/view/currentView`.
 - Produces: props `currentView: ViewId`, `lang: AppLocale`, `translations: Record<string,string>`. Named slots: `controls`, `info`, `overlay`, `settings`, `bottomLeading`, `bottomTrailing`, plus default. Owns Back button + settings open state.
 
@@ -591,6 +603,7 @@ git commit -m "feat(hud): add shared ViewHud shell"
 ### Task 6: Remove page-level language selectors
 
 **Files:**
+
 - Modify: `src/pages/galaxy.astro`, `src/pages/constellation.astro`, `src/pages/planetary/[systemId].astro`
 
 - [ ] **Step 1: Edit `src/pages/galaxy.astro`**
@@ -622,9 +635,11 @@ git commit -m "refactor(pages): remove page-level language selector (now in shar
 ### Task 7: Star view adopts `ViewHud`
 
 **Files:**
+
 - Modify: `src/components/PlanetarySystemWrapper.svelte`
 
 **Interfaces:**
+
 - Consumes: `ViewHud` from `./hud/ViewHud.svelte`; `getCurrentView` (always `"star"` here, but compute from URL for consistency).
 
 - [ ] **Step 1: Add imports + currentView**
@@ -632,13 +647,13 @@ git commit -m "refactor(pages): remove page-level language selector (now in shar
 At the top of the `<script>` import block, add:
 
 ```ts
-  import ViewHud from "./hud/ViewHud.svelte";
+import ViewHud from "./hud/ViewHud.svelte";
 ```
 
 Near the other `let` declarations, add:
 
 ```ts
-  let currentView: "star" | "galaxy" | "constellation" = "star";
+let currentView: "star" | "galaxy" | "constellation" = "star";
 ```
 
 - [ ] **Step 2: Replace the HUD chrome with `ViewHud`**
@@ -696,6 +711,7 @@ git commit -m "refactor(star): adopt shared ViewHud; move barycenter+orbit-speed
 ### Task 8: Constellation view adopts `ViewHud`
 
 **Files:**
+
 - Modify: `src/components/ConstellationWrapper.svelte`
 
 - [ ] **Step 1: Add import + currentView**
@@ -703,14 +719,14 @@ git commit -m "refactor(star): adopt shared ViewHud; move barycenter+orbit-speed
 Add to imports:
 
 ```ts
-  import ViewHud from "./hud/ViewHud.svelte";
-  import { getCurrentView } from "@/lib/view/currentView";
+import ViewHud from "./hud/ViewHud.svelte";
+import { getCurrentView } from "@/lib/view/currentView";
 ```
 
 After the existing `lang` handling, add:
 
 ```ts
-  let currentView = getCurrentView(window.location.pathname) ?? "constellation";
+let currentView = getCurrentView(window.location.pathname) ?? "constellation";
 ```
 
 - [ ] **Step 2: Replace the standalone Back + controls-toggle with `ViewHud`**
@@ -738,6 +754,7 @@ Remove the `<div class="absolute top-4 left-4 z-20">…<button class="hud-btn">R
 ```
 
 Notes:
+
 - If the existing side panel used a local `showControls` toggle and a `Panel On/Off` button, remove them (the panel is always shown in the `controls` slot; settings centralizes preferences). Delete the `.hud-drag-card` drag-instructions block's positioning if it conflicts (keep it as a `bottomLeading` slot if desired: `<div slot="bottomLeading">…`).
 - `scanlinesOn` is a new local boolean (default `true`) toggling whether `<ScanLines />` renders; wire it into the overlay slot: `{#if scanlinesOn}<ScanLines />{/if}`. Add `let scanlinesOn = true;`.
 
@@ -758,6 +775,7 @@ git commit -m "refactor(constellation): adopt shared ViewHud"
 ### Task 9: Galaxy view adopts `ViewHud` + tactical kit; delete legacy CSS
 
 **Files:**
+
 - Modify: `src/components/GalaxyWrapper.svelte`
 
 This is the largest refactor: replace the legacy `.hamburger-button` / `.controls-button` / `.hamburger-menu` / `.controls-panel` / `.system-info-tooltip` template + the entire legacy `<style>` block, and collapse the tooltip+dialog duplication into a single details dialog.
@@ -767,21 +785,21 @@ This is the largest refactor: replace the legacy `.hamburger-button` / `.control
 Add imports:
 
 ```ts
-  import ViewHud from "./hud/ViewHud.svelte";
-  import HudPanel from "./hud/HudPanel.svelte";
-  import HudButton from "./hud/HudButton.svelte";
-  import HudSearch from "./hud/HudSearch.svelte";
-  import { getCurrentView } from "@/lib/view/currentView";
+import ViewHud from "./hud/ViewHud.svelte";
+import HudPanel from "./hud/HudPanel.svelte";
+import HudButton from "./hud/HudButton.svelte";
+import HudSearch from "./hud/HudSearch.svelte";
+import { getCurrentView } from "@/lib/view/currentView";
 ```
 
 Add:
 
 ```ts
-  let currentView = getCurrentView(window.location.pathname) ?? "galaxy";
-  let nearbyQuery = "";
-  $: nearbyResults = localGalaxyData.starSystems.filter((s) =>
-    systemName(s).toLowerCase().includes(nearbyQuery.toLowerCase())
-  );
+let currentView = getCurrentView(window.location.pathname) ?? "galaxy";
+let nearbyQuery = "";
+$: nearbyResults = localGalaxyData.starSystems.filter((s) =>
+  systemName(s).toLowerCase().includes(nearbyQuery.toLowerCase()),
+);
 ```
 
 Remove the legacy UI state that `ViewHud` now owns: `showHamburgerMenu`, `showControls`, `showSystemInfo`, `toggleHamburgerMenu`, `toggleControls`, `closeSystemInfo`. Keep `showSystemDialog`, `selectedSystemId`, `selectedSystemData`, and the existing settings booleans (`enableAnimations`, `enableStarGlow`, `enableSolLabel`, `maxRenderDistance`) — these move into the settings slot. Add `let enableDistanceLines = true;` (wired in Plan 2; harmless default here).
@@ -851,31 +869,135 @@ Ensure `handleSystemSelect` no longer sets `showSystemInfo` (deleted). It should
 Delete the whole legacy `<style>…</style>` (`.hamburger-*`, `.controls-*`, `.hamburger-menu`, `.controls-panel`, `.system-info-tooltip`, the legacy-blue `.system-dialog*` rules). Replace with a minimal block:
 
 ```css
-  .galaxy-wrapper { position: relative; width: 100%; height: 100vh; overflow: hidden; background: #000011; }
-  .galaxy-container { width: 100%; height: 100%; position: relative; }
-  .galaxy-nearby { width: min(340px, 90vw); max-height: 60vh; overflow-y: auto; }
-  .hud-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-  .hud-list-row {
-    display: flex; align-items: center; gap: 8px; width: 100%;
-    background: transparent; border: 1px solid transparent; color: rgba(255,255,255,0.8);
-    padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; text-align: left;
-  }
-  .hud-list-row:hover { border-color: var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
-  .row-name { white-space: nowrap; }
-  .row-leader { flex: 1; border-bottom: 1px dotted rgba(0,240,255,0.3); }
-  .row-count { font-size: 11px; opacity: 0.8; }
-  .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
-  .hud-setting input[type="range"] { flex: 1; }
-  .system-dialog-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.8); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; }
-  .system-dialog { background: rgba(0,0,17,0.95); border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 12px; width: min(700px, 90vw); max-height: 85vh; overflow-y: auto; padding: 20px; color: #e0f7ff; }
-  .dialog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .dialog-header h2 { margin: 0; color: var(--hud-cyan, #00f0ff); }
-  .dialog-close-button { background: transparent; border: none; color: var(--hud-cyan, #00f0ff); font-size: 24px; cursor: pointer; }
-  .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
-  .action-button { padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; letter-spacing: 0.08em; }
-  .action-button.secondary { background: transparent; border: 1px solid var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
-  .action-button.primary { background: var(--hud-cyan, #00f0ff); border: 1px solid var(--hud-cyan, #00f0ff); color: #001011; }
-  .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.galaxy-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: #000011;
+}
+.galaxy-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+.galaxy-nearby {
+  width: min(340px, 90vw);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.hud-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hud-list-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+.hud-list-row:hover {
+  border-color: var(--hud-cyan, #00f0ff);
+  color: var(--hud-cyan, #00f0ff);
+}
+.row-name {
+  white-space: nowrap;
+}
+.row-leader {
+  flex: 1;
+  border-bottom: 1px dotted rgba(0, 240, 255, 0.3);
+}
+.row-count {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.hud-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 2px 0;
+}
+.hud-setting input[type="range"] {
+  flex: 1;
+}
+.system-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.system-dialog {
+  background: rgba(0, 0, 17, 0.95);
+  border: 1px solid var(--hud-cyan, #00f0ff);
+  border-radius: 12px;
+  width: min(700px, 90vw);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 20px;
+  color: #e0f7ff;
+}
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.dialog-header h2 {
+  margin: 0;
+  color: var(--hud-cyan, #00f0ff);
+}
+.dialog-close-button {
+  background: transparent;
+  border: none;
+  color: var(--hud-cyan, #00f0ff);
+  font-size: 24px;
+  cursor: pointer;
+}
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.action-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+.action-button.secondary {
+  background: transparent;
+  border: 1px solid var(--hud-cyan, #00f0ff);
+  color: var(--hud-cyan, #00f0ff);
+}
+.action-button.primary {
+  background: var(--hud-cyan, #00f0ff);
+  border: 1px solid var(--hud-cyan, #00f0ff);
+  color: #001011;
+}
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 ```
 
 - [ ] **Step 5: Verify**
@@ -895,6 +1017,7 @@ git commit -m "refactor(galaxy): adopt shared ViewHud, remove legacy CSS, dedupe
 ### Task 10: E2E smoke for the shared HUD + view-switcher + language-in-settings
 
 **Files:**
+
 - Modify: `e2e/main-user-journeys.spec.ts` (append) or create `e2e/shared-hud.spec.ts`
 
 - [ ] **Step 1: Add smoke tests**
@@ -907,7 +1030,9 @@ import { test, expect } from "@playwright/test";
 const BASE = "http://localhost:3600";
 
 test.describe("Shared HUD @smoke", () => {
-  test("galaxy shows shared chrome and no standalone language button", async ({ page }) => {
+  test("galaxy shows shared chrome and no standalone language button", async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/galaxy`);
     try {
       await page.waitForSelector("#galaxy-renderer canvas", { timeout: 15000 });
@@ -915,25 +1040,35 @@ test.describe("Shared HUD @smoke", () => {
       // headless no-WebGL fallback: just assert page loaded
     }
     // Back button present (top-left)
-    await expect(page.getByRole("button", { name: /back to menu/i })).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByRole("button", { name: /back to menu/i }),
+    ).toBeVisible({ timeout: 10000 });
     // Settings present (top-right)
     await expect(page.getByRole("button", { name: /settings/i })).toBeVisible();
     // The old fixed language selector overlay is gone
     await expect(page.locator(".language-selector-global")).toHaveCount(0);
   });
 
-  test("view switcher navigates galaxy -> constellation directly", async ({ page }) => {
+  test("view switcher navigates galaxy -> constellation directly", async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/galaxy`);
     await page.waitForTimeout(500);
-    await page.getByRole("tab", { name: /constellation/i }).click({ force: true });
+    await page
+      .getByRole("tab", { name: /constellation/i })
+      .click({ force: true });
     await page.waitForURL(/\/constellation/, { timeout: 20000 });
     await expect(page).toHaveURL(/\/constellation/);
   });
 
   test("language is reachable via settings panel", async ({ page }) => {
     await page.goto(`${BASE}/galaxy`);
-    await page.getByRole("button", { name: /settings/i }).click({ force: true });
-    await expect(page.getByRole("dialog", { name: /settings/i })).toBeVisible({ timeout: 5000 });
+    await page
+      .getByRole("button", { name: /settings/i })
+      .click({ force: true });
+    await expect(page.getByRole("dialog", { name: /settings/i })).toBeVisible({
+      timeout: 5000,
+    });
     await expect(page.getByRole("button", { name: "中文" })).toBeVisible();
   });
 });
@@ -974,5 +1109,6 @@ git add -A && git commit -m "chore: format" || echo "nothing to commit"
 ---
 
 ## Out of Scope (handled by Plan 2)
+
 - Galaxy Sol marker / label / distance-lines rendering (the `enableDistanceLines` toggle added here is a no-op stub until Plan 2 wires it).
 - Constellation horizon ring / cardinal labels / compass.

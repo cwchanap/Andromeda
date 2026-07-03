@@ -392,35 +392,35 @@
     {/if}
   </div>
   
+  <ViewHud currentView={currentView} {lang} {translations}>
+    <div slot="info">
+      <HudPanel title={t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')}>
+        <p class="hud-details-desc m-0">
+          {t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || ''}
+        </p>
+      </HudPanel>
+    </div>
+
+    <div slot="controls" class="hud-rail">
+      <HudButton ariaLabel={t('finder.open')} on:click={() => { showFinder = true; focusedFinderIndex = 0; }}>{t('finder.title')}</HudButton>
+      {#if zoomControls}
+        <HudButton on:click={zoomControls.zoomIn}>{t('controls.zoomIn')}</HudButton>
+        <HudButton on:click={zoomControls.zoomOut}>{t('controls.zoomOut')}</HudButton>
+        <HudButton on:click={zoomControls.resetView}>{t('controls.resetView')}</HudButton>
+      {/if}
+    </div>
+
+    <div slot="settings">
+      {#if hasBarycenterOverlay}
+        <label class="hud-setting"><input type="checkbox" bind:checked={showBarycenterOverlay}> {t('controls.showBarycenters')}</label>
+      {/if}
+      {#if isSceneReady}
+        <OrbitSpeedControl {lang} {translations} />
+      {/if}
+    </div>
+  </ViewHud>
+
   {#if isSceneReady}
-    <ViewHud currentView={currentView} {lang} {translations}>
-      <div slot="info">
-        <HudPanel title={t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')}>
-          <p class="hud-details-desc m-0">
-            {t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || ''}
-          </p>
-        </HudPanel>
-      </div>
-
-      <div slot="controls" class="hud-rail">
-        <HudButton ariaLabel={t('finder.open')} on:click={() => { showFinder = true; focusedFinderIndex = 0; }}>{t('finder.title')}</HudButton>
-        {#if zoomControls}
-          <HudButton on:click={zoomControls.zoomIn}>{t('controls.zoomIn')}</HudButton>
-          <HudButton on:click={zoomControls.zoomOut}>{t('controls.zoomOut')}</HudButton>
-          <HudButton on:click={zoomControls.resetView}>{t('controls.resetView')}</HudButton>
-        {/if}
-      </div>
-
-      <div slot="settings">
-        {#if hasBarycenterOverlay}
-          <label class="hud-setting"><input type="checkbox" bind:checked={showBarycenterOverlay}> {t('controls.showBarycenters')}</label>
-        {/if}
-        {#if isSceneReady}
-          <OrbitSpeedControl {lang} {translations} />
-        {/if}
-      </div>
-    </ViewHud>
-
     <!-- JUMP TO finder (toggle-open) -->
     {#if showFinder}
       <div class="hud-finder" bind:this={finderEl}>
