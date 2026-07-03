@@ -43,6 +43,17 @@ export class GalaxyRenderer {
     // is frozen from the first frame for reduced-motion users.
     private reducedMotion = false;
 
+    // Cached indicator visibility preferences. setSolLabelVisible() and
+    // setDistanceLinesVisible() may be called before initialize() creates
+    // starSystemManager (same reactive-statement race as reducedMotion).
+    // Without caching, the calls are no-ops and init creates the Sol label
+    // / distance lines visible per the default config, silently losing a
+    // toggle made during the load window. Cache the latest value here and
+    // replay once the manager exists so the user's choice applies from the
+    // first frame. `null` means "no preference captured, use config default".
+    private pendingSolLabelVisible: boolean | null = null;
+    private pendingDistanceLinesVisible: boolean | null = null;
+
     // Performance monitoring
     private lastFrameTime = 0;
     private frameCount = 0;
@@ -135,6 +146,21 @@ export class GalaxyRenderer {
             // manager existed (see setReducedMotion).
             if (this.reducedMotion) {
                 this.starSystemManager.setReducedMotion(true);
+            }
+
+            // Replay indicator-visibility preferences captured before the
+            // manager existed (see setSolLabelVisible / setDistanceLinesVisible).
+            // Only replay when a preference was explicitly captured; otherwise
+            // leave the init-time config-driven state untouched.
+            if (this.pendingSolLabelVisible !== null) {
+                this.starSystemManager.setSolLabelVisible(
+                    this.pendingSolLabelVisible,
+                );
+            }
+            if (this.pendingDistanceLinesVisible !== null) {
+                this.starSystemManager.setDistanceLinesVisible(
+                    this.pendingDistanceLinesVisible,
+                );
             }
 
             // Position camera for good initial view
@@ -450,9 +476,13 @@ export class GalaxyRenderer {
     }
 
     /**
-     * Toggle distance line indicators visibility
+     * Toggle distance line indicators visibility. Safe to call before
+     * initialize(): the value is cached and replayed once the manager exists
+     * (see pendingDistanceLinesVisible), so a toggle made during the load
+     * window is not silently lost.
      */
     setDistanceLinesVisible(visible: boolean): void {
+        this.pendingDistanceLinesVisible = visible;
         this.starSystemManager?.setDistanceLinesVisible(visible);
     }
 
@@ -464,9 +494,13 @@ export class GalaxyRenderer {
     }
 
     /**
-     * Toggle Sol marker label visibility only (core/ring marker stays visible)
+     * Toggle Sol marker label visibility only (core/ring marker stays visible).
+     * Safe to call before initialize(): the value is cached and replayed once
+     * the manager exists (see pendingSolLabelVisible), so a toggle made during
+     * the load window is not silently lost.
      */
     setSolLabelVisible(visible: boolean): void {
+        this.pendingSolLabelVisible = visible;
         this.starSystemManager?.setSolLabelVisible(visible);
     }
 

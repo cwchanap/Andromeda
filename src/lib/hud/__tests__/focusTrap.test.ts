@@ -160,4 +160,25 @@ describe("focusTrap", () => {
         // First non-disabled focusable is .b, not the disabled .a.
         expect(document.activeElement).toBe(dialog.querySelector(".b"));
     });
+
+    it("excludes elements that opt out with tabindex=-1", () => {
+        // A native focusable element (button/link) explicitly removed from
+        // the tab order via tabindex="-1" (e.g. roving-tabindex rest state)
+        // must not be treated as a focusable by the trap, otherwise initial
+        // focus or Tab wrapping can land on an element the author intended
+        // to be outside the tab order.
+        const dialog = mountDialog(
+            '<button class="a" tabindex="-1">A</button><button class="b">B</button>',
+        );
+        focusTrap(dialog);
+        // First in-tab-order focusable is .b, not the opted-out .a.
+        expect(document.activeElement).toBe(dialog.querySelector(".b"));
+
+        // Tab wrapping must also skip the opted-out element: from .b,
+        // Shift+Tab should wrap back to .b (only focusable), not .a.
+        const b = dialog.querySelector(".b") as HTMLElement;
+        b.focus();
+        dispatchTab(b, true);
+        expect(document.activeElement).toBe(b);
+    });
 });

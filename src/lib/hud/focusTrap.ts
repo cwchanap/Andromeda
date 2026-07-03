@@ -14,12 +14,18 @@ export function focusTrap(
     initialFocusSelector?: string,
 ): { destroy(): void } {
     const trigger = document.activeElement as HTMLElement | null;
-    const selector =
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    // Query all potentially focusable elements, then filter by tabIndex >= 0
+    // and absence of `disabled`. Filtering by `el.tabIndex >= 0` (rather than
+    // a `:not([tabindex="-1"])` CSS pseudo-class) correctly excludes native
+    // focusables (button/link/input) that explicitly opt out of the tab order
+    // with `tabindex="-1"` — the CSS alternative only guards the `[tabindex]`
+    // branch, so a `<button tabindex="-1">` would still match the `button`
+    // branch and pollute the trap's focus cycle.
+    const selector = "button, [href], input, select, textarea, [tabindex]";
 
     function focusables(): HTMLElement[] {
         return Array.from(node.querySelectorAll<HTMLElement>(selector)).filter(
-            (el) => !el.hasAttribute("disabled"),
+            (el) => !el.hasAttribute("disabled") && el.tabIndex >= 0,
         );
     }
 
