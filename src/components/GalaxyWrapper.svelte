@@ -12,6 +12,7 @@
     import HudPanel from '@/components/hud/HudPanel.svelte';
     import HudSearch from '@/components/hud/HudSearch.svelte';
     import { focusTrap } from '@/lib/hud/focusTrap';
+    import { addMediaQueryListener, removeMediaQueryListener } from '@/utils/mediaQuery';
 
     export let lang: AppLocale = 'en';
     export let translations: Record<string, string> = {};
@@ -235,11 +236,11 @@
     // Lifecycle
     onMount(() => {
         initializeRenderer();
-        reducedMotionMql?.addEventListener("change", handleReducedMotionChange);
+        addMediaQueryListener(reducedMotionMql, "change", handleReducedMotionChange);
     });
 
     onDestroy(() => {
-        reducedMotionMql?.removeEventListener("change", handleReducedMotionChange);
+        removeMediaQueryListener(reducedMotionMql, "change", handleReducedMotionChange);
         cleanup();
     });
 
