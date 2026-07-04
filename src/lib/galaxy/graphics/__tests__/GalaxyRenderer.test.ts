@@ -572,19 +572,6 @@ describe("GalaxyRenderer", () => {
             expect(spy).toHaveBeenCalledWith(false);
         });
 
-        it("forwards setSolMarkerVisible to the star system manager", async () => {
-            const renderer = new GalaxyRenderer(
-                container,
-                mockConfig,
-                mockEvents,
-            );
-            await renderer.initialize(mockGalaxyData);
-            const ssm = (renderer as any).starSystemManager;
-            const spy = vi.spyOn(ssm, "setSolMarkerVisible");
-            renderer.setSolMarkerVisible(false);
-            expect(spy).toHaveBeenCalledWith(false);
-        });
-
         it("replays reduced-motion preference set before initialize()", async () => {
             // GalaxyWrapper's reactive `$: if (renderer) renderer.setReducedMotion(...)`
             // fires when the renderer is assigned, which happens BEFORE `await

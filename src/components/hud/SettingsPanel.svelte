@@ -50,6 +50,7 @@
     on:click={(e) => {
       if (e.target === e.currentTarget) dispatch("close");
     }}
+    on:keydown={handleKeydown}
     role="dialog"
     aria-modal="true"
     aria-label={t("settings.title")}

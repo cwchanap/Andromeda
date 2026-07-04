@@ -487,13 +487,6 @@ export class GalaxyRenderer {
     }
 
     /**
-     * Toggle Sol marker visibility
-     */
-    setSolMarkerVisible(visible: boolean): void {
-        this.starSystemManager?.setSolMarkerVisible(visible);
-    }
-
-    /**
      * Toggle Sol marker label visibility only (core/ring marker stays visible).
      * Safe to call before initialize(): the value is cached and replayed once
      * the manager exists (see pendingSolLabelVisible), so a toggle made during

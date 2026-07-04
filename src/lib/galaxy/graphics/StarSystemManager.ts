@@ -137,13 +137,6 @@ export class StarSystemManager {
     }
 
     /**
-     * Set visibility of the Sol origin marker
-     */
-    setSolMarkerVisible(visible: boolean): void {
-        if (this.solMarkerGroup) this.solMarkerGroup.visible = visible;
-    }
-
-    /**
      * Set visibility of the Sol origin marker label only (the core/ring
      * marker stays visible). Lazily creates the label on first enable when
      * enableSolLabel was false at init time, so the runtime toggle is never
