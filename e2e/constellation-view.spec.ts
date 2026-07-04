@@ -56,8 +56,8 @@ test.describe("Constellation View Navigation", () => {
             page.getByRole("heading", { name: "Constellation View" }),
         ).toBeVisible({ timeout: 30000 });
 
-        // Click back to menu
-        await page.getByRole("button", { name: /RETURN/i }).click();
+        // Click back to menu (shared ViewHud uses controls.backToMenu label)
+        await page.getByRole("button", { name: /back to menu/i }).click();
 
         // Wait for navigation to complete
         await page.waitForURL(/\/($|\?)/, { timeout: 10000 });
@@ -220,9 +220,7 @@ test.describe("Constellation Data and Selection", () => {
 });
 
 test.describe("Constellation View UI Controls", () => {
-    test("should toggle control panel including location readout", async ({
-        page,
-    }) => {
+    test("should show location readout in the HUD panel", async ({ page }) => {
         await page.goto("/constellation");
 
         // Wait for controls to load
@@ -232,29 +230,16 @@ test.describe("Constellation View UI Controls", () => {
             timeout: 30000,
         });
 
-        // Panel toggle button should exist and be interactive
-        const toggleButton = page.getByRole("button", {
-            name: /PANEL OFF/i,
+        // The shared ViewHud removed the PANEL ON/OFF toggle — the location
+        // readout is now always visible inside the controls panel once the
+        // scene is ready. Scope to .hud-readout so the text assertions don't
+        // collide with the Astro dev toolbar's i18n inspector, which renders
+        // a <code> dump of the translations JSON containing the same keys.
+        const readout = page.locator(".hud-readout");
+        await expect(readout.getByText(/GEO-LOCK/)).toBeVisible({
+            timeout: 10000,
         });
-        await expect(toggleButton).toBeVisible({ timeout: 5000 });
-
-        // Location readout (GEO-LOCK) should be visible inside the panel
-        const geoLabel = page.getByText(/GEO-LOCK/);
-        await expect(geoLabel).toBeVisible({ timeout: 10000 });
-
-        // Hide the panel
-        await toggleButton.click();
-        await expect(geoLabel).toHaveCount(0);
-
-        // Show the panel again and verify content returns
-        const showButton = page.getByRole("button", {
-            name: /PANEL ON/i,
-        });
-        await showButton.click();
-        await expect(page.getByText(/GEO-LOCK/)).toBeVisible({
-            timeout: 5000,
-        });
-        await expect(page.getByText(/UTC/)).toBeVisible({
+        await expect(readout.getByText(/UTC/)).toBeVisible({
             timeout: 5000,
         });
     });
@@ -269,9 +254,9 @@ test.describe("Constellation View UI Controls", () => {
             timeout: 30000,
         });
 
-        // Back button should be visible
+        // Back button should be visible (shared ViewHud uses controls.backToMenu)
         await expect(
-            page.getByRole("button", { name: /RETURN/i }),
+            page.getByRole("button", { name: /back to menu/i }),
         ).toBeVisible();
     });
 
@@ -350,9 +335,9 @@ test.describe("Constellation View Accessibility", () => {
             timeout: 30000,
         });
 
-        // Check button roles
+        // Check button roles (shared ViewHud back button)
         await expect(
-            page.getByRole("button", { name: /RETURN/i }),
+            page.getByRole("button", { name: /back to menu/i }),
         ).toHaveAttribute("type", "button");
     });
 });
@@ -369,9 +354,9 @@ test.describe("Constellation View Responsive Design", () => {
             timeout: 30000,
         });
 
-        // Back button should be visible
+        // Back button should be visible (shared ViewHud uses controls.backToMenu)
         await expect(
-            page.getByRole("button", { name: /RETURN/i }),
+            page.getByRole("button", { name: /back to menu/i }),
         ).toBeVisible();
     });
 
@@ -388,7 +373,7 @@ test.describe("Constellation View Responsive Design", () => {
 
         // All elements should be properly sized
         await expect(
-            page.getByRole("button", { name: /RETURN/i }),
+            page.getByRole("button", { name: /back to menu/i }),
         ).toBeVisible();
     });
 
@@ -404,7 +389,7 @@ test.describe("Constellation View Responsive Design", () => {
             timeout: 30000,
         });
         await expect(
-            page.getByRole("button", { name: /RETURN/i }),
+            page.getByRole("button", { name: /back to menu/i }),
         ).toBeVisible();
     });
 });
@@ -553,8 +538,8 @@ test.describe("Constellation View Integration", () => {
             timeout: 30000,
         });
 
-        // Go back to main menu
-        await page.getByRole("button", { name: /RETURN/i }).click();
+        // Go back to main menu (shared ViewHud back button)
+        await page.getByRole("button", { name: /back to menu/i }).click();
         await expect(
             page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
         ).toBeVisible({ timeout: 10000 });
@@ -575,7 +560,9 @@ test.describe("Constellation View Integration", () => {
         });
     });
 
-    test("should work with language selector", async ({ page }) => {
+    test("should reach language options via settings panel", async ({
+        page,
+    }) => {
         await page.goto("/constellation");
 
         // Wait for page to load
@@ -585,9 +572,16 @@ test.describe("Constellation View Integration", () => {
             timeout: 30000,
         });
 
-        // Language selector should be present
-        await expect(
-            page.getByRole("button", { name: /Language/i }),
-        ).toBeVisible();
+        // The page-level Language selector was removed by the shared ViewHud
+        // refactor — language is now reachable inside the Settings panel.
+        // Scope to the HUD's aria-labelled Settings button to avoid colliding
+        // with the Astro dev toolbar's "Settings" item in strict mode.
+        await page.getByLabel("Settings").click();
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).toBeVisible({ timeout: 5000 });
+        // A locale button (中文) confirms the language selector rendered.
+        await expect(dialog.getByRole("button", { name: "中文" })).toBeVisible({
+            timeout: 5000,
+        });
     });
 });

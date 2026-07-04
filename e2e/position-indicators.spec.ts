@@ -69,8 +69,12 @@ test.describe("Position indicators @smoke", () => {
         const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
-        // Distance Lines toggle — maps to enableDistanceLines.
-        const distanceLinesLabel = page.getByText(/distance lines/i, {
+        // Distance Lines toggle — maps to enableDistanceLines. Scope the
+        // text search to the dialog so it doesn't collide with the Astro dev
+        // toolbar's i18n inspector, which can render a <code> dump of the
+        // translations JSON (containing "distance lines") and trigger a
+        // strict-mode violation (see commit bc5b96c).
+        const distanceLinesLabel = dialog.getByText(/distance lines/i, {
             exact: false,
         });
         await expect(distanceLinesLabel).toBeVisible();
@@ -84,7 +88,9 @@ test.describe("Position indicators @smoke", () => {
         if (!dlBefore) await distanceLinesCheckbox.uncheck();
 
         // Sol Label toggle — maps to enableSolLabel (Sol marker label).
-        const solLabelLabel = page.getByText(/sol label|sol marker/i, {
+        // Scope to the dialog for the same dev-toolbar collision reason as
+        // the Distance Lines toggle above.
+        const solLabelLabel = dialog.getByText(/sol label|sol marker/i, {
             exact: false,
         });
         await expect(solLabelLabel).toBeVisible();
