@@ -4,7 +4,7 @@
     import { planetarySystemRegistry } from '@/lib/planetary-system';
     import { routes, type AppLocale } from '@/i18n/routes';
     import { getCurrentView, type ViewId } from '@/lib/view/currentView';
-    import { gameActions } from '@/stores/gameStore';
+    import { gameActions, settings } from '@/stores/gameStore';
     import LoadingAnimation from '@/components/LoadingAnimation.svelte';
     import ErrorBoundary from '@/components/ErrorBoundary.svelte';
     import AccessibilityManager from '@/components/AccessibilityManager.svelte';
@@ -214,16 +214,22 @@
     // Star labels toggle only the Sol marker label, not the whole marker group.
     $: if (renderer) renderer.setSolLabelVisible(enableSolLabel);
     // Reduced-motion preference freezes the Sol ring pulse per the spec.
-    // Subscribed (not read once) so an OS toggle mid-session applies live.
-    let reducedMotion = false;
+    // Two sources are OR'd so EITHER the OS preference OR the in-app
+    // Settings toggle freezes the ring — matching ViewHud, which reads only
+    // $settings.reducedMotion. Without this, enabling Reduced Motion via the
+    // settings modal (without OS pref) would style the HUD but leave the
+    // ring pulsing. Both inputs are subscribed so mid-session toggles apply
+    // live.
+    let mqlReducedMotion = false;
     let reducedMotionMql: MediaQueryList | null = null;
     const handleReducedMotionChange = (e: MediaQueryListEvent) => {
-        reducedMotion = e.matches;
+        mqlReducedMotion = e.matches;
     };
     if (typeof window !== 'undefined') {
         reducedMotionMql = window.matchMedia?.("(prefers-reduced-motion: reduce)") ?? null;
-        reducedMotion = reducedMotionMql?.matches ?? false;
+        mqlReducedMotion = reducedMotionMql?.matches ?? false;
     }
+    $: reducedMotion = $settings.reducedMotion || mqlReducedMotion;
     $: if (renderer) renderer.setReducedMotion(reducedMotion);
 
     // Lifecycle
@@ -323,6 +329,7 @@
                 on:click={(e) => {
                     if (e.target === e.currentTarget) closeSystemDialog();
                 }}
+                on:keydown={handleDialogKeydown}
                 role="dialog"
                 aria-modal="true"
                 aria-label={systemName(selectedSystemData)}

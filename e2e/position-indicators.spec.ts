@@ -112,9 +112,11 @@ test.describe("Position indicators @smoke", () => {
         const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
-        // Labels toggle (star names on/off).
-        const labelsToggle = page.getByRole("checkbox").first();
-        await expect(labelsToggle).toBeVisible();
+        // Scanlines toggle is the first checkbox in the constellation
+        // settings slot (order: scanlines → labels → auto-rotate). Asserting
+        // visibility confirms the slotted settings rendered inside the dialog.
+        const scanlinesToggle = page.getByRole("checkbox").first();
+        await expect(scanlinesToggle).toBeVisible();
 
         // Close the settings dialog so the HUD is visible again.
         await page.keyboard.press("Escape");

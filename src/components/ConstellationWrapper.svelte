@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { gameState } from "@/stores/gameStore";
+  import { gameState, settings } from "@/stores/gameStore";
   import { getLangFromUrl, useTranslations } from "@/i18n/utils";
   import { routes, type AppLocale } from "@/i18n/routes";
   import Button from "@/components/ui/Button.svelte";
@@ -72,7 +72,7 @@
   let facingDeg = 0;
   let facingElev = 0;
   $: facingCardinal = t(azimuthToCardinalKey(facingDeg));
-  $: facingDegDisplay = Math.round(((facingDeg % 360) + 360) % 360) % 360;
+  $: facingDegDisplay = ((Math.round(facingDeg) % 360) + 360) % 360;
   $: facingElevDisplay = `${facingElev >= 0 ? "+" : ""}${Math.round(facingElev)}°`;
 
   // Initialize translations
@@ -96,16 +96,22 @@
   let labelsOn = true;
   let autoRotateOn = false;
   // Reduced-motion preference — disables auto-rotate per WCAG §2.3.3.
-  // Subscribed (not read once) so an OS toggle mid-session applies live.
-  let reducedMotion = false;
+  // Two sources are OR'd so EITHER the OS preference OR the in-app Settings
+  // toggle disables auto-rotate — matching ViewHud, which reads only
+  // $settings.reducedMotion. Without this, enabling Reduced Motion via the
+  // settings modal (without OS pref) would style the HUD but auto-rotate
+  // could still run. Both inputs are subscribed so mid-session toggles
+  // apply live.
+  let mqlReducedMotion = false;
   let reducedMotionMql: MediaQueryList | null = null;
   const handleReducedMotionChange = (e: MediaQueryListEvent) => {
-    reducedMotion = e.matches;
+    mqlReducedMotion = e.matches;
   };
   if (typeof window !== 'undefined') {
     reducedMotionMql = window.matchMedia?.("(prefers-reduced-motion: reduce)") ?? null;
-    reducedMotion = reducedMotionMql?.matches ?? false;
+    mqlReducedMotion = reducedMotionMql?.matches ?? false;
   }
+  $: reducedMotion = $settings.reducedMotion || mqlReducedMotion;
   // Push toggle state to the renderer whenever it (or the renderer) changes.
   $: if (renderer) {
     renderer.setLabelsVisible(labelsOn);

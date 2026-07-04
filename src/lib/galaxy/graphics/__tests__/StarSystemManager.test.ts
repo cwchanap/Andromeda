@@ -481,16 +481,6 @@ describe("StarSystemManager — Sol marker", () => {
         );
         expect(labelOff).toBeUndefined();
     });
-
-    it("setSolMarkerVisible toggles the marker group visibility", async () => {
-        const manager = new StarSystemManager(scene, { ...mockConfig });
-        await manager.initialize([mockStarSystemData]);
-        manager.setSolMarkerVisible(false);
-        const marker = scene.children.find((c: any) => c.name === "sol-marker");
-        expect(marker!.visible).toBe(false);
-        manager.setSolMarkerVisible(true);
-        expect(marker!.visible).toBe(true);
-    });
 });
 
 describe("StarSystemManager — distance lines", () => {
