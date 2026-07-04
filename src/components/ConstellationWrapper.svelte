@@ -18,6 +18,7 @@
   import ViewHud from "./hud/ViewHud.svelte";
   import { getCurrentView, type ViewId } from "@/lib/view/currentView";
   import { gameActions } from "@/stores/gameStore";
+  import { addMediaQueryListener, removeMediaQueryListener } from "@/utils/mediaQuery";
 
   export let lang: AppLocale = "en";
   export let translations: Record<string, string> = {};
@@ -315,11 +316,11 @@
 
   onMount(() => {
     initConstellationView();
-    reducedMotionMql?.addEventListener("change", handleReducedMotionChange);
+    addMediaQueryListener(reducedMotionMql, "change", handleReducedMotionChange);
   });
 
   onDestroy(() => {
-    reducedMotionMql?.removeEventListener("change", handleReducedMotionChange);
+    removeMediaQueryListener(reducedMotionMql, "change", handleReducedMotionChange);
     if (hudRafId !== null) cancelAnimationFrame(hudRafId);
     if (renderer) {
       renderer.dispose();

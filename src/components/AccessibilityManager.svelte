@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { settings } from '../stores/gameStore';
+  import { addMediaQueryListener } from '../utils/mediaQuery';
   import '../styles/high-contrast.css';
   import '../styles/reduced-motion.css';
 
@@ -77,11 +78,11 @@
     }
 
     // Listen for system preference changes
-    prefersReducedMotion.addEventListener('change', (e) => {
+    addMediaQueryListener(prefersReducedMotion, 'change', (e) => {
       document.documentElement.setAttribute('data-system-reduced-motion', e.matches.toString());
     });
 
-    prefersHighContrast.addEventListener('change', (e) => {
+    addMediaQueryListener(prefersHighContrast, 'change', (e) => {
       document.documentElement.setAttribute('data-system-high-contrast', e.matches.toString());
     });
   }
