@@ -31,9 +31,11 @@
   let showSettings = false;
 
   // Accessibility: read reduced-motion + high-contrast from the shared
-  // settings store so the HUD shell reflects user/system preferences without
-  // each child re-querying matchMedia. The settings store is kept in sync
-  // with OS preferences by AccessibilityManager.
+  // settings store so the HUD shell reflects in-app user preferences without
+  // each child re-querying matchMedia. OS-level preferences (when the user
+  // has NOT toggled the in-app setting) are handled via @media queries in the
+  // style block below, since AccessibilityManager only writes data-system-*
+  // attributes and does not sync $settings.
   $: reducedMotion = $settings.reducedMotion;
   $: highContrast = $settings.highContrastMode;
 
@@ -210,5 +212,51 @@
   .view-hud.high-contrast :global(.vs-mobile-item:focus) {
     outline: 3px solid #ffff00 !important;
     outline-offset: 2px;
+  }
+
+  /* OS-level preferences: when the user relies on prefers-reduced-motion or
+     prefers-contrast without toggling the in-app settings, $settings stays
+     false and the .reduced-motion/.high-contrast classes above never apply.
+     These media queries mirror the class rules so the HUD shell honors OS
+     preferences directly. AccessibilityManager only writes data-system-*
+     attributes and does not sync $settings, so the store-driven classes
+     alone are insufficient. */
+  @media (prefers-reduced-motion: reduce) {
+    .view-hud :global(.vs-tab),
+    .view-hud :global(.vs-mobile-toggle),
+    .view-hud :global(.vs-mobile-item),
+    .view-hud :global(.hud-btn),
+    .view-hud :global(.hud-panel-anim) {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+
+  @media (prefers-contrast: high) {
+    .view-hud :global(.hud-btn) {
+      border: 2px solid #ffffff !important;
+      color: #ffffff !important;
+    }
+    .view-hud :global(.hud-btn:focus) {
+      outline: 3px solid #ffff00 !important;
+      outline-offset: 2px;
+    }
+    .view-hud :global(.vs-tab),
+    .view-hud :global(.vs-mobile-toggle) {
+      border: 2px solid #ffffff !important;
+      color: #ffffff !important;
+    }
+    .view-hud :global(.vs-tab.is-active),
+    .view-hud :global(.vs-mobile-item.is-active) {
+      background: #ffff00 !important;
+      color: #000000 !important;
+      border-color: #ffff00 !important;
+    }
+    .view-hud :global(.vs-tab:focus),
+    .view-hud :global(.vs-mobile-toggle:focus),
+    .view-hud :global(.vs-mobile-item:focus) {
+      outline: 3px solid #ffff00 !important;
+      outline-offset: 2px;
+    }
   }
 </style>
