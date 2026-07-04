@@ -1864,4 +1864,144 @@ describe("ConstellationRenderer", () => {
             container.remove();
         });
     });
+
+    describe("ConstellationRenderer — runtime reduced-motion / auto-rotate API", () => {
+        it("setReducedMotion(true) snaps tweenCameraTo to target without a tween", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                // Use the runtime API (not matchMedia) so the
+                // `this.reducedMotion` branch is exercised.
+                renderer.setReducedMotion(true);
+                renderer.tweenCameraTo(0.3, 0.4, 1000);
+                expect((renderer as any).cameraRotationX).toBeCloseTo(0.3, 5);
+                expect((renderer as any).cameraRotationY).toBeCloseTo(0.4, 5);
+                // No tween scheduled.
+                expect((renderer as any).tweenState.active).toBe(false);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("setReducedMotion(true) suppresses shooting-star spawning", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                renderer.setReducedMotion(true);
+                const sceneAddCalls = ((renderer as any).scene.add as any).mock
+                    .calls.length;
+                for (let i = 0; i < 1000; i++)
+                    (renderer as any).maybeSpawnShootingStar(
+                        performance.now() + i * 100,
+                    );
+                expect(
+                    ((renderer as any).scene.add as any).mock.calls.length,
+                ).toBe(sceneAddCalls);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("setAutoRotate(true) advances camera yaw in animate() when idle", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                renderer.setAutoRotate(true);
+                const before = (renderer as any).cameraRotationY as number;
+                // animate() reads clock.getDelta(); force a positive delta so
+                // the yaw advance is observable regardless of frame timing.
+                (renderer as any).clock.getDelta = () => 1.0;
+                (renderer as any).animate();
+                const after = (renderer as any).cameraRotationY as number;
+                expect(after).toBeGreaterThan(before);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("setAutoRotate is ignored while dragging (isMouseDown latches)", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                renderer.setAutoRotate(true);
+                (renderer as any).isMouseDown = true;
+                const before = (renderer as any).cameraRotationY as number;
+                (renderer as any).clock.getDelta = () => 1.0;
+                (renderer as any).animate();
+                expect((renderer as any).cameraRotationY).toBe(before);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("setAutoRotate is ignored under reduced-motion", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                renderer.setAutoRotate(true);
+                renderer.setReducedMotion(true);
+                const before = (renderer as any).cameraRotationY as number;
+                (renderer as any).clock.getDelta = () => 1.0;
+                (renderer as any).animate();
+                expect((renderer as any).cameraRotationY).toBe(before);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("setAutoRotateSpeed changes the per-frame yaw advance", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                renderer.setAutoRotate(true);
+                renderer.setAutoRotateSpeed(0.4);
+                const before = (renderer as any).cameraRotationY as number;
+                (renderer as any).clock.getDelta = () => 1.0;
+                (renderer as any).animate();
+                // 0.4 rad/s × 1.0s delta = 0.4 rad advance.
+                expect((renderer as any).cameraRotationY).toBeCloseTo(
+                    before + 0.4,
+                    5,
+                );
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
 });

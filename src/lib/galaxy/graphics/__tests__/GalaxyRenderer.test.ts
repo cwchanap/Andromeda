@@ -657,4 +657,45 @@ describe("GalaxyRenderer", () => {
             expect(spy).toHaveBeenCalledWith(true);
         });
     });
+
+    describe("GalaxyRenderer — controls change & config toggles", () => {
+        it("fires onCameraChange when the orbit controls dispatch a change event", async () => {
+            const renderer = new GalaxyRenderer(
+                container,
+                mockConfig,
+                mockEvents,
+            );
+            await renderer.initialize(mockGalaxyData);
+            // The OrbitControls mock records addEventListener calls; find
+            // the "change" listener registered in setupControls() and
+            // invoke it directly to exercise the callback body.
+            const controls = (renderer as any).controls;
+            const addCalls = controls.addEventListener.mock.calls as Array<
+                [string, () => void]
+            >;
+            const changeCall = addCalls.find(([evt]) => evt === "change");
+            expect(changeCall).toBeTruthy();
+            changeCall![1]();
+            expect(mockEvents.onCameraChange).toHaveBeenCalledTimes(1);
+            const args = (mockEvents.onCameraChange as any).mock.calls[0];
+            // First arg is the camera position, second is the zoom magnitude.
+            expect(args[0]).toBeDefined();
+            expect(typeof args[1]).toBe("number");
+        });
+
+        it("updateConfig(enableStarGlow) forwards to setStarGlowVisible", async () => {
+            const renderer = new GalaxyRenderer(
+                container,
+                mockConfig,
+                mockEvents,
+            );
+            await renderer.initialize(mockGalaxyData);
+            const ssm = (renderer as any).starSystemManager;
+            const spy = vi.spyOn(ssm, "setStarGlowVisible");
+            renderer.updateConfig({ enableStarGlow: false });
+            expect(spy).toHaveBeenCalledWith(false);
+            renderer.updateConfig({ enableStarGlow: true });
+            expect(spy).toHaveBeenCalledWith(true);
+        });
+    });
 });

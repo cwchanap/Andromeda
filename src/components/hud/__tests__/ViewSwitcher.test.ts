@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/svelte";
 import ViewSwitcher from "@/components/hud/ViewSwitcher.svelte";
 import type { ViewId } from "@/lib/view/currentView";
+import { gameActions } from "@/stores/gameStore";
 
 const translations: Record<string, string> = {
     "viewSwitcher.label": "VIEW",
@@ -18,6 +19,9 @@ const expectedHrefs: Record<ViewId, string> = {
 
 afterEach(() => {
     cleanup();
+    // Reset the shared gameState store so hudView/hudLang don't leak
+    // between tests.
+    gameActions.resetGameState();
 });
 
 describe("ViewSwitcher", () => {
@@ -175,6 +179,55 @@ describe("ViewSwitcher", () => {
             expect(a.tagName).toBe("A");
             expect(a.getAttribute("role")).toBeNull();
             expect(a.getAttribute("href")).toBeTruthy();
+        }
+    });
+});
+
+describe("ViewSwitcher — shared gameState store integration", () => {
+    afterEach(() => {
+        cleanup();
+        gameActions.resetGameState();
+    });
+
+    it("prefers $gameState.hudView over the currentView prop", () => {
+        // Publish a hudView to the shared store; the prop is a fallback.
+        gameActions.setHudView("constellation");
+        const { container } = render(ViewSwitcher, {
+            // Prop says "star" but the store says "constellation".
+            props: { currentView: "star", lang: "en", translations },
+        });
+        const nav = container.querySelector("nav.view-switcher")!;
+        const active = nav.querySelector("a.is-active");
+        expect(active?.textContent?.trim()).toBe("Constellation");
+        expect(active?.getAttribute("aria-current")).toBe("page");
+    });
+
+    it("falls back to the currentView prop when hudView is unset", () => {
+        // hudView is undefined in the default reset state.
+        const { container } = render(ViewSwitcher, {
+            props: { currentView: "galaxy", lang: "en", translations },
+        });
+        const nav = container.querySelector("nav.view-switcher")!;
+        expect(nav.querySelector("a.is-active")?.textContent?.trim()).toBe(
+            "Galaxy",
+        );
+    });
+
+    it("builds hrefs from $gameState.hudLang when no translations are provided", () => {
+        // Without a translations prop, the component falls back to
+        // useTranslations(effectiveLang) — exercising the effectiveLang
+        // reactive path. Use zh so the href locale prefix is observable.
+        gameActions.setHudLang("zh");
+        const { container } = render(ViewSwitcher, {
+            props: { currentView: "galaxy", lang: "en" },
+        });
+        const nav = container.querySelector("nav.view-switcher")!;
+        const links = Array.from(
+            nav.querySelectorAll<HTMLAnchorElement>("a.vs-tab"),
+        );
+        // Every href must carry the zh locale derived from the store.
+        for (const a of links) {
+            expect(a.getAttribute("href")).toContain("/zh/");
         }
     });
 });
