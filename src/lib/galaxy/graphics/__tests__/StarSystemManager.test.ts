@@ -623,3 +623,111 @@ describe("StarSystemManager — distance lines", () => {
         expect(groups.get("far")!.visible).toBe(false);
     });
 });
+
+describe("StarSystemManager — Sol ring pulse & runtime toggles", () => {
+    let scene: THREE.Scene;
+    let mockConfig: Required<GalaxyConfig>;
+    let mockStarSystemData: StarSystemData;
+
+    beforeEach(() => {
+        scene = new THREE.Scene();
+        mockConfig = createMockConfig();
+        mockStarSystemData = createMockStarSystemData();
+        vi.clearAllMocks();
+    });
+
+    it("tickSolPulse oscillates the Sol ring scale and opacity", async () => {
+        const manager = new StarSystemManager(scene, { ...mockConfig });
+        await manager.initialize([mockStarSystemData]);
+        const ring = (manager as any).solRing as THREE.Mesh;
+        expect(ring).toBeTruthy();
+        const mat = ring.material as THREE.MeshBasicMaterial;
+        const setScalarSpy = ring.scale.setScalar as ReturnType<typeof vi.fn>;
+        const initialOpacity = mat.opacity;
+        // Advance to a non-zero phase of the sine wave (0.4s into the
+        // 1.6s period → quarter cycle → sine = 1).
+        manager.update(0.4, new THREE.Vector3(0, 0, 0));
+        // The pulse must have driven a scale update and an opacity change.
+        expect(setScalarSpy).toHaveBeenCalled();
+        expect(mat.opacity).not.toBe(initialOpacity);
+    });
+
+    it("setReducedMotion(true) freezes the ring at base scale/opacity", async () => {
+        const manager = new StarSystemManager(scene, { ...mockConfig });
+        await manager.initialize([mockStarSystemData]);
+        const ring = (manager as any).solRing as THREE.Mesh;
+        const mat = ring.material as THREE.MeshBasicMaterial;
+        const setScalarSpy = ring.scale.setScalar as ReturnType<typeof vi.fn>;
+        setScalarSpy.mockClear();
+        manager.setReducedMotion(true);
+        // Base scale (1) and base opacity (0.8) are applied immediately.
+        expect(setScalarSpy).toHaveBeenCalledWith(1);
+        expect(mat.opacity).toBe(0.8);
+        // Subsequent updates must not pulse the ring (setScalar not called
+        // again by tickSolPulse under reduced-motion).
+        setScalarSpy.mockClear();
+        manager.update(1.0, new THREE.Vector3(0, 0, 0));
+        expect(setScalarSpy).not.toHaveBeenCalled();
+    });
+
+    it("setStarGlowVisible toggles every glow mesh visibility", async () => {
+        const manager = new StarSystemManager(scene, { ...mockConfig });
+        await manager.initialize([mockStarSystemData]);
+        const glowMesh = (manager as any).glowMeshes.get("sun") as THREE.Mesh;
+        expect(glowMesh).toBeDefined();
+        manager.setStarGlowVisible(false);
+        expect(glowMesh.visible).toBe(false);
+        manager.setStarGlowVisible(true);
+        expect(glowMesh.visible).toBe(true);
+    });
+
+    it("setSolLabelVisible lazily creates the label when enableSolLabel was false at init", async () => {
+        const manager = new StarSystemManager(scene, {
+            ...mockConfig,
+            enableSolLabel: false,
+        });
+        await manager.initialize([mockStarSystemData]);
+        const marker = scene.children.find(
+            (c: any) => c.name === "sol-marker",
+        ) as THREE.Group;
+        // No label at init.
+        expect(marker.getObjectByName("sol-marker-label")).toBeNull();
+        // Enabling at runtime lazily creates it.
+        manager.setSolLabelVisible(true);
+        const label = marker.getObjectByName("sol-marker-label");
+        expect(label).toBeDefined();
+        expect(label!.visible).toBe(true);
+        // Disabling hides without destroying.
+        manager.setSolLabelVisible(false);
+        expect(label!.visible).toBe(false);
+    });
+
+    it("setDistanceLinesVisible lazily creates lines when enableDistanceIndicators was false at init", async () => {
+        const manager = new StarSystemManager(scene, {
+            ...mockConfig,
+            enableDistanceIndicators: false,
+        });
+        const system = {
+            ...mockStarSystemData,
+            id: "alpha",
+            position: new THREE.Vector3(3, 0, 0),
+            distanceFromEarth: 3,
+        };
+        await manager.initialize([system]);
+        const group = (manager as any).starSystemGroups.get("alpha");
+        // No distance line at init.
+        expect(
+            group.children.find((c: any) => c.name === "sol-distance-line"),
+        ).toBeUndefined();
+        // Enabling at runtime lazily creates the line.
+        manager.setDistanceLinesVisible(true);
+        const line = group.children.find(
+            (c: any) => c.name === "sol-distance-line",
+        ) as THREE.Line;
+        expect(line).toBeDefined();
+        expect(line.visible).toBe(true);
+        // Disabling hides the lazily-created line.
+        manager.setDistanceLinesVisible(false);
+        expect(line.visible).toBe(false);
+    });
+});
