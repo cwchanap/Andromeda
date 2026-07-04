@@ -481,13 +481,19 @@ test.describe("30 Nearest Systems", () => {
         const canvas = page.locator("canvas");
         await expect(canvas).toBeVisible({ timeout: 10000 });
 
-        // Wait for scene to be ready (hamburger button appears)
-        const hamburger = page.locator(".hamburger-button");
-        await expect(hamburger).toBeVisible({ timeout: 15000 });
+        // Wait for the scene to finish initializing. The shared ViewHud
+        // refactor removed the hamburger menu that previously served as the
+        // scene-ready indicator. The Nearby Systems panel (in the HUD
+        // controls slot) renders the system list as .hud-list-row items;
+        // wait for the loading spinner to disappear so the renderer is
+        // ready to handle system selection.
+        await expect(page.locator(".animate-spin")).toHaveCount(0, {
+            timeout: 15000,
+        });
 
-        // Open hamburger menu and assert ≥30 systems are listed
-        await hamburger.click();
-        const systemItems = page.locator(".system-item");
+        // The Nearby Systems panel lists all 30 systems as hud-list-row
+        // buttons (replacing the old hamburger menu's .system-item entries).
+        const systemItems = page.locator(".galaxy-nearby .hud-list-row");
         await expect(systemItems).toHaveCount(30, { timeout: 5000 });
 
         // Click Alpha Centauri and assert dialog shows 2 confirmed exoplanets
