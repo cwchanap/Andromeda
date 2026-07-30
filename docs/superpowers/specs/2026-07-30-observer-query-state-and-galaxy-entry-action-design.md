@@ -2,14 +2,22 @@
 
 **Issue:** HPA-432  
 **Epic:** HPA-426 — Sky From Another Star  
-**Status:** Approved, revised after second-pass review  
+**Status:** Approved, revised after third-pass review  
 **Date:** 2026-07-30
 
 ## Summary
 
 Add a shareable observer-state URL contract for the Constellation view and a second, independent **View sky from here** action to the Galaxy system dialog.
 
-This slice deliberately stops before alternate-observer rendering. It establishes the route-state semantics and Galaxy launch path that HPA-435 will later consume when integrating observer rendering, HUD controls, and fallback notices.
+This slice establishes:
+
+- parsing, resolution, and serialization contracts for `observer=<systemId>`;
+- canonical query-free Sol URLs;
+- locale-safe full-page navigation;
+- the Galaxy launch action; and
+- defensive observer eligibility handling.
+
+It deliberately stops before alternate-observer rendering. HPA-435 will consume the resolved observer state when integrating transformed catalogs, HUD controls, and fallback notices.
 
 Canonical URLs:
 
@@ -18,7 +26,7 @@ Canonical URLs:
 - System observer: `/constellation?observer=<systemId>`
 - Localized system observer: `/zh/constellation?observer=<systemId>`
 
-`observer=sol` is accepted when parsing but serializes to the query-free canonical Sol URL.
+A request containing exactly one `observer=sol` parameter redirects server-side to the corresponding query-free localized URL.
 
 ## Goals
 
@@ -26,6 +34,7 @@ Canonical URLs:
 - Preserve observer query state through locale switching and full-page navigation.
 - Give every coordinate-valid `localGalaxyData` system an independent Galaxy entry action.
 - Preserve invalid-state provenance so HPA-435 can show the correct fallback explanation.
+- Provide one shared eligibility contract for direct URLs and Galaxy availability.
 - Keep this PR independent of astronomy transforms, prepared catalogs, and renderer changes.
 - Protect existing Explore navigation and dialog behavior with regression tests.
 
@@ -36,18 +45,23 @@ Canonical URLs:
 - Changes to `ConstellationRenderer` or `ConstellationWrapper` behavior.
 - Observer HUD, Find Sol, Earth-reference overlay, or fallback notice UI in Constellation view.
 - A generic application-wide query-state framework.
-- Client-side routing or changes to the current full-page navigation model.
+- Client-side routing.
 - Coordinate tolerances owned by HPA-431's astronomy transform layer.
+- Full Galaxy-to-Constellation journey coverage, which remains in HPA-436.
 
 ## Existing architecture
 
 The repository currently has these relevant boundaries:
 
 - `src/i18n/routes.ts` creates localized pathnames but does not create query-bearing Constellation URLs.
-- `LanguageSelector.svelte` and `SettingsPanel.svelte` independently compose `switchLocalePath(...) + search + hash`.
+- `LanguageSelector.svelte` and `SettingsPanel.svelte` already preserve `search` and `hash` with equivalent inline URL composition.
 - `GalaxyWrapper.svelte` owns Galaxy selection state, the selected-system dialog, planetary navigation, and current Coming Soon behavior.
 - `localGalaxyData.starSystems` is the authoritative list of observer candidates and exposes each system's exact ID and light-year Cartesian position.
 - `ConstellationWrapper.svelte` currently initializes only the Earth/Sol sky path and will consume resolved observer state in HPA-435.
+- `src/pages/constellation.astro` is rendered on demand because the project uses `output: "server"`.
+- Localized Vercel fallback routes are path-based rewrites into the same server renderer.
+
+The locale URL helper is therefore a focused deduplication and drift-prevention change, not a fix for a current query-loss bug.
 
 HPA-432 must not import or depend on HPA-431's astronomy transformation implementation. The two tickets can proceed independently.
 
@@ -102,17 +116,17 @@ export type ResolvedObserverState =
 
 Names may vary during implementation, but these semantic distinctions and field values are required.
 
-### 2. Preserve fallback provenance
+### 2. Preserve exact fallback provenance
 
 The effective observer alone is insufficient. These requests all eventually render Sol but have different meanings:
 
 - `/constellation`: normal Sol mode; no notice.
-- `/constellation?observer=sol`: explicit Sol mode; no notice.
+- `/constellation?observer=sol`: explicit Sol request; canonical redirect.
 - `/constellation?observer=unknown`: invalid request; HPA-435 shows a fallback notice.
 - `/constellation?observer=`: malformed request; HPA-435 shows a fallback notice.
 - `/constellation?observer=a&observer=b`: ambiguous request; HPA-435 shows a fallback notice without claiming either value was selected.
 
-The exact provenance contract is:
+Exact provenance contract:
 
 | Input class | `requestedObserver` | Reason |
 | --- | --- | --- |
@@ -140,6 +154,8 @@ The route contract does not:
 
 A single non-empty `observer` value is parsed as a candidate. Resolution then performs exact ID lookup.
 
+The alias rule is defensive documentation. No separate Galaxy component test is required for `solar-system`, because the current Galaxy dialog only opens for IDs present in `localGalaxyData.starSystems` and that catalog contains no such entry.
+
 ### 4. Define deterministic malformed-query behavior
 
 Use `URLSearchParams.getAll("observer")`:
@@ -152,11 +168,11 @@ Use `URLSearchParams.getAll("observer")`:
 
 Duplicate observer parameters do not use first-value-wins or last-value-wins behavior. They deterministically fall back to Sol.
 
-Unrelated query parameters are ignored by the observer parser and preserved during locale switching.
+Unrelated query parameters are ignored by the observer parser and preserved during locale switching and explicit-Sol canonicalization.
 
-### 5. Canonicalize Sol to no query parameter
+### 5. Serialize observer state as a query suffix
 
-`serializeObserverQuery()` returns a query suffix suitable for direct concatenation to a localized pathname:
+`serializeObserverQuery()` returns a suffix suitable for direct concatenation to a localized pathname:
 
 - `""` when no observer parameter should be emitted;
 - a string beginning with `?` for a system observer.
@@ -175,12 +191,39 @@ serializeObserverQuery(undefined);
 
 serializeObserverQuery("alpha-centauri");
 // "?observer=alpha-centauri"
-
-parseObserverQuery(new URLSearchParams("observer=sol"));
-// { kind: "explicit-sol" }
 ```
 
-HPA-432 does not need to replace the browser URL when a user manually opens `observer=sol`; canonicalization is guaranteed when application code serializes or navigates to Sol.
+System IDs must be encoded with `URLSearchParams` or equivalent standard URL encoding rather than manual concatenation.
+
+### 6. Canonicalize explicit Sol requests server-side
+
+The project uses on-demand server rendering, and existing pages already use `Astro.redirect()`. HPA-432 therefore provides one stable shareable Sol URL rather than merely producing canonical URLs from application navigation.
+
+`src/pages/constellation.astro` imports the observer parser and redirects only when parsing returns `explicit-sol`:
+
+```ts
+const observerQuery = parseObserverQuery(Astro.url.searchParams);
+
+if (observerQuery.kind === "explicit-sol") {
+    const canonicalUrl = new URL(Astro.url);
+    canonicalUrl.searchParams.delete("observer");
+
+    return Astro.redirect(
+        `${canonicalUrl.pathname}${canonicalUrl.search}`,
+        308,
+    );
+}
+```
+
+Required behavior:
+
+- `/constellation?observer=sol` redirects to `/constellation`;
+- `/ja/constellation?observer=sol` redirects to `/ja/constellation`;
+- unrelated query parameters remain present;
+- malformed duplicate parameters, including `observer=sol&observer=x`, do not redirect and remain available to the typed fallback contract;
+- no client-side `history.replaceState` logic is introduced.
+
+`parseObserverQuery()` therefore has a narrow production consumer in this slice. `resolveObserverState()` remains a module contract exercised by unit tests until HPA-435 integrates it into `ConstellationWrapper`.
 
 ## Observer route-state module
 
@@ -219,7 +262,7 @@ interface ObserverCandidate {
 }
 ```
 
-`THREE.Vector3` exposes public numeric `x`, `y`, and `z` fields, so `StarSystemData.position` is structurally assignable to this plain shape. Production callers can pass `localGalaxyData.starSystems` directly without importing Three.js into the route-state module; tests can use plain objects.
+`THREE.Vector3` exposes public numeric `x`, `y`, and `z` fields, so `StarSystemData.position` is structurally assignable to this plain shape. Production callers can pass `localGalaxyData.starSystems` directly without importing Three.js into the route-state module or creating a mapping layer. Tests can use plain objects.
 
 The module must not import Svelte, DOM APIs, Three.js, a renderer, or the global galaxy catalog.
 
@@ -240,7 +283,7 @@ A candidate is eligible when:
 - `position.x`, `position.y`, and `position.z` are all finite; and
 - the position is not exactly `(0, 0, 0)`.
 
-Failure reasons:
+Typed failure reasons remain distinct in the domain contract:
 
 - `invalid-coordinates` for any non-finite component;
 - `origin-collision` for an exact origin vector.
@@ -249,16 +292,9 @@ Do not introduce an epsilon in this ticket. Near-zero vector tolerances and tran
 
 ### Current-data reachability
 
-The current CSV-generated `localGalaxyData` contains 30 nearby systems with positive distances. `radialToCartesian()` derives finite non-origin system positions from those distances and catalog coordinates, so the production catalog does not currently exercise the disabled Galaxy action.
+The current CSV-generated `localGalaxyData` contains 30 nearby systems with positive distances. `radialToCartesian()` derives finite non-origin system positions from those distances and catalog coordinates, so the production catalog does not currently exercise an ineligible Galaxy selection.
 
-The disabled-button states are intentionally defensive and are tested with synthetic component fixtures. They remain in HPA-432 because:
-
-- the route resolver already defines typed invalid-coordinate and origin-collision behavior;
-- future generated/imported catalog data must not create unusable observer URLs;
-- Galaxy should explain an unusable selection instead of navigating to a URL that HPA-435 must immediately reject; and
-- the existing HPA-432 scope explicitly requires the disabled accessible state.
-
-This is not a claim that current users will encounter these states with today's generated data.
+The eligibility guard remains because generated or future imported data can regress. However, the Galaxy user-facing treatment is intentionally generic rather than exposing separate coordinate failure reasons.
 
 ## Route helper design
 
@@ -291,11 +327,11 @@ routes.constellation("zh", { observerId: "sol" });
 // /zh/constellation
 ```
 
-Use an options object rather than a positional observer argument. Encode observer IDs through `URLSearchParams` or equivalent standard URL encoding rather than string concatenation.
+Use an options object rather than a positional observer argument.
 
 ### Locale-switch URL helper
 
-Centralize the duplicated locale-switch composition in `src/i18n/routes.ts`:
+Centralize the equivalent locale-switch composition in `src/i18n/routes.ts`:
 
 ```ts
 switchLocaleUrl(url: URL, locale: AppLocale): string;
@@ -303,7 +339,7 @@ switchLocaleUrl(url: URL, locale: AppLocale): string;
 
 It returns the localized pathname plus the original search and hash. Both `LanguageSelector.svelte` and `SettingsPanel.svelte` use this helper.
 
-This is a focused deduplication serving observer-state preservation, not a broader navigation refactor.
+This is a maintainability change that prevents the two call sites from drifting. It does not claim either component currently drops query state.
 
 ## Galaxy dialog integration
 
@@ -311,7 +347,7 @@ Add **View sky from here** to the existing Galaxy system details dialog.
 
 ### Independent capabilities
 
-Preserve the existing reactive `canExplore` calculation and binding. Add `observerEligibility` alongside it rather than renaming or rewriting the established Explore path.
+Leave the existing reactive `canExplore` calculation and binding untouched. Add `observerEligibility` alongside it.
 
 Planetary exploration availability remains based on `planetarySystemRegistry` and `resolveRouteSystemId`. Sky availability is based on the selected local-galaxy system's exact ID and the shared `isObserverCandidateEligible()` helper.
 
@@ -337,18 +373,37 @@ window.location.href = routes.constellation(lang, {
 
 Use the exact selected Galaxy ID. Do not pass it through `resolveRouteSystemId`, which exists only for planetary navigation.
 
-### Disabled behavior
+### Ineligible observer action
 
-For non-finite or origin-colliding coordinates:
+Both typed eligibility failures map to one localized Galaxy message:
 
-- render the View Sky button disabled;
-- keep Explore behavior unchanged;
-- show localized explanatory text near the actions;
-- associate the disabled button with that text through `aria-describedby`;
-- do not rely exclusively on a native title tooltip;
-- do not navigate or silently substitute Sol.
+```text
+galaxy.skyUnavailable
+```
 
-The explanation remains visible while the selected system dialog is open.
+Suggested English copy:
+
+> Sky view is unavailable for this system.
+
+The View Sky action remains visible and keyboard-focusable:
+
+- use `aria-disabled="true"`, not the native `disabled` attribute;
+- keep the button in the tab order;
+- associate it with the persistent explanation through `aria-describedby`;
+- guard the click handler so pointer, Enter, and Space activation do not navigate;
+- style the `aria-disabled` state consistently with unavailable controls;
+- do not expose `invalid-coordinates` or `origin-collision` as user-facing Galaxy copy.
+
+This preserves discoverability and allows assistive-technology users to focus the action and hear why it is unavailable.
+
+### Reconcile the two unavailable patterns
+
+The two dialog actions represent different semantics:
+
+- **Explore / Coming Soon** is an enabled action that intentionally opens the existing inline Coming Soon notice.
+- **View sky from here / unavailable** is a non-activatable data-integrity state represented by a focusable `aria-disabled` button with persistent explanatory text.
+
+HPA-432 does not reuse the Coming Soon click-notice behavior for View Sky, because an `aria-disabled` action must not perform an activation side effect.
 
 ### Action hierarchy
 
@@ -368,15 +423,19 @@ Add equivalent non-empty strings to `en`, `zh`, and `ja` for:
 
 ```text
 action.viewSkyFromHere
-galaxy.skyUnavailableInvalidCoordinates
-galaxy.skyUnavailableOriginCollision
+galaxy.skyUnavailable
 ```
 
-Do not add a new Explore label. The existing product action continues to use `action.explore`, whose English copy is **Explore**.
+Do not add:
+
+- separate user-facing messages for invalid coordinates and origin collision; or
+- a new Explore label.
+
+The existing product action continues to use `action.explore`, whose English copy is **Explore**.
 
 Unknown-observer and Constellation fallback copy belongs to HPA-435.
 
-The repository does not currently enforce general key parity across all locale catalogs. Add `src/i18n/__tests__/observerUiI18nSync.test.ts` to assert these HPA-432 keys exist and are non-empty in every supported locale. Do not broaden this ticket into a repository-wide key-parity migration, which may expose unrelated historical differences.
+Add `src/i18n/__tests__/observerUiI18nSync.test.ts` to assert the two HPA-432 keys exist and are non-empty in every supported locale. Do not broaden this ticket into a repository-wide key-parity migration.
 
 ## Testing strategy
 
@@ -384,8 +443,8 @@ The repository does not currently enforce general key parity across all locale c
 
 Cover:
 
-- missing parameter resolves to normal Sol mode;
-- `observer=sol` resolves to explicit Sol mode;
+- missing parameter parses and resolves to normal Sol mode;
+- `observer=sol` parses as explicit Sol;
 - a known eligible system resolves to system mode;
 - an unknown ID falls back with the exact requested ID and `unknown-system` reason;
 - an empty value produces `requestedObserver: ""` and `empty` reason;
@@ -396,8 +455,10 @@ Cover:
 - unrelated query parameters do not change observer parsing;
 - Sol, `null`, and `undefined` serialization produce `""`;
 - system serialization produces an encoded suffix beginning with `?`;
-- valid system parse/serialize round trips preserve the ID;
+- valid system parse/serialize round trips preserve the ID; and
 - resolver eligibility failures match direct `isObserverCandidateEligible()` results.
+
+These are module-contract tests. Except for explicit-Sol parsing used by the page redirect, renderer fallback behavior is not implemented in HPA-432.
 
 ### Route helper tests
 
@@ -407,30 +468,30 @@ Extend `src/i18n/__tests__/routes.test.ts` to cover:
 - query-free canonical Sol URLs;
 - `{ observerId: undefined }` and `{ observerId: null }` returning the query-free route;
 - encoded observer IDs;
-- locale switching that preserves observer, unrelated query parameters, and hash fragments;
+- locale switching that preserves observer, unrelated query parameters, and hash fragments; and
 - locale switching without duplicating an existing locale prefix.
+
+### Explicit-Sol redirect integration
+
+Add one focused route-level Playwright test for the server canonicalization behavior:
+
+- `/constellation?observer=sol` redirects to `/constellation`;
+- unrelated query parameters are preserved; and
+- a duplicate observer request is not canonicalized as explicit Sol.
+
+This is not the full alien-sky journey. HPA-436 retains cross-view and localized observer-route E2E coverage.
 
 ### Localization coverage test
 
-Add a focused parity guard for the three HPA-432 UI keys across every locale exposed by `ui`.
+Add a focused parity guard for the two HPA-432 UI keys across every locale exposed by `ui`.
 
-### SettingsPanel locale-switch regression
+### Locale-switch component coverage
 
-Add the single component regression to `src/components/hud/__tests__/SettingsPanel.test.ts`.
+Do not add a second standalone locale-switch test solely for HPA-432.
 
-Prove that:
+Instead, strengthen the existing SettingsPanel navigation test fixture so its existing assertion includes an observer query and hash. Pure `switchLocaleUrl()` tests carry the complete locale/query matrix.
 
-```text
-/constellation?observer=alpha-centauri#details
-```
-
-becomes:
-
-```text
-/ja/constellation?observer=alpha-centauri#details
-```
-
-`LanguageSelector.svelte` is migrated to the same shared helper, but its existing component test does not need a duplicate navigation matrix. Pure route-helper tests cover the full locale/query behavior.
+`LanguageSelector.svelte` migrates to the shared helper, but its component suite does not duplicate that matrix.
 
 ### GalaxyWrapper tests
 
@@ -443,13 +504,25 @@ Cover:
 - an eligible, non-explorable system still enables View Sky;
 - View Sky navigates to the correct English URL;
 - View Sky navigates to the correct localized URL;
-- synthetic non-finite coordinates disable only View Sky and show the associated localized reason;
-- synthetic origin coordinates disable only View Sky and show the associated localized reason;
-- the component consumes `isObserverCandidateEligible()` rather than duplicating coordinate predicates, using a module mock or equivalent assertion;
-- clicking Explore on a Coming Soon system still shows the current notice while View Sky remains enabled;
+- synthetic non-finite and origin candidates each produce the same focusable `aria-disabled` View Sky state and generic description;
+- the ineligible click handler does not navigate;
+- the component consumes `isObserverCandidateEligible()` rather than duplicating coordinate predicates;
+- clicking Explore on a Coming Soon system still shows the current notice while View Sky remains enabled; and
 - closing, backdrop dismissal, focus trap, and Escape behavior do not regress.
 
 Full Galaxy-to-Constellation Playwright coverage remains in HPA-436.
+
+## Localized deployment coverage
+
+The Vercel locale fallback routes are path-anchored rewrites into the server renderer. Query strings are expected to reach the page unchanged, but that deployment behavior is not proven by route-helper unit tests.
+
+HPA-436 must explicitly load at least one localized observer URL such as:
+
+```text
+/zh/constellation?observer=alpha-centauri
+```
+
+and verify that the observer state reaches the completed Constellation integration. Its existing targeted `zh` and `ja` route coverage should include query-bearing URLs, not only localized pathnames.
 
 ## Expected file changes
 
@@ -459,6 +532,7 @@ src/lib/constellation/__tests__/observerRouteState.test.ts
 src/i18n/routes.ts
 src/i18n/__tests__/routes.test.ts
 src/i18n/__tests__/observerUiI18nSync.test.ts
+src/pages/constellation.astro
 src/components/LanguageSelector.svelte
 src/components/hud/SettingsPanel.svelte
 src/components/hud/__tests__/SettingsPanel.test.ts
@@ -467,6 +541,7 @@ src/components/__tests__/GalaxyWrapper.test.ts
 src/i18n/en.ts
 src/i18n/zh.ts
 src/i18n/ja.ts
+e2e/observer-routing.spec.ts
 ```
 
 A small test helper may be added if it materially reduces fixture duplication. No renderer, astronomy-transform, or Constellation-wrapper file should require behavioral changes in this PR.
@@ -477,11 +552,12 @@ A small test helper may be added if it materially reduces fixture duplication. N
 2. Implement parsing, shared eligibility, resolution, and query-suffix serialization in the pure route-state module.
 3. Add failing route tests for observer URLs, nullish options, and locale preservation.
 4. Extend `routes.constellation` and add `switchLocaleUrl`.
-5. Migrate both language-switching components to the shared helper and add the focused SettingsPanel regression.
-6. Add the focused HPA-432 locale-key coverage test and translations.
-7. Add GalaxyWrapper tests for action hierarchy, independent capability behavior, shared eligibility use, and synthetic invalid fixtures.
-8. Add observer navigation, CTA, and accessible disabled explanations while preserving `canExplore` and the existing Explore primary action.
-9. Run focused tests, formatting, lint, type-check, the full Vitest suite, and build.
+5. Add the explicit-Sol canonical redirect to `constellation.astro` and its focused route integration test.
+6. Migrate both language-switching components to the shared helper and strengthen the existing SettingsPanel navigation test.
+7. Add the focused HPA-432 locale-key coverage test and two localized strings.
+8. Add GalaxyWrapper tests for action hierarchy, independent capability behavior, shared eligibility use, and generic `aria-disabled` handling.
+9. Add observer navigation, CTA, and accessible ineligible explanation while preserving `canExplore` and the existing Explore primary action.
+10. Run focused tests, formatting, lint, type-check, the full Vitest suite, the focused Playwright route test, and build.
 
 ## Risks and mitigations
 
@@ -493,57 +569,72 @@ A small test helper may be added if it materially reduces fixture duplication. N
 ### Resolver and Galaxy eligibility drift
 
 **Risk:** Direct URLs and the Galaxy button use separate coordinate predicates.  
-**Mitigation:** Both paths call the exported `isObserverCandidateEligible()` helper; component coverage proves that dependency.
+**Mitigation:** Both paths call the exported `isObserverCandidateEligible()` helper.
 
-### Planetary aliases leak into observer IDs
+### Canonical output and browser URL diverge
 
-**Risk:** Reusing `resolveRouteSystemId` changes Galaxy IDs before observer serialization.  
-**Mitigation:** Observer URLs always use exact `localGalaxyData` IDs.
+**Risk:** Application navigation omits `observer=sol`, but manually opened explicit-Sol URLs remain shareable duplicates.  
+**Mitigation:** `constellation.astro` issues a server-side 308 redirect for exactly one explicit Sol parameter.
 
-### Query state is dropped during locale switching
+### Locale helper changes are mistaken for a current bug fix
 
-**Risk:** One language selector preserves observer state while another only localizes the pathname.  
-**Mitigation:** Both selectors use one tested `switchLocaleUrl` helper, with the component regression located in SettingsPanel tests.
+**Risk:** The design overstates current query-loss behavior.  
+**Mitigation:** Document the helper as deduplication and drift prevention; strengthen one existing component test rather than adding a redundant matrix.
 
-### Locale keys drift
+### Ineligible controls are inaccessible
 
-**Risk:** A new observer action or disabled-state message is missing from one locale.  
-**Mitigation:** Add a focused automated parity guard for the three HPA-432 UI keys.
+**Risk:** A native disabled button leaves the tab order, so keyboard and screen-reader users do not encounter its description.  
+**Mitigation:** Use focusable `aria-disabled`, persistent `aria-describedby` text, and a guarded handler.
 
-### Defensive UI is mistaken for current production reachability
+### Defensive UI is over-specified
 
-**Risk:** Reviewers assume the current 30-system catalog can trigger invalid-coordinate disabled states.  
-**Mitigation:** Document that current production data is valid and exercise these paths through synthetic fixtures as forward-compatible data-integrity behavior.
-
-### HPA-432 becomes dependent on astronomy implementation
-
-**Risk:** Coordinate validation imports HPA-431 transform helpers or adopts transform tolerances.  
-**Mitigation:** Check only finite components and exact-origin collision through the structural shared helper.
+**Risk:** Separate user-facing messages and tests are built for coordinate states absent from the current catalog.  
+**Mitigation:** Preserve typed domain reasons but map both to one generic Galaxy message and one parameterized component behavior.
 
 ### Existing Explore behavior regresses
 
 **Risk:** Adding another action changes `canExplore`, Coming Soon, visual priority, focus, dismissal, or Explore routing.  
-**Mitigation:** Preserve the existing `canExplore` binding and primary Explore action, add View Sky as the preceding secondary action, and retain component regressions.
+**Mitigation:** Leave `canExplore` untouched, preserve the existing primary Explore action, add View Sky as the preceding secondary action, and retain component regressions.
+
+### Localized deployment rewrites lose query state
+
+**Risk:** Unit tests prove URL construction but not query propagation through Vercel's localized fallback routes.  
+**Mitigation:** Require explicit query-bearing localized URL coverage in HPA-436.
 
 ## Acceptance criteria
 
-- `/constellation`, `/zh/constellation`, and `/ja/constellation` are canonical Sol URLs.
-- `observer=sol` parses as explicit Sol and serializes without an observer parameter.
-- `serializeObserverQuery()` returns either `""` or a leading-`?` query suffix.
-- A valid local-galaxy system serializes to the correctly localized Constellation URL.
+### Module contract
+
+- `parseObserverQuery()` distinguishes missing, explicit Sol, candidate, empty, and duplicate input deterministically.
 - Empty observer input preserves `requestedObserver: ""`; duplicate input uses `requestedObserver: null`.
 - Unknown, non-finite, and origin-colliding candidates preserve the exact requested ID.
-- Missing, empty, duplicate, unknown, non-finite, and origin-colliding observer requests have deterministic typed results.
-- Resolver and Galaxy eligibility both use `isObserverCandidateEligible()`.
+- `resolveObserverState()` and Galaxy availability both use `isObserverCandidateEligible()`.
+- `serializeObserverQuery()` returns either `""` or a leading-`?` query suffix.
+- Sol, `null`, and `undefined` serialize without an observer parameter.
+
+### Route and page behavior
+
+- `/constellation`, `/zh/constellation`, and `/ja/constellation` are canonical Sol URLs.
+- Exactly one `observer=sol` parameter redirects server-side to the corresponding query-free localized path.
+- Explicit-Sol canonicalization preserves unrelated query parameters.
+- Valid local-galaxy systems serialize to correctly localized Constellation URLs.
 - Locale switching preserves the full query string and hash.
-- The three HPA-432 UI keys are automatically verified across all supported locales.
+- All observer navigation emitted by HPA-432 stores observer selection in the URL; no component-only observer source is introduced.
+
+### Galaxy behavior
+
 - The Galaxy dialog order is Close, View sky from here, Explore/Coming Soon.
-- Explore keeps its existing primary styling, copy, route mapping, and Coming Soon behavior.
+- Explore keeps its existing primary styling, copy, route mapping, `canExplore` binding, and Coming Soon behavior.
 - View Sky is an independent secondary action and may be enabled when Explore is Coming Soon.
-- Invalid or origin-colliding systems have a disabled View Sky action with localized accessible explanation; these states are defensive and fixture-covered with current data.
-- Existing `canExplore`, focus handling, dialog dismissal, and Escape behavior do not regress.
-- The locale-switch component regression is implemented in `SettingsPanel.test.ts`.
-- No observer state exists only in a transient Svelte variable.
+- Ineligible systems retain a focusable `aria-disabled` View Sky action with one localized generic explanation.
+- Ineligible View Sky activation never navigates.
+- Existing focus handling, dialog dismissal, and Escape behavior do not regress.
+
+### Scope and localization
+
+- The two HPA-432 UI keys are automatically verified across all supported locales.
+- Current invalid-coordinate and origin-collision results remain typed domain distinctions but do not create separate Galaxy copy.
+- `resolveObserverState()` is treated as a module contract until HPA-435 consumes it in the application.
 - No astronomy transforms, renderer support, observer HUD, or Constellation fallback UI are added in this PR.
 
 ## Validation commands
@@ -554,6 +645,7 @@ bunx vitest src/i18n/__tests__/routes.test.ts
 bunx vitest src/i18n/__tests__/observerUiI18nSync.test.ts
 bunx vitest src/components/hud/__tests__/SettingsPanel.test.ts
 bunx vitest src/components/__tests__/GalaxyWrapper.test.ts
+bunx playwright test e2e/observer-routing.spec.ts
 bun run lint
 bun run type-check
 bun run test:run
