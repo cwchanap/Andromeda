@@ -72,6 +72,23 @@ beforeEach(() => {
     galaxyHarness.eligibility.mockReturnValue({ eligible: true });
 });
 
+// Default matchMedia mock returning a non-matching MQL so the
+// AccessibilityManager (rendered as a child) doesn't crash when it
+// calls window.matchMedia without optional chaining. Shared across the
+// reduced-motion and observer-sky suites as the single source of truth
+// for the default matchMedia stub.
+function installDefaultMatchMedia(overrides: Partial<any> = {}) {
+    const mql: any = {
+        matches: false,
+        media: "(prefers-reduced-motion: reduce)",
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        ...overrides,
+    };
+    return vi.spyOn(window, "matchMedia").mockReturnValue(mql);
+}
+
 describe("GalaxyWrapper", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -323,24 +340,8 @@ describe("GalaxyWrapper – reduced-motion & dialog a11y", () => {
 
     let capturedEvents: any;
 
-    // Default matchMedia mock returning a non-matching MQL so the
-    // AccessibilityManager (rendered as a child) doesn't crash when it
-    // calls window.matchMedia without optional chaining.
-    function installDefaultMatchMedia(overrides: Partial<any> = {}) {
-        const mql: any = {
-            matches: false,
-            media: "(prefers-reduced-motion: reduce)",
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn(),
-            dispatchEvent: vi.fn(),
-            ...overrides,
-        };
-        matchMediaSpy = vi.spyOn(window, "matchMedia").mockReturnValue(mql);
-        return mql;
-    }
-
     it("forwards OS reduced-motion preference to the renderer", async () => {
-        installDefaultMatchMedia({ matches: true });
+        matchMediaSpy = installDefaultMatchMedia({ matches: true });
 
         (GalaxyRenderer as ReturnType<typeof vi.fn>).mockImplementationOnce(
             (_c: HTMLElement, _cfg: unknown, events: unknown) => {
@@ -407,7 +408,7 @@ describe("GalaxyWrapper – reduced-motion & dialog a11y", () => {
 
     it("closes the system dialog when Escape is pressed on the overlay", async () => {
         // Provide a default matchMedia so AccessibilityManager doesn't crash.
-        installDefaultMatchMedia();
+        matchMediaSpy = installDefaultMatchMedia();
 
         const mockSystem = {
             id: "solar-system",
@@ -521,18 +522,8 @@ describe("GalaxyWrapper — observer sky action", () => {
         });
         // Re-install a default matchMedia so the child AccessibilityManager
         // (which reads prefers-reduced-motion) is isolated from any spy
-        // pollution left by the reduced-motion describe above. Mirrors the
-        // installDefaultMatchMedia helper used by that suite.
-        vi.spyOn(window, "matchMedia").mockReturnValue({
-            matches: false,
-            media: "(prefers-reduced-motion: reduce)",
-            onchange: null,
-            addListener: vi.fn(),
-            removeListener: vi.fn(),
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn(),
-            dispatchEvent: vi.fn(),
-        } as any);
+        // pollution left by the reduced-motion describe above.
+        installDefaultMatchMedia();
     });
 
     it("renders ordered secondary View Sky and primary Explore actions", async () => {
