@@ -20,16 +20,14 @@ describe("parseObserverQuery", () => {
     });
 
     it("returns explicit-sol for exactly one observer=sol", () => {
-        expect(
-            parseObserverQuery(new URLSearchParams("observer=sol")),
-        ).toEqual({ kind: "explicit-sol" });
+        expect(parseObserverQuery(new URLSearchParams("observer=sol"))).toEqual(
+            { kind: "explicit-sol" },
+        );
     });
 
     it("returns one exact non-empty candidate", () => {
         expect(
-            parseObserverQuery(
-                new URLSearchParams("observer=alpha-centauri"),
-            ),
+            parseObserverQuery(new URLSearchParams("observer=alpha-centauri")),
         ).toEqual({
             kind: "candidate",
             observerId: "alpha-centauri",
@@ -58,9 +56,7 @@ describe("parseObserverQuery", () => {
     it("rejects duplicates without selecting either value", () => {
         expect(
             parseObserverQuery(
-                new URLSearchParams(
-                    "observer=sol&observer=alpha-centauri",
-                ),
+                new URLSearchParams("observer=sol&observer=alpha-centauri"),
             ),
         ).toEqual({
             kind: "malformed",
@@ -71,12 +67,9 @@ describe("parseObserverQuery", () => {
 });
 
 describe("serializeObserverQuery", () => {
-    it.each(["sol", null, undefined])(
-        "omits observer for %s",
-        (observerId) => {
-            expect(serializeObserverQuery(observerId)).toBe("");
-        },
-    );
+    it.each(["sol", null, undefined])("omits observer for %s", (observerId) => {
+        expect(serializeObserverQuery(observerId)).toBe("");
+    });
 
     it("returns a leading-question-mark system suffix", () => {
         expect(serializeObserverQuery("alpha-centauri")).toBe(
@@ -103,12 +96,12 @@ describe("isObserverCandidateEligible", () => {
         { x: 1, y: Number.POSITIVE_INFINITY, z: 1 },
         { x: 1, y: 1, z: Number.NEGATIVE_INFINITY },
     ])("rejects non-finite coordinates: %j", (position) => {
-        expect(
-            isObserverCandidateEligible({ id: "broken", position }),
-        ).toEqual({
-            eligible: false,
-            reason: "invalid-coordinates",
-        });
+        expect(isObserverCandidateEligible({ id: "broken", position })).toEqual(
+            {
+                eligible: false,
+                reason: "invalid-coordinates",
+            },
+        );
     });
 
     it("rejects exact origin", () => {

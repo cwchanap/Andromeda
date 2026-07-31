@@ -74,9 +74,7 @@ describe("i18n routes", () => {
                 ),
                 "ja",
             ),
-        ).toBe(
-            "/ja/constellation?observer=alpha-centauri&ref=earth#details",
-        );
+        ).toBe("/ja/constellation?observer=alpha-centauri&ref=earth#details");
     });
 
     it("switches locale without duplicating prefixes", () => {
