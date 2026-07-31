@@ -1,7 +1,7 @@
 <script lang="ts">
   import { languages } from '../i18n/ui';
   import { getLangFromUrl, useTranslations } from '../i18n/utils';
-  import { switchLocalePath, type AppLocale } from '../i18n/routes';
+  import { switchLocaleUrl, type AppLocale } from '../i18n/routes';
   import { onMount } from 'svelte';
   
   let showLanguageSelector = false;
@@ -17,9 +17,10 @@
   
   function handleLanguageChange(newLang: AppLocale) {
     if (typeof window !== 'undefined') {
-      const currentUrl = new URL(window.location.href);
-      const newPath = `${switchLocalePath(currentUrl.pathname, newLang)}${currentUrl.search}${currentUrl.hash}`;
-      window.location.href = newPath;
+      window.location.href = switchLocaleUrl(
+        new URL(window.location.href),
+        newLang,
+      );
     }
     showLanguageSelector = false;
   }

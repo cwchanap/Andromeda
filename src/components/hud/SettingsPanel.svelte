@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { languages } from "@/i18n/ui";
-  import { switchLocalePath, type AppLocale } from "@/i18n/routes";
+  import { switchLocaleUrl, type AppLocale } from "@/i18n/routes";
   import { useTranslations } from "@/i18n/utils";
   import { focusTrap } from "@/lib/hud/focusTrap";
   import { gameState } from "@/stores/gameStore";
@@ -28,11 +28,10 @@
 
   function changeLanguage(newLang: AppLocale) {
     if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    window.location.href = `${switchLocalePath(
-      url.pathname,
+    window.location.href = switchLocaleUrl(
+      new URL(window.location.href),
       newLang,
-    )}${url.search}${url.hash}`;
+    );
   }
 
   function handleKeydown(event: KeyboardEvent) {
