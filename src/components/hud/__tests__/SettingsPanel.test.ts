@@ -150,7 +150,9 @@ describe("SettingsPanel — interactions", () => {
         });
         const jaBtn = Array.from(
             container.querySelectorAll<HTMLButtonElement>(".lang-btn"),
-        ).find((button) => button.textContent?.trim() === "日本語") as HTMLElement;
+        ).find(
+            (button) => button.textContent?.trim() === "日本語",
+        ) as HTMLElement;
 
         await fireEvent.click(jaBtn);
 

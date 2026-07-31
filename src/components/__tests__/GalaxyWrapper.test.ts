@@ -46,16 +46,18 @@ vi.mock("@/lib/galaxy", () => {
     };
 
     return {
-        GalaxyRenderer: vi.fn().mockImplementation(
-            (
-                _container: HTMLElement,
-                _config: unknown,
-                events: unknown,
-            ) => {
-                galaxyHarness.capturedEvents = events;
-                return mockRenderer;
-            },
-        ),
+        GalaxyRenderer: vi
+            .fn()
+            .mockImplementation(
+                (
+                    _container: HTMLElement,
+                    _config: unknown,
+                    events: unknown,
+                ) => {
+                    galaxyHarness.capturedEvents = events;
+                    return mockRenderer;
+                },
+            ),
         localGalaxyData: {
             starSystems: galaxyHarness.starSystems,
             metadata: { name: "Test Galaxy" },
@@ -486,7 +488,11 @@ async function openSystemDialog(
     system: any = baseSystem,
     props: { lang?: "en" | "zh" | "ja" } = {},
 ) {
-    galaxyHarness.starSystems.splice(0, galaxyHarness.starSystems.length, system);
+    galaxyHarness.starSystems.splice(
+        0,
+        galaxyHarness.starSystems.length,
+        system,
+    );
     const result = render(GalaxyWrapper, {
         props: { translations: galaxyTranslations, ...props },
     });
@@ -549,8 +555,12 @@ describe("GalaxyWrapper — observer sky action", () => {
     it("navigates an eligible non-explorable system", async () => {
         const { container } = await openSystemDialog();
         const viewSky = Array.from(
-            container.querySelectorAll<HTMLButtonElement>(".dialog-actions button"),
-        ).find((button) => button.textContent?.trim() === "View sky from here")!;
+            container.querySelectorAll<HTMLButtonElement>(
+                ".dialog-actions button",
+            ),
+        ).find(
+            (button) => button.textContent?.trim() === "View sky from here",
+        )!;
 
         await fireEvent.click(viewSky);
 
@@ -561,10 +571,16 @@ describe("GalaxyWrapper — observer sky action", () => {
     });
 
     it("uses the localized observer route", async () => {
-        const { container } = await openSystemDialog(baseSystem, { lang: "ja" });
+        const { container } = await openSystemDialog(baseSystem, {
+            lang: "ja",
+        });
         const viewSky = Array.from(
-            container.querySelectorAll<HTMLButtonElement>(".dialog-actions button"),
-        ).find((button) => button.textContent?.trim() === "View sky from here")!;
+            container.querySelectorAll<HTMLButtonElement>(
+                ".dialog-actions button",
+            ),
+        ).find(
+            (button) => button.textContent?.trim() === "View sky from here",
+        )!;
 
         await fireEvent.click(viewSky);
 
@@ -583,17 +599,21 @@ describe("GalaxyWrapper — observer sky action", () => {
             const originalHref = window.location.href;
             const { container } = await openSystemDialog();
             const viewSky = Array.from(
-                container.querySelectorAll<HTMLButtonElement>(".dialog-actions button"),
-            ).find((button) => button.textContent?.trim() === "View sky from here")!;
+                container.querySelectorAll<HTMLButtonElement>(
+                    ".dialog-actions button",
+                ),
+            ).find(
+                (button) => button.textContent?.trim() === "View sky from here",
+            )!;
 
             expect(viewSky.disabled).toBe(false);
             expect(viewSky.getAttribute("aria-disabled")).toBe("true");
 
             const descriptionId = viewSky.getAttribute("aria-describedby");
             expect(descriptionId).toBe("galaxy-sky-unavailable");
-            expect(container.querySelector(`#${descriptionId}`)?.textContent).toContain(
-                "Sky view is unavailable for this system.",
-            );
+            expect(
+                container.querySelector(`#${descriptionId}`)?.textContent,
+            ).toContain("Sky view is unavailable for this system.");
 
             viewSky.focus();
             expect(document.activeElement).toBe(viewSky);
@@ -605,7 +625,9 @@ describe("GalaxyWrapper — observer sky action", () => {
     it("keeps Coming Soon Explore behavior while View Sky is enabled", async () => {
         const { container } = await openSystemDialog();
         const actions = Array.from(
-            container.querySelectorAll<HTMLButtonElement>(".dialog-actions button"),
+            container.querySelectorAll<HTMLButtonElement>(
+                ".dialog-actions button",
+            ),
         );
         const viewSky = actions.find(
             (button) => button.textContent?.trim() === "View sky from here",
@@ -617,9 +639,9 @@ describe("GalaxyWrapper — observer sky action", () => {
         expect(viewSky.getAttribute("aria-disabled")).not.toBe("true");
         await fireEvent.click(explore);
 
-        expect(container.querySelector(".coming-soon-notice")?.textContent).toContain(
-            "This planetary experience is coming soon.",
-        );
+        expect(
+            container.querySelector(".coming-soon-notice")?.textContent,
+        ).toContain("This planetary experience is coming soon.");
         expect(window.location.href).toBe("http://localhost/galaxy");
     });
 });

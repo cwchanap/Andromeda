@@ -13,7 +13,9 @@ const redirectCases = [
 
 test.describe("observer route canonicalization", () => {
     for (const { requestUrl, location } of redirectCases) {
-        test(`redirects ${requestUrl} to canonical Sol`, async ({ request }) => {
+        test(`redirects ${requestUrl} to canonical Sol`, async ({
+            request,
+        }) => {
             const response = await request.get(requestUrl, {
                 maxRedirects: 0,
             });
