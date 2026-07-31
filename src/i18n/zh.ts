@@ -596,6 +596,7 @@ export const zh = {
     "action.close": "关闭",
     "action.save": "保存",
     "action.open": "打开",
+    "action.viewSkyFromHere": "從這裡觀看星空",
 
     // HUD screen-reader announcements
     "hud.settingsOpened": "设置已打开",
@@ -649,6 +650,7 @@ export const zh = {
     "galaxy.systemType.trinary": "三星",
     "galaxy.systemType.multiple": "多星",
     "galaxy.systemType.exotic": "特殊",
+    "galaxy.skyUnavailable": "目前無法從此恆星系統觀看星空。",
 
     // Terrain
     "terrain.loading": "正在加载地形...",
