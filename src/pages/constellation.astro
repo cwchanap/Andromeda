@@ -7,8 +7,8 @@ import {
   addLocaleToPath,
 } from "../i18n/utils";
 import { ui } from "../i18n/ui";
-import { parseObserverQuery } from "../lib/constellation/observerRouteState";
-import { isAppLocale } from "../i18n/routes";
+import { parseObserverQuery } from "@/lib/constellation/observerRouteState";
+import { isAppLocale } from "@/i18n/routes";
 
 const observerQuery = parseObserverQuery(Astro.url.searchParams);
 

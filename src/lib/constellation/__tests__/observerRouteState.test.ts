@@ -115,6 +115,21 @@ describe("isObserverCandidateEligible", () => {
             reason: "origin-collision",
         });
     });
+
+    it.each([null, undefined])(
+        "rejects nullish position: %s",
+        (position) => {
+            expect(
+                isObserverCandidateEligible({
+                    id: "no-position",
+                    position,
+                } as unknown as ObserverCandidate),
+            ).toEqual({
+                eligible: false,
+                reason: "invalid-coordinates",
+            });
+        },
+    );
 });
 
 describe("resolveObserverState", () => {

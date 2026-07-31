@@ -60,7 +60,12 @@ export type ObserverEligibility =
 export function isObserverCandidateEligible(
     candidate: ObserverCandidate,
 ): ObserverEligibility {
-    const { x, y, z } = candidate.position;
+    const { position } = candidate;
+    if (position == null) {
+        return { eligible: false, reason: "invalid-coordinates" };
+    }
+
+    const { x, y, z } = position;
 
     if (![x, y, z].every(Number.isFinite)) {
         return { eligible: false, reason: "invalid-coordinates" };
