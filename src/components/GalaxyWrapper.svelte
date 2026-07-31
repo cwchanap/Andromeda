@@ -2,6 +2,7 @@
     import { onMount, onDestroy } from 'svelte';
     import { GalaxyRenderer, localGalaxyData, type GalaxyConfig, type GalaxyEvents, type StarSystemData } from '@/lib/galaxy';
     import { planetarySystemRegistry } from '@/lib/planetary-system';
+    import { isObserverCandidateEligible } from '@/lib/constellation/observerRouteState';
     import { routes, type AppLocale } from '@/i18n/routes';
     import { getCurrentView, type ViewId } from '@/lib/view/currentView';
     import { gameActions, settings } from '@/stores/gameStore';
@@ -175,6 +176,13 @@
         selectedSystemId !== null &&
         planetarySystemRegistry.hasSystem(resolveRouteSystemId(selectedSystemId) ?? '');
 
+    // Shared eligibility source for the independent View Sky action. Computed
+    // reactively from selectedSystemData so the button state and the guard in
+    // navigateToObserverSky always agree.
+    $: observerEligibility = selectedSystemData
+        ? isObserverCandidateEligible(selectedSystemData)
+        : null;
+
     const navigateToSystem = (systemId: string) => {
         const routeSystemId = resolveRouteSystemId(systemId) ?? systemId;
 
@@ -185,6 +193,18 @@
             // blocking native alert().
             comingSoonNotice = true;
         }
+    };
+
+    // Independent full-page navigation to the constellation view scoped to
+    // the selected system as the observer. Eligible systems only; the button
+    // renders aria-disabled (not native disabled) when unavailable so it
+    // remains focusable and announced.
+    const navigateToObserverSky = () => {
+        if (!selectedSystemData || observerEligibility?.eligible !== true) return;
+
+        window.location.href = routes.constellation(lang, {
+            observerId: selectedSystemData.id,
+        });
     };
 
     // Star system selection handlers
@@ -401,9 +421,30 @@
                         </div>
                     </div>
                     <div class="dialog-actions">
-                        <button class="action-button secondary" on:click={closeSystemDialog}>{t('action.close')}</button>
-                        <button class="action-button primary" on:click={() => navigateToSystem(selectedSystemId!)}>{canExplore ? t('action.explore') : t('common.comingSoon')}</button>
+                        <button class="action-button secondary" on:click={closeSystemDialog}>
+                            {t('action.close')}
+                        </button>
+                        <button
+                            type="button"
+                            class="action-button secondary"
+                            aria-disabled={observerEligibility?.eligible === false ? 'true' : undefined}
+                            aria-describedby={observerEligibility?.eligible === false ? 'galaxy-sky-unavailable' : undefined}
+                            on:click={navigateToObserverSky}
+                        >
+                            {t('action.viewSkyFromHere')}
+                        </button>
+                        <button
+                            class="action-button primary"
+                            on:click={() => navigateToSystem(selectedSystemId!)}
+                        >
+                            {canExplore ? t('action.explore') : t('common.comingSoon')}
+                        </button>
                     </div>
+                    {#if observerEligibility?.eligible === false}
+                        <div id="galaxy-sky-unavailable" class="sky-unavailable-notice" role="status">
+                            {t('galaxy.skyUnavailable')}
+                        </div>
+                    {/if}
                     {#if comingSoonNotice}
                         <div class="coming-soon-notice" role="status">
                             {t('galaxy.comingSoonNotice')}
@@ -454,5 +495,16 @@
     .action-button.secondary { background: transparent; border: 1px solid var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
     .action-button.primary { background: var(--hud-cyan, #00f0ff); border: 1px solid var(--hud-cyan, #00f0ff); color: #001011; }
     .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .action-button[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+    .sky-unavailable-notice {
+        margin-top: 12px;
+        padding: 10px 14px;
+        border: 1px solid rgba(0, 240, 255, 0.45);
+        border-radius: 6px;
+        background: rgba(0, 240, 255, 0.06);
+        color: rgba(224, 247, 255, 0.85);
+        font-size: 13px;
+        text-align: center;
+    }
     .coming-soon-notice { margin-top: 12px; padding: 10px 14px; border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 6px; background: rgba(0,240,255,0.08); color: var(--hud-cyan, #00f0ff); font-size: 13px; text-align: center; }
 </style>

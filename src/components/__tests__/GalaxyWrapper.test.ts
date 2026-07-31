@@ -5,14 +5,32 @@ import GalaxyWrapper from "@/components/GalaxyWrapper.svelte";
 import { GalaxyRenderer } from "@/lib/galaxy";
 import { settings, defaultSettings } from "@/stores/gameStore";
 
+// Hoisted shared harness so individual tests can drive the mocked
+// GalaxyRenderer events, swap star-system fixtures, and stub observer
+// eligibility without reaching into module-private closures.
+const galaxyHarness = vi.hoisted(() => ({
+    capturedEvents: null as any,
+    starSystems: [] as any[],
+    eligibility: vi.fn(),
+}));
+
+vi.mock("@/lib/constellation/observerRouteState", async () => {
+    const actual = await vi.importActual<
+        typeof import("@/lib/constellation/observerRouteState")
+    >("@/lib/constellation/observerRouteState");
+
+    return {
+        ...actual,
+        isObserverCandidateEligible: galaxyHarness.eligibility,
+    };
+});
+
 // Mock heavy dependencies – capture events so onSystemLoad can be triggered
 vi.mock("@/lib/galaxy", () => {
-    let capturedEvents: any;
-
     const mockRenderer = {
         initialize: vi.fn().mockImplementation(async () => {
             await Promise.resolve(); // yield so synchronous tests still see loading state
-            capturedEvents?.onSystemLoad?.();
+            galaxyHarness.capturedEvents?.onSystemLoad?.();
         }),
         dispose: vi.fn(),
         onResize: vi.fn(),
@@ -28,23 +46,28 @@ vi.mock("@/lib/galaxy", () => {
     };
 
     return {
-        GalaxyRenderer: vi
-            .fn()
-            .mockImplementation(
-                (
-                    _container: HTMLElement,
-                    _config: unknown,
-                    events: unknown,
-                ) => {
-                    capturedEvents = events;
-                    return mockRenderer;
-                },
-            ),
+        GalaxyRenderer: vi.fn().mockImplementation(
+            (
+                _container: HTMLElement,
+                _config: unknown,
+                events: unknown,
+            ) => {
+                galaxyHarness.capturedEvents = events;
+                return mockRenderer;
+            },
+        ),
         localGalaxyData: {
-            starSystems: [],
+            starSystems: galaxyHarness.starSystems,
             metadata: { name: "Test Galaxy" },
         },
     };
+});
+
+beforeEach(() => {
+    galaxyHarness.starSystems.splice(0);
+    galaxyHarness.capturedEvents = null;
+    galaxyHarness.eligibility.mockReset();
+    galaxyHarness.eligibility.mockReturnValue({ eligible: true });
 });
 
 describe("GalaxyWrapper", () => {
@@ -424,5 +447,179 @@ describe("GalaxyWrapper – reduced-motion & dialog a11y", () => {
         await waitFor(() =>
             expect(container.querySelector(".system-dialog")).toBeNull(),
         );
+    });
+});
+
+// Deterministic fixtures and helpers for the observer-sky action tests.
+// `sigma-draconis` is intentionally NOT registered in
+// planetarySystemRegistry (it is not part of the nearest-30 set), so
+// canExplore is false and the Explore CTA reads "Coming Soon" — making the
+// independent View Sky action the focus of these tests. Eligibility itself
+// is MOCKED via galaxyHarness.eligibility, so the fixture's position values
+// are never evaluated by the real helper.
+const baseSystem = {
+    id: "sigma-draconis",
+    name: "Sigma Draconis System",
+    description: "Sigma Draconis system",
+    distanceFromEarth: 18.8,
+    systemType: "solar" as const,
+    position: { x: -0.05, y: 0.48, z: -5.94 },
+    metadata: {
+        spectralClass: "K0V",
+        constellation: "Draco",
+        hasExoplanets: true,
+        numberOfPlanets: 4,
+    },
+    stars: [],
+};
+
+const galaxyTranslations = {
+    "action.close": "Close",
+    "action.explore": "Explore",
+    "action.viewSkyFromHere": "View sky from here",
+    "common.comingSoon": "Coming Soon",
+    "galaxy.skyUnavailable": "Sky view is unavailable for this system.",
+    "galaxy.comingSoonNotice": "This planetary experience is coming soon.",
+};
+
+async function openSystemDialog(
+    system: any = baseSystem,
+    props: { lang?: "en" | "zh" | "ja" } = {},
+) {
+    galaxyHarness.starSystems.splice(0, galaxyHarness.starSystems.length, system);
+    const result = render(GalaxyWrapper, {
+        props: { translations: galaxyTranslations, ...props },
+    });
+
+    await waitFor(() => expect(GalaxyRenderer).toHaveBeenCalled());
+    galaxyHarness.capturedEvents?.onSystemLoad?.();
+    galaxyHarness.capturedEvents?.onStarSystemSelect?.(system);
+    await waitFor(() =>
+        expect(result.container.querySelector(".system-dialog")).not.toBeNull(),
+    );
+
+    return result;
+}
+
+describe("GalaxyWrapper — observer sky action", () => {
+    beforeEach(() => {
+        Object.defineProperty(window, "location", {
+            value: {
+                href: "http://localhost/galaxy",
+                pathname: "/galaxy",
+                search: "",
+                hash: "",
+            },
+            writable: true,
+            configurable: true,
+        });
+        // Re-install a default matchMedia so the child AccessibilityManager
+        // (which reads prefers-reduced-motion) is isolated from any spy
+        // pollution left by the reduced-motion describe above. Mirrors the
+        // installDefaultMatchMedia helper used by that suite.
+        vi.spyOn(window, "matchMedia").mockReturnValue({
+            matches: false,
+            media: "(prefers-reduced-motion: reduce)",
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+        } as any);
+    });
+
+    it("renders ordered secondary View Sky and primary Explore actions", async () => {
+        const { container } = await openSystemDialog();
+        const actions = Array.from(
+            container.querySelectorAll<HTMLButtonElement>(
+                ".system-dialog .dialog-actions button",
+            ),
+        );
+
+        expect(actions.map((button) => button.textContent?.trim())).toEqual([
+            "Close",
+            "View sky from here",
+            "Coming Soon",
+        ]);
+        expect(actions[1].classList.contains("secondary")).toBe(true);
+        expect(actions[2].classList.contains("primary")).toBe(true);
+    });
+
+    it("navigates an eligible non-explorable system", async () => {
+        const { container } = await openSystemDialog();
+        const viewSky = Array.from(
+            container.querySelectorAll<HTMLButtonElement>(".dialog-actions button"),
+        ).find((button) => button.textContent?.trim() === "View sky from here")!;
+
+        await fireEvent.click(viewSky);
+
+        expect(window.location.href).toBe(
+            "/constellation?observer=sigma-draconis",
+        );
+        expect(galaxyHarness.eligibility).toHaveBeenCalledWith(baseSystem);
+    });
+
+    it("uses the localized observer route", async () => {
+        const { container } = await openSystemDialog(baseSystem, { lang: "ja" });
+        const viewSky = Array.from(
+            container.querySelectorAll<HTMLButtonElement>(".dialog-actions button"),
+        ).find((button) => button.textContent?.trim() === "View sky from here")!;
+
+        await fireEvent.click(viewSky);
+
+        expect(window.location.href).toBe(
+            "/ja/constellation?observer=sigma-draconis",
+        );
+    });
+
+    it.each(["invalid-coordinates", "origin-collision"] as const)(
+        "maps %s to one focusable aria-disabled state",
+        async (reason) => {
+            galaxyHarness.eligibility.mockReturnValue({
+                eligible: false,
+                reason,
+            });
+            const originalHref = window.location.href;
+            const { container } = await openSystemDialog();
+            const viewSky = Array.from(
+                container.querySelectorAll<HTMLButtonElement>(".dialog-actions button"),
+            ).find((button) => button.textContent?.trim() === "View sky from here")!;
+
+            expect(viewSky.disabled).toBe(false);
+            expect(viewSky.getAttribute("aria-disabled")).toBe("true");
+
+            const descriptionId = viewSky.getAttribute("aria-describedby");
+            expect(descriptionId).toBe("galaxy-sky-unavailable");
+            expect(container.querySelector(`#${descriptionId}`)?.textContent).toContain(
+                "Sky view is unavailable for this system.",
+            );
+
+            viewSky.focus();
+            expect(document.activeElement).toBe(viewSky);
+            await fireEvent.click(viewSky);
+            expect(window.location.href).toBe(originalHref);
+        },
+    );
+
+    it("keeps Coming Soon Explore behavior while View Sky is enabled", async () => {
+        const { container } = await openSystemDialog();
+        const actions = Array.from(
+            container.querySelectorAll<HTMLButtonElement>(".dialog-actions button"),
+        );
+        const viewSky = actions.find(
+            (button) => button.textContent?.trim() === "View sky from here",
+        )!;
+        const explore = actions.find(
+            (button) => button.textContent?.trim() === "Coming Soon",
+        )!;
+
+        expect(viewSky.getAttribute("aria-disabled")).not.toBe("true");
+        await fireEvent.click(explore);
+
+        expect(container.querySelector(".coming-soon-notice")?.textContent).toContain(
+            "This planetary experience is coming soon.",
+        );
+        expect(window.location.href).toBe("http://localhost/galaxy");
     });
 });
