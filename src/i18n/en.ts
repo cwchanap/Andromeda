@@ -476,6 +476,7 @@ export const en = {
     "action.close": "Close",
     "action.save": "Save",
     "action.open": "Open",
+    "action.viewSkyFromHere": "View sky from here",
 
     // HUD screen-reader announcements
     "hud.settingsOpened": "Settings opened",
@@ -529,6 +530,7 @@ export const en = {
     "galaxy.systemType.trinary": "Trinary",
     "galaxy.systemType.multiple": "Multiple",
     "galaxy.systemType.exotic": "Exotic",
+    "galaxy.skyUnavailable": "Sky view is unavailable for this system.",
 
     // Terrain
     "terrain.loading": "Loading terrain...",

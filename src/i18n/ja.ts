@@ -613,6 +613,7 @@ export const ja = {
     "action.close": "閉じる",
     "action.save": "保存",
     "action.open": "開く",
+    "action.viewSkyFromHere": "ここから星空を見る",
 
     // HUD screen-reader announcements
     "hud.settingsOpened": "設定を開きました",
@@ -666,6 +667,7 @@ export const ja = {
     "galaxy.systemType.trinary": "三重",
     "galaxy.systemType.multiple": "多重",
     "galaxy.systemType.exotic": "特殊",
+    "galaxy.skyUnavailable": "この恒星系からの星空は現在表示できません。",
 
     // Terrain
     "terrain.loading": "地形を読み込み中...",
