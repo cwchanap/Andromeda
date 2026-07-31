@@ -1,3 +1,4 @@
+import { serializeObserverQuery } from "@/lib/constellation/observerRouteState";
 import { defaultLang, languages, showDefaultLang } from "./ui";
 
 export type AppLocale = keyof typeof languages;
@@ -44,11 +45,24 @@ export function switchLocalePath(pathname: string, locale: AppLocale): string {
     return localizePath(stripLocaleFromPath(pathname), locale);
 }
 
+export interface ConstellationRouteOptions {
+    observerId?: string | "sol" | null;
+}
+
+export function switchLocaleUrl(url: URL, locale: AppLocale): string {
+    return `${switchLocalePath(url.pathname, locale)}${url.search}${url.hash}`;
+}
+
 export const routes = {
     home: (locale: AppLocale) => localizePath("/", locale),
     galaxy: (locale: AppLocale) => localizePath("/galaxy", locale),
-    constellation: (locale: AppLocale) =>
-        localizePath("/constellation", locale),
+    constellation: (
+        locale: AppLocale,
+        options: ConstellationRouteOptions = {},
+    ) =>
+        `${localizePath("/constellation", locale)}${serializeObserverQuery(
+            options.observerId,
+        )}`,
     planetarySystem: (systemId: string, locale: AppLocale) =>
         localizePath(`/planetary/${systemId}`, locale),
     terrain: (planetId: string, locale: AppLocale) =>
