@@ -86,10 +86,10 @@ describe("SettingsPanel — interactions", () => {
         // jsdom's "Not implemented: navigation" noise.
         Object.defineProperty(window, "location", {
             value: {
-                href: "http://localhost/galaxy",
-                pathname: "/galaxy",
-                search: "",
-                hash: "",
+                href: "http://localhost/constellation?observer=alpha-centauri#details",
+                pathname: "/constellation",
+                search: "?observer=alpha-centauri",
+                hash: "#details",
             },
             writable: true,
             configurable: true,
@@ -144,15 +144,18 @@ describe("SettingsPanel — interactions", () => {
         expect(closed).not.toHaveBeenCalled();
     });
 
-    it("navigates to the localized path when a language button is clicked", async () => {
+    it("preserves observer query and hash while switching locale", async () => {
         const { container } = render(SettingsPanel, {
             props: { isOpen: true, lang: "en", translations },
         });
-        const zhBtn = Array.from(
+        const jaBtn = Array.from(
             container.querySelectorAll<HTMLButtonElement>(".lang-btn"),
-        ).find((b) => b.textContent?.trim() === "中文") as HTMLElement;
-        await fireEvent.click(zhBtn);
-        // switchLocalePath("/galaxy", "zh") => "/zh/galaxy"
-        expect(window.location.href).toContain("/zh/galaxy");
+        ).find((button) => button.textContent?.trim() === "日本語") as HTMLElement;
+
+        await fireEvent.click(jaBtn);
+
+        expect(window.location.href).toBe(
+            "/ja/constellation?observer=alpha-centauri#details",
+        );
     });
 });
