@@ -1,8 +1,27 @@
 ---
 import ConstellationWrapper from "../components/ConstellationWrapper.svelte";
 import GlobalStyles from "../components/GlobalStyles.astro";
-import { getLangFromUrl, useTranslations } from "../i18n/utils";
+import { getLangFromUrl, useTranslations, addLocaleToPath } from "../i18n/utils";
 import { ui } from "../i18n/ui";
+import { parseObserverQuery } from "../lib/constellation/observerRouteState";
+import { isAppLocale } from "../i18n/routes";
+
+const observerQuery = parseObserverQuery(Astro.url.searchParams);
+
+if (observerQuery.kind === "explicit-sol") {
+  const canonicalUrl = new URL(Astro.url);
+  canonicalUrl.searchParams.delete("observer");
+
+  const currentLocale = Astro.currentLocale;
+  const pathname = isAppLocale(currentLocale)
+    ? addLocaleToPath(canonicalUrl.pathname, currentLocale)
+    : canonicalUrl.pathname;
+
+  return Astro.redirect(
+    `${pathname}${canonicalUrl.search}`,
+    308,
+  );
+}
 
 const lang = getLangFromUrl(Astro.url, Astro.currentLocale);
 const t = useTranslations(lang);
