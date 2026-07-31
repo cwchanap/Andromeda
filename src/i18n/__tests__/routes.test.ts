@@ -3,6 +3,7 @@ import {
     getLocaleFromPath,
     localizePath,
     switchLocalePath,
+    switchLocaleUrl,
     routes,
     type AppLocale,
 } from "../routes";
@@ -44,5 +45,48 @@ describe("i18n routes", () => {
         expect(routes.constellation("ja")).toBe("/ja/constellation");
         expect(routes.planetarySystem("solar", "en")).toBe("/planetary/solar");
         expect(routes.terrain("mars", "zh")).toBe("/zh/planetary/terrain/mars");
+    });
+
+    it("builds localized observer and canonical Sol routes", () => {
+        expect(routes.constellation("en")).toBe("/constellation");
+        expect(routes.constellation("en", { observerId: undefined })).toBe(
+            "/constellation",
+        );
+        expect(routes.constellation("en", { observerId: null })).toBe(
+            "/constellation",
+        );
+        expect(routes.constellation("zh", { observerId: "sol" })).toBe(
+            "/zh/constellation",
+        );
+        expect(
+            routes.constellation("ja", { observerId: "alpha-centauri" }),
+        ).toBe("/ja/constellation?observer=alpha-centauri");
+        expect(
+            routes.constellation("en", { observerId: "alpha centauri/β" }),
+        ).toBe("/constellation?observer=alpha+centauri%2F%CE%B2");
+    });
+
+    it("switches locale while preserving query and hash", () => {
+        expect(
+            switchLocaleUrl(
+                new URL(
+                    "https://example.test/constellation?observer=alpha-centauri&ref=earth#details",
+                ),
+                "ja",
+            ),
+        ).toBe(
+            "/ja/constellation?observer=alpha-centauri&ref=earth#details",
+        );
+    });
+
+    it("switches locale without duplicating prefixes", () => {
+        expect(
+            switchLocaleUrl(
+                new URL(
+                    "https://example.test/zh/constellation?observer=alpha-centauri",
+                ),
+                "en",
+            ),
+        ).toBe("/constellation?observer=alpha-centauri");
     });
 });
