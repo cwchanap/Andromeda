@@ -33,7 +33,10 @@ test.describe("observer route canonicalization", () => {
             { maxRedirects: 0 },
         );
 
-        expect(response.status()).not.toBe(308);
+        // Duplicate observer params are malformed (not canonicalizable), so
+        // the route must render the Sol fallback with a successful status
+        // rather than crash or canonicalize.
+        expect(response.status()).toBe(200);
         expect(response.headers().location).toBeUndefined();
     });
 });
