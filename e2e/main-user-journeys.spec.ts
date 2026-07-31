@@ -507,6 +507,55 @@ test.describe("30 Nearest Systems", () => {
         await expect(dialog.getByText(/Known Exoplanets.*2/i)).toBeVisible();
     });
 
+    test("system dialog actions do not overflow on narrow viewports", async ({
+        page,
+    }) => {
+        // 360px sits within the 320-375px range where three action buttons
+        // (Close, View sky from here, Explore) plus localized labels can
+        // overflow a non-wrapping flex row.
+        await page.setViewportSize({ width: 360, height: 640 });
+        await page.goto("/galaxy");
+
+        await page.waitForSelector("#galaxy-renderer", { timeout: 15000 });
+        await expect(page.locator(".animate-spin")).toHaveCount(0, {
+            timeout: 15000,
+        });
+
+        const systemItems = page.locator(".galaxy-nearby .hud-list-row");
+        await expect(systemItems).toHaveCount(30, { timeout: 5000 });
+
+        const alphaCentauriItem = systemItems.filter({
+            hasText: /Alpha Centauri/i,
+        });
+        await alphaCentauriItem.click();
+        const dialog = page.locator(".system-dialog");
+        await expect(dialog).toBeVisible({ timeout: 5000 });
+
+        const actions = dialog.locator(".dialog-actions");
+        const actionButtons = actions.locator(".action-button");
+        await expect(actionButtons).toHaveCount(3);
+
+        // Every action button must be fully visible inside the dialog's
+        // horizontal bounds (no horizontal overflow / clipping).
+        const dialogBox = await dialog.boundingBox();
+        const actionsBox = await actions.boundingBox();
+        expect(dialogBox).not.toBeNull();
+        expect(actionsBox).not.toBeNull();
+        expect(actionsBox!.x).toBeGreaterThanOrEqual(dialogBox!.x);
+        expect(actionsBox!.x + actionsBox!.width).toBeLessThanOrEqual(
+            dialogBox!.x + dialogBox!.width,
+        );
+
+        for (const button of await actionButtons.all()) {
+            const box = await button.boundingBox();
+            expect(box).not.toBeNull();
+            expect(box!.x).toBeGreaterThanOrEqual(dialogBox!.x);
+            expect(box!.x + box!.width).toBeLessThanOrEqual(
+                dialogBox!.x + dialogBox!.width,
+            );
+        }
+    });
+
     test("Alpha Centauri system page loads @smoke", async ({ page }) => {
         await page.goto("/planetary/alpha-centauri");
 
