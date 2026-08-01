@@ -43,7 +43,8 @@ export type CoordinateTransformError =
           readonly code: "undefined-direction";
           readonly distanceLightYears: number;
           readonly thresholdLightYears: number;
-      };
+      }
+    | { readonly code: "cartesian-distance-overflow" };
 
 export type TransformResult<T> =
     | { readonly ok: true; readonly value: T }
@@ -192,6 +193,10 @@ export function cartesianToEquatorial(
     if (vectorError) return failure(vectorError);
 
     const distanceLightYears = Math.hypot(vector.x, vector.y, vector.z);
+
+    if (!Number.isFinite(distanceLightYears)) {
+        return failure({ code: "cartesian-distance-overflow" });
+    }
 
     if (distanceLightYears <= DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS) {
         return failure({

@@ -168,10 +168,13 @@ The implementation must follow this order exactly:
 
 1. validate finite `x`, `y`, and `z`;
 2. compute `distance = hypot(x, y, z)`;
-3. if `distance <= DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS`, return `undefined-direction`;
-4. compute `horizontal = hypot(x, z)`;
-5. if `horizontal <= POLE_HORIZONTAL_RATIO_EPSILON * distance`, return the canonical pole representation;
-6. otherwise use the normal `atan2` formulas and normalize RA.
+3. if `distance` is not finite, return `cartesian-distance-overflow`;
+4. if `distance <= DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS`, return `undefined-direction`;
+5. compute `horizontal = hypot(x, z)`;
+6. if `horizontal <= POLE_HORIZONTAL_RATIO_EPSILON * distance`, return the canonical pole representation;
+7. otherwise use the normal `atan2` formulas and normalize RA.
+
+The derived-norm finiteness check must precede the distance-epsilon comparison. Finite Cartesian components do not guarantee a finite derived norm: `hypot(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE)` returns `Infinity`, which would otherwise skip the epsilon branch, produce a `NaN` horizontal ratio, and return a successful result with a non-finite distance. This violates the §12 guarantee that validated transforms never return a successful non-finite coordinate.
 
 The full-vector norm check must precede pole handling. This prevents `(0, 0, 0)`, including signed-zero variants, from entering a pole branch in which `y` is neither positive nor negative.
 
@@ -293,10 +296,11 @@ export type CoordinateTransformError =
           readonly code: "undefined-direction";
           readonly distanceLightYears: number;
           readonly thresholdLightYears: number;
-      };
+      }
+    | { readonly code: "cartesian-distance-overflow" };
 ```
 
-The error payload does not echo `NaN` or infinity. For non-finite failures, the component name identifies the bad input without making diagnostics non-serializable.
+The error payload does not echo `NaN` or infinity. For non-finite failures, the component name identifies the bad input without making diagnostics non-serializable. The `cartesian-distance-overflow` variant carries no payload because the offending derived norm is non-finite and therefore not serializable.
 
 Finite invalid values, such as a negative distance or out-of-range declination, may be included directly in the error payload.
 
@@ -409,7 +413,7 @@ For each vector, validate components in `x`, `y`, `z` order and return the first
 
 `subtractObserverPosition()` validates target first, then observer.
 
-`cartesianToEquatorial()` follows the ordered algorithm in §5.5: finite components, absolute full-norm epsilon, relative pole ratio, then normal `atan2` conversion.
+`cartesianToEquatorial()` follows the ordered algorithm in §5.5: finite components, derived-norm finiteness, absolute full-norm epsilon, relative pole ratio, then normal `atan2` conversion.
 
 ### 8.3 Derived relative vector
 
@@ -417,7 +421,15 @@ Subtraction of finite Cartesian values can overflow to infinity for extreme dire
 
 This path is outside normal catalog scales but is reachable through the public `subtractObserverPosition()` API. Keep one dedicated fixture so the `role: "vector"` branch cannot silently regress.
 
-### 8.4 Negative zero
+### 8.4 Derived norm overflow
+
+Finite Cartesian components do not guarantee a finite derived norm. `Math.hypot(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE)` returns `Infinity`. `cartesianToEquatorial()` is a public API reachable with such inputs directly, and `transformToObserver()` reaches it through the synthetic-Sol and large-coordinate paths.
+
+After computing the full-vector norm, `cartesianToEquatorial()` must reject a non-finite derived distance with `cartesian-distance-overflow` before any comparison, pole classification, or `atan2` conversion. Without this guard, a `NaN` horizontal ratio skips the pole branch and the function returns a successful result with a non-finite distance, violating §12.
+
+Keep dedicated fixtures for direct `cartesianToEquatorial()` and composite `transformToObserver()` inputs at `{ x: Number.MAX_VALUE, y: Number.MAX_VALUE, z: Number.MAX_VALUE }` so the guard cannot silently regress.
+
+### 8.5 Negative zero
 
 New validated numeric outputs must canonicalize JavaScript negative zero to positive zero at these required sites:
 
@@ -592,7 +604,8 @@ Also cover:
 - declination just below `-90°` and just above `+90°`;
 - zero star distance;
 - negative star distance;
-- finite observer origin as valid.
+- finite observer origin as valid;
+- finite Cartesian components whose derived norm overflows, e.g. `{ x: Number.MAX_VALUE, y: Number.MAX_VALUE, z: Number.MAX_VALUE }`, rejected by `cartesianToEquatorial()` and by the composite `transformToObserver()` path with `cartesian-distance-overflow`.
 
 ### 10.8 Signed-zero compatibility fixtures
 
@@ -756,9 +769,9 @@ Formatting checks should follow the repository's normal workflow.
 
 ### Silent invalid data
 
-**Risk:** `NaN`, infinity, negative distance, or out-of-range declination could propagate into renderer geometry.
+**Risk:** `NaN`, infinity, negative distance, or out-of-range declination could propagate into renderer geometry. Finite Cartesian components can also produce a non-finite derived norm through `Math.hypot` overflow, which would otherwise return a successful result with a non-finite distance.
 
-**Mitigation:** Validate every new public operation and never return a successful non-finite result.
+**Mitigation:** Validate every new public operation and never return a successful non-finite result. `cartesianToEquatorial()` rejects a non-finite derived norm with `cartesian-distance-overflow` immediately after `Math.hypot`, before the distance-epsilon comparison or pole classification.
 
 ### Incorrect synthetic Sol construction
 
@@ -808,6 +821,7 @@ Formatting checks should follow the repository's normal workflow.
 - Require positive-zero output for normalized RA and new validated Cartesian components that compare equal to zero; leave intermediate trig and the legacy helper untouched.
 - Accept Cartesian observers only in `transformToObserver()`; callers with equatorial observer coordinates convert first.
 - Keep the reachable derived-overflow guard and one explicit `role: "vector"` fixture because `subtractObserverPosition()` is public.
+- Reject a non-finite derived norm in `cartesianToEquatorial()` with `cartesian-distance-overflow` immediately after `Math.hypot`, before the distance-epsilon comparison; keep dedicated direct and composite fixtures at `{ x: Number.MAX_VALUE, y: Number.MAX_VALUE, z: Number.MAX_VALUE }`.
 - Use plain structural vectors and discriminated result unions.
 - Apply translation only; do not rotate into a local surface frame.
 - Assign fixed-equatorial alien/reference placement to HPA-434; preserve Earth `celestialToSphere()` behavior for normal Earth mode.
