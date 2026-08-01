@@ -92,6 +92,18 @@ describe("equatorialToCartesian", () => {
         expectCartesianClose(inputs[1].value, inputs[2].value);
     });
 
+    it("normalizes exactly 24h right ascension to the 0h axis", () => {
+        const result = equatorialToCartesian({
+            rightAscensionHours: 24,
+            declinationDegrees: 0,
+            distanceLightYears: 10,
+        });
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expectCartesianClose(result.value, { x: 10, y: 0, z: 0 });
+    });
+
     for (const component of EQUATORIAL_COMPONENTS) {
         for (const invalidValue of NON_FINITE_VALUES) {
             it(`rejects non-finite ${component}: ${String(invalidValue)}`, () => {
@@ -354,10 +366,12 @@ describe("cartesianToEquatorial", () => {
                         fixture.equatorial.distanceLightYears,
                 ),
             ).toBeLessThanOrEqual(DISTANCE_TOLERANCE);
-            expect(result.value.declinationDegrees).toBeCloseTo(
-                fixture.equatorial.declinationDegrees,
-                10,
-            );
+            expect(
+                Math.abs(
+                    result.value.declinationDegrees -
+                        fixture.equatorial.declinationDegrees,
+                ),
+            ).toBeLessThanOrEqual(DECLINATION_TOLERANCE);
             const expectedHours =
                 Math.abs(fixture.equatorial.declinationDegrees) === 90
                     ? 0
@@ -604,14 +618,18 @@ describe("transformToObserver", () => {
                 EXPECTED_SOL_FROM_ALPHA_CENTAURI.rightAscensionHours,
             ),
         ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
-        expect(sol.value.declinationDegrees).toBeCloseTo(
-            EXPECTED_SOL_FROM_ALPHA_CENTAURI.declinationDegrees,
-            10,
-        );
-        expect(sol.value.distanceLightYears).toBeCloseTo(
-            EXPECTED_SOL_FROM_ALPHA_CENTAURI.distanceLightYears,
-            10,
-        );
+        expect(
+            Math.abs(
+                sol.value.declinationDegrees -
+                    EXPECTED_SOL_FROM_ALPHA_CENTAURI.declinationDegrees,
+            ),
+        ).toBeLessThanOrEqual(DECLINATION_TOLERANCE);
+        expect(
+            Math.abs(
+                sol.value.distanceLightYears -
+                    EXPECTED_SOL_FROM_ALPHA_CENTAURI.distanceLightYears,
+            ),
+        ).toBeLessThanOrEqual(DISTANCE_TOLERANCE);
     });
 
     it("returns the first stage failure without partial output", () => {
