@@ -4,6 +4,7 @@ import {
     POLE_HORIZONTAL_RATIO_EPSILON,
     equatorialToCartesian,
     radialToCartesian,
+    subtractObserverPosition,
     type CartesianLightYears,
     type EquatorialPosition,
 } from "../observerTransform";
@@ -24,6 +25,7 @@ const EQUATORIAL_COMPONENTS = [
     "declinationDegrees",
     "distanceLightYears",
 ] as const;
+const CARTESIAN_COMPONENTS = ["x", "y", "z"] as const;
 
 function expectCartesianClose(
     actual: CartesianLightYears,
@@ -205,5 +207,119 @@ describe("radialToCartesian raw compatibility helper", () => {
     it("preserves raw signed zero", () => {
         expect(Object.is(radialToCartesian(0, 180, 0).x, -0)).toBe(true);
         expect(Object.is(radialToCartesian(10, 0, -0).y, -0)).toBe(true);
+    });
+});
+
+describe("subtractObserverPosition", () => {
+    it("subtracts the observer from the target", () => {
+        expect(
+            subtractObserverPosition(
+                { x: 10, y: -4, z: 3 },
+                { x: 1, y: 2, z: -5 },
+            ),
+        ).toEqual({
+            ok: true,
+            value: { x: 9, y: -6, z: 8 },
+        });
+    });
+
+    it("accepts the Sol origin as an observer", () => {
+        const target = { x: 1, y: 2, z: 3 };
+        expect(subtractObserverPosition(target, { x: 0, y: 0, z: 0 })).toEqual({
+            ok: true,
+            value: target,
+        });
+    });
+
+    for (const component of CARTESIAN_COMPONENTS) {
+        for (const invalidValue of NON_FINITE_VALUES) {
+            it(`rejects non-finite target ${component}: ${String(invalidValue)}`, () => {
+                const target = {
+                    x: 1,
+                    y: 2,
+                    z: 3,
+                    [component]: invalidValue,
+                };
+
+                expect(
+                    subtractObserverPosition(target, { x: 0, y: 0, z: 0 }),
+                ).toEqual({
+                    ok: false,
+                    error: {
+                        code: "non-finite-cartesian-input",
+                        role: "target",
+                        component,
+                    },
+                });
+            });
+        }
+    }
+
+    it("reports target validation before observer validation", () => {
+        expect(
+            subtractObserverPosition(
+                { x: Number.NaN, y: 0, z: 0 },
+                { x: 0, y: Number.POSITIVE_INFINITY, z: 0 },
+            ),
+        ).toEqual({
+            ok: false,
+            error: {
+                code: "non-finite-cartesian-input",
+                role: "target",
+                component: "x",
+            },
+        });
+    });
+
+    it("reports a non-finite observer component", () => {
+        expect(
+            subtractObserverPosition(
+                { x: 1, y: 2, z: 3 },
+                { x: Number.NaN, y: 0, z: 0 },
+            ),
+        ).toEqual({
+            ok: false,
+            error: {
+                code: "non-finite-cartesian-input",
+                role: "observer",
+                component: "x",
+            },
+        });
+    });
+
+    it("reports overflow in the derived relative vector", () => {
+        expect(
+            subtractObserverPosition(
+                { x: Number.MAX_VALUE, y: 0, z: 0 },
+                { x: -Number.MAX_VALUE, y: 0, z: 0 },
+            ),
+        ).toEqual({
+            ok: false,
+            error: {
+                code: "non-finite-cartesian-input",
+                role: "vector",
+                component: "x",
+            },
+        });
+    });
+
+    it("canonicalizes subtraction zero to positive zero", () => {
+        const result = subtractObserverPosition(
+            { x: -0, y: 1, z: 2 },
+            { x: 0, y: 0, z: 0 },
+        );
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(Object.is(result.value.x, -0)).toBe(false);
+    });
+
+    it("does not mutate frozen target or observer", () => {
+        const target = Object.freeze({ x: 3, y: 4, z: 5 });
+        const observer = Object.freeze({ x: 1, y: 1, z: 1 });
+
+        expect(() => subtractObserverPosition(target, observer)).not.toThrow();
+        expect(target).toEqual({ x: 3, y: 4, z: 5 });
+        expect(observer).toEqual({ x: 1, y: 1, z: 1 });
     });
 });
