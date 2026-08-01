@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS,
     POLE_HORIZONTAL_RATIO_EPSILON,
+    cartesianToEquatorial,
     equatorialToCartesian,
     radialToCartesian,
     subtractObserverPosition,
@@ -40,6 +41,18 @@ function expectCartesianClose(
     expect(Math.abs(actual.z - expected.z)).toBeLessThanOrEqual(
         CARTESIAN_TOLERANCE,
     );
+}
+
+const DISTANCE_TOLERANCE = 1e-10;
+const DECLINATION_TOLERANCE = 1e-10;
+const RIGHT_ASCENSION_TOLERANCE = 1e-10;
+
+function circularRightAscensionDelta(
+    actualHours: number,
+    expectedHours: number,
+): number {
+    const delta = Math.abs(actualHours - expectedHours);
+    return Math.min(delta, 24 - delta);
 }
 
 describe("observerTransform constants", () => {
@@ -321,5 +334,174 @@ describe("subtractObserverPosition", () => {
         expect(() => subtractObserverPosition(target, observer)).not.toThrow();
         expect(target).toEqual({ x: 3, y: 4, z: 5 });
         expect(observer).toEqual({ x: 1, y: 1, z: 1 });
+    });
+});
+
+describe("cartesianToEquatorial", () => {
+    for (const fixture of AXIS_FIXTURES) {
+        it(`reverse converts ${fixture.name}`, () => {
+            const result = cartesianToEquatorial(fixture.expected);
+
+            expect(result.ok).toBe(true);
+            if (!result.ok) return;
+            expect(
+                Math.abs(
+                    result.value.distanceLightYears -
+                        fixture.equatorial.distanceLightYears,
+                ),
+            ).toBeLessThanOrEqual(DISTANCE_TOLERANCE);
+            expect(result.value.declinationDegrees).toBeCloseTo(
+                fixture.equatorial.declinationDegrees,
+                10,
+            );
+            const expectedHours =
+                Math.abs(fixture.equatorial.declinationDegrees) === 90
+                    ? 0
+                    : fixture.equatorial.rightAscensionHours;
+            expect(
+                circularRightAscensionDelta(
+                    result.value.rightAscensionHours,
+                    expectedHours,
+                ),
+            ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
+            expect(result.value.rightAscensionHours).toBeGreaterThanOrEqual(0);
+            expect(result.value.rightAscensionHours).toBeLessThan(24);
+        });
+    }
+
+    for (const component of CARTESIAN_COMPONENTS) {
+        for (const invalidValue of NON_FINITE_VALUES) {
+            it(`rejects non-finite vector ${component}: ${String(invalidValue)}`, () => {
+                const vector = {
+                    x: 1,
+                    y: 2,
+                    z: 3,
+                    [component]: invalidValue,
+                };
+
+                expect(cartesianToEquatorial(vector)).toEqual({
+                    ok: false,
+                    error: {
+                        code: "non-finite-cartesian-input",
+                        role: "vector",
+                        component,
+                    },
+                });
+            });
+        }
+    }
+
+    it.each([
+        { x: 0, y: 0, z: 0 },
+        { x: DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS, y: 0, z: 0 },
+        {
+            x: DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS / 2,
+            y: 0,
+            z: 0,
+        },
+    ])("rejects undefined direction for $x,$y,$z", (vector) => {
+        const result = cartesianToEquatorial(vector);
+
+        expect(result.ok).toBe(false);
+        if (result.ok) return;
+        expect(result.error.code).toBe("undefined-direction");
+        if (result.error.code !== "undefined-direction") return;
+        expect(result.error.thresholdLightYears).toBe(
+            DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS,
+        );
+    });
+
+    it("accepts a vector safely above the direction epsilon", () => {
+        expect(
+            cartesianToEquatorial({
+                x: DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS * 2,
+                y: 0,
+                z: 0,
+            }).ok,
+        ).toBe(true);
+    });
+
+    it("canonicalizes exact poles with arbitrary source RA", () => {
+        for (const declinationDegrees of [-90, 90]) {
+            const forward = equatorialToCartesian({
+                rightAscensionHours: 8.75,
+                declinationDegrees,
+                distanceLightYears: 10,
+            });
+            expect(forward.ok).toBe(true);
+            if (!forward.ok) continue;
+
+            const reverse = cartesianToEquatorial(forward.value);
+            expect(reverse.ok).toBe(true);
+            if (!reverse.ok) continue;
+            expect(reverse.value.rightAscensionHours).toBe(0);
+            expect(reverse.value.declinationDegrees).toBe(declinationDegrees);
+        }
+    });
+
+    it("canonicalizes an exact north-pole vector above the distance epsilon", () => {
+        expect(cartesianToEquatorial({ x: 0, y: 1e-11, z: 0 })).toEqual({
+            ok: true,
+            value: {
+                rightAscensionHours: 0,
+                declinationDegrees: 90,
+                distanceLightYears: 1e-11,
+            },
+        });
+    });
+
+    it("uses the same pole classification at multiple distances", () => {
+        for (const distance of [1e-11, 1, 100]) {
+            const horizontal = distance * POLE_HORIZONTAL_RATIO_EPSILON * 0.5;
+            const y = Math.sqrt(distance * distance - horizontal * horizontal);
+            const result = cartesianToEquatorial({ x: horizontal, y, z: 0 });
+
+            expect(result.ok).toBe(true);
+            if (!result.ok) continue;
+            expect(result.value.rightAscensionHours).toBe(0);
+            expect(result.value.declinationDegrees).toBe(90);
+        }
+    });
+
+    it("keeps a near-pole vector outside the ratio and preserves RA", () => {
+        const source = {
+            rightAscensionHours: 7.125,
+            declinationDegrees: 89.99999999999,
+            distanceLightYears: 100,
+        };
+        const cartesian = equatorialToCartesian(source);
+
+        expect(cartesian.ok).toBe(true);
+        if (!cartesian.ok) return;
+        const result = cartesianToEquatorial(cartesian.value);
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(
+            circularRightAscensionDelta(
+                result.value.rightAscensionHours,
+                source.rightAscensionHours,
+            ),
+        ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
+        expect(
+            Math.abs(
+                result.value.declinationDegrees - source.declinationDegrees,
+            ),
+        ).toBeLessThanOrEqual(DECLINATION_TOLERANCE);
+    });
+
+    it("normalizes reverse RA to positive zero", () => {
+        const result = cartesianToEquatorial({ x: 1, y: 0, z: -0 });
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(result.value.rightAscensionHours).toBe(0);
+        expect(Object.is(result.value.rightAscensionHours, -0)).toBe(false);
+    });
+
+    it("does not mutate frozen vector input", () => {
+        const vector = Object.freeze({ x: 1, y: 2, z: 3 });
+        expect(() => cartesianToEquatorial(vector)).not.toThrow();
+        expect(vector).toEqual({ x: 1, y: 2, z: 3 });
     });
 });
