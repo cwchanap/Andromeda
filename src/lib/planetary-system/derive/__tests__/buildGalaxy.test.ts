@@ -4,6 +4,7 @@ import {
     galaxyVisual,
     BV_INDEX,
 } from "@/lib/planetary-system/derive/buildGalaxy";
+import { radialToCartesian as sharedRadialToCartesian } from "@/lib/astronomy/observerTransform";
 
 describe("radialToCartesian", () => {
     it("origin (d=0) is the zero vector", () => {
@@ -29,6 +30,14 @@ describe("radialToCartesian", () => {
         expect(v.z).toBeCloseTo(10);
         expect(v.x).toBeCloseTo(0);
         expect(v.y).toBeCloseTo(0);
+    });
+    it("re-exports the shared astronomy helper", () => {
+        expect(radialToCartesian).toBe(sharedRadialToCartesian);
+    });
+
+    it("preserves raw signed-zero behavior", () => {
+        expect(Object.is(radialToCartesian(0, 180, 0).x, -0)).toBe(true);
+        expect(Object.is(radialToCartesian(10, 0, -0).y, -0)).toBe(true);
     });
 });
 
