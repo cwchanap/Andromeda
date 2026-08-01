@@ -13,63 +13,63 @@ export interface AxisFixture {
 export const AXIS_FIXTURES: readonly AxisFixture[] = Object.freeze([
     Object.freeze({
         name: "RA 0h points along +X",
-        equatorial: {
+        equatorial: Object.freeze({
             rightAscensionHours: 0,
             declinationDegrees: 0,
             distanceLightYears: 10,
-        },
+        }),
         rightAscensionDegrees: 0,
-        expected: { x: 10, y: 0, z: 0 },
+        expected: Object.freeze({ x: 10, y: 0, z: 0 }),
     }),
     Object.freeze({
         name: "RA 6h points along +Z",
-        equatorial: {
+        equatorial: Object.freeze({
             rightAscensionHours: 6,
             declinationDegrees: 0,
             distanceLightYears: 10,
-        },
+        }),
         rightAscensionDegrees: 90,
-        expected: { x: 0, y: 0, z: 10 },
+        expected: Object.freeze({ x: 0, y: 0, z: 10 }),
     }),
     Object.freeze({
         name: "RA 12h points along -X",
-        equatorial: {
+        equatorial: Object.freeze({
             rightAscensionHours: 12,
             declinationDegrees: 0,
             distanceLightYears: 10,
-        },
+        }),
         rightAscensionDegrees: 180,
-        expected: { x: -10, y: 0, z: 0 },
+        expected: Object.freeze({ x: -10, y: 0, z: 0 }),
     }),
     Object.freeze({
         name: "RA 18h points along -Z",
-        equatorial: {
+        equatorial: Object.freeze({
             rightAscensionHours: 18,
             declinationDegrees: 0,
             distanceLightYears: 10,
-        },
+        }),
         rightAscensionDegrees: 270,
-        expected: { x: 0, y: 0, z: -10 },
+        expected: Object.freeze({ x: 0, y: 0, z: -10 }),
     }),
     Object.freeze({
         name: "Dec +90 points along +Y",
-        equatorial: {
+        equatorial: Object.freeze({
             rightAscensionHours: 0,
             declinationDegrees: 90,
             distanceLightYears: 10,
-        },
+        }),
         rightAscensionDegrees: 0,
-        expected: { x: 0, y: 10, z: 0 },
+        expected: Object.freeze({ x: 0, y: 10, z: 0 }),
     }),
     Object.freeze({
         name: "Dec -90 points along -Y",
-        equatorial: {
+        equatorial: Object.freeze({
             rightAscensionHours: 0,
             declinationDegrees: -90,
             distanceLightYears: 10,
-        },
+        }),
         rightAscensionDegrees: 0,
-        expected: { x: 0, y: -10, z: 0 },
+        expected: Object.freeze({ x: 0, y: -10, z: 0 }),
     }),
 ]);
 
@@ -98,7 +98,7 @@ export const EXPECTED_SOL_FROM_ALPHA_CENTAURI: EquatorialPosition =
         distanceLightYears: 4.2465,
     });
 
-export const IDENTITY_FIXTURES: readonly EquatorialPosition[] = [
+export const IDENTITY_FIXTURES: readonly EquatorialPosition[] = Object.freeze([
     Object.freeze({
         rightAscensionHours: 1.5,
         declinationDegrees: 25,
@@ -124,4 +124,4 @@ export const IDENTITY_FIXTURES: readonly EquatorialPosition[] = [
         declinationDegrees: 12,
         distanceLightYears: 35.9,
     }),
-];
+]);

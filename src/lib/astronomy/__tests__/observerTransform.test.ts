@@ -55,8 +55,13 @@ function circularRightAscensionDelta(
     actualHours: number,
     expectedHours: number,
 ): number {
-    const delta = Math.abs(actualHours - expectedHours);
-    return Math.min(delta, 24 - delta);
+    const wrappedDelta = Math.abs(actualHours - expectedHours) % 24;
+    return Math.min(wrappedDelta, 24 - wrappedDelta);
+}
+
+function expectRightAscensionInRange(hours: number): void {
+    expect(hours).toBeGreaterThanOrEqual(0);
+    expect(hours).toBeLessThan(24);
 }
 
 describe("observerTransform constants", () => {
@@ -382,8 +387,7 @@ describe("cartesianToEquatorial", () => {
                     expectedHours,
                 ),
             ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
-            expect(result.value.rightAscensionHours).toBeGreaterThanOrEqual(0);
-            expect(result.value.rightAscensionHours).toBeLessThan(24);
+            expectRightAscensionInRange(result.value.rightAscensionHours);
         });
     }
 
@@ -501,6 +505,7 @@ describe("cartesianToEquatorial", () => {
                 source.rightAscensionHours,
             ),
         ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
+        expectRightAscensionInRange(result.value.rightAscensionHours);
         expect(
             Math.abs(
                 result.value.declinationDegrees - source.declinationDegrees,
@@ -522,6 +527,19 @@ describe("cartesianToEquatorial", () => {
         expect(() => cartesianToEquatorial(vector)).not.toThrow();
         expect(vector).toEqual({ x: 1, y: 2, z: 3 });
     });
+
+    it("rejects finite components whose derived norm overflows", () => {
+        const vector = {
+            x: Number.MAX_VALUE,
+            y: Number.MAX_VALUE,
+            z: Number.MAX_VALUE,
+        };
+
+        expect(cartesianToEquatorial(vector)).toEqual({
+            ok: false,
+            error: { code: "cartesian-distance-overflow" },
+        });
+    });
 });
 
 describe("transformToObserver", () => {
@@ -538,6 +556,9 @@ describe("transformToObserver", () => {
                     source.rightAscensionHours,
                 ),
             ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
+            expectRightAscensionInRange(
+                result.value.equatorial.rightAscensionHours,
+            );
             expect(
                 Math.abs(
                     result.value.equatorial.declinationDegrees -
@@ -618,6 +639,7 @@ describe("transformToObserver", () => {
                 EXPECTED_SOL_FROM_ALPHA_CENTAURI.rightAscensionHours,
             ),
         ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
+        expectRightAscensionInRange(sol.value.rightAscensionHours);
         expect(
             Math.abs(
                 sol.value.declinationDegrees -
@@ -666,5 +688,25 @@ describe("transformToObserver", () => {
             distanceLightYears: 20,
         });
         expect(observer).toEqual({ x: 1, y: 2, z: 3 });
+    });
+
+    it("rejects a derived relative norm that overflows after subtraction", () => {
+        expect(
+            transformToObserver(
+                {
+                    rightAscensionHours: 0,
+                    declinationDegrees: 0,
+                    distanceLightYears: 10,
+                },
+                {
+                    x: Number.MAX_VALUE,
+                    y: Number.MAX_VALUE,
+                    z: Number.MAX_VALUE,
+                },
+            ),
+        ).toEqual({
+            ok: false,
+            error: { code: "cartesian-distance-overflow" },
+        });
     });
 });
