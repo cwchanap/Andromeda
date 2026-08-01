@@ -22,7 +22,7 @@ The module will:
 - normalize finite right ascension values into `[0h, 24h)`;
 - canonicalize right ascension to `0h` at exact declination poles;
 - reject relative vectors whose direction is undefined at or below a documented near-zero threshold;
-- preserve the existing `radialToCartesian()` import path, positional signature, and permissive zero-distance behavior for galaxy derivation;
+- preserve the existing `radialToCartesian()` import path, positional signature, mutable return shape, and permissive zero-distance behavior for galaxy derivation;
 - provide deterministic fixtures that prove compatibility with the existing galaxy coordinates.
 
 The HPA-431 implementation remains a domain-and-test change only. It does not prepare constellation catalogs, create synthetic Sol records, modify renderer behavior, or integrate route/UI state.
@@ -328,10 +328,12 @@ export function radialToCartesian(
     d: number,
     raDeg: number,
     decDeg: number,
-): CartesianLightYears;
+): { x: number; y: number; z: number };
 ```
 
 into `observerTransform.ts` as the single raw formula source.
+
+The helper intentionally retains the existing explicit mutable return shape `{ x: number; y: number; z: number }` rather than exposing `CartesianLightYears` as its public return type. The validated APIs may consume that object structurally as `CartesianLightYears`, but legacy callers retain their current static contract even though the current consumers only read `.x`, `.y`, and `.z`.
 
 `src/lib/planetary-system/derive/buildGalaxy.ts` re-exports this helper so existing imports and tests remain valid:
 
@@ -342,6 +344,7 @@ export { radialToCartesian } from "@/lib/astronomy/observerTransform";
 The compatibility helper intentionally preserves existing behavior:
 
 - its positional signature and runtime behavior remain exactly `(d, raDeg, decDeg)`;
+- its explicit mutable `{ x, y, z }` return type remains unchanged;
 - parameter-name polish inside the implementation is optional and must not imply a call-site contract change;
 - it does not return `TransformResult`;
 - it accepts `d = 0` and returns the zero vector;
@@ -460,11 +463,15 @@ Use the generated local-galaxy position as a hard-coded observer fixture:
 }
 ```
 
-This corresponds to the current source coordinate:
+The fixture is hand-reproducible from this exact source tuple without calling the function under test:
 
-- distance: `4.2465 ly`;
-- right ascension: `219.90°` / `14.66h`;
-- declination: `-60.84°`.
+```text
+distanceLightYears = 4.2465
+rightAscensionDegrees = 219.90
+declinationDegrees = -60.84
+```
+
+The distance `4.2465 ly` comes from the Alpha Centauri system rows in `src/data/nearest_30_planetary_systems.csv`; the RA/Dec pair `219.90°, -60.84°` comes from the Alpha Centauri row in `src/data/system_coordinates.csv`. Together they are the inputs currently passed to `radialToCartesian(distanceLy, coord.ra, coord.dec)` by `buildLocalGalaxy()`.
 
 For a synthetic Sol target at the Sol origin, the observer-relative vector is the negation of the observer vector. Its expected reverse conversion is:
 
@@ -508,7 +515,15 @@ Verify:
 
 Cover `NaN`, positive infinity, and negative infinity for every equatorial and Cartesian component.
 
-Cover:
+Pin the Cartesian error-role contract with explicit representative cases:
+
+- a non-finite target component passed to `subtractObserverPosition()` returns `non-finite-cartesian-input` with `role: "target"` and the offending component;
+- a non-finite observer component passed to `subtractObserverPosition()` returns `non-finite-cartesian-input` with `role: "observer"` and the offending component;
+- finite target and observer components whose subtraction overflows return `non-finite-cartesian-input` with `role: "vector"` and the derived offending component.
+
+At minimum, the observer-role fixture uses a valid target and an observer such as `{ x: Number.NaN, y: 0, z: 0 }`, then asserts `{ code: "non-finite-cartesian-input", role: "observer", component: "x" }`.
+
+Also cover:
 
 - declination just below `-90°` and just above `+90°`;
 - zero star distance;
@@ -586,7 +601,7 @@ src/lib/planetary-system/derive/buildGalaxy.ts
 src/lib/planetary-system/derive/__tests__/buildGalaxy.test.ts
 ```
 
-`buildGalaxy.ts` removes the local formula body and re-exports the shared helper. Existing behavior, positional signature, and import paths remain unchanged.
+`buildGalaxy.ts` removes only the local `radialToCartesian()` formula body and re-exports the shared helper. The file-local `clamp()` function, `galaxyVisual()`, and `BV_INDEX` remain in `buildGalaxy.ts`; they are not astronomy-module responsibilities. Existing helper behavior, mutable return type, positional signature, and import paths remain unchanged.
 
 ### Do not modify
 
@@ -666,15 +681,17 @@ Formatting checks should follow the repository's normal workflow.
 
 ### Legacy behavior regression
 
-**Risk:** Centralizing `radialToCartesian()` could break existing galaxy origin fixtures, positional calls, or imports.
+**Risk:** Centralizing `radialToCartesian()` could break existing galaxy origin fixtures, positional calls, imports, or callers that rely on the mutable return type.
 
-**Mitigation:** Preserve its `(d, raDeg, decDeg)` signature, zero-distance behavior, and import path; retain and extend existing galaxy tests.
+**Mitigation:** Preserve its `(d, raDeg, decDeg)` signature, explicit mutable `{ x, y, z }` return type, zero-distance behavior, and import path; move only the formula body; retain `clamp()`, `galaxyVisual()`, and `BV_INDEX` in `buildGalaxy.ts`; retain and extend existing galaxy tests.
 
 ## 18. Resolved decisions
 
 - Use the existing galaxy Y-up equatorial frame.
 - Share one raw coordinate formula between galaxy derivation and observer transforms.
 - Preserve the legacy `radialToCartesian()` import path and positional `(d, raDeg, decDeg)` runtime contract.
+- Preserve the helper's explicit mutable `{ x: number; y: number; z: number }` return type; validated APIs expose readonly `CartesianLightYears` separately.
+- Move only the raw coordinate formula; keep `clamp()`, `galaxyVisual()`, and `BV_INDEX` in `buildGalaxy.ts`.
 - Keep the raw compatibility helper permissive for `distance = 0`.
 - Require positive distance in validated star-equatorial input.
 - Map constellation `Star.rightAscension` hours, `declination` degrees, and `distance` light-years directly into `EquatorialPosition`.
@@ -688,6 +705,7 @@ Formatting checks should follow the repository's normal workflow.
 - Treat relative norms at or below `1e-12 ly` as undefined direction.
 - Reuse the same `1e-12 ly` threshold for full-vector and horizontal pole checks.
 - Require positive-zero output for normalized RA and public Cartesian components that compare equal to zero; leave intermediate trig values untouched.
+- Test explicit `target`, `observer`, and derived `vector` roles for non-finite Cartesian failures.
 - Accept Cartesian observers only in `transformToObserver()`; callers with equatorial observer coordinates convert first.
 - Use plain structural vectors and discriminated result unions.
 - Apply translation only; do not rotate into a local surface frame.
