@@ -178,3 +178,42 @@ export function subtractObserverPosition(
         z: positiveZero(relative.z),
     });
 }
+
+export function cartesianToEquatorial(
+    vector: CartesianLightYears,
+): TransformResult<EquatorialPosition> {
+    const vectorError = validateCartesian(vector, "vector");
+    if (vectorError) return failure(vectorError);
+
+    const distanceLightYears = Math.hypot(vector.x, vector.y, vector.z);
+
+    if (distanceLightYears <= DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS) {
+        return failure({
+            code: "undefined-direction",
+            distanceLightYears,
+            thresholdLightYears: DIRECTION_DISTANCE_EPSILON_LIGHT_YEARS,
+        });
+    }
+
+    const horizontal = Math.hypot(vector.x, vector.z);
+    const horizontalRatio = horizontal / distanceLightYears;
+
+    if (horizontalRatio <= POLE_HORIZONTAL_RATIO_EPSILON) {
+        return success({
+            rightAscensionHours: 0,
+            declinationDegrees: vector.y > 0 ? 90 : -90,
+            distanceLightYears,
+        });
+    }
+
+    const rightAscensionRadians = Math.atan2(vector.z, vector.x);
+    const declinationRadians = Math.atan2(vector.y, horizontal);
+
+    return success({
+        rightAscensionHours: normalizeRightAscensionHours(
+            (rightAscensionRadians * 12) / Math.PI,
+        ),
+        declinationDegrees: (declinationRadians * 180) / Math.PI,
+        distanceLightYears,
+    });
+}
