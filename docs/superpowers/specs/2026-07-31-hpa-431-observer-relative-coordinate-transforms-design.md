@@ -1,12 +1,14 @@
 # HPA-431: Observer-Relative Coordinate Transforms Design
 
-**Status:** Approved design
+**Status:** Approved, revised after design review
 
 **Issue:** HPA-431 — `[Sky] Define observer-relative coordinate transforms and astronomy fixtures`
 
 **Parent:** HPA-426 — `Epic: Sky From Another Star`
 
 **Downstream consumer:** HPA-433 — `[Sky] Prepare transformed constellation catalogs and synthetic Sol`
+
+> This document is the approved design for HPA-431. Draft PR #33 contains the design only; implementation follows in a separate implementation plan and implementation PR.
 
 ## 1. Summary
 
@@ -20,10 +22,10 @@ The module will:
 - normalize finite right ascension values into `[0h, 24h)`;
 - canonicalize right ascension to `0h` at exact declination poles;
 - reject relative vectors whose direction is undefined at or below a documented near-zero threshold;
-- preserve the existing `radialToCartesian()` import path and permissive zero-distance behavior for galaxy derivation;
+- preserve the existing `radialToCartesian()` import path, positional signature, and permissive zero-distance behavior for galaxy derivation;
 - provide deterministic fixtures that prove compatibility with the existing galaxy coordinates.
 
-This PR remains a domain-and-test change only. It does not prepare constellation catalogs, create synthetic Sol records, modify renderer behavior, or integrate route/UI state.
+The HPA-431 implementation remains a domain-and-test change only. It does not prepare constellation catalogs, create synthetic Sol records, modify renderer behavior, or integrate route/UI state.
 
 ## 2. Context
 
@@ -61,6 +63,8 @@ HPA-433 will consume the resulting API to transform immutable constellation cata
 - Surface-observer orientation or local horizon coordinates.
 - Distance-adjusted apparent magnitude.
 - Adding a third-party astronomy or result-type dependency.
+- Adding public right-ascension hours/degrees conversion helpers.
+- Adding an equatorial-observer overload to `transformToObserver()`.
 
 ## 5. Coordinate model
 
@@ -83,7 +87,7 @@ The origin is Sol. The axes are fixed to the equatorial directions represented b
 
 This is the existing `radialToCartesian()` convention. HPA-431 does not rotate the frame when the observer changes; it only translates the origin.
 
-### 5.2 Units
+### 5.2 Units and source mapping
 
 Public types encode units in property names:
 
@@ -92,6 +96,13 @@ Public types encode units in property names:
 - Cartesian position and scalar distance: light-years.
 
 The existing galaxy compatibility helper retains its current scalar signature of distance in light-years, right ascension in degrees, and declination in degrees.
+
+| Source | Right ascension | Declination | Distance | HPA-431 mapping |
+| --- | --- | --- | --- | --- |
+| `src/data/constellations.ts` / `Star` | hours | degrees | light-years | `rightAscension` -> `rightAscensionHours`; `declination` -> `declinationDegrees`; `distance` -> `distanceLightYears` |
+| `system_coordinates.csv` / `radialToCartesian()` | degrees | degrees | light-years | Legacy helper only; positional call remains `(d, raDeg, decDeg)` |
+
+The unit relationship is `rightAscensionDegrees = rightAscensionHours × 15`, or conversely `rightAscensionHours = rightAscensionDegrees / 15`. HPA-431 documents this conversion but does not add a public unit-conversion helper.
 
 ### 5.3 Forward conversion
 
@@ -126,29 +137,43 @@ No rotation, scale, or time-dependent adjustment is applied.
 
 A Sol observer is represented by `{ x: 0, y: 0, z: 0 }` and is valid.
 
-### 5.5 Reverse conversion
+### 5.5 Reverse conversion and required control flow
 
-For a non-zero Cartesian vector `(x, y, z)`:
+For a valid non-zero Cartesian vector `(x, y, z)`, normal reverse conversion is:
 
 ```text
 distance = hypot(x, y, z)
+horizontal = hypot(x, z)
 rightAscensionRadians = atan2(z, x)
-declinationRadians = atan2(y, hypot(x, z))
+declinationRadians = atan2(y, horizontal)
 ```
 
 Right ascension is converted to hours and normalized into `[0h, 24h)`.
 
 Using `atan2(y, hypot(x, z))` for declination avoids a division by distance and remains stable near the poles.
 
+The implementation must follow this order exactly:
+
+1. validate finite `x`, `y`, and `z`;
+2. compute `distance = hypot(x, y, z)`;
+3. if `distance <= MIN_DIRECTION_DISTANCE_LIGHT_YEARS`, return `undefined-direction`;
+4. compute `horizontal = hypot(x, z)`;
+5. if `horizontal <= MIN_DIRECTION_DISTANCE_LIGHT_YEARS`, return the canonical pole representation;
+6. otherwise use the normal `atan2` formulas and normalize RA.
+
+The full-vector norm check must precede pole handling. This prevents `(0, 0, 0)`, including signed-zero variants, from entering a pole branch in which `y` is neither positive nor negative.
+
 ### 5.6 Pole canonicalization
 
-At the exact north or south celestial pole, right ascension is geometrically undefined. Floating-point remnants in `x` and `z` must not produce arbitrary output values.
+At the north or south celestial pole, right ascension is geometrically undefined. Floating-point remnants in `x` and `z` must not produce arbitrary output values.
 
-When the horizontal norm `hypot(x, z)` is at or below the same directional epsilon used by the module, reverse conversion returns:
+After the full-vector norm has been proven greater than the direction threshold, when the horizontal norm `hypot(x, z)` is at or below that same threshold, reverse conversion returns:
 
 - `rightAscensionHours = 0`;
 - `declinationDegrees = +90` when `y > 0`;
 - `declinationDegrees = -90` when `y < 0`.
+
+A `y === 0` pole case is unreachable: if `y` is zero and the horizontal norm is at or below the threshold, then the full norm is also at or below the threshold and step 3 returns `undefined-direction` first. The implementation must not add a fallback such as `else { declinationDegrees = 0 }` to the pole branch.
 
 Round-trip tests at exact poles assert the canonical output rather than preservation of the input right ascension.
 
@@ -164,7 +189,12 @@ export const MIN_DIRECTION_DISTANCE_LIGHT_YEARS = 1e-12;
 
 A Cartesian vector with norm less than or equal to this threshold returns an `undefined-direction` failure when converted to equatorial coordinates.
 
-The threshold is many orders of magnitude below all current catalog and nearby-system distances, so it protects numerical behavior without excluding real application data.
+The same threshold is intentionally reused for the full-vector norm and the horizontal pole norm. Therefore:
+
+- `(0, 1e-11, 0)` succeeds and canonicalizes to RA `0h`, Dec `+90°`, distance `1e-11 ly`;
+- `(0, 1e-12, 0)` fails with `undefined-direction` because its full norm equals the threshold.
+
+This is coherent domain behavior, not a malformed-catalog special case. The threshold is many orders of magnitude below all current catalog and nearby-system distances, so it protects numerical behavior without excluding real application data.
 
 ## 6. Module location and dependencies
 
@@ -287,15 +317,17 @@ export function transformToObserver(
 
 It returns the first failure encountered and does not partially succeed.
 
+The observer argument is Cartesian by design because HPA-432 and local-galaxy data already expose system positions in the shared Cartesian frame. HPA-431 does not add an equatorial-observer overload. A caller that only has equatorial observer coordinates must call `equatorialToCartesian()` first, or use the already-derived galaxy position.
+
 ### 7.5 Galaxy compatibility helper
 
 Move the existing implementation of:
 
 ```ts
 export function radialToCartesian(
-    distanceLightYears: number,
-    rightAscensionDegrees: number,
-    declinationDegrees: number,
+    d: number,
+    raDeg: number,
+    decDeg: number,
 ): CartesianLightYears;
 ```
 
@@ -309,8 +341,10 @@ export { radialToCartesian } from "@/lib/astronomy/observerTransform";
 
 The compatibility helper intentionally preserves existing behavior:
 
+- its positional signature and runtime behavior remain exactly `(d, raDeg, decDeg)`;
+- parameter-name polish inside the implementation is optional and must not imply a call-site contract change;
 - it does not return `TransformResult`;
-- it accepts `distanceLightYears = 0` and returns the zero vector;
+- it accepts `d = 0` and returns the zero vector;
 - it remains the low-level formula used by galaxy derivation;
 - validated HPA-431 APIs do not delegate input policy to callers.
 
@@ -334,13 +368,13 @@ Validate in this order:
 
 Finite right ascension values outside `[0, 24)` are accepted and normalized.
 
-### 8.2 Cartesian input
+### 8.2 Cartesian input and reverse-conversion order
 
 For each vector, validate components in `x`, `y`, `z` order and return the first non-finite component.
 
 `subtractObserverPosition()` validates target first, then observer.
 
-`cartesianToEquatorial()` validates components before calculating the norm.
+`cartesianToEquatorial()` follows the ordered algorithm in §5.5: finite components, full-norm threshold, horizontal pole threshold, then normal `atan2` conversion. The pole branch is unreachable for full norms at or below the threshold.
 
 ### 8.3 Derived relative vector
 
@@ -348,9 +382,14 @@ Subtraction of finite values can overflow to infinity for extreme numbers. After
 
 ### 8.4 Negative zero
 
-Public numeric outputs must canonicalize JavaScript negative zero to positive zero where practical, especially normalized right ascension and axis fixture results.
+Public numeric outputs must canonicalize JavaScript negative zero to positive zero at these required sites:
 
-Tests use `Object.is(value, -0)` for the explicit RA normalization assertion.
+- normalized `rightAscensionHours` returned by reverse conversion;
+- every public Cartesian component whose computed result compares equal to zero, including axis fixtures, forward conversion, observer subtraction, and the compatibility helper.
+
+Intermediate trigonometric values do not require negative-zero cleanup, and tiny non-zero floating-point remnants must not be rounded to zero except through the explicit pole/threshold rules.
+
+Tests use `Object.is(value, -0)` for normalized RA and representative zero Cartesian components.
 
 ## 9. Data flow
 
@@ -450,6 +489,12 @@ Verify arbitrary input RA at both exact poles produces the expected Y-axis vecto
 
 Also include near-pole values that remain outside the pole-canonicalization branch and preserve their normalized right ascension within tolerance.
 
+Verify the ordered threshold boundary explicitly:
+
+- `(0, 1e-11, 0)` succeeds as canonical north pole;
+- `(0, 1e-12, 0)` fails as `undefined-direction`;
+- no full-norm failure reaches a `y === 0` pole case.
+
 ### 10.6 Near-zero fixtures
 
 Verify:
@@ -507,6 +552,8 @@ HPA-433 can safely map failures into omitted-star diagnostics:
 - coincident target and observer -> omit that direction and record `undefined-direction`;
 - valid remaining stars -> continue catalog preparation.
 
+A near-observer polar vector above the full-norm threshold is valid and canonicalizes to a pole; HPA-433 must not classify that case as malformed catalog data.
+
 HPA-431 does not log, warn, or throw for expected domain failures. Logging policy belongs to the downstream preparation or development-diagnostics layer.
 
 ## 13. Performance and determinism
@@ -539,7 +586,7 @@ src/lib/planetary-system/derive/buildGalaxy.ts
 src/lib/planetary-system/derive/__tests__/buildGalaxy.test.ts
 ```
 
-`buildGalaxy.ts` removes the local formula body and re-exports the shared helper. Existing behavior and import paths remain unchanged.
+`buildGalaxy.ts` removes the local formula body and re-exports the shared helper. Existing behavior, positional signature, and import paths remain unchanged.
 
 ### Do not modify
 
@@ -553,11 +600,11 @@ src/components/ConstellationWrapper.svelte
 src/components/GalaxyWrapper.svelte
 ```
 
-No route, renderer, UI, or catalog integration belongs in this PR.
+No route, renderer, UI, or catalog integration belongs in the HPA-431 implementation PR.
 
-## 15. Verification commands
+## 15. Implementation verification — not this design-only PR
 
-The implementation plan should require, at minimum:
+The separate implementation plan and implementation PR should require, at minimum:
 
 ```bash
 bun run test:run -- src/lib/astronomy/__tests__/observerTransform.test.ts
@@ -567,6 +614,8 @@ bun run type-check
 bun run lint
 bun run build
 ```
+
+These commands describe implementation verification. Draft PR #33 contains documentation only and does not yet contain the files or behavior exercised by these commands.
 
 Formatting checks should follow the repository's normal workflow.
 
@@ -579,9 +628,9 @@ Formatting checks should follow the repository's normal workflow.
 | Forward/reverse conversion round-trips representative fixtures | Axis, quadrant, wrap, pole, and catalog-scale fixtures |
 | RA values normalize to documented range | Finite RA wraps; output is always `[0h, 24h)` |
 | Invalid distance/non-finite input has explicit typed behavior | `TransformResult` and discriminated `CoordinateTransformError` |
-| Zero-length relative vectors have explicit typed behavior | `undefined-direction` at or below `1e-12 ly` |
+| Zero-length relative vectors have explicit typed behavior | `undefined-direction` at or below `1e-12 ly` before pole handling |
 | Relationship to galaxy coordinates is unambiguous | Shared raw formula, compatibility re-export, and Alpha Centauri fixture |
-| One focused domain/test PR | Only astronomy module, tests, and narrow helper centralization |
+| One focused domain/test PR | Only astronomy module, tests, and narrow helper centralization in the implementation PR |
 
 ## 17. Risks and mitigations
 
@@ -599,9 +648,9 @@ Formatting checks should follow the repository's normal workflow.
 
 ### Pole instability
 
-**Risk:** Tiny `x/z` values at exact poles could generate arbitrary RA.
+**Risk:** Tiny `x/z` values at exact poles could generate arbitrary RA, or zero vectors could be misclassified as poles.
 
-**Mitigation:** Canonicalize pole RA to `0h` and test exact and near-pole cases separately.
+**Mitigation:** Check full norm before horizontal norm, canonicalize pole RA to `0h`, make the `y === 0` pole case unreachable, and test exact, threshold, and near-pole cases separately.
 
 ### Silent invalid data
 
@@ -611,33 +660,40 @@ Formatting checks should follow the repository's normal workflow.
 
 ### Over-broad abstraction
 
-**Risk:** The module could grow into catalog, renderer, time, or surface-observer responsibilities.
+**Risk:** The module could grow into catalog, renderer, time, unit-helper, or surface-observer responsibilities.
 
 **Mitigation:** Keep the API scalar and individual-position focused; defer aggregation and synthetic records to HPA-433.
 
 ### Legacy behavior regression
 
-**Risk:** Centralizing `radialToCartesian()` could break existing galaxy origin fixtures or imports.
+**Risk:** Centralizing `radialToCartesian()` could break existing galaxy origin fixtures, positional calls, or imports.
 
-**Mitigation:** Preserve its signature, zero-distance behavior, and import path; retain and extend existing galaxy tests.
+**Mitigation:** Preserve its `(d, raDeg, decDeg)` signature, zero-distance behavior, and import path; retain and extend existing galaxy tests.
 
 ## 18. Resolved decisions
 
 - Use the existing galaxy Y-up equatorial frame.
 - Share one raw coordinate formula between galaxy derivation and observer transforms.
-- Preserve the legacy `radialToCartesian()` import path.
+- Preserve the legacy `radialToCartesian()` import path and positional `(d, raDeg, decDeg)` runtime contract.
 - Keep the raw compatibility helper permissive for `distance = 0`.
 - Require positive distance in validated star-equatorial input.
+- Map constellation `Star.rightAscension` hours, `declination` degrees, and `distance` light-years directly into `EquatorialPosition`.
+- Convert RA units with `degrees = hours × 15` and `hours = degrees / 15`; do not add a public conversion helper.
 - Wrap all finite right ascension input modulo 24.
 - Reject out-of-range declination rather than clamp or reflect it.
 - Normalize output RA to `[0h, 24h)`.
-- Canonicalize RA to `0h` at exact poles.
+- Check the full vector norm before pole canonicalization.
+- Canonicalize RA to `0h` when the horizontal norm is at or below the threshold and the full norm is above it.
+- Make a `y === 0` pole branch unreachable; full-norm failure wins first.
 - Treat relative norms at or below `1e-12 ly` as undefined direction.
+- Reuse the same `1e-12 ly` threshold for full-vector and horizontal pole checks.
+- Require positive-zero output for normalized RA and public Cartesian components that compare equal to zero; leave intermediate trig values untouched.
+- Accept Cartesian observers only in `transformToObserver()`; callers with equatorial observer coordinates convert first.
 - Use plain structural vectors and discriminated result unions.
 - Apply translation only; do not rotate into a local surface frame.
 
 ## 19. Completion boundary
 
-HPA-431 is complete when the pure API, shared coordinate source, compatibility re-export, deterministic fixtures, and focused tests satisfy the mapped acceptance criteria.
+HPA-431 is complete when the pure API, shared coordinate source, compatibility re-export, deterministic fixtures, and focused tests satisfy the mapped acceptance criteria in the separate implementation PR.
 
 The next issue, HPA-433, may then consume `transformToObserver()` and `cartesianToEquatorial()` to prepare transformed catalogs and synthetic Sol while preserving its own catalog-level omission diagnostics and identity rules.
