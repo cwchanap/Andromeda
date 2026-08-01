@@ -1,19 +1,7 @@
+export { radialToCartesian } from "@/lib/astronomy/observerTransform";
+
 function clamp(v: number, lo: number, hi: number): number {
     return Math.min(hi, Math.max(lo, v));
-}
-
-export function radialToCartesian(
-    d: number,
-    raDeg: number,
-    decDeg: number,
-): { x: number; y: number; z: number } {
-    const ra = (raDeg * Math.PI) / 180;
-    const dec = (decDeg * Math.PI) / 180;
-    return {
-        x: d * Math.cos(dec) * Math.cos(ra),
-        y: d * Math.sin(dec),
-        z: d * Math.cos(dec) * Math.sin(ra),
-    };
 }
 
 export function galaxyVisual(distanceLy: number): { brightness: number } {
