@@ -28,6 +28,9 @@ pnpm-debug.log*
 # local claude settings
 .claude/
 
+# local git worktrees
+.worktrees/
+
 coverage/
 .playwright-mcp/
 test-results/
