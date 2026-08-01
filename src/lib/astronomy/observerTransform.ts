@@ -130,3 +130,51 @@ export function equatorialToCartesian(
         z: positiveZero(raw.z),
     });
 }
+
+type CartesianRole = "target" | "observer" | "vector";
+type CartesianComponent = "x" | "y" | "z";
+
+function validateCartesian(
+    vector: CartesianLightYears,
+    role: CartesianRole,
+): CoordinateTransformError | null {
+    const components: readonly CartesianComponent[] = ["x", "y", "z"];
+
+    for (const component of components) {
+        if (!Number.isFinite(vector[component])) {
+            return {
+                code: "non-finite-cartesian-input",
+                role,
+                component,
+            };
+        }
+    }
+
+    return null;
+}
+
+export function subtractObserverPosition(
+    target: CartesianLightYears,
+    observer: CartesianLightYears,
+): TransformResult<CartesianLightYears> {
+    const targetError = validateCartesian(target, "target");
+    if (targetError) return failure(targetError);
+
+    const observerError = validateCartesian(observer, "observer");
+    if (observerError) return failure(observerError);
+
+    const relative = {
+        x: target.x - observer.x,
+        y: target.y - observer.y,
+        z: target.z - observer.z,
+    };
+
+    const relativeError = validateCartesian(relative, "vector");
+    if (relativeError) return failure(relativeError);
+
+    return success({
+        x: positiveZero(relative.x),
+        y: positiveZero(relative.y),
+        z: positiveZero(relative.z),
+    });
+}
