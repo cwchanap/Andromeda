@@ -1,6 +1,6 @@
 # HPA-433: Observer Catalog Preparation and Synthetic Sol Design
 
-**Status:** Approved for written-spec review
+**Status:** Approved, revised after design review
 
 **Issue:** HPA-433 — `[Sky] Prepare transformed constellation catalogs and synthetic Sol`
 
@@ -18,11 +18,13 @@ The module will:
 
 - consume only plain catalog objects and a plain Cartesian observer position;
 - transform each unique source star at most once through `transformToObserver()`;
-- preserve source star IDs, constellation IDs, names, magnitude, spectral class, color, visibility metadata, and future enumerable metadata;
+- preserve source-star IDs, names, magnitude, spectral class, color, and future enumerable star metadata;
+- preserve constellation IDs, names, descriptions, mythology, visibility metadata, and future enumerable constellation metadata;
 - retain the current constellation-local star-array and index-pair line model;
 - omit only invalid stars rather than failing the whole ordinary-star transformation;
 - return deterministic, JSON-safe omitted-star diagnostics;
 - rebuild affected line indices and remove only segments whose endpoints are unavailable;
+- defensively ignore malformed source line entries rather than misreading them as valid pairs;
 - create synthetic Sol by subtracting the observer from the Sol-centered Cartesian origin and then reverse-converting the resulting vector;
 - keep synthetic Sol out of every constellation and append it only to the alternate-observer primary catalog's top-level star list;
 - optionally return an Earth/Sol reference catalog using the same successful-star inclusion mask as the transformed catalog;
@@ -36,9 +38,9 @@ HPA-433 is a pure data-and-test change. HPA-434 owns fixed-equatorial placement,
 The current constellation source model has two properties that shape this design:
 
 1. `Constellation.stars` is a constellation-local ordered array.
-2. `Constellation.lines` contains numeric index pairs into that local array.
+2. `Constellation.lines` is typed as `number[][]` and contains index pairs into that local array in the current data.
 
-The renderer currently receives a separate top-level star array and constellation array. It uses the top-level star ordering for point hover lookup and each constellation's local star ordering for line construction. Synthetic Sol cannot be inserted into a fake constellation without inventing cultural membership and corrupting line semantics, so the prepared result needs both:
+The renderer currently receives a separate top-level star array and constellation array. It uses top-level star ordering for point hover lookup and each constellation's local star ordering for line construction. Synthetic Sol cannot be inserted into a fake constellation without inventing cultural membership and corrupting line semantics, so the prepared result needs both:
 
 - a top-level primary star collection containing transformed source stars plus synthetic Sol; and
 - constellation-local star collections containing only transformed source stars.
@@ -55,15 +57,17 @@ HPA-432 resolves URL observer state separately and guarantees that a selected Ga
 ## 3. Goals
 
 - Produce an immutable-by-contract, serializable observer-relative catalog.
-- Preserve stable source star and constellation identities for hover, selection, labels, and focus lookup.
-- Preserve source metadata while replacing only right ascension, declination, and distance on transformed stars.
+- Preserve stable source-star and constellation identities for hover, selection, labels, and focus lookup.
+- Preserve source-star metadata while replacing only right ascension, declination, and distance on transformed stars.
+- Preserve constellation metadata, including visibility and `bestMonths`, in fresh prepared objects.
 - Transform each canonical source star once even when it belongs to multiple constellation arrays.
 - Preserve constellation-local ordering for successful stars.
-- Preserve line values exactly when no star in a constellation is omitted.
+- Preserve line values exactly when no star is omitted and every source line is a valid pair.
 - Repair line indices deterministically when a star is omitted.
+- Prevent malformed source line arrays from being narrowed into incorrect prepared tuples.
 - Return one structured diagnostic per omitted canonical star.
 - Create synthetic Sol through the HPA-431 Cartesian-origin primitive path.
-- Make synthetic Sol distinguishable by stable ID and explicit marker metadata rather than by magnitude or color inference.
+- Make synthetic Sol distinguishable by stable ID and explicit marker metadata rather than magnitude, color, or property-presence inference.
 - Optionally create an Earth/Sol reference catalog that can be passed independently to a second renderer layer.
 - Keep all work outside animation loops.
 
@@ -79,7 +83,8 @@ HPA-432 resolves URL observer state separately and guarantees that a selected Ga
 - A full star-catalog import.
 - Replacing the existing `Star` or `Constellation` types.
 - Converting constellation line storage from local array indices to star IDs.
-- General source-catalog validation for duplicate IDs with conflicting metadata or malformed line definitions.
+- Reporting diagnostics for duplicate IDs with conflicting records or malformed source line definitions.
+- General source-catalog validation beyond the defensive line guard required to produce safe prepared tuples.
 - Adding a zero-distance exception to `EquatorialPosition` or `transformToObserver()`.
 
 ## 5. Design decisions
@@ -95,7 +100,7 @@ This keeps HPA-433 focused and allows HPA-434 to consume familiar star and const
 Sol identity and synthetic Sol are different operations:
 
 - An observer at `{ x: 0, y: 0, z: 0 }` can identity-transform every positive-distance catalog star.
-- Synthetic Sol from the same origin would produce the zero Cartesian vector, whose direction is undefined and intentionally rejected by HPA-431.
+- Synthetic Sol from the same origin produces the zero Cartesian vector, whose direction is undefined and intentionally rejected by HPA-431.
 
 Therefore the module must not expose one unconditional operation that claims both behaviors succeed for a Sol-origin observer.
 
@@ -122,11 +127,29 @@ When a transformed source star fails, it is omitted from both:
 
 Both catalogs use the same repaired constellation topology. This prevents the reference layer from containing a star or segment that has no corresponding transformed-layer object and keeps comparison behavior deterministic.
 
-### 5.5 IDs are canonical identity
+### 5.5 IDs are canonical identity and first occurrence wins
 
-A source star ID is the canonical identity across constellation memberships. The first occurrence in deterministic source traversal establishes top-level ordering and the canonical source record used for transformation.
+A source-star ID is the canonical identity across constellation memberships. The first occurrence in deterministic source traversal establishes:
 
-The current catalog constructs constellation membership from one shared source-star collection, so repeated membership is expected to describe the same star. Conflicting records under one ID remain a source-catalog validation concern outside HPA-433.
+- the canonical source record used for coordinates and metadata;
+- top-level source-star ordering; and
+- the source name included in any omission diagnostic.
+
+Later occurrences with the same ID contribute membership only, even if their fields conflict. This first-record-wins behavior is deterministic and test-pinned, but conflicting duplicate validation remains outside HPA-433.
+
+The current catalog constructs constellation membership from one shared source-star collection, so normal repeated membership describes the same record.
+
+### 5.6 Prepared line tuples require a defensive source guard
+
+The source type permits arbitrary `number[]` entries, while the prepared type intentionally exposes only exact two-index tuples. The implementation must therefore validate each source line before tuple narrowing.
+
+A usable source line must:
+
+- have exactly two entries;
+- contain integer indices; and
+- reference indices within the original constellation-local star array.
+
+Malformed or out-of-range entries are omitted defensively and never converted into prepared tuples. HPA-433 does not add line diagnostics or fail catalog preparation for these entries.
 
 ## 6. Module location and dependencies
 
@@ -167,7 +190,7 @@ export const SYNTHETIC_SOL_COLOR = "#FFF4E8";
 
 The finite magnitude exists only to remain compatible with current magnitude filtering and serialization. HPA-434 must use marker metadata as the authoritative synthetic-Sol rendering signal and must not present the fallback magnitude as observer-correct photometry.
 
-### 7.2 Prepared stars
+### 7.2 Prepared stars and authoritative discriminator
 
 ```ts
 export interface SyntheticSolMarker {
@@ -184,7 +207,19 @@ export type SyntheticSolStar = Readonly<Star> & {
 };
 
 export type PreparedCatalogStar = PreparedSourceStar | SyntheticSolStar;
+
+export function isSyntheticSolStar(
+    star: PreparedCatalogStar,
+): star is SyntheticSolStar;
 ```
+
+`isSyntheticSolStar()` must use the value discriminator:
+
+```ts
+return star.marker?.kind === "synthetic-sol";
+```
+
+Consumers must not use `"marker" in star` as the discriminator. Source stars normally have no own `marker` property, and JSON serialization omits optional `undefined` properties. The value-based discriminator remains correct before and after a JSON round-trip because synthetic Sol retains `marker: { kind: "synthetic-sol" }` while source stars do not.
 
 Source stars do not receive alternate-observer marker metadata. Their identity continues to be their original stable ID.
 
@@ -220,7 +255,7 @@ Every prepared constellation is a fresh object with:
 
 - the same ID, name, abbreviation, description, mythology, and visibility values;
 - a fresh local star array;
-- fresh line-pair arrays; and
+- fresh validated line-pair tuples; and
 - a fresh visibility object and `bestMonths` array.
 
 Constellations are retained even when every star is omitted. Such a constellation has empty `stars` and `lines`, preserving stable constellation identity without inventing data.
@@ -237,7 +272,7 @@ export interface PreparedConstellationCatalog {
 The same structural type has three explicit roles:
 
 - **Transformed catalog:** successful observer-relative source stars only; no synthetic Sol.
-- **Alternate primary catalog:** the transformed source stars followed by synthetic Sol.
+- **Alternate primary catalog:** transformed source stars followed by synthetic Sol.
 - **Reference catalog:** successful cloned source stars at original Sol-relative coordinates; no synthetic Sol.
 
 The role is determined by the public operation and result field, not by adding a mutable catalog-mode flag.
@@ -258,7 +293,7 @@ export interface OmittedStarDiagnostic {
 }
 ```
 
-Diagnostics intentionally exclude the full source star object. HPA-431's error union identifies non-finite components without echoing `NaN` or infinity, keeping the full result JSON-safe.
+Diagnostics intentionally exclude the full source-star object. HPA-431's error union identifies non-finite components without echoing `NaN` or infinity, keeping the full result JSON-safe.
 
 There is exactly one diagnostic per canonical star ID, even when that star appears in multiple constellation arrays. Memberships are ordered by constellation traversal and local star index.
 
@@ -317,6 +352,7 @@ This operation:
 - clones successful source stars with transformed coordinates;
 - records failures as omitted-star diagnostics;
 - rebuilds every constellation and its line indices;
+- defensively removes unusable source line entries;
 - builds the top-level transformed source-star list; and
 - optionally builds a matching Earth/Sol reference catalog.
 
@@ -399,7 +435,7 @@ For every encountered star:
 
 - record membership `{ constellationId, originalStarIndex }`;
 - if the ID has not been seen, register this star as the canonical source record and append its ID to canonical order;
-- if the ID has already been seen, append membership only.
+- if the ID has already been seen, append membership only and do not replace the canonical record.
 
 After indexing, transform canonical stars in canonical order.
 
@@ -438,18 +474,20 @@ On success, create a fresh transformed source star using spread-first copying:
 
 Only the three coordinate fields change.
 
-The following remain unchanged:
+The following source-star fields remain unchanged:
 
 - `id`;
 - `name`;
 - `magnitude`;
 - `spectralClass`;
 - `color`; and
-- future enumerable source metadata.
+- future enumerable source-star metadata.
+
+Constellation-level visibility metadata is preserved separately during constellation reconstruction.
 
 Magnitude remains the existing Sol-observer apparent magnitude for MVP. HPA-433 and its consumers must not claim it is observer-correct brightness.
 
-On failure, no prepared source star is created. Record one `OmittedStarDiagnostic` containing the canonical ID, name, all memberships, and the exact HPA-431 error.
+On failure, no prepared source star is created. Record one `OmittedStarDiagnostic` containing the canonical ID, canonical name, all memberships, and the exact HPA-431 error.
 
 ## 11. Constellation reconstruction and line remapping
 
@@ -467,15 +505,17 @@ Successful local stars retain their relative order.
 
 A canonical prepared star object may be reused across the top-level list and multiple local arrays within the same catalog because the record is immutable by contract. All arrays remain fresh, and no prepared star object is shared with the source catalog or between primary/transformed and reference roles.
 
-Reference constellations use separately cloned canonical reference star objects with original coordinates.
+Reference constellations use separately cloned canonical reference-star objects with original coordinates.
 
 ### 11.2 Line reconstruction
 
-For each original line pair `[oldStart, oldEnd]` in source order:
+For each source line entry in source order:
 
-1. look up both new indices;
-2. when both exist, append a fresh pair `[newStart, newEnd]`;
-3. when either endpoint was omitted, omit the entire segment.
+1. verify it is an exact two-entry integer pair whose indices are in range for the original local star array;
+2. if it is unusable, omit it defensively;
+3. otherwise look up both remapped indices;
+4. when both remapped indices exist, append a fresh tuple `[newStart, newEnd]`; and
+5. when either endpoint was omitted, omit the entire segment.
 
 No new segment is created to bridge across an omitted star.
 
@@ -491,9 +531,22 @@ Prepared lines: [1,2], [0,2]
 
 The first two original segments are removed because they touch B. `[2,3]` becomes `[1,2]`; `[0,3]` becomes `[0,2]`.
 
-When no star is omitted from a constellation, every line pair must remain value-identical and in the same order, although the pair arrays themselves are fresh objects.
+When no star is omitted from a constellation and every source line is usable, every line pair remains value-identical and in the same order, although the pair arrays themselves are fresh objects.
 
-Malformed or out-of-range source line definitions are outside this issue's validation scope. Current source data is treated as satisfying the `Constellation.lines` invariant.
+Malformed-line diagnostic reporting remains outside this issue. The guard exists solely to prevent a `number[]` of the wrong shape from being destructured and incorrectly narrowed into a prepared tuple.
+
+### 11.3 Fully depleted constellations
+
+A constellation remains in output even when all of its source stars are omitted. Its prepared form preserves constellation identity and metadata while returning:
+
+```ts
+{
+    stars: [],
+    lines: [],
+}
+```
+
+No surviving or malformed source line may remain when the local prepared star array is empty.
 
 ## 12. Reference catalog preparation
 
@@ -502,11 +555,12 @@ When requested, the reference catalog is built during the same reconstruction pa
 It contains:
 
 - fresh clones of only those source stars whose observer-relative transform succeeded;
-- original right ascension, declination, distance, magnitude, and metadata;
+- original right ascension, declination, distance, magnitude, and source-star metadata;
+- preserved constellation metadata, including visibility and `bestMonths`;
 - the same top-level successful-source-star order as the transformed catalog;
 - the same constellation order;
 - the same successful local-star inclusion mask;
-- the same repaired line index pairs; and
+- the same repaired and guarded line tuples; and
 - no synthetic Sol.
 
 The reference catalog is a complete independent renderer input. Consumers do not need to inspect the transformed or primary catalog to interpret its star and constellation arrays.
@@ -540,7 +594,11 @@ Expected causes include:
 
 HPA-433 does not decide the UI fallback. HPA-435 may map this failure to Sol mode with a localized notice.
 
-### 13.3 Programming errors
+### 13.3 Malformed source lines
+
+Malformed or out-of-range line entries are not coordinate errors and do not produce `OmittedStarDiagnostic` records. They are skipped by the defensive pair guard so they cannot corrupt prepared topology.
+
+### 13.4 Programming errors
 
 Unexpected programming defects are not converted into domain diagnostics. The module does not catch arbitrary exceptions around ordinary object/array operations.
 
@@ -553,10 +611,10 @@ The implementation must not mutate:
 - any input local star array;
 - any source star;
 - any source line array or pair;
-- visibility metadata or `bestMonths`; or
+- constellation visibility metadata or `bestMonths`; or
 - the observer object.
 
-All output container arrays and constellation/visibility/line objects are fresh relative to input. Immutable prepared star records may be shared within one catalog role to keep top-level and local membership identity consistent; they are never shared with source records or between transformed/primary and reference roles.
+All output container arrays and constellation/visibility/line objects are fresh relative to input. Immutable prepared-star records may be shared within one catalog role to keep top-level and local membership identity consistent; they are never shared with source records or between transformed/primary and reference roles.
 
 Runtime deep freezing is not required. The public API uses readonly output types, and tests verify operation on deeply frozen inputs.
 
@@ -566,6 +624,8 @@ Every success and failure result must be safe for `JSON.stringify()` and determi
 - `Date`, `Map`, `Set`, class instances, or functions;
 - `THREE.Vector3`; or
 - cyclic object references.
+
+Serialization may omit the optional `marker` key on prepared source stars. Synthetic Sol's marker object must survive a stringify/parse round-trip, and the authoritative value predicate `star.marker?.kind === "synthetic-sol"` must continue to distinguish it. Consumers must not depend on marker-key presence.
 
 The module must preserve HPA-431's positive-zero normalization in transformed coordinates and must not reintroduce signed-zero special handling.
 
@@ -577,7 +637,7 @@ Let:
 
 - `U` be unique source stars;
 - `M` be total constellation memberships; and
-- `L` be total line segments.
+- `L` be total source line entries.
 
 Time complexity is `O(U + M + L)`. Space complexity is `O(U + M + L)` for the prepared transformed/primary catalog, with another proportional allocation only when the reference catalog is requested.
 
@@ -600,7 +660,8 @@ Tests must be pure Vitest unit tests with no DOM or Three.js setup.
 
 - Transform representative ordinary stars with observer `{ x: 0, y: 0, z: 0 }`.
 - Assert RA, declination, and distance reproduce source values within the HPA-431 tolerances.
-- Assert names, IDs, magnitude, spectral class, color, and extra fixture metadata remain unchanged.
+- Assert source-star names, IDs, magnitude, spectral class, color, and extra fixture metadata remain unchanged.
+- Assert constellation visibility metadata and `bestMonths` remain value-identical in fresh objects.
 - Assert `transformCatalogToObserver()` returns `transformedCatalog` without synthetic Sol.
 
 ### 16.2 Nearby observer
@@ -614,27 +675,30 @@ Tests must be pure Vitest unit tests with no DOM or Three.js setup.
 - Assert `createSyntheticSol()` produces the direction and distance expected from the HPA-431 fixture observer.
 - Assert the result is consistent with subtracting the observer from the Cartesian origin.
 - Assert ID, fallback name, spectral class, finite magnitude, color, and marker metadata.
+- Assert `isSyntheticSolStar()` recognizes the result.
 - Assert a Sol-origin observer returns `undefined-direction`.
 - Assert zero-distance equatorial Sol is never introduced into the public contract.
 
-### 16.4 Stable identity and ordering
+### 16.4 Stable identity, first-wins behavior, and ordering
 
-- Assert source star IDs and constellation IDs are unchanged.
+- Assert source-star IDs and constellation IDs are unchanged.
 - Assert canonical top-level order follows first source appearance.
 - Assert duplicate membership produces one top-level source star and multiple local memberships.
+- Supply two records with one ID but conflicting coordinates/metadata and assert the first record is canonical while both memberships are retained.
 - Assert synthetic Sol is appended last only by `prepareAlternateObserverCatalog()`.
 - Assert input constellation order and successful local-star order remain unchanged.
 
-### 16.5 Line preservation and repair
+### 16.5 Line preservation, guard, and repair
 
-- Assert a no-omission fixture preserves line pair values and order exactly.
+- Assert a no-omission fixture with valid pairs preserves line pair values and order exactly.
+- Include malformed source entries with the wrong length, non-integer indices, and out-of-range indices; assert they are omitted and never appear as prepared tuples.
 - Omit the middle star of a four-star fixture.
 - Assert touching segments are removed.
 - Assert unrelated surviving segments are correctly remapped.
 - Assert no bridge segment is invented.
-- Assert the same repaired topology is used by the optional reference catalog.
+- Assert the same guarded, repaired topology is used by the optional reference catalog.
 
-### 16.6 Invalid-star omission
+### 16.6 Invalid-star omission and fully depleted constellation
 
 Cover at least:
 
@@ -653,6 +717,12 @@ For each, assert:
 - all memberships are present in deterministic order;
 - the HPA-431 error is preserved; and
 - unrelated constellations and stars survive.
+
+Also include one constellation whose every star is omitted and assert:
+
+- the constellation ID and metadata remain present;
+- its prepared `stars` and `lines` arrays are empty; and
+- other constellations remain unaffected.
 
 ### 16.7 Product-level fatal observer failure
 
@@ -675,19 +745,21 @@ For each, assert:
 - Assert inputs are deeply unchanged.
 - Call preparation twice and assert deep equality.
 - Assert `JSON.stringify()` succeeds and contains no `null` introduced by non-finite numeric output.
+- Parse serialized output and assert synthetic Sol still satisfies the marker-kind predicate while source stars do not.
+- Assert discrimination does not depend on `"marker" in star`.
 
 ## 17. Acceptance-criteria mapping
 
 | HPA-433 acceptance criterion | Design mechanism |
 | --- | --- |
-| Output is deterministic and serializable | Ordered traversal, plain readonly objects/arrays, JSON-safe HPA-431 errors |
+| Output is deterministic and serializable | Ordered traversal, plain readonly objects/arrays, JSON-safe HPA-431 errors, marker round-trip test |
 | Input catalog objects are not mutated | Fresh container reconstruction, spread-first star copies, deep-freeze tests |
-| Star/constellation identity remains stable | IDs preserved; canonical star map keyed by source ID; constellations retained |
+| Star/constellation identity remains stable | IDs preserved; canonical star map keyed by source ID; constellations retained, including depleted constellations |
 | Synthetic Sol is correct for fixture observers | Cartesian origin subtraction followed by `cartesianToEquatorial()` |
 | No zero-distance equatorial exception | Sol never enters `transformToObserver()`; origin observer correctly fails marker creation |
 | Invalid stars do not fail the entire catalog | One omitted-star diagnostic per canonical failed star |
 | Earth-reference preparation is independently consumable | Complete optional reference catalog with its own top-level stars and constellations |
-| Preserved line indices/IDs | Value-identical no-omission lines; old-to-new remapping after omission |
+| Preserved line indices/IDs | Value-identical valid no-omission lines; exact-pair guard; old-to-new remapping after omission |
 | Original catalog remains immutable | Readonly inputs, no source mutation, no shared mutable source containers |
 | Pure catalog/data PR | No renderer, route, Svelte, localization, or browser imports |
 
@@ -696,6 +768,10 @@ For each, assert:
 ### Risk: line topology silently changes after omission
 
 **Mitigation:** use an explicit old-index-to-new-index map, remove only segments with missing endpoints, preserve segment order, and test a middle-star omission where naïve filtering would connect incorrect stars.
+
+### Risk: source `number[][]` contains a non-pair entry
+
+**Mitigation:** require an exact two-entry, integer, in-range guard before tuple narrowing; omit unusable entries; test malformed length, non-integer, and out-of-range cases.
 
 ### Risk: synthetic Sol is accidentally represented as zero-distance equatorial data
 
@@ -707,15 +783,15 @@ For each, assert:
 
 ### Risk: duplicate constellation membership causes repeated transforms or duplicate top-level points
 
-**Mitigation:** canonicalize by stable star ID, transform once, record all memberships, and order top-level stars by first appearance.
+**Mitigation:** canonicalize by stable star ID, transform once, record all memberships, order top-level stars by first appearance, and test conflicting duplicates to pin first-record-wins behavior.
 
 ### Risk: reference and transformed layers compare different star sets
 
 **Mitigation:** build both from one successful-star inclusion mask and one repaired topology pass.
 
-### Risk: marker appearance is inferred from arbitrary photometric data
+### Risk: marker appearance or identity is inferred incorrectly
 
-**Mitigation:** make `marker.kind === "synthetic-sol"` authoritative and document the finite magnitude as renderer compatibility only.
+**Mitigation:** make `marker.kind === "synthetic-sol"` authoritative, expose `isSyntheticSolStar()`, document the finite magnitude as renderer compatibility only, and test serialization round-trip discrimination.
 
 ### Risk: readonly output is cast away and mutated by a consumer
 
@@ -723,7 +799,7 @@ For each, assert:
 
 ### Risk: source records with one ID disagree across constellations
 
-**Mitigation:** treat consistent ID definitions as an existing source-catalog invariant. A future catalog-validation issue may detect conflicts; HPA-433 does not broaden its diagnostic model beyond coordinate/transform failures.
+**Mitigation:** deterministically use the first occurrence as canonical and test that rule. A future catalog-validation issue may report conflicts; HPA-433 does not broaden its diagnostic model beyond coordinate/transform failures.
 
 ## 19. Implementation boundary
 
@@ -755,12 +831,12 @@ A narrow import-only test adjustment to reuse HPA-431 immutable fixtures is acce
 After this design is reviewed:
 
 1. write a task-by-task TDD implementation plan;
-2. implement public prepared-catalog types and deterministic fixtures;
+2. implement public prepared-catalog types, marker discriminator, and deterministic fixtures;
 3. implement canonical source indexing and ordinary transformation;
-4. implement omission diagnostics and line remapping;
+4. implement omission diagnostics, defensive line guarding, and line remapping;
 5. implement synthetic Sol through Cartesian primitives;
 6. implement alternate-observer composition and optional reference output;
-7. finish immutability, determinism, serialization, and fatal-preflight tests; and
+7. finish depleted-constellation, conflicting-duplicate, immutability, determinism, serialization, and fatal-preflight tests; and
 8. verify unit tests, type checking, lint, build, and diff scope.
 
 HPA-434 begins only after this catalog contract is merged or otherwise treated as stable.
