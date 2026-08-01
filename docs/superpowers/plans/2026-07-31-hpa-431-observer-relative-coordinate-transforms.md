@@ -4,7 +4,7 @@
 
 **Goal:** Implement the pure observer-relative astronomy API, deterministic fixtures, and legacy galaxy-helper centralization defined by HPA-431.
 
-**Architecture:** A dependency-free `observerTransform.ts` module owns equatorial/Cartesian conversion, observer translation, reverse conversion, typed failures, and the raw legacy radial formula. Tests are split into immutable fixture data and behavior assertions. `buildGalaxy.ts` keeps its galaxy-only visual helpers and re-exports the shared raw formula so existing imports remain valid.
+**Architecture:** A dependency-free `observerTransform.ts` module owns equatorial/Cartesian conversion, observer translation, reverse conversion, typed failures, and the raw legacy radial formula. Tests use immutable hand-authored fixtures plus exhaustive validation matrices. `buildGalaxy.ts` keeps its galaxy-only visual helpers and re-exports the shared raw formula so existing imports remain valid.
 
 **Tech Stack:** TypeScript 5.8, Vitest 3, Bun, Astro repository aliases (`@/`), existing ESLint/Prettier configuration.
 
@@ -58,7 +58,7 @@
 
 ---
 
-### Task 1: Add the public contract, fixtures, and forward conversion
+### Task 1: Add the public contract, fixtures, raw helper, and forward conversion
 
 **Files:**
 - Create: `src/lib/astronomy/observerTransform.ts`
@@ -212,9 +212,9 @@ export const IDENTITY_FIXTURES: readonly EquatorialPosition[] = [
 ];
 ```
 
-- [ ] **Step 2: Write forward-conversion and validation tests**
+- [ ] **Step 2: Write failing forward-conversion tests**
 
-Create `src/lib/astronomy/__tests__/observerTransform.test.ts`:
+Create `src/lib/astronomy/__tests__/observerTransform.test.ts` with these shared helpers and forward tests:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -224,10 +224,25 @@ import {
     equatorialToCartesian,
     radialToCartesian,
     type CartesianLightYears,
+    type EquatorialPosition,
 } from "../observerTransform";
-import { AXIS_FIXTURES } from "./observerTransform.fixtures";
+import {
+    ALPHA_CENTAURI_OBSERVER,
+    ALPHA_CENTAURI_SOURCE,
+    AXIS_FIXTURES,
+} from "./observerTransform.fixtures";
 
 const CARTESIAN_TOLERANCE = 1e-10;
+const NON_FINITE_VALUES = [
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+] as const;
+const EQUATORIAL_COMPONENTS = [
+    "rightAscensionHours",
+    "declinationDegrees",
+    "distanceLightYears",
+] as const;
 
 function expectCartesianClose(
     actual: CartesianLightYears,
@@ -271,29 +286,45 @@ describe("equatorialToCartesian", () => {
         expectCartesianClose(inputs[1].value, inputs[2].value);
     });
 
-    it.each([
-        ["rightAscensionHours", Number.NaN],
-        ["declinationDegrees", Number.POSITIVE_INFINITY],
-        ["distanceLightYears", Number.NEGATIVE_INFINITY],
-    ] as const)(
-        "rejects non-finite %s without echoing the value",
-        (component, value) => {
-            const position = {
-                rightAscensionHours: 1,
-                declinationDegrees: 2,
-                distanceLightYears: 3,
-                [component]: value,
-            };
+    for (const component of EQUATORIAL_COMPONENTS) {
+        for (const invalidValue of NON_FINITE_VALUES) {
+            it(`rejects non-finite ${component}: ${String(invalidValue)}`, () => {
+                const base: EquatorialPosition = {
+                    rightAscensionHours: 1,
+                    declinationDegrees: 2,
+                    distanceLightYears: 3,
+                };
+                const position = {
+                    ...base,
+                    [component]: invalidValue,
+                } as EquatorialPosition;
 
-            expect(equatorialToCartesian(position)).toEqual({
-                ok: false,
-                error: {
-                    code: "non-finite-equatorial-input",
-                    component,
-                },
+                expect(equatorialToCartesian(position)).toEqual({
+                    ok: false,
+                    error: {
+                        code: "non-finite-equatorial-input",
+                        component,
+                    },
+                });
             });
-        },
-    );
+        }
+    }
+
+    it("uses deterministic equatorial validation order", () => {
+        expect(
+            equatorialToCartesian({
+                rightAscensionHours: Number.NaN,
+                declinationDegrees: Number.POSITIVE_INFINITY,
+                distanceLightYears: Number.NEGATIVE_INFINITY,
+            }),
+        ).toEqual({
+            ok: false,
+            error: {
+                code: "non-finite-equatorial-input",
+                component: "rightAscensionHours",
+            },
+        });
+    });
 
     it.each([-90.000001, 90.000001])(
         "rejects out-of-range declination %s",
@@ -367,16 +398,18 @@ describe("radialToCartesian raw compatibility helper", () => {
                 fixture.rightAscensionDegrees,
                 fixture.equatorial.declinationDegrees,
             );
-            expect(Math.abs(result.x - fixture.expected.x)).toBeLessThanOrEqual(
-                CARTESIAN_TOLERANCE,
-            );
-            expect(Math.abs(result.y - fixture.expected.y)).toBeLessThanOrEqual(
-                CARTESIAN_TOLERANCE,
-            );
-            expect(Math.abs(result.z - fixture.expected.z)).toBeLessThanOrEqual(
-                CARTESIAN_TOLERANCE,
-            );
+            expectCartesianClose(result, fixture.expected);
         }
+    });
+
+    it("reproduces the pinned Alpha Centauri galaxy fixture", () => {
+        const result = radialToCartesian(
+            ALPHA_CENTAURI_SOURCE.distanceLightYears,
+            ALPHA_CENTAURI_SOURCE.rightAscensionDegrees,
+            ALPHA_CENTAURI_SOURCE.declinationDegrees,
+        );
+
+        expectCartesianClose(result, ALPHA_CENTAURI_OBSERVER);
     });
 
     it("preserves raw signed zero", () => {
@@ -394,7 +427,7 @@ bun run test:run -- src/lib/astronomy/__tests__/observerTransform.test.ts
 
 Expected: FAIL because `src/lib/astronomy/observerTransform.ts` and its exports do not exist.
 
-- [ ] **Step 4: Implement the public types, constants, raw helper, and validated forward conversion**
+- [ ] **Step 4: Implement public contracts, the raw helper, and validated forward conversion**
 
 Create `src/lib/astronomy/observerTransform.ts`:
 
@@ -542,7 +575,7 @@ export function equatorialToCartesian(
 bun run test:run -- src/lib/astronomy/__tests__/observerTransform.test.ts
 ```
 
-Expected: PASS for constants, axes, RA wrapping, equatorial validation, positive-zero canonicalization, immutability, and raw signed-zero compatibility.
+Expected: PASS for constants, axes, Alpha Centauri provenance, RA wrapping, all nine non-finite equatorial combinations, validation order, range/distance errors, positive zero, immutability, and legacy signed zero.
 
 - [ ] **Step 6: Commit Task 1**
 
@@ -570,9 +603,11 @@ git commit -m "feat(astronomy): add forward observer coordinates"
 
 - [ ] **Step 1: Add failing subtraction tests**
 
-Add `subtractObserverPosition` to the test imports and append:
+Add `subtractObserverPosition` to the module imports. Add these test constants and the describe block:
 
 ```ts
+const CARTESIAN_COMPONENTS = ["x", "y", "z"] as const;
+
 describe("subtractObserverPosition", () => {
     it("subtracts the observer from the target", () => {
         expect(
@@ -592,6 +627,30 @@ describe("subtractObserverPosition", () => {
             subtractObserverPosition(target, { x: 0, y: 0, z: 0 }),
         ).toEqual({ ok: true, value: target });
     });
+
+    for (const component of CARTESIAN_COMPONENTS) {
+        for (const invalidValue of NON_FINITE_VALUES) {
+            it(`rejects non-finite target ${component}: ${String(invalidValue)}`, () => {
+                const target = {
+                    x: 1,
+                    y: 2,
+                    z: 3,
+                    [component]: invalidValue,
+                };
+
+                expect(
+                    subtractObserverPosition(target, { x: 0, y: 0, z: 0 }),
+                ).toEqual({
+                    ok: false,
+                    error: {
+                        code: "non-finite-cartesian-input",
+                        role: "target",
+                        component,
+                    },
+                });
+            });
+        }
+    }
 
     it("reports target validation before observer validation", () => {
         expect(
@@ -731,7 +790,7 @@ export function subtractObserverPosition(
 bun run test:run -- src/lib/astronomy/__tests__/observerTransform.test.ts
 ```
 
-Expected: PASS, including `target`, `observer`, and derived `vector` error roles.
+Expected: PASS, including all nine target-component/value combinations, explicit observer failure, deterministic validation order, derived overflow, positive zero, and immutability.
 
 - [ ] **Step 5: Commit Task 2**
 
@@ -744,7 +803,7 @@ git commit -m "feat(astronomy): add observer position subtraction"
 
 ---
 
-### Task 3: Add reverse conversion, direction epsilon, and relative pole handling
+### Task 3: Add reverse conversion, direction epsilon, and scale-independent pole handling
 
 **Files:**
 - Modify: `src/lib/astronomy/observerTransform.ts`
@@ -788,7 +847,6 @@ describe("cartesianToEquatorial", () => {
 
             expect(result.ok).toBe(true);
             if (!result.ok) return;
-
             expect(result.value.distanceLightYears).toBeCloseTo(
                 fixture.equatorial.distanceLightYears,
                 10,
@@ -807,7 +865,31 @@ describe("cartesianToEquatorial", () => {
                     expectedHours,
                 ),
             ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
+            expect(result.value.rightAscensionHours).toBeGreaterThanOrEqual(0);
+            expect(result.value.rightAscensionHours).toBeLessThan(24);
         });
+    }
+
+    for (const component of CARTESIAN_COMPONENTS) {
+        for (const invalidValue of NON_FINITE_VALUES) {
+            it(`rejects non-finite vector ${component}: ${String(invalidValue)}`, () => {
+                const vector = {
+                    x: 1,
+                    y: 2,
+                    z: 3,
+                    [component]: invalidValue,
+                };
+
+                expect(cartesianToEquatorial(vector)).toEqual({
+                    ok: false,
+                    error: {
+                        code: "non-finite-cartesian-input",
+                        role: "vector",
+                        component,
+                    },
+                });
+            });
+        }
     }
 
     it.each([
@@ -838,6 +920,24 @@ describe("cartesianToEquatorial", () => {
                 z: 0,
             }).ok,
         ).toBe(true);
+    });
+
+    it("canonicalizes exact poles with arbitrary source RA", () => {
+        for (const declinationDegrees of [-90, 90]) {
+            const forward = equatorialToCartesian({
+                rightAscensionHours: 8.75,
+                declinationDegrees,
+                distanceLightYears: 10,
+            });
+            expect(forward.ok).toBe(true);
+            if (!forward.ok) continue;
+
+            const reverse = cartesianToEquatorial(forward.value);
+            expect(reverse.ok).toBe(true);
+            if (!reverse.ok) continue;
+            expect(reverse.value.rightAscensionHours).toBe(0);
+            expect(reverse.value.declinationDegrees).toBe(declinationDegrees);
+        }
     });
 
     it("canonicalizes an exact north-pole vector above the distance epsilon", () => {
@@ -899,23 +999,6 @@ describe("cartesianToEquatorial", () => {
         if (!result.ok) return;
         expect(result.value.rightAscensionHours).toBe(0);
         expect(Object.is(result.value.rightAscensionHours, -0)).toBe(false);
-    });
-
-    it("rejects a non-finite input component with role vector", () => {
-        expect(
-            cartesianToEquatorial({
-                x: 0,
-                y: Number.POSITIVE_INFINITY,
-                z: 0,
-            }),
-        ).toEqual({
-            ok: false,
-            error: {
-                code: "non-finite-cartesian-input",
-                role: "vector",
-                component: "y",
-            },
-        });
     });
 
     it("does not mutate frozen vector input", () => {
@@ -987,7 +1070,7 @@ Do not add a `y === 0` fallback in the pole branch. A meaningful vector with `y 
 bun run test:run -- src/lib/astronomy/__tests__/observerTransform.test.ts
 ```
 
-Expected: PASS for reverse axes, inclusive direction epsilon, scale-independent poles, near-pole RA, normalized positive-zero RA, validation, and immutability.
+Expected: PASS for all nine direct vector non-finite combinations, reverse axes, normalized RA range, arbitrary-RA exact poles, inclusive direction epsilon, scale-independent poles, near-pole RA, positive-zero RA, and immutability.
 
 - [ ] **Step 6: Commit Task 3**
 
@@ -1391,13 +1474,16 @@ Confirm each statement directly against code and tests:
 
 ```text
 [ ] No Three.js/Svelte/DOM/browser dependency in observerTransform.ts
-[ ] Forward formula matches legacy galaxy axes
+[ ] Forward formula matches legacy galaxy axes and Alpha Centauri
+[ ] All three non-finite values are tested for every equatorial component
+[ ] All three non-finite values are tested for every Cartesian component
 [ ] Finite RA wraps to [0h, 24h)
 [ ] Declination outside [-90, 90] fails
 [ ] Validated distance <= 0 fails
 [ ] Sol observer is an identity transform for positive-distance stars
 [ ] Direction norm <= 1e-12 fails
 [ ] Pole classification uses horizontal / distance <= 1e-15
+[ ] Arbitrary-RA exact poles canonicalize to RA 0h
 [ ] Near-pole RA stays within 1e-10h circular tolerance
 [ ] Target, observer, and derived-vector errors are distinguished
 [ ] Synthetic Sol uses Cartesian origin subtraction, not transformToObserver()
