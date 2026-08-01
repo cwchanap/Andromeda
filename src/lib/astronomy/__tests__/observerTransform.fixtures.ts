@@ -1,7 +1,7 @@
 import type {
     CartesianLightYears,
     EquatorialPosition,
-} from "../observerTransform";
+} from "@/lib/astronomy/observerTransform";
 
 export interface AxisFixture {
     readonly name: string;
@@ -10,8 +10,8 @@ export interface AxisFixture {
     readonly expected: CartesianLightYears;
 }
 
-export const AXIS_FIXTURES: readonly AxisFixture[] = [
-    {
+export const AXIS_FIXTURES: readonly AxisFixture[] = Object.freeze([
+    Object.freeze({
         name: "RA 0h points along +X",
         equatorial: {
             rightAscensionHours: 0,
@@ -20,8 +20,8 @@ export const AXIS_FIXTURES: readonly AxisFixture[] = [
         },
         rightAscensionDegrees: 0,
         expected: { x: 10, y: 0, z: 0 },
-    },
-    {
+    }),
+    Object.freeze({
         name: "RA 6h points along +Z",
         equatorial: {
             rightAscensionHours: 6,
@@ -30,8 +30,8 @@ export const AXIS_FIXTURES: readonly AxisFixture[] = [
         },
         rightAscensionDegrees: 90,
         expected: { x: 0, y: 0, z: 10 },
-    },
-    {
+    }),
+    Object.freeze({
         name: "RA 12h points along -X",
         equatorial: {
             rightAscensionHours: 12,
@@ -40,8 +40,8 @@ export const AXIS_FIXTURES: readonly AxisFixture[] = [
         },
         rightAscensionDegrees: 180,
         expected: { x: -10, y: 0, z: 0 },
-    },
-    {
+    }),
+    Object.freeze({
         name: "RA 18h points along -Z",
         equatorial: {
             rightAscensionHours: 18,
@@ -50,8 +50,8 @@ export const AXIS_FIXTURES: readonly AxisFixture[] = [
         },
         rightAscensionDegrees: 270,
         expected: { x: 0, y: 0, z: -10 },
-    },
-    {
+    }),
+    Object.freeze({
         name: "Dec +90 points along +Y",
         equatorial: {
             rightAscensionHours: 0,
@@ -60,8 +60,8 @@ export const AXIS_FIXTURES: readonly AxisFixture[] = [
         },
         rightAscensionDegrees: 0,
         expected: { x: 0, y: 10, z: 0 },
-    },
-    {
+    }),
+    Object.freeze({
         name: "Dec -90 points along -Y",
         equatorial: {
             rightAscensionHours: 0,
@@ -70,8 +70,8 @@ export const AXIS_FIXTURES: readonly AxisFixture[] = [
         },
         rightAscensionDegrees: 0,
         expected: { x: 0, y: -10, z: 0 },
-    },
-];
+    }),
+]);
 
 export const SOL_OBSERVER: CartesianLightYears = Object.freeze({
     x: 0,

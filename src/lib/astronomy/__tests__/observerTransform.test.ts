@@ -9,7 +9,7 @@ import {
     transformToObserver,
     type CartesianLightYears,
     type EquatorialPosition,
-} from "../observerTransform";
+} from "@/lib/astronomy/observerTransform";
 import {
     ALPHA_CENTAURI_OBSERVER,
     ALPHA_CENTAURI_SOURCE,

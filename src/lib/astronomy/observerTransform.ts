@@ -65,6 +65,12 @@ function normalizeRightAscensionHours(hours: number): number {
     return positiveZero(((hours % 24) + 24) % 24);
 }
 
+/**
+ * Converts spherical equatorial coordinates to a Cartesian vector using a Y-up
+ * convention. Declination maps to the Y axis (positive declination → +Y), and
+ * right ascension maps within the X/Z plane (0° → +X, 90° → +Z). Returns a
+ * mutable plain object (`{ x; y; z }`), not a `CartesianLightYears` instance.
+ */
 export function radialToCartesian(
     d: number,
     raDeg: number,
