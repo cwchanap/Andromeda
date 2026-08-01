@@ -4,7 +4,7 @@
 
 **Goal:** Implement the pure observer-catalog preparation layer that transforms the full exported constellation-member graph, supports explicit observer-source exclusions, prepares role-specific primary/reference topology, and creates synthetic Sol through the HPA-431 Cartesian-origin path.
 
-**Architecture:** `observerCatalog.ts` indexes constellation-member stars once by stable ID, applies either observer-frame transformation or identity validation, then rebuilds primary and optional reference catalogs from separate inclusion maps. The module owns no route, Galaxy, renderer, browser, or localization behavior; HPA-435 supplies observer-source IDs and HPA-434 consumes the authoritative prepared star/constellation pairs.
+**Architecture:** `observerCatalog.ts` indexes constellation-member stars once by stable ID, applies either observer-frame transformation or Sol-origin identity validation, then rebuilds primary and optional reference catalogs from separate inclusion maps. The module owns no route, Galaxy, renderer, browser, or localization behavior; HPA-435 supplies observer-source IDs and HPA-434 consumes the authoritative prepared star/constellation pairs.
 
 **Tech Stack:** TypeScript 5.8, Vitest 3, Bun, Astro repository aliases (`@/`), existing HPA-431 coordinate API, existing ESLint and Prettier configuration.
 
@@ -48,7 +48,7 @@
 ### Modify only if needed for fixture reuse
 
 - `src/lib/astronomy/__tests__/observerTransform.fixtures.ts`
-  - Import-only/export-only adjustment is allowed if the implementation tests need an existing immutable HPA-431 fixture that is not already exported. Do not alter any coordinate value or tolerance.
+  - Import-only/export-only adjustment is allowed if a required immutable HPA-431 fixture is not already exported. Do not alter coordinate values or tolerances.
 
 ### Explicitly unchanged
 
@@ -75,7 +75,7 @@
 **Interfaces:**
 - Consumes:
   - `Star`, `Constellation` from `@/types/constellation`
-  - `CartesianLightYears`, `CoordinateTransformError`, `TransformResult<T>` from `@/lib/astronomy/observerTransform`
+  - `CoordinateTransformError` from `@/lib/astronomy/observerTransform`
 - Produces:
   - `SYNTHETIC_SOL_STAR_ID`
   - `SYNTHETIC_SOL_RENDER_MAGNITUDE`
@@ -217,8 +217,6 @@ describe("observerCatalog public contract", () => {
 
 - [ ] **Step 3: Run the test to verify it fails**
 
-Run:
-
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "uses a value-based synthetic-Sol discriminator"
 ```
@@ -227,15 +225,11 @@ Expected: FAIL because `@/lib/constellation/observerCatalog` does not exist.
 
 - [ ] **Step 4: Add the public types, constants, and predicate**
 
-Create `src/lib/constellation/observerCatalog.ts` with this contract:
+Create `src/lib/constellation/observerCatalog.ts`:
 
 ```ts
 import type { Constellation, Star } from "@/types/constellation";
-import type {
-    CartesianLightYears,
-    CoordinateTransformError,
-    TransformResult,
-} from "@/lib/astronomy/observerTransform";
+import type { CoordinateTransformError } from "@/lib/astronomy/observerTransform";
 
 export const SYNTHETIC_SOL_STAR_ID = "sol" as const;
 export const SYNTHETIC_SOL_RENDER_MAGNITUDE = 0;
@@ -325,37 +319,16 @@ export function isSyntheticSolStar(
 ): star is SyntheticSolStar {
     return star.marker?.kind === "synthetic-sol";
 }
-
-// Public operations are added in later tasks.
-export declare function transformCatalogToObserver(
-    sourceConstellations: readonly Constellation[],
-    observerPosition: CartesianLightYears,
-    options?: ObserverCatalogOptions,
-): CatalogTransformOutput;
-
-export declare function createSyntheticSol(
-    observerPosition: CartesianLightYears,
-): TransformResult<SyntheticSolStar>;
-
-export declare function prepareAlternateObserverCatalog(
-    sourceConstellations: readonly Constellation[],
-    observerPosition: CartesianLightYears,
-    options?: ObserverCatalogOptions,
-): AlternateObserverCatalogPreparationResult;
 ```
 
-Do not leave the `declare` stubs after Task 2 begins; they are only the red/green scaffold for this first contract commit.
-
-- [ ] **Step 5: Run the focused test and type-check the file**
-
-Run:
+- [ ] **Step 5: Run the focused test and type-check**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "uses a value-based synthetic-Sol discriminator"
 bun run type-check
 ```
 
-Expected: the focused test passes and type-check exits `0`.
+Expected: focused test passes; type-check exits `0`.
 
 - [ ] **Step 6: Commit**
 
@@ -375,31 +348,24 @@ git commit -m "feat(constellation): define observer catalog contract"
 - Modify: `src/lib/constellation/__tests__/observerCatalog.test.ts`
 
 **Interfaces:**
-- Consumes: Task 1 public types and fixture builders.
+- Consumes: Task 1 types and fixture builders.
 - Produces:
   - `transformCatalogToObserver(sourceConstellations, observerPosition, options)`
-  - Deterministic canonical first-appearance ordering.
+  - Canonical first-appearance ordering.
   - Sol-origin identity behavior.
   - Optional independent reference star objects.
-- Task 3 replaces the initial line-copy implementation with omission-safe remapping.
+- Task 3 replaces the initial no-omission line copy with omission-safe remapping.
 
-- [ ] **Step 1: Add shared test helpers and happy-path tests**
+- [ ] **Step 1: Extend the existing test imports**
 
-Append to `observerCatalog.test.ts`:
+Add `transformCatalogToObserver` to the existing `@/lib/constellation/observerCatalog` import. Extend the existing fixture import with `ALPHA_CENTAURI_OBSERVER`, `SOL_OBSERVER`, and `makeConstellation`. Do not add duplicate import declarations.
+
+- [ ] **Step 2: Add shared helper and failing happy-path tests**
+
+Append:
 
 ```ts
-import {
-    transformCatalogToObserver,
-    type PreparedSourceStar,
-} from "@/lib/constellation/observerCatalog";
-import {
-    ALPHA_CENTAURI_OBSERVER,
-    SOL_OBSERVER,
-    makeConstellation,
-    makeStar,
-} from "./observerCatalog.fixtures";
-
-function starById(
+function preparedStarById(
     stars: readonly PreparedSourceStar[],
     id: string,
 ): PreparedSourceStar {
@@ -427,7 +393,7 @@ describe("transformCatalogToObserver happy path", () => {
             SOL_OBSERVER,
             { includeReferenceCatalog: true },
         );
-        const transformed = starById(
+        const transformed = preparedStarById(
             result.transformedCatalog.stars as readonly PreparedSourceStar[],
             "identity",
         );
@@ -490,26 +456,30 @@ describe("transformCatalogToObserver happy path", () => {
 });
 ```
 
-- [ ] **Step 2: Run the happy-path tests to verify they fail**
-
-Run:
+- [ ] **Step 3: Run the tests to verify they fail**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "transformCatalogToObserver happy path"
 ```
 
-Expected: FAIL because the Task 1 declarations have no runtime implementation.
+Expected: FAIL because `transformCatalogToObserver` is not exported.
 
-- [ ] **Step 3: Replace declarations with canonical-indexing helpers**
+- [ ] **Step 4: Add canonical-indexing and star-copy helpers**
 
-Add these imports and internal helpers to `observerCatalog.ts`:
+Extend the astronomy imports in `observerCatalog.ts` rather than adding a second import from the same module:
 
 ```ts
 import {
     transformToObserver,
+    type CartesianLightYears,
+    type CoordinateTransformError,
     type EquatorialPosition,
 } from "@/lib/astronomy/observerTransform";
+```
 
+Add:
+
+```ts
 const SOL_ORIGIN: CartesianLightYears = { x: 0, y: 0, z: 0 };
 
 interface CanonicalStarEntry {
@@ -540,10 +510,7 @@ function collectCanonicalStars(
                 return;
             }
             order.push(source.id);
-            byId.set(source.id, {
-                source,
-                memberships: [membership],
-            });
+            byId.set(source.id, { source, memberships: [membership] });
         });
     }
 
@@ -573,13 +540,7 @@ function cloneTransformedStar(
         distance: equatorial.distanceLightYears,
     };
 }
-```
 
-- [ ] **Step 4: Add the initial catalog reconstruction and transform loop**
-
-Use this first version; Task 3 replaces line handling with role-specific remapping:
-
-```ts
 function cloneVisibility(
     visibility: Constellation["visibility"],
 ): PreparedConstellation["visibility"] {
@@ -588,8 +549,14 @@ function cloneVisibility(
         bestMonths: [...visibility.bestMonths],
     };
 }
+```
 
-function buildCatalogWithoutOmissions(
+- [ ] **Step 5: Add the initial happy-path catalog builder and transform loop**
+
+Task 3 replaces line handling with role-safe remapping. This version is intentionally limited to fixtures without omitted stars:
+
+```ts
+function buildCatalogForCompleteRole(
     sourceConstellations: readonly Constellation[],
     canonicalOrder: readonly string[],
     preparedById: ReadonlyMap<string, PreparedSourceStar>,
@@ -601,13 +568,8 @@ function buildCatalogWithoutOmissions(
         }),
         constellations: sourceConstellations.map((source) => ({
             ...source,
-            stars: source.stars.flatMap((star) => {
-                const prepared = preparedById.get(star.id);
-                return prepared ? [prepared] : [];
-            }),
-            lines: source.lines
-                .filter((line) => line.length === 2)
-                .map(([start, end]) => [start, end] as const),
+            stars: source.stars.map((star) => preparedById.get(star.id)!),
+            lines: source.lines.map(([start, end]) => [start, end] as const),
             visibility: cloneVisibility(source.visibility),
         })),
     };
@@ -653,13 +615,13 @@ export function transformCatalogToObserver(
     }
 
     return {
-        transformedCatalog: buildCatalogWithoutOmissions(
+        transformedCatalog: buildCatalogForCompleteRole(
             sourceConstellations,
             canonical.order,
             transformedById,
         ),
         referenceCatalog: options.includeReferenceCatalog
-            ? buildCatalogWithoutOmissions(
+            ? buildCatalogForCompleteRole(
                   sourceConstellations,
                   canonical.order,
                   referenceById,
@@ -670,11 +632,7 @@ export function transformCatalogToObserver(
 }
 ```
 
-Remove the Task 1 `declare function transformCatalogToObserver` declaration.
-
-- [ ] **Step 5: Run the focused tests**
-
-Run:
+- [ ] **Step 6: Run the focused tests**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "transformCatalogToObserver happy path"
@@ -682,7 +640,7 @@ bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "tran
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/lib/constellation/observerCatalog.ts \
@@ -696,7 +654,6 @@ git commit -m "feat(constellation): transform canonical observer catalog stars"
 
 **Files:**
 - Modify: `src/lib/constellation/observerCatalog.ts`
-- Modify: `src/lib/constellation/__tests__/observerCatalog.fixtures.ts`
 - Modify: `src/lib/constellation/__tests__/observerCatalog.test.ts`
 
 **Interfaces:**
@@ -705,10 +662,11 @@ git commit -m "feat(constellation): transform canonical observer catalog stars"
   - Exact-pair line guard.
   - Old-index → role-index remapping.
   - Coordinate-invalid omission from both roles.
+  - Full HPA-431 failure propagation matrix.
   - Fully depleted constellation preservation.
 - Task 4 reuses this reconstruction with different primary/reference masks.
 
-- [ ] **Step 1: Add failing omission and line-repair tests**
+- [ ] **Step 1: Add failing line-repair and depleted-constellation tests**
 
 Append:
 
@@ -746,23 +704,17 @@ describe("coordinate omissions and line reconstruction", () => {
             [1, 2],
             [0, 2],
         ]);
-        expect(result.omittedStars).toEqual([
-            {
-                starId: "b",
-                starName: "b",
-                memberships: [
-                    { constellationId: "line-repair", originalStarIndex: 1 },
-                ],
-                reason: {
-                    code: "coordinate-transform-failed",
-                    error: { code: "invalid-distance", distanceLightYears: 0 },
-                },
-                referenceDisposition: "omitted",
+        expect(result.omittedStars[0]).toMatchObject({
+            starId: "b",
+            reason: {
+                code: "coordinate-transform-failed",
+                error: { code: "invalid-distance", distanceLightYears: 0 },
             },
-        ]);
+            referenceDisposition: "omitted",
+        });
     });
 
-    it("skips malformed lines before narrowing them to tuples", () => {
+    it("skips malformed lines before tuple narrowing", () => {
         const stars = [makeStar({ id: "a" }), makeStar({ id: "b" })];
         const source = makeConstellation({
             id: "malformed-lines",
@@ -778,7 +730,6 @@ describe("coordinate omissions and line reconstruction", () => {
         });
 
         const result = transformCatalogToObserver([source], SOL_OBSERVER);
-
         expect(result.transformedCatalog.constellations[0].lines).toEqual([
             [0, 1],
         ]);
@@ -806,19 +757,115 @@ describe("coordinate omissions and line reconstruction", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify the naïve line copy fails**
+- [ ] **Step 2: Add the failing HPA-431 error-propagation matrix**
 
-Run:
+Append inside the same `describe`:
+
+```ts
+it.each([
+    {
+        name: "negative distance",
+        star: makeStar({ id: "negative", distance: -1 }),
+        observer: SOL_OBSERVER,
+        expected: { code: "invalid-distance", distanceLightYears: -1 },
+    },
+    {
+        name: "out-of-range declination",
+        star: makeStar({ id: "declination", declination: 100 }),
+        observer: SOL_OBSERVER,
+        expected: { code: "declination-out-of-range", declinationDegrees: 100 },
+    },
+    {
+        name: "exact observer collision",
+        star: makeStar({
+            id: "collision",
+            rightAscension: 0,
+            declination: 0,
+            distance: 1,
+        }),
+        observer: { x: 1, y: 0, z: 0 },
+        expected: {
+            code: "undefined-direction",
+            distanceLightYears: 0,
+            thresholdLightYears: 1e-12,
+        },
+    },
+    {
+        name: "subtraction overflow",
+        star: makeStar({
+            id: "vector-overflow",
+            rightAscension: 0,
+            declination: 0,
+            distance: Number.MAX_VALUE,
+        }),
+        observer: { x: -Number.MAX_VALUE, y: 0, z: 0 },
+        expected: {
+            code: "non-finite-cartesian-input",
+            role: "vector",
+            component: "x",
+        },
+    },
+    {
+        name: "derived norm overflow",
+        star: makeStar({
+            id: "norm-overflow",
+            rightAscension: 0,
+            declination: 0,
+            distance: 10,
+        }),
+        observer: {
+            x: Number.MAX_VALUE,
+            y: Number.MAX_VALUE,
+            z: Number.MAX_VALUE,
+        },
+        expected: { code: "cartesian-distance-overflow" },
+    },
+])("preserves $name failures", ({ star, observer, expected }) => {
+    const result = transformCatalogToObserver(
+        [makeConstellation({ id: "errors", stars: [star] })],
+        observer,
+        { includeReferenceCatalog: true },
+    );
+
+    expect(result.transformedCatalog.stars).toEqual([]);
+    expect(result.referenceCatalog?.stars).toEqual([]);
+    expect(result.omittedStars[0].reason).toEqual({
+        code: "coordinate-transform-failed",
+        error: expected,
+    });
+});
+
+it("returns one ordered diagnostic with every duplicate membership", () => {
+    const invalid = makeStar({ id: "shared-invalid", distance: 0 });
+    const source = [
+        makeConstellation({ id: "first", stars: [invalid] }),
+        makeConstellation({
+            id: "second",
+            stars: [makeStar({ id: "other" }), invalid],
+        }),
+    ];
+
+    const result = transformCatalogToObserver(source, SOL_OBSERVER);
+
+    expect(result.omittedStars).toHaveLength(1);
+    expect(result.omittedStars[0].memberships).toEqual([
+        { constellationId: "first", originalStarIndex: 0 },
+        { constellationId: "second", originalStarIndex: 1 },
+    ]);
+});
+```
+
+- [ ] **Step 3: Run the tests to verify the Task 2 builder fails**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "coordinate omissions and line reconstruction"
 ```
 
-Expected: FAIL because the Task 2 implementation leaves stale line indices after omission and does not enforce integer/in-range endpoints.
+Expected: FAIL because stale/malformed line indices are not handled safely.
 
-- [ ] **Step 3: Replace the initial builder with guarded role reconstruction**
+- [ ] **Step 4: Replace the initial builder with guarded role reconstruction**
 
-Replace `buildCatalogWithoutOmissions()` with:
+Replace `buildCatalogForCompleteRole()` with:
 
 ```ts
 function isUsableSourceLine(
@@ -881,11 +928,9 @@ function buildPreparedCatalog(
 }
 ```
 
-Update both calls in `transformCatalogToObserver()` to use `buildPreparedCatalog()`.
+Update transformed/reference calls to use `buildPreparedCatalog()`.
 
-- [ ] **Step 4: Run the focused and prior tests**
-
-Run:
+- [ ] **Step 5: Run current tests**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "coordinate omissions and line reconstruction|transformCatalogToObserver happy path"
@@ -893,7 +938,7 @@ bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "coor
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/lib/constellation/observerCatalog.ts \
@@ -920,18 +965,15 @@ git commit -m "feat(constellation): repair observer catalog topology"
   - Role-specific topology around exclusions.
   - Alpha Centauri production-mismatch regression.
 
-- [ ] **Step 1: Add failing Alpha Centauri and exclusion tests**
+- [ ] **Step 1: Extend the existing fixture import**
+
+Add `CENTAURUS_FIXTURE` to the existing fixture import. The fixture already contains `alpha_cen` and `beta_cen`; do not add another import declaration.
+
+- [ ] **Step 2: Add failing Alpha Centauri and exclusion tests**
 
 Append:
 
 ```ts
-import {
-    ALPHA_CENTAURI_CATALOG_STAR,
-    ALPHA_CENTAURI_OBSERVER,
-    BETA_CENTAURI_CATALOG_STAR,
-    CENTAURUS_FIXTURE,
-} from "./observerCatalog.fixtures";
-
 describe("observer-source exclusions", () => {
     it("pins the production Alpha Centauri distance mismatch", () => {
         const result = transformCatalogToObserver(
@@ -999,6 +1041,36 @@ describe("observer-source exclusions", () => {
         ]);
     });
 
+    it("supports multiple exclusions and ignores option order", () => {
+        const first = transformCatalogToObserver(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                includeReferenceCatalog: true,
+                observerSourceStarIds: ["beta_cen", "alpha_cen"],
+            },
+        );
+        const second = transformCatalogToObserver(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                includeReferenceCatalog: true,
+                observerSourceStarIds: ["alpha_cen", "beta_cen"],
+            },
+        );
+
+        expect(first).toEqual(second);
+        expect(first.transformedCatalog.stars).toEqual([]);
+        expect(first.omittedStars.map((item) => item.starId)).toEqual([
+            "alpha_cen",
+            "beta_cen",
+        ]);
+        expect(first.referenceCatalog?.stars.map((star) => star.id)).toEqual([
+            "alpha_cen",
+            "beta_cen",
+        ]);
+    });
+
     it("omits an invalid excluded source from both roles", () => {
         const invalid = makeStar({ id: "invalid-local", distance: 0 });
         const source = makeConstellation({
@@ -1028,19 +1100,17 @@ describe("observer-source exclusions", () => {
 });
 ```
 
-- [ ] **Step 2: Run the exclusion tests to verify they fail**
-
-Run:
+- [ ] **Step 3: Run the tests to verify exclusion behavior fails**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "observer-source exclusions"
 ```
 
-Expected: the mismatch test passes under the existing transform, while exclusion behavior fails because `observerSourceStarIds` is not yet applied.
+Expected: mismatch test passes; exclusion tests fail because options are not applied.
 
-- [ ] **Step 3: Apply exclusions in canonical traversal**
+- [ ] **Step 4: Apply exclusions in canonical traversal**
 
-Replace the canonical loop inside `transformCatalogToObserver()` with this structure:
+Replace the canonical loop with:
 
 ```ts
 const excludedIds = new Set(options.observerSourceStarIds ?? []);
@@ -1110,9 +1180,7 @@ for (const id of canonical.order) {
 
 Do not transform an explicitly excluded star against `observerPosition`; its one HPA-431 call is the Sol-origin validation path.
 
-- [ ] **Step 4: Run all observer-source tests and topology regression tests**
-
-Run:
+- [ ] **Step 5: Run exclusion and topology tests**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "observer-source exclusions|coordinate omissions and line reconstruction"
@@ -1120,7 +1188,7 @@ bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "obse
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/lib/constellation/observerCatalog.ts \
@@ -1147,18 +1215,15 @@ git commit -m "feat(constellation): support observer source exclusions"
   - Fail-fast `synthetic-sol-unavailable` behavior.
   - Primary top-level synthetic Sol appended exactly once.
 
-- [ ] **Step 1: Add failing synthetic-Sol tests**
+- [ ] **Step 1: Extend the existing observer-catalog import**
+
+Add `createSyntheticSol` and `prepareAlternateObserverCatalog` to the existing import. `isSyntheticSolStar` and `SYNTHETIC_SOL_STAR_ID` are already imported from Task 1; do not import them again.
+
+- [ ] **Step 2: Add failing synthetic-Sol and fatal-preflight tests**
 
 Append:
 
 ```ts
-import {
-    createSyntheticSol,
-    isSyntheticSolStar,
-    prepareAlternateObserverCatalog,
-    SYNTHETIC_SOL_STAR_ID,
-} from "@/lib/constellation/observerCatalog";
-
 describe("synthetic Sol and alternate composition", () => {
     it("creates Sol through the Cartesian-origin primitive path", () => {
         const result = createSyntheticSol(ALPHA_CENTAURI_OBSERVER);
@@ -1180,6 +1245,38 @@ describe("synthetic Sol and alternate composition", () => {
                 distanceLightYears: 0,
                 thresholdLightYears: 1e-12,
             },
+        });
+    });
+
+    it.each([
+        {
+            name: "non-finite observer",
+            observer: { x: Number.NaN, y: 0, z: 0 },
+            cause: {
+                code: "non-finite-cartesian-input",
+                role: "observer",
+                component: "x",
+            },
+        },
+        {
+            name: "observer norm overflow",
+            observer: {
+                x: Number.MAX_VALUE,
+                y: Number.MAX_VALUE,
+                z: Number.MAX_VALUE,
+            },
+            cause: { code: "cartesian-distance-overflow" },
+        },
+    ])("fails before catalog preparation for $name", ({ observer, cause }) => {
+        expect(
+            prepareAlternateObserverCatalog(
+                [CENTAURUS_FIXTURE],
+                observer,
+                { includeReferenceCatalog: true },
+            ),
+        ).toEqual({
+            ok: false,
+            error: { code: "synthetic-sol-unavailable", cause },
         });
     });
 
@@ -1210,7 +1307,7 @@ describe("synthetic Sol and alternate composition", () => {
         ]);
     });
 
-    it("returns no partial catalog when synthetic Sol is unavailable", () => {
+    it("returns no partial catalog for a Sol-origin observer", () => {
         expect(
             prepareAlternateObserverCatalog([CENTAURUS_FIXTURE], SOL_OBSERVER, {
                 includeReferenceCatalog: true,
@@ -1250,30 +1347,25 @@ describe("synthetic Sol and alternate composition", () => {
 });
 ```
 
-- [ ] **Step 2: Run the synthetic-Sol tests to verify they fail**
-
-Run:
+- [ ] **Step 3: Run the tests to verify they fail**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "synthetic Sol and alternate composition"
 ```
 
-Expected: FAIL because Task 1 still contains only declarations for these operations.
+Expected: FAIL because the public functions are not implemented.
 
-- [ ] **Step 3: Implement `createSyntheticSol()`**
+- [ ] **Step 4: Extend astronomy imports and implement `createSyntheticSol()`**
 
-Add imports:
+Merge these names into the existing astronomy import:
 
 ```ts
-import {
-    cartesianToEquatorial,
-    subtractObserverPosition,
-    transformToObserver,
-    type EquatorialPosition,
-} from "@/lib/astronomy/observerTransform";
+cartesianToEquatorial,
+subtractObserverPosition,
+type TransformResult,
 ```
 
-Replace the declaration with:
+Add:
 
 ```ts
 export function createSyntheticSol(
@@ -1302,9 +1394,7 @@ export function createSyntheticSol(
 }
 ```
 
-- [ ] **Step 4: Implement fail-fast alternate composition**
-
-Replace the declaration with:
+- [ ] **Step 5: Implement fail-fast alternate composition**
 
 ```ts
 export function prepareAlternateObserverCatalog(
@@ -1346,9 +1436,7 @@ export function prepareAlternateObserverCatalog(
 }
 ```
 
-- [ ] **Step 5: Run the focused tests**
-
-Run:
+- [ ] **Step 6: Run focused tests**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "synthetic Sol and alternate composition"
@@ -1356,7 +1444,7 @@ bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "synt
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/lib/constellation/observerCatalog.ts \
@@ -1370,7 +1458,6 @@ git commit -m "feat(constellation): add synthetic Sol catalog composition"
 
 **Files:**
 - Modify: `src/lib/constellation/__tests__/observerCatalog.test.ts`
-- Modify: `src/lib/constellation/__tests__/observerCatalog.fixtures.ts`
 - Modify: `src/lib/constellation/observerCatalog.ts` only for defects exposed by these tests.
 
 **Interfaces:**
@@ -1384,13 +1471,17 @@ git commit -m "feat(constellation): add synthetic Sol catalog composition"
   - JSON round-trip marker discrimination.
   - Finite serializable failure output.
 
-- [ ] **Step 1: Add a local deep-freeze helper and invariant tests**
+- [ ] **Step 1: Add production import and deep-freeze helper without duplicate imports**
 
-Append:
+Add this new import once at the top of the test file:
 
 ```ts
 import { constellations as productionConstellations } from "@/data/constellations";
+```
 
+Add:
+
+```ts
 function deepFreeze<T>(value: T): T {
     if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
         return value;
@@ -1400,7 +1491,13 @@ function deepFreeze<T>(value: T): T {
     }
     return Object.freeze(value);
 }
+```
 
+- [ ] **Step 2: Add final invariant tests**
+
+Append:
+
+```ts
 describe("observer catalog invariants", () => {
     it("reserves the synthetic Sol ID in production constellation members", () => {
         const sourceIds = productionConstellations.flatMap((constellation) =>
@@ -1563,29 +1660,15 @@ describe("observer catalog invariants", () => {
 });
 ```
 
-- [ ] **Step 2: Run the invariant tests**
-
-Run:
+- [ ] **Step 3: Run invariant tests**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts -t "observer catalog invariants"
 ```
 
-Expected: PASS unless an implementation detail violates immutability or object independence. Fix only the exposed HPA-433 defect; do not broaden scope.
+Expected: PASS unless a concrete HPA-433 invariant is violated. Fix only the exposed defect.
 
-- [ ] **Step 3: Run the entire observer-catalog test file**
-
-Run:
-
-```bash
-bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts
-```
-
-Expected: all tests in the file pass.
-
-- [ ] **Step 4: Format the new files and rerun the focused suite**
-
-Run:
+- [ ] **Step 4: Run and format the entire focused suite**
 
 ```bash
 bunx prettier --write \
@@ -1595,7 +1678,7 @@ bunx prettier --write \
 bunx vitest run src/lib/constellation/__tests__/observerCatalog.test.ts
 ```
 
-Expected: formatter completes and all observer-catalog tests pass.
+Expected: formatter completes; all observer-catalog tests pass.
 
 - [ ] **Step 5: Commit**
 
@@ -1688,16 +1771,24 @@ Sol identity
 nearby observer transform
 Alpha Centauri 0.1235 ly mismatch
 explicit observer-source exclusion
+multiple, duplicate, unknown, and reordered exclusions
 reference retention of valid exclusions
-coordinate-invalid omission from both roles
+invalid excluded source omission from both roles
+negative distance
+out-of-range declination
+exact observer collision
+subtraction overflow
+Cartesian norm overflow
+non-finite equatorial input
 canonical first-record-wins ordering
+all duplicate memberships in one diagnostic
 ordered diagnostics
 role-specific line remapping
 malformed-line guard
 fully depleted constellations
 empty input
 synthetic Sol primitive path
-fatal synthetic-Sol preflight
+fatal origin, non-finite, and overflow preflight
 reserved source ID sol
 full unfiltered source behavior
 immutability
