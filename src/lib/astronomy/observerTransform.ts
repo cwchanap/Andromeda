@@ -217,3 +217,25 @@ export function cartesianToEquatorial(
         distanceLightYears,
     });
 }
+
+export function transformToObserver(
+    target: EquatorialPosition,
+    observer: CartesianLightYears,
+): TransformResult<ObserverRelativePosition> {
+    const targetCartesian = equatorialToCartesian(target);
+    if (!targetCartesian.ok) return targetCartesian;
+
+    const relativeCartesian = subtractObserverPosition(
+        targetCartesian.value,
+        observer,
+    );
+    if (!relativeCartesian.ok) return relativeCartesian;
+
+    const equatorial = cartesianToEquatorial(relativeCartesian.value);
+    if (!equatorial.ok) return equatorial;
+
+    return success({
+        relativeCartesian: relativeCartesian.value,
+        equatorial: equatorial.value,
+    });
+}

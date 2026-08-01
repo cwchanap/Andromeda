@@ -6,6 +6,7 @@ import {
     equatorialToCartesian,
     radialToCartesian,
     subtractObserverPosition,
+    transformToObserver,
     type CartesianLightYears,
     type EquatorialPosition,
 } from "../observerTransform";
@@ -13,6 +14,9 @@ import {
     ALPHA_CENTAURI_OBSERVER,
     ALPHA_CENTAURI_SOURCE,
     AXIS_FIXTURES,
+    EXPECTED_SOL_FROM_ALPHA_CENTAURI,
+    IDENTITY_FIXTURES,
+    SOL_OBSERVER,
 } from "./observerTransform.fixtures";
 
 const CARTESIAN_TOLERANCE = 1e-10;
@@ -503,5 +507,146 @@ describe("cartesianToEquatorial", () => {
         const vector = Object.freeze({ x: 1, y: 2, z: 3 });
         expect(() => cartesianToEquatorial(vector)).not.toThrow();
         expect(vector).toEqual({ x: 1, y: 2, z: 3 });
+    });
+});
+
+describe("transformToObserver", () => {
+    it.each(IDENTITY_FIXTURES)(
+        "round-trips a Sol-observer fixture",
+        (source) => {
+            const result = transformToObserver(source, SOL_OBSERVER);
+
+            expect(result.ok).toBe(true);
+            if (!result.ok) return;
+            expect(
+                circularRightAscensionDelta(
+                    result.value.equatorial.rightAscensionHours,
+                    source.rightAscensionHours,
+                ),
+            ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
+            expect(
+                Math.abs(
+                    result.value.equatorial.declinationDegrees -
+                        source.declinationDegrees,
+                ),
+            ).toBeLessThanOrEqual(DECLINATION_TOLERANCE);
+            expect(
+                Math.abs(
+                    result.value.equatorial.distanceLightYears -
+                        source.distanceLightYears,
+                ),
+            ).toBeLessThanOrEqual(DISTANCE_TOLERANCE);
+        },
+    );
+
+    it("returns both relative Cartesian and equatorial output", () => {
+        expect(
+            transformToObserver(
+                {
+                    rightAscensionHours: 0,
+                    declinationDegrees: 0,
+                    distanceLightYears: 10,
+                },
+                { x: 1, y: 0, z: 0 },
+            ),
+        ).toEqual({
+            ok: true,
+            value: {
+                relativeCartesian: { x: 9, y: 0, z: 0 },
+                equatorial: {
+                    rightAscensionHours: 0,
+                    declinationDegrees: 0,
+                    distanceLightYears: 9,
+                },
+            },
+        });
+    });
+
+    it("rejects zero-distance Sol as an equatorial target", () => {
+        expect(
+            transformToObserver(
+                {
+                    rightAscensionHours: 0,
+                    declinationDegrees: 0,
+                    distanceLightYears: 0,
+                },
+                ALPHA_CENTAURI_OBSERVER,
+            ),
+        ).toEqual({
+            ok: false,
+            error: {
+                code: "invalid-distance",
+                distanceLightYears: 0,
+            },
+        });
+    });
+
+    it("constructs synthetic Sol through Cartesian primitives", () => {
+        const relativeSol = subtractObserverPosition(
+            { x: 0, y: 0, z: 0 },
+            ALPHA_CENTAURI_OBSERVER,
+        );
+
+        expect(relativeSol.ok).toBe(true);
+        if (!relativeSol.ok) return;
+        expectCartesianClose(relativeSol.value, {
+            x: -ALPHA_CENTAURI_OBSERVER.x,
+            y: -ALPHA_CENTAURI_OBSERVER.y,
+            z: -ALPHA_CENTAURI_OBSERVER.z,
+        });
+
+        const sol = cartesianToEquatorial(relativeSol.value);
+        expect(sol.ok).toBe(true);
+        if (!sol.ok) return;
+        expect(
+            circularRightAscensionDelta(
+                sol.value.rightAscensionHours,
+                EXPECTED_SOL_FROM_ALPHA_CENTAURI.rightAscensionHours,
+            ),
+        ).toBeLessThanOrEqual(RIGHT_ASCENSION_TOLERANCE);
+        expect(sol.value.declinationDegrees).toBeCloseTo(
+            EXPECTED_SOL_FROM_ALPHA_CENTAURI.declinationDegrees,
+            10,
+        );
+        expect(sol.value.distanceLightYears).toBeCloseTo(
+            EXPECTED_SOL_FROM_ALPHA_CENTAURI.distanceLightYears,
+            10,
+        );
+    });
+
+    it("returns the first stage failure without partial output", () => {
+        expect(
+            transformToObserver(
+                {
+                    rightAscensionHours: Number.NaN,
+                    declinationDegrees: 0,
+                    distanceLightYears: 10,
+                },
+                { x: Number.NaN, y: 0, z: 0 },
+            ),
+        ).toEqual({
+            ok: false,
+            error: {
+                code: "non-finite-equatorial-input",
+                component: "rightAscensionHours",
+            },
+        });
+    });
+
+    it("does not mutate frozen target or observer", () => {
+        const target = Object.freeze({
+            rightAscensionHours: 6,
+            declinationDegrees: 30,
+            distanceLightYears: 20,
+        });
+        const observer = Object.freeze({ x: 1, y: 2, z: 3 });
+
+        expect(() => transformToObserver(target, observer)).not.toThrow();
+        expect(target).toEqual({
+            rightAscensionHours: 6,
+            declinationDegrees: 30,
+            distanceLightYears: 20,
+        });
+        expect(observer).toEqual({ x: 1, y: 2, z: 3 });
     });
 });
