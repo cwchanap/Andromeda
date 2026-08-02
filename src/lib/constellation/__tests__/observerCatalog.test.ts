@@ -3,7 +3,9 @@ import {
     SYNTHETIC_SOL_COLOR,
     SYNTHETIC_SOL_RENDER_MAGNITUDE,
     SYNTHETIC_SOL_STAR_ID,
+    createSyntheticSol,
     isSyntheticSolStar,
+    prepareAlternateObserverCatalog,
     transformCatalogToObserver,
     type PreparedSourceStar,
     type SyntheticSolStar,
@@ -416,5 +418,123 @@ describe("observer-source exclusions", () => {
             },
             referenceDisposition: "omitted",
         });
+    });
+});
+
+describe("synthetic Sol and alternate composition", () => {
+    it("creates Sol through the Cartesian-origin primitive path", () => {
+        const result = createSyntheticSol(ALPHA_CENTAURI_OBSERVER);
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(result.value.id).toBe(SYNTHETIC_SOL_STAR_ID);
+        expect(result.value.rightAscension).toBeCloseTo(2.66, 10);
+        expect(result.value.declination).toBeCloseTo(60.84, 10);
+        expect(result.value.distance).toBeCloseTo(4.2465, 10);
+        expect(isSyntheticSolStar(result.value)).toBe(true);
+    });
+
+    it("rejects synthetic Sol for a Sol-origin observer", () => {
+        expect(createSyntheticSol(SOL_OBSERVER)).toEqual({
+            ok: false,
+            error: {
+                code: "undefined-direction",
+                distanceLightYears: 0,
+                thresholdLightYears: 1e-12,
+            },
+        });
+    });
+
+    it.each([
+        {
+            name: "non-finite observer",
+            observer: { x: Number.NaN, y: 0, z: 0 },
+            cause: {
+                code: "non-finite-cartesian-input",
+                role: "observer",
+                component: "x",
+            },
+        },
+        {
+            name: "observer norm overflow",
+            observer: {
+                x: Number.MAX_VALUE,
+                y: Number.MAX_VALUE,
+                z: Number.MAX_VALUE,
+            },
+            cause: { code: "cartesian-distance-overflow" },
+        },
+    ])("fails before catalog preparation for $name", ({ observer, cause }) => {
+        expect(
+            prepareAlternateObserverCatalog([CENTAURUS_FIXTURE], observer, {
+                includeReferenceCatalog: true,
+            }),
+        ).toEqual({
+            ok: false,
+            error: { code: "synthetic-sol-unavailable", cause },
+        });
+    });
+
+    it("appends synthetic Sol once after canonical primary stars", () => {
+        const result = prepareAlternateObserverCatalog(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                includeReferenceCatalog: true,
+                observerSourceStarIds: ["alpha_cen"],
+            },
+        );
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(
+            result.value.primaryCatalog.stars.map((star) => star.id),
+        ).toEqual(["beta_cen", "sol"]);
+        expect(
+            result.value.primaryCatalog.constellations.some((constellation) =>
+                constellation.stars.some((star) => star.id === "sol"),
+            ),
+        ).toBe(false);
+        expect(
+            result.value.referenceCatalog?.stars.map((star) => star.id),
+        ).toEqual(["alpha_cen", "beta_cen"]);
+    });
+
+    it("returns no partial catalog for a Sol-origin observer", () => {
+        expect(
+            prepareAlternateObserverCatalog([CENTAURUS_FIXTURE], SOL_OBSERVER, {
+                includeReferenceCatalog: true,
+            }),
+        ).toEqual({
+            ok: false,
+            error: {
+                code: "synthetic-sol-unavailable",
+                cause: {
+                    code: "undefined-direction",
+                    distanceLightYears: 0,
+                    thresholdLightYears: 1e-12,
+                },
+            },
+        });
+    });
+
+    it("returns only synthetic Sol for empty valid input", () => {
+        const result = prepareAlternateObserverCatalog(
+            [],
+            ALPHA_CENTAURI_OBSERVER,
+            { includeReferenceCatalog: true },
+        );
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(
+            result.value.primaryCatalog.stars.map((star) => star.id),
+        ).toEqual(["sol"]);
+        expect(result.value.primaryCatalog.constellations).toEqual([]);
+        expect(result.value.referenceCatalog).toEqual({
+            stars: [],
+            constellations: [],
+        });
+        expect(result.value.omittedStars).toEqual([]);
     });
 });
