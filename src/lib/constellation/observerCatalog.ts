@@ -1,9 +1,12 @@
 import type { Constellation, Star } from "@/types/constellation";
 import {
+    cartesianToEquatorial,
+    subtractObserverPosition,
     transformToObserver,
     type CartesianLightYears,
     type CoordinateTransformError,
     type EquatorialPosition,
+    type TransformResult,
 } from "@/lib/astronomy/observerTransform";
 
 export const SYNTHETIC_SOL_STAR_ID = "sol" as const;
@@ -312,5 +315,68 @@ export function transformCatalogToObserver(
               )
             : undefined,
         omittedStars,
+    };
+}
+
+export function createSyntheticSol(
+    observerPosition: CartesianLightYears,
+): TransformResult<SyntheticSolStar> {
+    const relative = subtractObserverPosition(SOL_ORIGIN, observerPosition);
+    if (!relative.ok) return relative;
+
+    const equatorial = cartesianToEquatorial(relative.value);
+    if (!equatorial.ok) return equatorial;
+
+    return {
+        ok: true,
+        value: {
+            id: SYNTHETIC_SOL_STAR_ID,
+            name: "Sol",
+            rightAscension: equatorial.value.rightAscensionHours,
+            declination: equatorial.value.declinationDegrees,
+            magnitude: SYNTHETIC_SOL_RENDER_MAGNITUDE,
+            distance: equatorial.value.distanceLightYears,
+            spectralClass: "G2V",
+            color: SYNTHETIC_SOL_COLOR,
+            marker: { kind: "synthetic-sol" },
+        },
+    };
+}
+
+export function prepareAlternateObserverCatalog(
+    sourceConstellations: readonly Constellation[],
+    observerPosition: CartesianLightYears,
+    options: ObserverCatalogOptions = {},
+): AlternateObserverCatalogPreparationResult {
+    const syntheticSol = createSyntheticSol(observerPosition);
+    if (!syntheticSol.ok) {
+        return {
+            ok: false,
+            error: {
+                code: "synthetic-sol-unavailable",
+                cause: syntheticSol.error,
+            },
+        };
+    }
+
+    const transformed = transformCatalogToObserver(
+        sourceConstellations,
+        observerPosition,
+        options,
+    );
+
+    return {
+        ok: true,
+        value: {
+            primaryCatalog: {
+                stars: [
+                    ...transformed.transformedCatalog.stars,
+                    syntheticSol.value,
+                ],
+                constellations: transformed.transformedCatalog.constellations,
+            },
+            referenceCatalog: transformed.referenceCatalog,
+            omittedStars: transformed.omittedStars,
+        },
     };
 }
