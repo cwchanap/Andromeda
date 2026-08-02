@@ -1,5 +1,10 @@
 import type { Constellation, Star } from "@/types/constellation";
-import type { CoordinateTransformError } from "@/lib/astronomy/observerTransform";
+import {
+    transformToObserver,
+    type CartesianLightYears,
+    type CoordinateTransformError,
+    type EquatorialPosition,
+} from "@/lib/astronomy/observerTransform";
 
 export const SYNTHETIC_SOL_STAR_ID = "sol" as const;
 export const SYNTHETIC_SOL_RENDER_MAGNITUDE = 0;
@@ -88,4 +93,147 @@ export function isSyntheticSolStar(
     star: PreparedCatalogStar,
 ): star is SyntheticSolStar {
     return star.marker?.kind === "synthetic-sol";
+}
+
+interface CanonicalStarEntry {
+    readonly source: Star;
+    readonly memberships: OmittedStarMembership[];
+}
+
+interface CanonicalIndex {
+    readonly order: readonly string[];
+    readonly byId: ReadonlyMap<string, CanonicalStarEntry>;
+}
+
+function collectCanonicalStars(
+    sourceConstellations: readonly Constellation[],
+): CanonicalIndex {
+    const order: string[] = [];
+    const byId = new Map<string, CanonicalStarEntry>();
+
+    for (const constellation of sourceConstellations) {
+        constellation.stars.forEach((source, originalStarIndex) => {
+            const membership = {
+                constellationId: constellation.id,
+                originalStarIndex,
+            };
+            const existing = byId.get(source.id);
+            if (existing) {
+                existing.memberships.push(membership);
+                return;
+            }
+            order.push(source.id);
+            byId.set(source.id, { source, memberships: [membership] });
+        });
+    }
+
+    return { order, byId };
+}
+
+function toEquatorialPosition(source: Star): EquatorialPosition {
+    return {
+        rightAscensionHours: source.rightAscension,
+        declinationDegrees: source.declination,
+        distanceLightYears: source.distance,
+    };
+}
+
+function cloneSourceStar(source: Star): PreparedSourceStar {
+    return { ...source };
+}
+
+function cloneTransformedStar(
+    source: Star,
+    equatorial: EquatorialPosition,
+): PreparedSourceStar {
+    return {
+        ...source,
+        rightAscension: equatorial.rightAscensionHours,
+        declination: equatorial.declinationDegrees,
+        distance: equatorial.distanceLightYears,
+    };
+}
+
+function cloneVisibility(
+    visibility: Constellation["visibility"],
+): PreparedConstellation["visibility"] {
+    return {
+        ...visibility,
+        bestMonths: [...visibility.bestMonths],
+    };
+}
+
+function buildCatalogForCompleteRole(
+    sourceConstellations: readonly Constellation[],
+    canonicalOrder: readonly string[],
+    preparedById: ReadonlyMap<string, PreparedSourceStar>,
+): PreparedConstellationCatalog {
+    return {
+        stars: canonicalOrder.flatMap((id) => {
+            const star = preparedById.get(id);
+            return star ? [star] : [];
+        }),
+        constellations: sourceConstellations.map((source) => ({
+            ...source,
+            stars: source.stars.map((star) => preparedById.get(star.id)!),
+            lines: source.lines.map(([start, end]) => [start, end] as const),
+            visibility: cloneVisibility(source.visibility),
+        })),
+    };
+}
+
+export function transformCatalogToObserver(
+    sourceConstellations: readonly Constellation[],
+    observerPosition: CartesianLightYears,
+    options: ObserverCatalogOptions = {},
+): CatalogTransformOutput {
+    const canonical = collectCanonicalStars(sourceConstellations);
+    const transformedById = new Map<string, PreparedSourceStar>();
+    const referenceById = new Map<string, PreparedSourceStar>();
+    const omittedStars: OmittedStarDiagnostic[] = [];
+
+    for (const id of canonical.order) {
+        const entry = canonical.byId.get(id)!;
+        const result = transformToObserver(
+            toEquatorialPosition(entry.source),
+            observerPosition,
+        );
+        if (!result.ok) {
+            omittedStars.push({
+                starId: id,
+                starName: entry.source.name,
+                memberships: [...entry.memberships],
+                reason: {
+                    code: "coordinate-transform-failed",
+                    error: result.error,
+                },
+                referenceDisposition: "omitted",
+            });
+            continue;
+        }
+
+        transformedById.set(
+            id,
+            cloneTransformedStar(entry.source, result.value.equatorial),
+        );
+        if (options.includeReferenceCatalog) {
+            referenceById.set(id, cloneSourceStar(entry.source));
+        }
+    }
+
+    return {
+        transformedCatalog: buildCatalogForCompleteRole(
+            sourceConstellations,
+            canonical.order,
+            transformedById,
+        ),
+        referenceCatalog: options.includeReferenceCatalog
+            ? buildCatalogForCompleteRole(
+                  sourceConstellations,
+                  canonical.order,
+                  referenceById,
+              )
+            : undefined,
+        omittedStars,
+    };
 }
