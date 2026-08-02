@@ -138,6 +138,8 @@ function toEquatorialPosition(source: Star): EquatorialPosition {
     };
 }
 
+const SOL_ORIGIN: CartesianLightYears = { x: 0, y: 0, z: 0 };
+
 function cloneSourceStar(source: Star): PreparedSourceStar {
     return { ...source };
 }
@@ -232,20 +234,55 @@ export function transformCatalogToObserver(
     const referenceById = new Map<string, PreparedSourceStar>();
     const omittedStars: OmittedStarDiagnostic[] = [];
 
+    const excludedIds = new Set(options.observerSourceStarIds ?? []);
+
     for (const id of canonical.order) {
         const entry = canonical.byId.get(id)!;
-        const result = transformToObserver(
+
+        if (excludedIds.has(id)) {
+            const identity = transformToObserver(
+                toEquatorialPosition(entry.source),
+                SOL_ORIGIN,
+            );
+            if (!identity.ok) {
+                omittedStars.push({
+                    starId: id,
+                    starName: entry.source.name,
+                    memberships: [...entry.memberships],
+                    reason: {
+                        code: "coordinate-transform-failed",
+                        error: identity.error,
+                    },
+                    referenceDisposition: "omitted",
+                });
+                continue;
+            }
+
+            if (options.includeReferenceCatalog) {
+                referenceById.set(id, cloneSourceStar(entry.source));
+            }
+            omittedStars.push({
+                starId: id,
+                starName: entry.source.name,
+                memberships: [...entry.memberships],
+                reason: { code: "observer-source-star-excluded" },
+                referenceDisposition: "retained",
+            });
+            continue;
+        }
+
+        const transformed = transformToObserver(
             toEquatorialPosition(entry.source),
             observerPosition,
         );
-        if (!result.ok) {
+        if (!transformed.ok) {
             omittedStars.push({
                 starId: id,
                 starName: entry.source.name,
                 memberships: [...entry.memberships],
                 reason: {
                     code: "coordinate-transform-failed",
-                    error: result.error,
+                    error: transformed.error,
                 },
                 referenceDisposition: "omitted",
             });
@@ -254,7 +291,7 @@ export function transformCatalogToObserver(
 
         transformedById.set(
             id,
-            cloneTransformedStar(entry.source, result.value.equatorial),
+            cloneTransformedStar(entry.source, transformed.value.equatorial),
         );
         if (options.includeReferenceCatalog) {
             referenceById.set(id, cloneSourceStar(entry.source));
