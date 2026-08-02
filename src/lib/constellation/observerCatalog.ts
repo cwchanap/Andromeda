@@ -163,7 +163,23 @@ function cloneVisibility(
     };
 }
 
-function buildCatalogForCompleteRole(
+function isUsableSourceLine(
+    line: readonly number[],
+    sourceStarCount: number,
+): line is readonly [number, number] {
+    if (line.length !== 2) return false;
+    const [start, end] = line;
+    return (
+        Number.isInteger(start) &&
+        Number.isInteger(end) &&
+        start >= 0 &&
+        end >= 0 &&
+        start < sourceStarCount &&
+        end < sourceStarCount
+    );
+}
+
+function buildPreparedCatalog(
     sourceConstellations: readonly Constellation[],
     canonicalOrder: readonly string[],
     preparedById: ReadonlyMap<string, PreparedSourceStar>,
@@ -173,12 +189,36 @@ function buildCatalogForCompleteRole(
             const star = preparedById.get(id);
             return star ? [star] : [];
         }),
-        constellations: sourceConstellations.map((source) => ({
-            ...source,
-            stars: source.stars.map((star) => preparedById.get(star.id)!),
-            lines: source.lines.map(([start, end]) => [start, end] as const),
-            visibility: cloneVisibility(source.visibility),
-        })),
+        constellations: sourceConstellations.map((source) => {
+            const stars: PreparedSourceStar[] = [];
+            const oldToNew = new Map<number, number>();
+
+            source.stars.forEach((sourceStar, oldIndex) => {
+                const prepared = preparedById.get(sourceStar.id);
+                if (!prepared) return;
+                oldToNew.set(oldIndex, stars.length);
+                stars.push(prepared);
+            });
+
+            const lines: (readonly [number, number])[] = [];
+            for (const sourceLine of source.lines) {
+                if (!isUsableSourceLine(sourceLine, source.stars.length)) {
+                    continue;
+                }
+                const [oldStart, oldEnd] = sourceLine;
+                const newStart = oldToNew.get(oldStart);
+                const newEnd = oldToNew.get(oldEnd);
+                if (newStart === undefined || newEnd === undefined) continue;
+                lines.push([newStart, newEnd]);
+            }
+
+            return {
+                ...source,
+                stars,
+                lines,
+                visibility: cloneVisibility(source.visibility),
+            };
+        }),
     };
 }
 
@@ -222,13 +262,13 @@ export function transformCatalogToObserver(
     }
 
     return {
-        transformedCatalog: buildCatalogForCompleteRole(
+        transformedCatalog: buildPreparedCatalog(
             sourceConstellations,
             canonical.order,
             transformedById,
         ),
         referenceCatalog: options.includeReferenceCatalog
-            ? buildCatalogForCompleteRole(
+            ? buildPreparedCatalog(
                   sourceConstellations,
                   canonical.order,
                   referenceById,
