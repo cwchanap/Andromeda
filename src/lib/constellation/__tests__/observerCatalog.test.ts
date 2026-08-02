@@ -10,6 +10,7 @@ import {
 } from "@/lib/constellation/observerCatalog";
 import {
     ALPHA_CENTAURI_OBSERVER,
+    CENTAURUS_FIXTURE,
     SOL_OBSERVER,
     makeConstellation,
     makeStar,
@@ -291,5 +292,129 @@ describe("coordinate omissions and line reconstruction", () => {
             { constellationId: "first", originalStarIndex: 0 },
             { constellationId: "second", originalStarIndex: 1 },
         ]);
+    });
+});
+
+describe("observer-source exclusions", () => {
+    it("pins the production Alpha Centauri distance mismatch", () => {
+        const result = transformCatalogToObserver(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+        );
+        const alpha = result.transformedCatalog.stars.find(
+            (star) => star.id === "alpha_cen",
+        );
+
+        expect(alpha?.distance).toBeCloseTo(0.1235008239, 9);
+    });
+
+    it("omits a valid observer source from primary and retains it in reference", () => {
+        const result = transformCatalogToObserver(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                includeReferenceCatalog: true,
+                observerSourceStarIds: ["alpha_cen"],
+            },
+        );
+
+        expect(result.transformedCatalog.stars.map((star) => star.id)).toEqual([
+            "beta_cen",
+        ]);
+        expect(
+            result.transformedCatalog.constellations[0].stars.map(
+                (star) => star.id,
+            ),
+        ).toEqual(["beta_cen"]);
+        expect(result.transformedCatalog.constellations[0].lines).toEqual([]);
+        expect(result.referenceCatalog?.stars.map((star) => star.id)).toEqual([
+            "alpha_cen",
+            "beta_cen",
+        ]);
+        expect(result.referenceCatalog?.constellations[0].lines).toEqual([
+            [0, 1],
+        ]);
+        expect(result.omittedStars).toEqual([
+            {
+                starId: "alpha_cen",
+                starName: "Alpha Centauri",
+                memberships: [
+                    { constellationId: "centaurus", originalStarIndex: 0 },
+                ],
+                reason: { code: "observer-source-star-excluded" },
+                referenceDisposition: "retained",
+            },
+        ]);
+    });
+
+    it("deduplicates option IDs and ignores unknown IDs", () => {
+        const result = transformCatalogToObserver(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                observerSourceStarIds: ["unknown", "alpha_cen", "alpha_cen"],
+            },
+        );
+
+        expect(result.omittedStars.map((item) => item.starId)).toEqual([
+            "alpha_cen",
+        ]);
+    });
+
+    it("supports multiple exclusions and ignores option order", () => {
+        const first = transformCatalogToObserver(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                includeReferenceCatalog: true,
+                observerSourceStarIds: ["beta_cen", "alpha_cen"],
+            },
+        );
+        const second = transformCatalogToObserver(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                includeReferenceCatalog: true,
+                observerSourceStarIds: ["alpha_cen", "beta_cen"],
+            },
+        );
+
+        expect(first).toEqual(second);
+        expect(first.transformedCatalog.stars).toEqual([]);
+        expect(first.omittedStars.map((item) => item.starId)).toEqual([
+            "alpha_cen",
+            "beta_cen",
+        ]);
+        expect(first.referenceCatalog?.stars.map((star) => star.id)).toEqual([
+            "alpha_cen",
+            "beta_cen",
+        ]);
+    });
+
+    it("omits an invalid excluded source from both roles", () => {
+        const invalid = makeStar({ id: "invalid-local", distance: 0 });
+        const source = makeConstellation({
+            id: "invalid-local-constellation",
+            stars: [invalid],
+        });
+
+        const result = transformCatalogToObserver(
+            [source],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                includeReferenceCatalog: true,
+                observerSourceStarIds: ["invalid-local"],
+            },
+        );
+
+        expect(result.transformedCatalog.stars).toEqual([]);
+        expect(result.referenceCatalog?.stars).toEqual([]);
+        expect(result.omittedStars[0]).toMatchObject({
+            reason: {
+                code: "coordinate-transform-failed",
+                error: { code: "invalid-distance", distanceLightYears: 0 },
+            },
+            referenceDisposition: "omitted",
+        });
     });
 });
