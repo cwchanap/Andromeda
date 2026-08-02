@@ -17,6 +17,17 @@ import {
     makeConstellation,
     makeStar,
 } from "./observerCatalog.fixtures";
+import { constellations as productionConstellations } from "@/data/constellations";
+
+function deepFreeze<T>(value: T): T {
+    if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
+        return value;
+    }
+    for (const nested of Object.values(value as Record<string, unknown>)) {
+        deepFreeze(nested);
+    }
+    return Object.freeze(value);
+}
 
 describe("observerCatalog public contract", () => {
     it("uses a value-based synthetic-Sol discriminator", () => {
@@ -536,5 +547,167 @@ describe("synthetic Sol and alternate composition", () => {
             constellations: [],
         });
         expect(result.value.omittedStars).toEqual([]);
+    });
+});
+
+describe("observer catalog invariants", () => {
+    it("reserves the synthetic Sol ID in production constellation members", () => {
+        const sourceIds = productionConstellations.flatMap((constellation) =>
+            constellation.stars.map((star) => star.id),
+        );
+        expect(sourceIds).not.toContain(SYNTHETIC_SOL_STAR_ID);
+    });
+
+    it("does not perform Earth visibility filtering", () => {
+        const southern = makeConstellation({
+            id: "southern-only",
+            stars: [makeStar({ id: "south", declination: -70 })],
+            hemisphere: "southern",
+        });
+
+        const result = transformCatalogToObserver([southern], SOL_OBSERVER);
+
+        expect(
+            result.transformedCatalog.constellations.map((item) => item.id),
+        ).toEqual(["southern-only"]);
+        expect(result.transformedCatalog.stars.map((star) => star.id)).toEqual([
+            "south",
+        ]);
+    });
+
+    it("keeps diagnostics in failed canonical first-appearance order", () => {
+        const source = [
+            makeConstellation({
+                id: "first",
+                stars: [
+                    makeStar({ id: "valid-a" }),
+                    makeStar({ id: "bad-a", distance: 0 }),
+                ],
+            }),
+            makeConstellation({
+                id: "second",
+                stars: [
+                    makeStar({ id: "excluded" }),
+                    makeStar({ id: "bad-b", declination: 100 }),
+                ],
+            }),
+        ];
+
+        const result = transformCatalogToObserver(source, SOL_OBSERVER, {
+            observerSourceStarIds: ["excluded"],
+        });
+
+        expect(result.omittedStars.map((item) => item.starId)).toEqual([
+            "bad-a",
+            "excluded",
+            "bad-b",
+        ]);
+    });
+
+    it("does not mutate deeply frozen inputs or option arrays", () => {
+        const source = deepFreeze([
+            makeConstellation({
+                id: "frozen",
+                stars: [makeStar({ id: "frozen-star" })],
+                lines: [[0, 0]],
+            }),
+        ]);
+        const observer = deepFreeze({ ...ALPHA_CENTAURI_OBSERVER });
+        const observerSourceStarIds = deepFreeze(["frozen-star"]);
+
+        expect(() =>
+            transformCatalogToObserver(source, observer, {
+                includeReferenceCatalog: true,
+                observerSourceStarIds,
+            }),
+        ).not.toThrow();
+        expect(source[0].stars[0].id).toBe("frozen-star");
+        expect(observer).toEqual(ALPHA_CENTAURI_OBSERVER);
+        expect(observerSourceStarIds).toEqual(["frozen-star"]);
+    });
+
+    it("returns independent primary and reference objects", () => {
+        const source = makeConstellation({
+            id: "independence",
+            stars: [makeStar({ id: "independent" })],
+            lines: [[0, 0]],
+        });
+        const result = transformCatalogToObserver(
+            [source],
+            ALPHA_CENTAURI_OBSERVER,
+            { includeReferenceCatalog: true },
+        );
+
+        expect(result.referenceCatalog).toBeDefined();
+        expect(result.transformedCatalog.stars[0]).not.toBe(
+            result.referenceCatalog!.stars[0],
+        );
+        expect(result.transformedCatalog.constellations[0]).not.toBe(
+            result.referenceCatalog!.constellations[0],
+        );
+        expect(result.transformedCatalog.constellations[0].visibility).not.toBe(
+            result.referenceCatalog!.constellations[0].visibility,
+        );
+        expect(result.transformedCatalog.constellations[0].lines[0]).not.toBe(
+            result.referenceCatalog!.constellations[0].lines[0],
+        );
+    });
+
+    it("is deterministic and preserves marker discrimination after JSON round trip", () => {
+        const first = prepareAlternateObserverCatalog(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                includeReferenceCatalog: true,
+                observerSourceStarIds: ["alpha_cen"],
+            },
+        );
+        const second = prepareAlternateObserverCatalog(
+            [CENTAURUS_FIXTURE],
+            ALPHA_CENTAURI_OBSERVER,
+            {
+                includeReferenceCatalog: true,
+                observerSourceStarIds: ["alpha_cen"],
+            },
+        );
+
+        expect(second).toEqual(first);
+        const parsed = JSON.parse(JSON.stringify(first)) as typeof first;
+        expect(parsed.ok).toBe(true);
+        if (!parsed.ok) return;
+        const parsedSol = parsed.value.primaryCatalog.stars.at(-1)!;
+        expect(isSyntheticSolStar(parsedSol)).toBe(true);
+        expect(
+            parsed.value.primaryCatalog.stars
+                .slice(0, -1)
+                .every((star) => !isSyntheticSolStar(star)),
+        ).toBe(true);
+    });
+
+    it("serializes non-finite source failures without numeric nulls", () => {
+        const result = transformCatalogToObserver(
+            [
+                makeConstellation({
+                    id: "non-finite",
+                    stars: [
+                        makeStar({
+                            id: "nan-ra",
+                            rightAscension: Number.NaN,
+                        }),
+                    ],
+                }),
+            ],
+            SOL_OBSERVER,
+        );
+        const json = JSON.stringify(result);
+
+        expect(json).not.toContain('"rightAscension":null');
+        expect(JSON.parse(json).omittedStars[0].reason).toEqual({
+            code: "coordinate-transform-failed",
+            error: {
+                code: "non-finite-equatorial-input",
+                component: "rightAscensionHours",
+            },
+        });
     });
 });
