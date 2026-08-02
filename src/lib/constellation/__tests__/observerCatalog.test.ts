@@ -121,3 +121,175 @@ describe("transformCatalogToObserver happy path", () => {
         expect(transformed.magnitude).toBe(-1);
     });
 });
+
+describe("coordinate omissions and line reconstruction", () => {
+    it("remaps surviving lines without inventing a bridge", () => {
+        const a = makeStar({ id: "a", distance: 10 });
+        const b = makeStar({ id: "b", distance: 0 });
+        const c = makeStar({ id: "c", rightAscension: 6, distance: 10 });
+        const d = makeStar({ id: "d", rightAscension: 12, distance: 10 });
+        const source = makeConstellation({
+            id: "line-repair",
+            stars: [a, b, c, d],
+            lines: [
+                [0, 1],
+                [1, 2],
+                [2, 3],
+                [0, 3],
+            ],
+        });
+
+        const result = transformCatalogToObserver([source], SOL_OBSERVER, {
+            includeReferenceCatalog: true,
+        });
+
+        expect(
+            result.transformedCatalog.constellations[0].stars.map((s) => s.id),
+        ).toEqual(["a", "c", "d"]);
+        expect(result.transformedCatalog.constellations[0].lines).toEqual([
+            [1, 2],
+            [0, 2],
+        ]);
+        expect(result.referenceCatalog?.constellations[0].lines).toEqual([
+            [1, 2],
+            [0, 2],
+        ]);
+        expect(result.omittedStars[0]).toMatchObject({
+            starId: "b",
+            reason: {
+                code: "coordinate-transform-failed",
+                error: { code: "invalid-distance", distanceLightYears: 0 },
+            },
+            referenceDisposition: "omitted",
+        });
+    });
+
+    it("skips malformed lines before tuple narrowing", () => {
+        const stars = [makeStar({ id: "a" }), makeStar({ id: "b" })];
+        const source = makeConstellation({
+            id: "malformed-lines",
+            stars,
+            lines: [[0, 1], [0], [0, 1, 0], [0.5, 1], [-1, 1], [0, 2]],
+        });
+
+        const result = transformCatalogToObserver([source], SOL_OBSERVER);
+        expect(result.transformedCatalog.constellations[0].lines).toEqual([
+            [0, 1],
+        ]);
+    });
+
+    it("retains a fully depleted constellation", () => {
+        const source = makeConstellation({
+            id: "depleted",
+            stars: [makeStar({ id: "bad", distance: -1 })],
+            lines: [[0, 0]],
+        });
+
+        const result = transformCatalogToObserver([source], SOL_OBSERVER);
+
+        expect(result.transformedCatalog.constellations).toHaveLength(1);
+        expect(result.transformedCatalog.constellations[0]).toMatchObject({
+            id: "depleted",
+            stars: [],
+            lines: [],
+        });
+        expect(result.transformedCatalog.constellations[0].visibility).not.toBe(
+            source.visibility,
+        );
+    });
+
+    it.each([
+        {
+            name: "negative distance",
+            star: makeStar({ id: "negative", distance: -1 }),
+            observer: SOL_OBSERVER,
+            expected: { code: "invalid-distance", distanceLightYears: -1 },
+        },
+        {
+            name: "out-of-range declination",
+            star: makeStar({ id: "declination", declination: 100 }),
+            observer: SOL_OBSERVER,
+            expected: {
+                code: "declination-out-of-range",
+                declinationDegrees: 100,
+            },
+        },
+        {
+            name: "exact observer collision",
+            star: makeStar({
+                id: "collision",
+                rightAscension: 0,
+                declination: 0,
+                distance: 1,
+            }),
+            observer: { x: 1, y: 0, z: 0 },
+            expected: {
+                code: "undefined-direction",
+                distanceLightYears: 0,
+                thresholdLightYears: 1e-12,
+            },
+        },
+        {
+            name: "subtraction overflow",
+            star: makeStar({
+                id: "vector-overflow",
+                rightAscension: 0,
+                declination: 0,
+                distance: Number.MAX_VALUE,
+            }),
+            observer: { x: -Number.MAX_VALUE, y: 0, z: 0 },
+            expected: {
+                code: "non-finite-cartesian-input",
+                role: "vector",
+                component: "x",
+            },
+        },
+        {
+            name: "derived norm overflow",
+            star: makeStar({
+                id: "norm-overflow",
+                rightAscension: 0,
+                declination: 0,
+                distance: 10,
+            }),
+            observer: {
+                x: Number.MAX_VALUE,
+                y: Number.MAX_VALUE,
+                z: Number.MAX_VALUE,
+            },
+            expected: { code: "cartesian-distance-overflow" },
+        },
+    ])("preserves $name failures", ({ star, observer, expected }) => {
+        const result = transformCatalogToObserver(
+            [makeConstellation({ id: "errors", stars: [star] })],
+            observer,
+            { includeReferenceCatalog: true },
+        );
+
+        expect(result.transformedCatalog.stars).toEqual([]);
+        expect(result.referenceCatalog?.stars).toEqual([]);
+        expect(result.omittedStars[0].reason).toEqual({
+            code: "coordinate-transform-failed",
+            error: expected,
+        });
+    });
+
+    it("returns one ordered diagnostic with every duplicate membership", () => {
+        const invalid = makeStar({ id: "shared-invalid", distance: 0 });
+        const source = [
+            makeConstellation({ id: "first", stars: [invalid] }),
+            makeConstellation({
+                id: "second",
+                stars: [makeStar({ id: "other" }), invalid],
+            }),
+        ];
+
+        const result = transformCatalogToObserver(source, SOL_OBSERVER);
+
+        expect(result.omittedStars).toHaveLength(1);
+        expect(result.omittedStars[0].memberships).toEqual([
+            { constellationId: "first", originalStarIndex: 0 },
+            { constellationId: "second", originalStarIndex: 1 },
+        ]);
+    });
+});
