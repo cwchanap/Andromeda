@@ -496,8 +496,11 @@ export class ConstellationCatalogLayer {
                     };
 
                     // Role-independent defensive guards: malformed lines must
-                    // be skipped before any endpoint dereference.
-                    if (line.length !== 2) {
+                    // be skipped before any endpoint dereference. The
+                    // Array.isArray check comes first so a deserialized
+                    // runtime value of null/undefined is skipped with a
+                    // structured warning instead of throwing on .length.
+                    if (!Array.isArray(line) || line.length !== 2) {
                         warnInvalidLine();
                         continue;
                     }
@@ -985,6 +988,7 @@ export class ConstellationCatalogLayer {
             scaleY: 2,
             renderOrder: PRIMARY_STAR_LABEL_RENDER_ORDER,
             name,
+            opacity: 0.9,
         });
     }
 
@@ -1020,6 +1024,7 @@ export class ConstellationCatalogLayer {
             scaleY: 5,
             renderOrder: PRIMARY_CONSTELLATION_LABEL_RENDER_ORDER,
             name: `label-${constellation.id}`,
+            opacity: 0.85,
         });
     }
 
@@ -1031,6 +1036,7 @@ export class ConstellationCatalogLayer {
             readonly scaleY: number;
             readonly renderOrder: number;
             readonly name: string;
+            readonly opacity: number;
         },
     ): THREE.Sprite {
         const texture = new THREE.CanvasTexture(canvas);
@@ -1039,6 +1045,7 @@ export class ConstellationCatalogLayer {
         const spriteMaterial = new THREE.SpriteMaterial({
             map: texture,
             transparent: true,
+            opacity: options.opacity,
             depthWrite: false,
         });
 
