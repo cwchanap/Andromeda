@@ -626,6 +626,39 @@ describe("ConstellationCatalogLayer independent line topology and guards", () =>
         );
     });
 
+    it("skips a non-array runtime line value (null) before .length dereference", () => {
+        const warn = vi.fn();
+        const catalog = makeRendererCatalog({
+            constellations: [
+                makeRendererConstellation({
+                    id: "nullish",
+                    stars: [
+                        makeRendererStar({ id: "a" }),
+                        makeRendererStar({ id: "b" }),
+                    ],
+                    // A deserialized runtime value of null must be skipped
+                    // with a structured warning, not throw on .length. Cast
+                    // through unknown to inject the malformed value past the
+                    // typed lines field.
+                    lines: [null as unknown as readonly [number, number]],
+                }),
+            ],
+        });
+
+        const layer = new ConstellationCatalogLayer(
+            makeLayerOptions({ catalog, warn }),
+        );
+
+        expect(layer.lineHitObjects).toEqual([]);
+        expect(warn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                objectKind: "constellation-line",
+                constellationId: "nullish",
+                lineIndex: 0,
+            }),
+        );
+    });
+
     it("skips non-integer indices", () => {
         const warn = vi.fn();
         const catalog = makeRendererCatalog({
@@ -1227,6 +1260,36 @@ describe("ConstellationCatalogLayer lazy primary labels", () => {
         expect(markerLabels?.children.map((sprite) => sprite.name)).toEqual([
             `marker-label-${SYNTHETIC_SOL_STAR_ID}`,
         ]);
+    });
+
+    it("preserves the legacy label opacity (0.9 star/Sol, 0.85 constellation)", () => {
+        const layer = new ConstellationCatalogLayer(
+            makeLayerOptions({ catalog: makeLabelCatalog() }),
+        );
+
+        layer.setLabelsVisible(true);
+
+        const starLabels = layer.root.getObjectByName(
+            "star-labels",
+        ) as unknown as THREE.Group;
+        const constellationLabels = layer.root.getObjectByName(
+            "constellation-labels",
+        ) as unknown as THREE.Group;
+        const markerLabels = layer.root.getObjectByName(
+            "marker-labels",
+        ) as unknown as THREE.Group;
+
+        for (const sprite of starLabels.children as THREE.Sprite[]) {
+            expect(sprite.material.opacity).toBeCloseTo(0.9, 6);
+        }
+        for (const sprite of constellationLabels.children as THREE.Sprite[]) {
+            expect(sprite.material.opacity).toBeCloseTo(0.85, 6);
+        }
+        // Sol marker label reuses the star-label sprite path, so it shares
+        // the 0.9 star-label opacity.
+        for (const sprite of markerLabels.children as THREE.Sprite[]) {
+            expect(sprite.material.opacity).toBeCloseTo(0.9, 6);
+        }
     });
 
     it("reuses the same label groups across toggles and only flips visibility", () => {

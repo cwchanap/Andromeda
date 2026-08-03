@@ -4173,6 +4173,82 @@ describe("ConstellationRenderer", () => {
             }
         });
 
+        it("rejects initialize() after final disposal instead of leaking new layers", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar({ magnitude: 1.0 })],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                renderer.dispose();
+
+                // Re-initialization after final disposal must throw a clear
+                // lifecycle error rather than silently attaching new catalog
+                // layers and Earth guides to a destroyed canvas/WebGL renderer
+                // (the animation loop would never restart and a second dispose
+                // is a no-op, so those resources would leak).
+                await expect(
+                    renderer.initialize(
+                        [makeStar({ magnitude: 1.0 })],
+                        [],
+                        makeSkyConfig(),
+                    ),
+                ).rejects.toThrow(/has already been disposed/);
+
+                // updateSky() routes through initialize(), so it is covered too.
+                await expect(
+                    renderer.updateSky(
+                        [makeStar({ magnitude: 1.0 })],
+                        [],
+                        makeSkyConfig(),
+                    ),
+                ).rejects.toThrow(/has already been disposed/);
+            } finally {
+                try {
+                    renderer.dispose();
+                } catch {
+                    // already disposed
+                }
+                container.remove();
+            }
+        });
+
+        it("rejects initializePreparedCatalogs() after final disposal instead of leaking new layers", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p1", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                renderer.dispose();
+
+                await expect(
+                    renderer.initializePreparedCatalogs(
+                        {
+                            primaryCatalog: makePreparedCatalog([
+                                makeStar({ id: "p1", magnitude: 1.0 }),
+                            ]),
+                        },
+                        preparedSettings(),
+                    ),
+                ).rejects.toThrow(/has already been disposed/);
+            } finally {
+                try {
+                    renderer.dispose();
+                } catch {
+                    // already disposed
+                }
+                container.remove();
+            }
+        });
+
         it("remains safe on a second call after constructor-only or partial initialization", async () => {
             // Constructor-only renderer: no initialization ever ran.
             const container = makeContainer();

@@ -840,6 +840,8 @@ class MockLine {
     const mat = {
         map: _cfg?.map ?? null,
         transparent: _cfg?.transparent ?? false,
+        opacity: _cfg?.opacity ?? 1,
+        depthWrite: _cfg?.depthWrite ?? true,
         dispose: vi.fn(),
     };
     Object.setPrototypeOf(mat, (THREE as any).SpriteMaterial.prototype);

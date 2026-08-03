@@ -833,6 +833,15 @@ export class ConstellationRenderer {
     private runSharedInitialization(
         request: SharedRendererInitialization,
     ): void {
+        // 0. reject reuse after final disposal: a disposed renderer has
+        // already torn down its canvas/WebGL renderer and cancelled both
+        // animation chains, so re-initialization would allocate new layers
+        // and guides that can never animate or be released. Throw a clear
+        // lifecycle error instead of silently leaking resources.
+        if (this._disposed) {
+            throw new Error("ConstellationRenderer has already been disposed");
+        }
+
         // 1. dispose old layers and Earth guides
         this.clearScene();
 
