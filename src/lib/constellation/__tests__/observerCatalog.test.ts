@@ -17,6 +17,7 @@ import {
     makeConstellation,
     makeStar,
 } from "./observerCatalog.fixtures";
+import type { Constellation } from "@/types/constellation";
 import { constellations as productionConstellations } from "@/data/constellations";
 
 function deepFreeze<T>(value: T): T {
@@ -709,5 +710,190 @@ describe("observer catalog invariants", () => {
                 component: "rightAscensionHours",
             },
         });
+    });
+});
+
+describe("non-finite metadata and reserved-marker stripping", () => {
+    it("omits a star with finite coordinates but non-finite magnitude", () => {
+        const nanMagnitude = makeStar({
+            id: "nan-magnitude",
+            rightAscension: 6,
+            declination: 30,
+            distance: 12,
+            magnitude: Number.NaN,
+        });
+        const infMagnitude = makeStar({
+            id: "inf-magnitude",
+            rightAscension: 6,
+            declination: 30,
+            distance: 12,
+            magnitude: Number.POSITIVE_INFINITY,
+        });
+        const source = makeConstellation({
+            id: "bad-magnitude",
+            stars: [nanMagnitude, infMagnitude],
+            lines: [[0, 1]],
+        });
+
+        const result = transformCatalogToObserver([source], SOL_OBSERVER, {
+            includeReferenceCatalog: true,
+        });
+
+        expect(result.transformedCatalog.stars).toEqual([]);
+        expect(result.referenceCatalog?.stars).toEqual([]);
+        expect(result.transformedCatalog.constellations[0].stars).toEqual([]);
+        expect(result.transformedCatalog.constellations[0].lines).toEqual([]);
+        expect(result.omittedStars).toEqual([
+            {
+                starId: "nan-magnitude",
+                starName: "nan-magnitude",
+                memberships: [
+                    { constellationId: "bad-magnitude", originalStarIndex: 0 },
+                ],
+                reason: { code: "non-finite-metadata", field: "magnitude" },
+                referenceDisposition: "omitted",
+            },
+            {
+                starId: "inf-magnitude",
+                starName: "inf-magnitude",
+                memberships: [
+                    { constellationId: "bad-magnitude", originalStarIndex: 1 },
+                ],
+                reason: { code: "non-finite-metadata", field: "magnitude" },
+                referenceDisposition: "omitted",
+            },
+        ]);
+        // Section 13: no NaN/Infinity reaches the JSON-safe output.
+        const json = JSON.stringify(result);
+        expect(json).not.toContain('"magnitude":null');
+        expect(json).not.toContain("Infinity");
+    });
+
+    it("omits a non-finite-magnitude observer-source star from both roles", () => {
+        const source = makeConstellation({
+            id: "excluded-bad-magnitude",
+            stars: [
+                makeStar({
+                    id: "excluded-nan",
+                    magnitude: Number.NaN,
+                }),
+            ],
+        });
+
+        const result = transformCatalogToObserver([source], SOL_OBSERVER, {
+            includeReferenceCatalog: true,
+            observerSourceStarIds: ["excluded-nan"],
+        });
+
+        expect(result.transformedCatalog.stars).toEqual([]);
+        expect(result.referenceCatalog?.stars).toEqual([]);
+        expect(result.omittedStars[0]).toMatchObject({
+            starId: "excluded-nan",
+            reason: { code: "non-finite-metadata", field: "magnitude" },
+            referenceDisposition: "omitted",
+        });
+    });
+
+    it("drops a constellation with non-finite visibility but keeps its stars", () => {
+        const shared = makeStar({ id: "shared-star", distance: 10 });
+        const badVisibility: Constellation = {
+            id: "bad-visibility",
+            name: "bad-visibility",
+            abbreviation: "bad",
+            description: "description",
+            mythology: "mythology",
+            stars: [shared],
+            lines: [],
+            visibility: {
+                hemisphere: "both",
+                bestMonths: [1, Number.NaN, 3],
+                minLatitude: -90,
+                maxLatitude: Number.POSITIVE_INFINITY,
+            },
+        };
+        const goodConstellation = makeConstellation({
+            id: "good-sharer",
+            stars: [shared],
+            lines: [[0, 0]],
+        });
+
+        const result = transformCatalogToObserver(
+            [badVisibility, goodConstellation],
+            SOL_OBSERVER,
+            { includeReferenceCatalog: true },
+        );
+
+        expect(
+            result.transformedCatalog.constellations.map((c) => c.id),
+        ).toEqual(["good-sharer"]);
+        expect(
+            result.referenceCatalog?.constellations.map((c) => c.id),
+        ).toEqual(["good-sharer"]);
+        // The shared star survives in the top-level stars array and in the
+        // good constellation; only the bad-visibility constellation is dropped.
+        expect(result.transformedCatalog.stars.map((s) => s.id)).toEqual([
+            "shared-star",
+        ]);
+        expect(
+            result.transformedCatalog.constellations[0].stars.map((s) => s.id),
+        ).toEqual(["shared-star"]);
+        expect(result.omittedStars).toEqual([]);
+        // Section 13: no NaN/Infinity leaks via the dropped visibility.
+        const json = JSON.stringify(result);
+        expect(json).not.toContain('"maxLatitude":null');
+        expect(json).not.toContain('"bestMonths":null');
+        expect(json).not.toContain("Infinity");
+    });
+
+    it("strips a reserved synthetic-Sol marker from an ordinary source star", () => {
+        const poisoned = {
+            ...makeStar({ id: "ordinary-star", distance: 10 }),
+            marker: { kind: "synthetic-sol" },
+        } as unknown as ReturnType<typeof makeStar>;
+
+        const result = transformCatalogToObserver(
+            [makeConstellation({ id: "marker-strip", stars: [poisoned] })],
+            SOL_OBSERVER,
+            { includeReferenceCatalog: true },
+        );
+
+        const primary = result.transformedCatalog.stars[0];
+        const reference = result.referenceCatalog!.stars[0];
+
+        expect(isSyntheticSolStar(primary)).toBe(false);
+        expect(isSyntheticSolStar(reference)).toBe(false);
+        expect((primary as { marker?: unknown }).marker).toBeUndefined();
+        expect((reference as { marker?: unknown }).marker).toBeUndefined();
+        // A JSON round trip must not resurrect the marker.
+        const parsed = JSON.parse(JSON.stringify(primary)) as {
+            marker?: unknown;
+        };
+        expect(parsed.marker).toBeUndefined();
+    });
+
+    it("strips the reserved marker from the transformed (non-identity) path", () => {
+        const poisoned = {
+            ...makeStar({
+                id: "transformed-marker",
+                rightAscension: 0,
+                declination: 0,
+                distance: 10,
+            }),
+            marker: { kind: "synthetic-sol" },
+        } as unknown as ReturnType<typeof makeStar>;
+
+        const result = transformCatalogToObserver(
+            [
+                makeConstellation({
+                    id: "transformed-marker-c",
+                    stars: [poisoned],
+                }),
+            ],
+            ALPHA_CENTAURI_OBSERVER,
+        );
+
+        const transformed = result.transformedCatalog.stars[0];
+        expect(isSyntheticSolStar(transformed)).toBe(false);
+        expect((transformed as { marker?: unknown }).marker).toBeUndefined();
     });
 });
