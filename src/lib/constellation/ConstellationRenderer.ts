@@ -4,7 +4,17 @@ import type {
     Star,
     Constellation,
 } from "../../types/constellation";
-import { celestialToSphere, magnitudeToSize } from "../../utils/astronomy";
+import { ConstellationCatalogLayer } from "@/lib/constellation/ConstellationCatalogLayer";
+import type { PreparedConstellationCatalog } from "@/lib/constellation/observerCatalog";
+import {
+    adaptLegacyCatalog,
+    adaptPreparedCatalog,
+} from "@/lib/constellation/rendererCatalog";
+import type {
+    RendererCatalog,
+    RendererCatalogSettings,
+} from "@/lib/constellation/rendererCatalog";
+import type { CatalogPlacementContext } from "@/lib/constellation/rendererPlacement";
 
 const HUD_CYAN = 0x00f0ff;
 // Maximum elevation (pitch) the camera can reach, in radians. Slightly below
@@ -12,6 +22,52 @@ const HUD_CYAN = 0x00f0ff;
 // Used both as the drag/tween clamp and as the initial sky-camera elevation so
 // the tracked rotation stays consistent with the actual camera orientation.
 const MAX_ELEVATION_RAD = Math.PI / 2.2;
+
+/**
+ * Decorative render orders. The starfield sphere renders first, then the
+ * optional legacy ambient points sit just above it but below all catalog
+ * geometry; Earth-only guides are pinned between catalog layers and the
+ * shooting stars render above everything.
+ */
+const STARFIELD_BACKGROUND_RENDER_ORDER = 0;
+const LEGACY_AMBIENT_RENDER_ORDER = 0.25;
+const EARTH_CARDINAL_RENDER_ORDER = 0.5;
+const EARTH_HORIZON_RENDER_ORDER = 4.5;
+const SHOOTING_STAR_RENDER_ORDER = 8;
+// Legacy ambient points are only synthesized when fewer than this many
+// ordinary stars made it into the catalog (sparse Earth pass).
+const LEGACY_AMBIENT_STAR_THRESHOLD = 100;
+const LEGACY_AMBIENT_STAR_COUNT = 500;
+// Legacy Earth view labels only the brightest stars (magnitude < 1.5),
+// preserving the pre-layer star-label gate.
+const LEGACY_STAR_LABEL_MAGNITUDE_LIMIT = 1.5;
+
+/**
+ * Public request for initializing the renderer from prepared catalogs.
+ * Structurally fixed-equatorial: it carries no location/date/timezone/FOV
+ * state — only the two catalogs and the optional reference visibility.
+ */
+export interface PreparedCatalogRenderRequest {
+    readonly primaryCatalog: PreparedConstellationCatalog;
+    readonly referenceCatalog?: PreparedConstellationCatalog;
+    readonly referenceVisible?: boolean;
+}
+
+export type PreparedCatalogRenderSettings = RendererCatalogSettings;
+
+/**
+ * One shared initialization request consumed by the private
+ * {@link ConstellationRenderer.runSharedInitialization} path. The legacy
+ * Earth view and the prepared fixed-equatorial view both reduce to this.
+ */
+interface SharedRendererInitialization {
+    readonly primaryCatalog: RendererCatalog;
+    readonly referenceCatalog?: RendererCatalog;
+    readonly placementContext: CatalogPlacementContext;
+    readonly settings: Readonly<RendererCatalogSettings>;
+    readonly isLegacyEarth: boolean;
+    readonly requestedReferenceVisible?: boolean;
+}
 
 export class ConstellationRenderer {
     private scene: THREE.Scene;
@@ -78,10 +134,23 @@ export class ConstellationRenderer {
     private autoRotate: boolean = false;
     private autoRotateSpeed: number = 0.04; // radians per second
     private reducedMotion: boolean = false;
-    // Cached init args so the runtime Labels toggle can lazily (re)create the
-    // star-label group without a full re-initialize.
-    private _skyConfig: SkyConfiguration | null = null;
-    private _constellations: Constellation[] = [];
+    // Layered catalog state. The primary layer renders the active catalog;
+    // the optional reference layer renders the comparison catalog. Both are
+    // rebuilt on every initialization, while the decorative background below
+    // (starfield sphere + optional ambient points) is created once in the
+    // constructor and survives reinitializations.
+    private primaryLayer: ConstellationCatalogLayer | null = null;
+    private referenceLayer: ConstellationCatalogLayer | null = null;
+    private referenceVisible = false;
+    // One persistent decorative owner: the shader starfield sphere plus the
+    // optional legacy ambient-points child (created lazily on the first
+    // sparse Earth pass, kept until final disposal).
+    private decorativeRoot: THREE.Group;
+    private ambientStarPoints: THREE.Points | null = null;
+    // Set while the single render-loop RAF chain is running; cleared by
+    // final disposal. Repeated serialized initialization reuses the one
+    // chain — overlapping async initialization is not supported.
+    private animationRunning = false;
 
     public readonly callbacks: {
         onStarHover?: (
@@ -128,8 +197,15 @@ export class ConstellationRenderer {
         // Initialize Three.js scene
         this.scene = new THREE.Scene();
 
+        // Create one persistent decorative owner: the shader starfield sphere
+        // (and later the optional legacy ambient points) live inside this root
+        // and survive reinitializations. Only final dispose() releases it.
+        this.decorativeRoot = new THREE.Group();
+        this.decorativeRoot.name = "decorative-background";
+
         // Create a dark starfield background instead of solid color
         this.createStarfieldBackground();
+        this.scene.add(this.decorativeRoot);
 
         // Setup camera
         this.camera = new THREE.PerspectiveCamera(
@@ -274,8 +350,8 @@ export class ConstellationRenderer {
             starfieldMaterial,
         );
         starfieldMesh.name = "starfield-background";
-        starfieldMesh.renderOrder = 0; // Render first
-        this.scene.add(starfieldMesh);
+        starfieldMesh.renderOrder = STARFIELD_BACKGROUND_RENDER_ORDER; // Render first
+        this.decorativeRoot.add(starfieldMesh);
     }
 
     /**
@@ -470,9 +546,12 @@ export class ConstellationRenderer {
             );
 
             let hoveredId: string | null = null;
-            if (this.constellationLines) {
+            if (
+                this.callbacks.onConstellationHover &&
+                this.getConstellationHitTargets().length > 0
+            ) {
                 const hits = this.raycaster.intersectObjects(
-                    this.constellationLines.children,
+                    this.getConstellationHitTargets(),
                     false,
                 );
                 if (hits.length > 0) {
@@ -632,135 +711,214 @@ export class ConstellationRenderer {
     }
 
     /**
-     * Initialize the constellation view with stars and constellations
+     * Initialize the constellation view with legacy Earth-mode stars and
+     * constellations. The legacy catalog is adapted and routed through the
+     * same shared initialization path as {@link initializePreparedCatalogs}.
      */
     async initialize(
-        stars: Star[],
-        constellations: Constellation[],
+        stars: readonly Star[],
+        constellations: readonly Constellation[],
         skyConfig: SkyConfiguration,
     ): Promise<void> {
-        // Clear existing objects
-        this.clearScene();
-
-        // Create star field
-        await this.createStars(stars, skyConfig);
-
-        // Create constellation lines
-        if (skyConfig.showConstellationLines) {
-            this.createConstellationLines(constellations, skyConfig);
-        }
-
-        // Create constellation name labels
-        this.createConstellationLabels(constellations, skyConfig);
-
-        // Create star labels (gated by showStarNames at init to preserve the
-        // pre-toggle creation behavior). The runtime Labels toggle can lazily
-        // (re)create them via setLabelsVisible() using the cached skyConfig.
-        if (skyConfig.showStarNames) {
-            this.createStarLabels(stars, skyConfig);
-        }
-
-        // Cache skyConfig + constellations so the runtime Labels toggle can
-        // lazily create star labels without a full re-initialize.
-        this._skyConfig = skyConfig;
-        this._constellations = constellations;
-        // Preserve a runtime toggle that arrived before init completed (e.g.
-        // the user opened Settings during loading and turned labels off).
-        // Without this guard, init would overwrite the user's choice with
-        // skyConfig.showStarNames, leaving the checkbox unchecked while
-        // labels are visible.
-        if (!this._labelsVisibleUserSet) {
-            this.labelsVisible = !!skyConfig.showStarNames;
-        }
-        this.applyLabelsVisibility();
-
-        // Create horizon ring + cardinal direction labels (N/E/S/W)
-        this.createOrientationGuides();
-
-        // Setup camera for sky view
-        this.setupSkyCamera();
-
-        // Start render loop
-        this.animate();
+        this.runSharedInitialization({
+            primaryCatalog: adaptLegacyCatalog(stars, constellations),
+            placementContext: { kind: "earth-horizontal", skyConfig },
+            settings: {
+                minimumMagnitude: skyConfig.minimumMagnitude,
+                showConstellationLines: skyConfig.showConstellationLines,
+                showStarNames: skyConfig.showStarNames,
+            },
+            isLegacyEarth: true,
+        });
     }
 
     /**
-     * Create star field as points in 360-degree space
+     * Initialize the renderer from prepared catalogs. Structurally
+     * fixed-equatorial: the request carries only catalogs and the optional
+     * reference visibility — never location/date/timezone/FOV state.
      */
-    private async createStars(
-        stars: Star[],
-        skyConfig: SkyConfiguration,
+    async initializePreparedCatalogs(
+        request: PreparedCatalogRenderRequest,
+        settings: Readonly<PreparedCatalogRenderSettings>,
     ): Promise<void> {
+        this.runSharedInitialization({
+            primaryCatalog: adaptPreparedCatalog(request.primaryCatalog),
+            referenceCatalog: request.referenceCatalog
+                ? adaptPreparedCatalog(request.referenceCatalog)
+                : undefined,
+            placementContext: { kind: "fixed-equatorial" },
+            settings,
+            isLegacyEarth: false,
+            requestedReferenceVisible: request.referenceVisible,
+        });
+    }
+
+    /**
+     * One shared initialization path for both the legacy Earth-horizontal
+     * view and the prepared fixed-equatorial view.
+     *
+     * Order:
+     * 1. dispose old layers and Earth guides;
+     * 2. clear stale selected/hovered IDs;
+     * 3. resolve labels/reference preferences;
+     * 4. adapt/build primary;
+     * 5. adapt/build optional reference;
+     * 6. add roots to scene;
+     * 7. apply label/reference visibility;
+     * 8. create Earth guides only for legacy Earth;
+     * 9. update ambient visibility for the active context;
+     * 10. set the existing initial camera policy;
+     * 11. ensure one animation loop.
+     */
+    private runSharedInitialization(
+        request: SharedRendererInitialization,
+    ): void {
+        // 1. dispose old layers and Earth guides
+        this.clearScene();
+
+        // 2. clear stale selected/hovered IDs
+        this.selectedId = null;
+        this.hoveredId = null;
+
+        // 3. resolve labels/reference preferences. A request value updates
+        // stored state; an omitted request value preserves stored state. A
+        // runtime label toggle (setLabelsVisible) always wins over the
+        // request so re-initialization never overwrites the user's choice.
+        if (!this._labelsVisibleUserSet) {
+            this.labelsVisible = request.settings.showStarNames;
+        }
+        if (request.requestedReferenceVisible !== undefined) {
+            this.referenceVisible = request.requestedReferenceVisible;
+        }
+
+        // 4. adapt/build primary
+        this.primaryLayer = new ConstellationCatalogLayer({
+            role: "primary",
+            catalog: request.primaryCatalog,
+            placementContext: request.placementContext,
+            settings: request.settings,
+            starLabelMagnitudeLimit: request.isLegacyEarth
+                ? LEGACY_STAR_LABEL_MAGNITUDE_LIMIT
+                : undefined,
+        });
+
+        // 5. adapt/build optional reference
+        this.referenceLayer = request.referenceCatalog
+            ? new ConstellationCatalogLayer({
+                  role: "reference",
+                  catalog: request.referenceCatalog,
+                  placementContext: request.placementContext,
+                  settings: request.settings,
+              })
+            : null;
+
+        // 6. add roots to scene
+        this.scene.add(this.primaryLayer.root);
+        if (this.referenceLayer) this.scene.add(this.referenceLayer.root);
+
+        // The legacy Earth view keeps a dedicated "constellation-lines"
+        // object so line hover/click raycasting, selection dimming, and
+        // tickUniforms preserve their pre-layer behavior. The layer's line
+        // hit objects are re-parented into this group (three.js moves them
+        // out of the layer root); the layer still owns and disposes their
+        // resources. Prepared views raycast against the layer directly.
+        if (request.isLegacyEarth) {
+            this.constellationLines = new THREE.Group();
+            this.constellationLines.name = "constellation-lines";
+            for (const lineObject of this.primaryLayer.lineHitObjects) {
+                this.constellationLines.add(lineObject);
+            }
+            this.scene.add(this.constellationLines);
+        }
+
+        // Alias the primary layer's star resources so star hover raycasting
+        // and tickUniforms keep working against the objects the layer owns.
+        this.starPoints = this.primaryLayer.ordinaryStarPoints;
+        this._stars = [...this.primaryLayer.renderedOrdinaryStars];
+
+        // 7. apply label/reference visibility
+        this.primaryLayer.setVisible(true);
+        this.primaryLayer.setLabelsVisible(this.labelsVisible);
+        if (this.referenceLayer) {
+            this.referenceLayer.setVisible(this.referenceVisible);
+        }
+
+        // 8. create Earth guides only for legacy Earth
+        if (request.isLegacyEarth) {
+            this.createOrientationGuides();
+        }
+
+        // 9. update ambient visibility for the active context. The ambient
+        // points are a decorative child of the persistent root, created once
+        // on the first sparse legacy pass and hidden for prepared views so
+        // prepared output is independent of navigation history. They are
+        // never part of any catalog buffer.
+        if (
+            request.isLegacyEarth &&
+            this.ambientStarPoints === null &&
+            this.primaryLayer.renderedOrdinaryStars.length <
+                LEGACY_AMBIENT_STAR_THRESHOLD
+        ) {
+            this.createAmbientStarPoints();
+        }
+        if (this.ambientStarPoints !== null) {
+            this.ambientStarPoints.visible =
+                request.placementContext.kind === "earth-horizontal";
+        }
+
+        // 10. set the existing initial camera policy
+        this.setupSkyCamera();
+
+        // 11. ensure one animation loop
+        this.ensureAnimationRunning();
+    }
+
+    /**
+     * Create the legacy procedural ambient-star points. These are purely
+     * decorative (they are not catalog records), so Math.random() is fine
+     * here — the determinism constraint applies only to catalog layers.
+     * The child lives inside {@link decorativeRoot} and is kept until final
+     * disposal; visibility is toggled per placement context.
+     */
+    private createAmbientStarPoints(): void {
         const starPositions: number[] = [];
         const starColors: number[] = [];
         const starSizes: number[] = [];
-        const filteredStars: Star[] = [];
 
-        stars.forEach((star) => {
-            // Skip stars dimmer than minimum magnitude
-            if (star.magnitude > skyConfig.minimumMagnitude) {
-                return;
+        // Random stars distributed evenly across the celestial sphere
+        for (let i = 0; i < LEGACY_AMBIENT_STAR_COUNT; i++) {
+            const theta = Math.random() * Math.PI * 2; // Azimuth (0 to 2π)
+            const phi = Math.acos(2 * Math.random() - 1); // Elevation (0 to π, evenly distributed)
+            const radius = 95 + Math.random() * 10; // Slight radius variation
+
+            // Convert spherical to Cartesian coordinates
+            const x = radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+
+            starPositions.push(x, y, z);
+
+            // Varied star colors for realism
+            const colorVariant = Math.random();
+            if (colorVariant < 0.1) {
+                starColors.push(1.0, 0.7, 0.4); // Orange giants
+            } else if (colorVariant < 0.2) {
+                starColors.push(1.0, 0.4, 0.3); // Red giants
+            } else if (colorVariant < 0.4) {
+                starColors.push(0.7, 0.8, 1.0); // Blue-white
+            } else {
+                starColors.push(1.0, 1.0, 0.9); // White/yellow
             }
 
-            // Convert celestial coordinates to 3D sphere position
-            const spherePos = celestialToSphere(
-                star.rightAscension,
-                star.declination,
-                skyConfig.location,
-                skyConfig.dateTime,
-                100, // Sphere radius
-            );
-
-            // All stars are placed in the 360-degree sphere
-            starPositions.push(spherePos.x, spherePos.y, spherePos.z);
-
-            // Parse star color
-            const color = new THREE.Color(star.color);
-            starColors.push(color.r, color.g, color.b);
-
-            // Calculate size based on magnitude - make brighter stars more visible
-            const size = magnitudeToSize(star.magnitude) * 3; // Triple the size for better visibility
-            starSizes.push(size);
-
-            filteredStars.push(star);
-        });
-
-        // Store filtered stars for star hover raycasting lookup
-        this._stars = filteredStars;
-
-        // If very few stars were created, add some procedural background stars for ambiance
-        if (starPositions.length < 300) {
-            // Fewer than 100 stars (3 floats per star) — add procedural background stars
-            for (let i = 0; i < 500; i++) {
-                // Create random stars distributed evenly across the celestial sphere
-                const theta = Math.random() * Math.PI * 2; // Azimuth (0 to 2π)
-                const phi = Math.acos(2 * Math.random() - 1); // Elevation (0 to π, evenly distributed)
-                const radius = 95 + Math.random() * 10; // Slight radius variation
-
-                // Convert spherical to Cartesian coordinates
-                const x = radius * Math.sin(phi) * Math.cos(theta);
-                const y = radius * Math.cos(phi);
-                const z = radius * Math.sin(phi) * Math.sin(theta);
-
-                starPositions.push(x, y, z);
-
-                // Varied star colors for realism
-                const colorVariant = Math.random();
-                if (colorVariant < 0.1) {
-                    starColors.push(1.0, 0.7, 0.4); // Orange giants
-                } else if (colorVariant < 0.2) {
-                    starColors.push(1.0, 0.4, 0.3); // Red giants
-                } else if (colorVariant < 0.4) {
-                    starColors.push(0.7, 0.8, 1.0); // Blue-white
-                } else {
-                    starColors.push(1.0, 1.0, 0.9); // White/yellow
-                }
-
-                starSizes.push(0.5 + Math.random() * 2); // Varied sizes for realism
-            }
+            starSizes.push(0.5 + Math.random() * 2); // Varied sizes for realism
         }
 
-        // Create geometry
+        // Per-star randomized seed for varied twinkle phase/speed
+        const starSeeds: number[] = [];
+        for (let i = 0; i < LEGACY_AMBIENT_STAR_COUNT; i++) {
+            starSeeds.push(Math.random());
+        }
+
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute(
             "position",
@@ -774,20 +932,6 @@ export class ConstellationRenderer {
             "size",
             new THREE.Float32BufferAttribute(starSizes, 1),
         );
-
-        // Dispose prior ShaderMaterial if re-initializing to prevent material leak.
-        if (
-            this.starPoints?.material &&
-            !Array.isArray(this.starPoints.material)
-        ) {
-            (this.starPoints.material as THREE.Material).dispose();
-        }
-
-        // Per-star randomized seed for varied twinkle phase/speed.
-        const starSeeds: number[] = [];
-        for (let i = 0; i < starPositions.length / 3; i++) {
-            starSeeds.push(Math.random());
-        }
         geometry.setAttribute(
             "aSeed",
             new THREE.Float32BufferAttribute(starSeeds, 1),
@@ -833,203 +977,19 @@ export class ConstellationRenderer {
             depthWrite: false,
         });
 
-        this.starPoints = new THREE.Points(geometry, material);
-        this.starPoints.name = "stars";
-        this.starPoints.renderOrder = 1; // Render after background
-        this.scene.add(this.starPoints);
-    }
-
-    /**
-     * Create constellation lines in 3D space
-     */
-    private createConstellationLines(
-        constellations: Constellation[],
-        skyConfig: SkyConfiguration,
-    ): void {
-        this.constellationLines = new THREE.Group();
-        this.constellationLines.name = "constellation-lines";
-
-        constellations.forEach((constellation) => {
-            const lineGeometry = new THREE.BufferGeometry();
-            const linePositions: number[] = [];
-            const lineProgress: number[] = [];
-
-            const starPositions = constellation.stars.map((star) =>
-                celestialToSphere(
-                    star.rightAscension,
-                    star.declination,
-                    skyConfig.location,
-                    skyConfig.dateTime,
-                    98,
-                ),
-            );
-
-            constellation.lines.forEach(([startIndex, endIndex]) => {
-                const startPos = starPositions[startIndex];
-                const endPos = starPositions[endIndex];
-                if (startPos && endPos) {
-                    linePositions.push(
-                        startPos.x,
-                        startPos.y,
-                        startPos.z,
-                        endPos.x,
-                        endPos.y,
-                        endPos.z,
-                    );
-                    lineProgress.push(0, 1); // 0 at start vertex, 1 at end vertex
-                }
-            });
-
-            if (linePositions.length === 0) return;
-
-            lineGeometry.setAttribute(
-                "position",
-                new THREE.Float32BufferAttribute(linePositions, 3),
-            );
-            lineGeometry.setAttribute(
-                "aLineProgress",
-                new THREE.Float32BufferAttribute(lineProgress, 1),
-            );
-
-            const lineMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    uTime: { value: 0 },
-                    uIsSelected: { value: 0 },
-                    uIsDimmed: { value: 0 },
-                    uColorIdle: { value: new THREE.Color(0x1b6b7a) },
-                    uColorHot: { value: new THREE.Color(0x00f0ff) },
-                },
-                vertexShader: `
-                    attribute float aLineProgress;
-                    varying float vProgress;
-                    void main() {
-                        vProgress = aLineProgress;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform float uTime;
-                    uniform float uIsSelected;
-                    uniform float uIsDimmed;
-                    uniform vec3 uColorIdle;
-                    uniform vec3 uColorHot;
-                    varying float vProgress;
-                    void main() {
-                        // Energy pulse: a hot stripe rides along the segment.
-                        float pulse = fract(vProgress * 3.0 - uTime * 0.4);
-                        float pulseIntensity = smoothstep(0.85, 1.0, pulse) * (uIsSelected > 0.5 ? 1.0 : 0.35);
-                        vec3 base = mix(uColorIdle, uColorHot, uIsSelected);
-                        vec3 col = base + uColorHot * pulseIntensity;
-                        float alpha = uIsDimmed > 0.5 ? 0.18 : (uIsSelected > 0.5 ? 1.0 : 0.5);
-                        gl_FragColor = vec4(col, alpha);
-                    }
-                `,
-                transparent: true,
-                depthWrite: false,
-            });
-
-            const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
-            lines.name = `constellation-${constellation.id}`;
-            lines.userData.constellationId = constellation.id;
-            lines.renderOrder = 2;
-            this.constellationLines!.add(lines);
-        });
-
-        this.scene.add(this.constellationLines);
-    }
-
-    /**
-     * Create constellation name labels in 3D space
-     */
-    private createConstellationLabels(
-        constellations: Constellation[],
-        skyConfig: SkyConfiguration,
-    ): void {
-        this.constellationLabels = new THREE.Group();
-        this.constellationLabels.name = "constellation-labels";
-
-        constellations.forEach((constellation) => {
-            if (constellation.stars.length === 0) return;
-
-            // Calculate the center position of the constellation
-            // Use circular mean for RA to handle 0h/24h wrap-around
-            let sinSum = 0;
-            let cosSum = 0;
-            let avgDec = 0;
-
-            constellation.stars.forEach((star) => {
-                const rad = (star.rightAscension / 24) * 2 * Math.PI;
-                sinSum += Math.sin(rad);
-                cosSum += Math.cos(rad);
-                avgDec += star.declination;
-            });
-
-            const avgRA =
-                ((Math.atan2(sinSum, cosSum) / (2 * Math.PI) + 1) % 1) * 24;
-            avgDec /= constellation.stars.length;
-
-            // Convert to 3D position
-            const labelPos = celestialToSphere(
-                avgRA,
-                avgDec,
-                skyConfig.location,
-                skyConfig.dateTime,
-                110, // Position labels farther out than stars for visibility
-            );
-
-            // Create text sprite for constellation name
-            const canvas = document.createElement("canvas");
-            const context = canvas.getContext("2d")!;
-            canvas.width = 512;
-            canvas.height = 128;
-
-            // Clear with transparent background
-            context.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw constellation name with larger, bold text
-            context.fillStyle = "#4FC3F7"; // Cyan color for prominence
-            context.font = "bold 48px Arial, sans-serif";
-            context.textAlign = "center";
-            context.textBaseline = "middle";
-
-            // Add glow effect for better visibility
-            context.shadowColor = "#4FC3F7";
-            context.shadowBlur = 12;
-            context.fillText(constellation.name, 256, 48);
-
-            // Add constellation abbreviation below
-            context.font = "32px Arial, sans-serif";
-            context.fillStyle = "#81C784"; // Light green for abbreviation
-            context.shadowBlur = 8;
-            context.fillText(`(${constellation.abbreviation})`, 256, 90);
-
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.needsUpdate = true;
-
-            const spriteMaterial = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                opacity: 0.85,
-                depthWrite: false,
-            });
-
-            const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.position.set(labelPos.x, labelPos.y, labelPos.z);
-            sprite.scale.set(20, 5, 1); // Large scale for visibility
-            sprite.renderOrder = 4; // Render above star labels
-            sprite.name = `label-${constellation.id}`;
-
-            this.constellationLabels!.add(sprite);
-        });
-
-        this.scene.add(this.constellationLabels);
+        const points = new THREE.Points(geometry, material);
+        points.name = "ambient-stars";
+        points.renderOrder = LEGACY_AMBIENT_RENDER_ORDER;
+        this.ambientStarPoints = points;
+        this.decorativeRoot.add(points);
     }
 
     /**
      * Create orientation guides: a horizon ring on the y=0 plane and
      * four cardinal direction labels (N/E/S/W). These are single-char
      * labels only — the wrapper renders the localized "compass" / "view
-     * from earth" text in the HUD.
+     * from earth" text in the HUD. Created only for the legacy Earth
+     * placement; prepared fixed-equatorial views get no guides.
      */
     private createOrientationGuides(): void {
         const radius = 100;
@@ -1051,7 +1011,7 @@ export class ConstellationRenderer {
         });
         this.horizonRing = new THREE.LineLoop(ringGeom, ringMat);
         this.horizonRing.name = "horizon-ring";
-        this.horizonRing.renderOrder = 2;
+        this.horizonRing.renderOrder = EARTH_HORIZON_RENDER_ORDER;
         this.scene.add(this.horizonRing);
 
         this.cardinalLabels = new THREE.Group();
@@ -1089,69 +1049,10 @@ export class ConstellationRenderer {
             sprite.position.set(x, 0, z);
             sprite.scale.set(6, 6, 1);
             sprite.name = `cardinal-${label}`;
+            sprite.renderOrder = EARTH_CARDINAL_RENDER_ORDER;
             this.cardinalLabels.add(sprite);
         }
         this.scene.add(this.cardinalLabels);
-    }
-
-    /**
-     * Create star name labels in 3D space
-     */
-    private createStarLabels(stars: Star[], skyConfig: SkyConfiguration): void {
-        this.labelSprites = new THREE.Group();
-        this.labelSprites.name = "star-labels";
-
-        // Only label the brightest stars (magnitude < 1.5)
-        const brightStars = stars.filter((star) => star.magnitude < 1.5);
-
-        brightStars.forEach((star) => {
-            const spherePos = celestialToSphere(
-                star.rightAscension,
-                star.declination,
-                skyConfig.location,
-                skyConfig.dateTime,
-                105, // Slightly farther than stars
-            );
-
-            // Create text sprite
-            const canvas = document.createElement("canvas");
-            const context = canvas.getContext("2d")!;
-            canvas.width = 256;
-            canvas.height = 64;
-
-            // Clear with transparent background
-            context.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Set text properties
-            context.fillStyle = "#ffffff";
-            context.font = "bold 20px Arial";
-            context.textAlign = "center";
-            context.textBaseline = "middle";
-
-            // Add text glow effect
-            context.shadowColor = "#4488cc";
-            context.shadowBlur = 4;
-            context.fillText(star.name, 128, 32);
-
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.needsUpdate = true;
-
-            const spriteMaterial = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                opacity: 0.9,
-                depthWrite: false,
-            });
-
-            const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.position.set(spherePos.x, spherePos.y, spherePos.z);
-            sprite.scale.set(8, 2, 1); // Larger labels for better visibility
-            sprite.renderOrder = 3; // Render on top
-
-            this.labelSprites!.add(sprite);
-        });
-
-        this.scene.add(this.labelSprites);
     }
 
     /**
@@ -1211,17 +1112,10 @@ export class ConstellationRenderer {
      */
     public setSelected(id: string | null): void {
         this.selectedId = id;
-        if (!this.constellationLines) return;
-        this.constellationLines.children.forEach((child: THREE.Object3D) => {
-            const mat = (child as THREE.LineSegments)
-                .material as THREE.ShaderMaterial;
-            if (!mat?.uniforms) return;
-            const constellationId = (child.userData as Record<string, unknown>)
-                .constellationId as string | undefined;
-            const isThisOne = constellationId === id;
-            mat.uniforms.uIsSelected.value = isThisOne ? 1 : 0;
-            mat.uniforms.uIsDimmed.value = id && !isThisOne ? 1 : 0;
-        });
+        // Selection/dimming is a primary-role concept; the layer owns the
+        // line materials (legacy lines are the same objects, re-parented
+        // into the legacy "constellation-lines" group).
+        this.primaryLayer?.setSelectedConstellation(id);
     }
 
     /**
@@ -1233,17 +1127,12 @@ export class ConstellationRenderer {
     }
 
     /**
-     * Apply the current `labelsVisible` state to both label groups. Star
-     * labels are lazily created on first enable when they were not created
-     * during initialize() (i.e. showStarNames was false at init).
+     * Apply the current `labelsVisible` state to the primary layer. The layer
+     * owns the star/constellation/Sol label groups and lazily creates them on
+     * the first enable, mirroring the pre-layer lazy-creation behavior.
      */
     private applyLabelsVisibility(): void {
-        if (this.labelsVisible && !this.labelSprites && this._skyConfig) {
-            this.createStarLabels(this._stars, this._skyConfig);
-        }
-        if (this.labelSprites) this.labelSprites.visible = this.labelsVisible;
-        if (this.constellationLabels)
-            this.constellationLabels.visible = this.labelsVisible;
+        this.primaryLayer?.setLabelsVisible(this.labelsVisible);
     }
 
     /**
@@ -1457,7 +1346,7 @@ export class ConstellationRenderer {
             depthWrite: false,
         });
         const line = new THREE.LineSegments(geom, mat);
-        line.renderOrder = 5; // above hover sprites (3) and label sprites (4)
+        line.renderOrder = SHOOTING_STAR_RENDER_ORDER; // above all catalog geometry
         this.scene.add(line);
         this.activeShootingStar = line as unknown as THREE.Line;
         this.shootingStarCount = 1;
@@ -1484,10 +1373,21 @@ export class ConstellationRenderer {
     }
 
     /**
+     * Ensure exactly one animation loop is running. Repeated serialized
+     * initialization reuses the single RAF chain; overlapping asynchronous
+     * initialization is not supported (callers must await initialization).
+     */
+    private ensureAnimationRunning(): void {
+        if (this.animationRunning || this._disposed) return;
+        this.animationRunning = true;
+        this.animate();
+    }
+
+    /**
      * Animation loop
      */
     private animate(): void {
-        if (this._disposed) return;
+        if (!this.animationRunning || this._disposed) return;
         this._rafId = requestAnimationFrame(() => this.animate());
 
         // Update camera rotation if mouse is being dragged
@@ -1550,65 +1450,34 @@ export class ConstellationRenderer {
         this.nextShootingStarAt = 0;
         this.shootingStarStarted = 0;
 
-        // NOTE: The "starfield-background" mesh is a persistent background
-        // created in the constructor and intentionally kept across reinitializations.
-        // Do NOT remove it here — initialize() does not recreate it.
+        // NOTE: The decorative root ("decorative-background") holding the
+        // starfield sphere and the optional ambient points is persistent and
+        // intentionally kept across reinitializations. Do NOT remove it
+        // here — initialize() does not recreate it; final dispose() does.
 
-        if (this.starPoints) {
-            this.scene.remove(this.starPoints);
-            this.starPoints.geometry.dispose();
-            if (Array.isArray(this.starPoints.material)) {
-                this.starPoints.material.forEach((material) =>
-                    material.dispose(),
-                );
-            } else {
-                this.starPoints.material.dispose();
-            }
-            this.starPoints = null;
+        // Layers own their star/line/label/marker resources; dispose()
+        // releases each exactly once and detaches the root.
+        if (this.primaryLayer) {
+            this.primaryLayer.dispose();
+            this.primaryLayer = null;
+        }
+        if (this.referenceLayer) {
+            this.referenceLayer.dispose();
+            this.referenceLayer = null;
         }
 
+        // The legacy "constellation-lines" group held the primary layer's
+        // line hit objects; the layer already disposed their resources, so
+        // only the group itself is detached here.
         if (this.constellationLines) {
             this.scene.remove(this.constellationLines);
-            this.constellationLines.children.forEach((child) => {
-                if (child instanceof THREE.LineSegments) {
-                    child.geometry.dispose();
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach((material) =>
-                            material.dispose(),
-                        );
-                    } else {
-                        child.material.dispose();
-                    }
-                }
-            });
             this.constellationLines = null;
         }
-
-        if (this.labelSprites) {
-            this.scene.remove(this.labelSprites);
-            this.labelSprites.children.forEach((child) => {
-                if (child instanceof THREE.Sprite) {
-                    if (child.material.map) {
-                        child.material.map.dispose();
-                    }
-                    child.material.dispose();
-                }
-            });
-            this.labelSprites = null;
-        }
-
-        if (this.constellationLabels) {
-            this.scene.remove(this.constellationLabels);
-            this.constellationLabels.children.forEach((child) => {
-                if (child instanceof THREE.Sprite) {
-                    if (child.material.map) {
-                        child.material.map.dispose();
-                    }
-                    child.material.dispose();
-                }
-            });
-            this.constellationLabels = null;
-        }
+        // starPoints/labelSprites/constellationLabels are aliases of (or
+        // placeholders for) layer-owned resources and are dropped here.
+        this.starPoints = null;
+        this.labelSprites = null;
+        this.constellationLabels = null;
 
         if (this.horizonRing) {
             this.horizonRing.geometry.dispose();
@@ -1638,11 +1507,23 @@ export class ConstellationRenderer {
      * Update the sky view with new configuration
      */
     async updateSky(
-        stars: Star[],
-        constellations: Constellation[],
+        stars: readonly Star[],
+        constellations: readonly Constellation[],
         skyConfig: SkyConfiguration,
     ): Promise<void> {
         await this.initialize(stars, constellations, skyConfig);
+    }
+
+    /**
+     * The constellation line objects to raycast against for hover/click.
+     * Legacy Earth views keep the dedicated "constellation-lines" group;
+     * prepared views hit-test the primary layer's line objects directly.
+     */
+    private getConstellationHitTargets(): THREE.Object3D[] {
+        if (this.constellationLines) {
+            return this.constellationLines.children;
+        }
+        return this.primaryLayer ? [...this.primaryLayer.lineHitObjects] : [];
     }
 
     /**
@@ -1669,9 +1550,9 @@ export class ConstellationRenderer {
             this.camera,
         );
 
-        if (this.constellationLines && this.callbacks.onConstellationClick) {
+        if (this.callbacks.onConstellationClick) {
             const hits = this.raycaster.intersectObjects(
-                this.constellationLines.children,
+                this.getConstellationHitTargets(),
                 false,
             );
             if (hits.length > 0) {
@@ -1688,6 +1569,7 @@ export class ConstellationRenderer {
      */
     dispose(): void {
         this._disposed = true;
+        this.animationRunning = false;
         this.tweenState.active = false;
 
         // Cancel the render loop
@@ -1702,21 +1584,30 @@ export class ConstellationRenderer {
             this._momentumRafId = null;
         }
 
-        // Phase 1: Clear scene objects (including starfield-background on final dispose)
+        // Phase 1: Clear scene objects (including the decorative background on final dispose)
         try {
             this.clearScene();
 
-            // Dispose starfield-background (intentionally kept across re-inits but must be cleaned up on final dispose)
-            const starfieldBg = this.scene.getObjectByName(
-                "starfield-background",
-            );
-            if (starfieldBg instanceof THREE.Mesh) {
-                starfieldBg.geometry.dispose();
-                if (starfieldBg.material instanceof THREE.Material) {
-                    starfieldBg.material.dispose();
+            // Dispose the decorative root (starfield sphere + optional
+            // ambient points) — intentionally kept across re-inits but
+            // released here on final dispose.
+            for (const child of this.decorativeRoot.children) {
+                const withResources = child as Partial<THREE.Mesh> &
+                    Partial<THREE.Points>;
+                if (withResources.geometry) {
+                    (
+                        withResources.geometry as { dispose: () => void }
+                    ).dispose();
                 }
-                this.scene.remove(starfieldBg);
+                if (withResources.material) {
+                    (
+                        withResources.material as { dispose: () => void }
+                    ).dispose();
+                }
             }
+            this.decorativeRoot.children.length = 0;
+            this.ambientStarPoints = null;
+            this.scene.remove(this.decorativeRoot);
         } catch (e) {
             console.error(
                 "ConstellationRenderer dispose: clearScene failed",

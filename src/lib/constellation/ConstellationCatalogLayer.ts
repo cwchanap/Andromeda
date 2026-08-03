@@ -53,6 +53,13 @@ export interface CatalogLayerBuildOptions {
     readonly placementContext: CatalogPlacementContext;
     readonly settings: Readonly<RendererCatalogSettings>;
     readonly warn?: (context: RendererSkipWarningContext) => void;
+    /**
+     * Optional gate for which ordinary stars receive star labels: when set,
+     * only stars with `magnitude < starLabelMagnitudeLimit` are labeled.
+     * The legacy Earth view labels only the brightest stars (magnitude <
+     * 1.5); prepared views label every rendered star by default.
+     */
+    readonly starLabelMagnitudeLimit?: number;
 }
 
 /** Immutable input cached at build time for one lazily-created star label. */
@@ -254,7 +261,14 @@ export class ConstellationCatalogLayer {
     private disposed = false;
 
     constructor(options: CatalogLayerBuildOptions) {
-        const { role, catalog, placementContext, settings, warn } = options;
+        const {
+            role,
+            catalog,
+            placementContext,
+            settings,
+            warn,
+            starLabelMagnitudeLimit,
+        } = options;
 
         this.role = role;
         this.root = new THREE.Group();
@@ -344,18 +358,24 @@ export class ConstellationCatalogLayer {
             if (role === "primary") {
                 // Star labels sit outside the star sphere at their own
                 // radius; cache the accepted label position so label
-                // creation never re-derives it.
-                const labelPlacement = placeCatalogCoordinate(
-                    star,
-                    placementContext,
-                    PRIMARY_STAR_LABEL_RADIUS,
-                );
-                if (labelPlacement.ok) {
-                    const { x: lx, y: ly, z: lz } = labelPlacement.position;
-                    labelStarInputs.push({
+                // creation never re-derives it. The legacy Earth view gates
+                // star labels to the brightest stars.
+                if (
+                    starLabelMagnitudeLimit === undefined ||
+                    star.magnitude < starLabelMagnitudeLimit
+                ) {
+                    const labelPlacement = placeCatalogCoordinate(
                         star,
-                        position: new THREE.Vector3(lx, ly, lz),
-                    });
+                        placementContext,
+                        PRIMARY_STAR_LABEL_RADIUS,
+                    );
+                    if (labelPlacement.ok) {
+                        const { x: lx, y: ly, z: lz } = labelPlacement.position;
+                        labelStarInputs.push({
+                            star,
+                            position: new THREE.Vector3(lx, ly, lz),
+                        });
+                    }
                 }
             }
         }

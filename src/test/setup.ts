@@ -618,6 +618,21 @@ class MockGroup extends (THREE as any).Group {
                 scene.children.find((c: any) => c.name === name) ?? null,
         ),
     };
+    // Real Object3D.getObjectByName traverses the whole tree; the renderer's
+    // persistent decorative root nests the starfield mesh, so the mock must
+    // search recursively to keep `scene.getObjectByName("starfield-background")`
+    // finding the mesh (Task 5 decorative-background extraction).
+    scene.getObjectByName.mockImplementation((name: string) => {
+        const stack: any[] = [...scene.children];
+        while (stack.length > 0) {
+            const object = stack.pop();
+            if (object.name === name) return object;
+            if (Array.isArray(object.children)) {
+                stack.push(...object.children);
+            }
+        }
+        return null;
+    });
     return scene;
 });
 
