@@ -243,6 +243,11 @@ export function transformCatalogToObserver(
         const entry = canonical.byId.get(id)!;
 
         if (excludedIds.has(id)) {
+            // Validate source coordinates via an identity transform from the
+            // Sol origin. The resulting equatorial position (identity.value)
+            // is intentionally discarded: the original source star is retained
+            // verbatim in the reference catalog below, so only the ok/error
+            // outcome matters here.
             const identity = transformToObserver(
                 toEquatorialPosition(entry.source),
                 SOL_ORIGIN,
@@ -343,6 +348,17 @@ export function createSyntheticSol(
     };
 }
 
+/**
+ * Builds an alternate-observer catalog by transforming `sourceConstellations`
+ * for `observerPosition` and appending a synthetic Sol star.
+ *
+ * Caller obligation: source constellations must not contain a star whose id
+ * equals {@link SYNTHETIC_SOL_STAR_ID} ("sol"). The synthetic Sol is appended
+ * unconditionally, so a colliding source id would produce duplicate ids in
+ * the primary catalog. This invariant is enforced at the data layer (see the
+ * "reserves the synthetic Sol ID in production constellation members" test)
+ * rather than by runtime validation here.
+ */
 export function prepareAlternateObserverCatalog(
     sourceConstellations: readonly Constellation[],
     observerPosition: CartesianLightYears,
