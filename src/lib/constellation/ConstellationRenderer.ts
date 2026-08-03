@@ -77,8 +77,6 @@ export class ConstellationRenderer {
     private starPoints: THREE.Points | null = null;
     private _stars: Star[] = []; // Stored for star hover raycasting lookup
     private constellationLines: THREE.Group | null = null;
-    private labelSprites: THREE.Group | null = null;
-    private constellationLabels: THREE.Group | null = null;
     private horizonRing: THREE.LineLoop | null = null;
     private cardinalLabels: THREE.Group | null = null;
     private isMouseDown: boolean = false;
@@ -1473,11 +1471,12 @@ export class ConstellationRenderer {
             this.scene.remove(this.constellationLines);
             this.constellationLines = null;
         }
-        // starPoints/labelSprites/constellationLabels are aliases of (or
-        // placeholders for) layer-owned resources and are dropped here.
+        // starPoints is an alias of the primary layer's ordinary-star
+        // points. The layer owned and disposed them; the renderer only
+        // drops the reference here. (Star/constellation label groups are
+        // likewise owned and disposed by the layer — no renderer-side
+        // aliases or disposal exist.)
         this.starPoints = null;
-        this.labelSprites = null;
-        this.constellationLabels = null;
 
         if (this.horizonRing) {
             this.horizonRing.geometry.dispose();

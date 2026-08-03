@@ -1798,18 +1798,36 @@ describe("ConstellationRenderer", () => {
                     makeSkyConfig({ showStarNames: true }),
                 );
 
-                const labelSprites = (renderer as any).labelSprites;
-                const constellationLabels = (renderer as any)
-                    .constellationLabels;
-                // Star labels should either be absent (lazy) or hidden.
-                if (labelSprites) {
-                    expect(labelSprites.visible).toBe(false);
-                }
-                if (constellationLabels) {
-                    expect(constellationLabels.visible).toBe(false);
-                }
                 // Internal state must reflect the user's choice, not skyConfig.
                 expect((renderer as any).labelsVisible).toBe(false);
+
+                // Label visibility is delegated to the primary layer, which
+                // lazily creates its label groups on the first enable. A
+                // preserved OFF toggle must leave no label groups behind.
+                const layer = (renderer as any).primaryLayer;
+                expect(layer.root.getObjectByName("star-labels")).toBeNull();
+                expect(
+                    layer.root.getObjectByName("constellation-labels"),
+                ).toBeNull();
+
+                // Flipping the toggle ON through the renderer must lazily
+                // create the primary layer's label groups and show them…
+                renderer.setLabelsVisible(true);
+                const starLabels = layer.root.getObjectByName("star-labels");
+                const constellationLabels = layer.root.getObjectByName(
+                    "constellation-labels",
+                );
+                expect(starLabels).not.toBeNull();
+                expect((starLabels as THREE.Group).visible).toBe(true);
+                expect(constellationLabels).not.toBeNull();
+                expect((constellationLabels as THREE.Group).visible).toBe(true);
+
+                // …and flipping it OFF again must hide the same groups.
+                renderer.setLabelsVisible(false);
+                expect((starLabels as THREE.Group).visible).toBe(false);
+                expect((constellationLabels as THREE.Group).visible).toBe(
+                    false,
+                );
             } finally {
                 renderer.dispose();
                 container.remove();
@@ -1829,10 +1847,25 @@ describe("ConstellationRenderer", () => {
                 );
 
                 expect((renderer as any).labelsVisible).toBe(true);
-                const labelSprites = (renderer as any).labelSprites;
-                if (labelSprites) {
-                    expect(labelSprites.visible).toBe(true);
-                }
+
+                // The preserved ON toggle must have created the primary
+                // layer's label groups during init and shown them.
+                const layer = (renderer as any).primaryLayer;
+                const starLabels = layer.root.getObjectByName("star-labels");
+                const constellationLabels = layer.root.getObjectByName(
+                    "constellation-labels",
+                );
+                expect(starLabels).not.toBeNull();
+                expect((starLabels as THREE.Group).visible).toBe(true);
+                expect(constellationLabels).not.toBeNull();
+                expect((constellationLabels as THREE.Group).visible).toBe(true);
+
+                // Toggling OFF through the renderer hides the same groups.
+                renderer.setLabelsVisible(false);
+                expect((starLabels as THREE.Group).visible).toBe(false);
+                expect((constellationLabels as THREE.Group).visible).toBe(
+                    false,
+                );
             } finally {
                 renderer.dispose();
                 container.remove();
@@ -1850,6 +1883,14 @@ describe("ConstellationRenderer", () => {
                 );
 
                 expect((renderer as any).labelsVisible).toBe(false);
+
+                // With labels off, the primary layer creates no label
+                // groups (lazy creation on first enable).
+                const layer = (renderer as any).primaryLayer;
+                expect(layer.root.getObjectByName("star-labels")).toBeNull();
+                expect(
+                    layer.root.getObjectByName("constellation-labels"),
+                ).toBeNull();
             } finally {
                 renderer.dispose();
                 container.remove();
