@@ -536,6 +536,7 @@ class MockGroup extends (THREE as any).Group {
         this.receiveShadow = false;
         this.add = vi.fn((c: any) => {
             this.children.push(c);
+            if (c) c.parent = this;
             return this;
         });
         this.remove = vi.fn((c: any) => {
@@ -544,8 +545,14 @@ class MockGroup extends (THREE as any).Group {
             return this;
         });
         // Object3D.removeFromParent() — used by layer disposal (e.g.
-        // ConstellationCatalogLayer.dispose detaches its root group).
-        this.removeFromParent = vi.fn();
+        // ConstellationCatalogLayer.dispose detaches its root group). Mirrors
+        // the real implementation: detach from the parent so the reinit
+        // cleanup tests observe old layer roots leaving the scene.
+        this.removeFromParent = vi.fn(() => {
+            if (this.parent && typeof this.parent.remove === "function") {
+                this.parent.remove(this);
+            }
+        });
         this.getObjectByName = vi.fn(
             (n: string) => this.children.find((c: any) => c.name === n) || null,
         );
@@ -600,6 +607,9 @@ class MockGroup extends (THREE as any).Group {
     const scene: any = {
         add: vi.fn((obj: any) => {
             scene.children.push(obj);
+            // Track the parent so Object3D.removeFromParent() on a child
+            // (e.g. a disposed layer root) detaches it from the scene.
+            if (obj) obj.parent = scene;
         }),
         remove: vi.fn((obj: any) => {
             const index = scene.children.indexOf(obj);
