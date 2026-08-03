@@ -542,16 +542,21 @@ class MockGroup extends (THREE as any).Group {
         this.remove = vi.fn((c: any) => {
             const i = this.children.indexOf(c);
             if (i >= 0) this.children.splice(i, 1);
+            // Mirrors real Object3D.remove: detach the child's parent
+            // reference so the removed object is fully independent.
+            if (c) c.parent = null;
             return this;
         });
         // Object3D.removeFromParent() — used by layer disposal (e.g.
         // ConstellationCatalogLayer.dispose detaches its root group). Mirrors
         // the real implementation: detach from the parent so the reinit
-        // cleanup tests observe old layer roots leaving the scene.
+        // cleanup tests observe old layer roots leaving the scene, and
+        // leave this.parent null after detachment.
         this.removeFromParent = vi.fn(() => {
             if (this.parent && typeof this.parent.remove === "function") {
                 this.parent.remove(this);
             }
+            this.parent = null;
         });
         // Object3D.lookAt — the synthetic-Sol marker group orients its
         // reticle plane toward the origin camera with lookAt(0, 0, 0). The

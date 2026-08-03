@@ -376,6 +376,11 @@ export class ConstellationRenderer {
         );
         starfieldMesh.name = "starfield-background";
         starfieldMesh.renderOrder = STARFIELD_BACKGROUND_RENDER_ORDER; // Render first
+        // Shadows are permanently disabled project-wide (mobile perf, space
+        // background artifacts) — set both flags explicitly on the decorative
+        // starfield so it never opts into shadow casting/receiving.
+        starfieldMesh.castShadow = false;
+        starfieldMesh.receiveShadow = false;
         this.decorativeRoot.add(starfieldMesh);
     }
 

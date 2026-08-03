@@ -92,6 +92,11 @@ function makeLayerOptions(
             showStarNames: overrides.settings?.showStarNames ?? true,
         },
         warn: overrides.warn,
+        // starLabelMagnitudeLimit is a top-level CatalogLayerBuildOptions
+        // field (read by the layer constructor, not from settings), so it
+        // must be forwarded here — not nested under settings — to exercise
+        // the legacy magnitude gate.
+        starLabelMagnitudeLimit: overrides.starLabelMagnitudeLimit,
     };
 }
 
@@ -1281,6 +1286,49 @@ describe("ConstellationCatalogLayer lazy primary labels", () => {
         ) as unknown as THREE.Group;
         expect(markerLabels.children.map((sprite) => sprite.name)).toEqual([
             `marker-label-${SYNTHETIC_SOL_STAR_ID}`,
+        ]);
+    });
+
+    it("legacy starLabelMagnitudeLimit gates labels to stars brighter than the limit", () => {
+        // The legacy Earth view labels only the brightest stars. With a limit
+        // of 1.5, only stars whose magnitude is strictly less than 1.5 receive
+        // a star label; dimmer rendered stars stay unlabeled.
+        const bright = makeRendererStar({
+            id: "bright",
+            name: "Bright",
+            magnitude: 1.0,
+        });
+        const medium = makeRendererStar({
+            id: "medium",
+            name: "Medium",
+            magnitude: 2.0,
+        });
+        const dim = makeRendererStar({
+            id: "dim",
+            name: "Dim",
+            magnitude: 5.0,
+        });
+        const layer = new ConstellationCatalogLayer(
+            makeLayerOptions({
+                catalog: makeRendererCatalog({
+                    stars: [bright, medium, dim],
+                }),
+                settings: {
+                    minimumMagnitude: 6,
+                },
+                starLabelMagnitudeLimit: 1.5,
+            }),
+        );
+
+        layer.setLabelsVisible(true);
+
+        const starLabels = layer.root.getObjectByName(
+            "star-labels",
+        ) as unknown as THREE.Group;
+        expect(starLabels).not.toBeNull();
+        // Only the magnitude-1.0 star is brighter than the 1.5 limit.
+        expect(starLabels.children.map((sprite) => sprite.name)).toEqual([
+            "label-bright",
         ]);
     });
 
