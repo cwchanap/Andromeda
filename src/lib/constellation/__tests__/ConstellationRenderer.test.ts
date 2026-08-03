@@ -2,6 +2,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as THREE from "three";
 import { ConstellationRenderer } from "@/lib/constellation/ConstellationRenderer";
+import type { PreparedCatalogRenderSettings } from "@/lib/constellation/ConstellationRenderer";
+import type {
+    PreparedCatalogStar,
+    PreparedConstellation,
+    PreparedConstellationCatalog,
+} from "@/lib/constellation/observerCatalog";
 import type {
     Star,
     Constellation,
@@ -75,6 +81,54 @@ const makeSkyConfig = (
     showStarNames: true,
     minimumMagnitude: 6.5,
     ...overrides,
+});
+
+/**
+ * Prepared-catalog fixtures for the renderer suite. The prepared public API
+ * is structurally fixed-equatorial: it accepts only
+ * `{ minimumMagnitude, showConstellationLines, showStarNames }` settings and
+ * never constructs location/date/timezone/FOV values.
+ */
+const preparedSettings = (
+    overrides: Partial<PreparedCatalogRenderSettings> = {},
+): PreparedCatalogRenderSettings => ({
+    minimumMagnitude: 4,
+    showConstellationLines: true,
+    showStarNames: true,
+    ...overrides,
+});
+
+const makePreparedCatalog = (
+    stars: PreparedCatalogStar[] = [
+        makeStar({ id: "prepared-star", magnitude: 1.5 }),
+    ],
+    constellations: PreparedConstellation[] = [],
+): PreparedConstellationCatalog => ({
+    stars,
+    constellations,
+});
+
+const makePreparedConstellation = (): PreparedConstellation => ({
+    id: "orion",
+    name: "Orion",
+    abbreviation: "Ori",
+    description: "The Hunter",
+    stars: [
+        makeStar({ id: "ps1", rightAscension: 5.5, declination: 1.0 }),
+        makeStar({
+            id: "ps2",
+            rightAscension: 5.6,
+            declination: 2.0,
+            magnitude: 1.0,
+        }),
+    ],
+    lines: [[0, 1]] as const,
+    visibility: {
+        hemisphere: "both",
+        bestMonths: [12, 1, 2],
+        minLatitude: -90,
+        maxLatitude: 90,
+    },
 });
 
 describe("ConstellationRenderer", () => {
@@ -2000,6 +2054,632 @@ describe("ConstellationRenderer", () => {
                 );
             } finally {
                 renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — prepared initialization", () => {
+        it("initializes primary and reference layers from prepared catalogs", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                const primaryCatalog = makePreparedCatalog([
+                    makeStar({ id: "p-star", magnitude: 1.0 }),
+                ]);
+                const referenceCatalog = makePreparedCatalog([
+                    makeStar({ id: "r-star", magnitude: 2.0 }),
+                ]);
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog,
+                        referenceCatalog,
+                        referenceVisible: true,
+                    },
+                    preparedSettings(),
+                );
+
+                const anyRenderer = renderer as any;
+                expect(anyRenderer.primaryLayer).toBeTruthy();
+                expect(anyRenderer.referenceLayer).toBeTruthy();
+                // referenceVisible:true makes the reference layer visible
+                expect(anyRenderer.referenceLayer.root.visible).toBe(true);
+                // Both roots are in the scene
+                expect(anyRenderer.scene.children).toContain(
+                    anyRenderer.primaryLayer.root,
+                );
+                expect(anyRenderer.scene.children).toContain(
+                    anyRenderer.referenceLayer.root,
+                );
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("initializes with only a primary catalog when reference is omitted", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p-star", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const anyRenderer = renderer as any;
+                expect(anyRenderer.primaryLayer).toBeTruthy();
+                expect(anyRenderer.referenceLayer).toBeNull();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("updateSky remains legacy-only and delegates to initialize()", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p-star", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const anyRenderer = renderer as any;
+                // Prepared mode creates no Earth guides
+                expect(
+                    anyRenderer.scene.children.find(
+                        (c: any) => c.name === "horizon-ring",
+                    ),
+                ).toBeFalsy();
+
+                const stars = [makeStar({ id: "legacy", magnitude: 1.0 })];
+                const constellations = [makeConstellation()];
+                const skyConfig = makeSkyConfig();
+                const initSpy = vi.spyOn(anyRenderer, "initialize");
+                await renderer.updateSky(stars, constellations, skyConfig);
+                expect(initSpy).toHaveBeenCalledWith(
+                    stars,
+                    constellations,
+                    skyConfig,
+                );
+                initSpy.mockRestore();
+
+                // A real legacy pass creates the Earth guides again
+                await renderer.updateSky(stars, constellations, skyConfig);
+                expect(
+                    anyRenderer.scene.children.find(
+                        (c: any) => c.name === "horizon-ring",
+                    ),
+                ).toBeTruthy();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("referenceVisible persists across reinit when omitted from the next request", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                const primaryCatalog = makePreparedCatalog([
+                    makeStar({ id: "p-star", magnitude: 1.0 }),
+                ]);
+                const referenceCatalog = makePreparedCatalog([
+                    makeStar({ id: "r-star", magnitude: 2.0 }),
+                ]);
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog,
+                        referenceCatalog,
+                        referenceVisible: true,
+                    },
+                    preparedSettings(),
+                );
+                expect((renderer as any).referenceVisible).toBe(true);
+
+                // Omitted referenceVisible preserves the stored value
+                await renderer.initializePreparedCatalogs(
+                    { primaryCatalog },
+                    preparedSettings(),
+                );
+                expect((renderer as any).referenceVisible).toBe(true);
+
+                // A later request with a reference catalog inherits it
+                await renderer.initializePreparedCatalogs(
+                    { primaryCatalog, referenceCatalog },
+                    preparedSettings(),
+                );
+                expect((renderer as any).referenceLayer.root.visible).toBe(
+                    true,
+                );
+
+                // An explicit false updates stored state
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog,
+                        referenceCatalog,
+                        referenceVisible: false,
+                    },
+                    preparedSettings(),
+                );
+                expect((renderer as any).referenceVisible).toBe(false);
+                expect((renderer as any).referenceLayer.root.visible).toBe(
+                    false,
+                );
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("prepared mode builds constellation lines when enabled", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog(
+                            [
+                                makeStar({
+                                    id: "p-star",
+                                    magnitude: 1.0,
+                                }),
+                            ],
+                            [makePreparedConstellation()],
+                        ),
+                    },
+                    preparedSettings(),
+                );
+                const primaryLayer = (renderer as any).primaryLayer;
+                expect(primaryLayer.lineHitObjects.length).toBe(1);
+                expect(
+                    primaryLayer.lineHitObjects[0].userData.constellationId,
+                ).toBe("orion");
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — Earth regression and fixed frame", () => {
+        it("Earth mode places ordinary stars via celestialToSphere at radius ~100", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [
+                        makeStar({ id: "s1", magnitude: 1.0 }),
+                        makeStar({ id: "s2", magnitude: 3.0 }),
+                    ],
+                    [],
+                    makeSkyConfig(),
+                );
+                const attr = (
+                    renderer as any
+                ).primaryLayer.ordinaryStarPoints.geometry.getAttribute(
+                    "position",
+                );
+                expect(attr.count).toBe(2);
+                for (let i = 0; i < attr.count; i++) {
+                    const x = attr.array[i * 3];
+                    const y = attr.array[i * 3 + 1];
+                    const z = attr.array[i * 3 + 2];
+                    // celestialToSphere preserves the radius (100)
+                    expect(Math.hypot(x, y, z)).toBeCloseTo(100, 3);
+                }
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("prepared placement is fixed-equatorial at radius ~100 with no location/date state", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({
+                                id: "p-star",
+                                magnitude: 1.0,
+                                rightAscension: 5,
+                                declination: 20,
+                            }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const attr = (
+                    renderer as any
+                ).primaryLayer.ordinaryStarPoints.geometry.getAttribute(
+                    "position",
+                );
+                expect(attr.count).toBe(1);
+                const x = attr.array[0];
+                const y = attr.array[1];
+                const z = attr.array[2];
+                // radialToCartesian preserves the radius (100)
+                expect(Math.hypot(x, y, z)).toBeCloseTo(100, 5);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("Earth mode creates horizon and cardinal guides", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                const scene = (renderer as any).scene as THREE.Scene;
+                expect(
+                    scene.children.find((c: any) => c.name === "horizon-ring"),
+                ).toBeTruthy();
+                expect(
+                    scene.children.find(
+                        (c: any) => c.name === "cardinal-labels",
+                    ),
+                ).toBeTruthy();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("prepared mode creates neither horizon nor cardinal guides", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p-star", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const scene = (renderer as any).scene as THREE.Scene;
+                expect(
+                    scene.children.find((c: any) => c.name === "horizon-ring"),
+                ).toBeFalsy();
+                expect(
+                    scene.children.find(
+                        (c: any) => c.name === "cardinal-labels",
+                    ),
+                ).toBeFalsy();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("cardinal labels use renderOrder 0.5, below catalog geometry", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                const group = (renderer as any).scene.children.find(
+                    (c: any) => c.name === "cardinal-labels",
+                );
+                expect(group).toBeTruthy();
+                expect(group.children.length).toBe(4);
+                group.children.forEach((sprite: any) => {
+                    expect(sprite.renderOrder).toBe(0.5);
+                });
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("horizon ring uses renderOrder 4.5", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                const ring = (renderer as any).scene.children.find(
+                    (c: any) => c.name === "horizon-ring",
+                );
+                expect(ring.renderOrder).toBe(4.5);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("shooting stars use renderOrder 8", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                (renderer as any).spawnShootingStar(1000);
+                expect((renderer as any).activeShootingStar).not.toBeNull();
+                expect((renderer as any).activeShootingStar.renderOrder).toBe(
+                    8,
+                );
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — decorative background mode switching", () => {
+        const findAmbient = (renderer: any) =>
+            renderer.decorativeRoot.children.find(
+                (c: any) => c.name === "ambient-stars",
+            );
+        const findDecorativeRoots = (renderer: any) =>
+            renderer.scene.children.filter(
+                (c: any) => c.name === "decorative-background",
+            );
+
+        it("sparse Earth -> prepared: one ambient child exists but is hidden", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar({ id: "s1", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+                const anyRenderer = renderer as any;
+                const ambient = findAmbient(anyRenderer);
+                expect(ambient).toBeTruthy();
+                expect(ambient.visible).toBe(true);
+
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p-star", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const ambientAfter = findAmbient(anyRenderer);
+                expect(ambientAfter).toBe(ambient);
+                expect(ambientAfter.visible).toBe(false);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("prepared -> sparse Earth: ambient child is created and visible", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p-star", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                expect(findAmbient(renderer as any)).toBeFalsy();
+
+                await renderer.initialize(
+                    [makeStar({ id: "s1", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+                const ambient = findAmbient(renderer as any);
+                expect(ambient).toBeTruthy();
+                expect(ambient.visible).toBe(true);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("sparse Earth -> prepared -> Earth: same ambient child identity is reused", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar({ id: "s1", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+                const anyRenderer = renderer as any;
+                const ambient1 = findAmbient(anyRenderer);
+                expect(ambient1).toBeTruthy();
+
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p-star", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                await renderer.initialize(
+                    [makeStar({ id: "s2", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+                const ambient2 = findAmbient(anyRenderer);
+                expect(ambient2).toBe(ambient1);
+                expect(ambient2.visible).toBe(true);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("dense-only Earth (>= 100 ordinary stars) never creates an ambient child", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                const denseStars = Array.from({ length: 110 }, (_, i) =>
+                    makeStar({ id: `dense-${i}`, magnitude: 1.0 }),
+                );
+                await renderer.initialize(denseStars, [], makeSkyConfig());
+                expect(findAmbient(renderer as any)).toBeFalsy();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("repeated initialization keeps exactly one decorative root", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                const anyRenderer = renderer as any;
+                const roots = findDecorativeRoots(anyRenderer);
+                expect(roots.length).toBe(1);
+                const root = roots[0];
+
+                await renderer.initialize(
+                    [makeStar({ id: "s1", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p-star", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                await renderer.initialize(
+                    [makeStar({ id: "s2", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+
+                const rootsAfter = findDecorativeRoots(anyRenderer);
+                expect(rootsAfter.length).toBe(1);
+                expect(rootsAfter[0]).toBe(root);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("catalog point counts never include ambient points", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                // Sparse Earth renders 1 ordinary star; ambient adds 500
+                // decorative points but they must stay out of the layer buffer.
+                await renderer.initialize(
+                    [makeStar({ id: "solo", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+                const primaryLayer = (renderer as any).primaryLayer;
+                const earthCount =
+                    primaryLayer.ordinaryStarPoints.geometry.getAttribute(
+                        "position",
+                    ).count;
+                expect(earthCount).toBe(1);
+
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p1", magnitude: 2 }),
+                            makeStar({ id: "p2", magnitude: 3 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const preparedCount = (
+                    renderer as any
+                ).primaryLayer.ordinaryStarPoints.geometry.getAttribute(
+                    "position",
+                ).count;
+                expect(preparedCount).toBe(2);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — single animation loop", () => {
+        it("repeated serialized initialization starts exactly one RAF chain", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            const rafSpy = vi.fn(() => 42);
+            vi.stubGlobal("requestAnimationFrame", rafSpy);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                expect(rafSpy).toHaveBeenCalledTimes(1);
+                expect((renderer as any).animationRunning).toBe(true);
+
+                // Second serialized init reuses the running chain
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p-star", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                expect(rafSpy).toHaveBeenCalledTimes(1);
+                expect((renderer as any).animationRunning).toBe(true);
+            } finally {
+                vi.unstubAllGlobals();
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("final disposal clears animationRunning and cancels the outstanding frame id", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            const rafSpy = vi.fn(() => 42);
+            const cancelSpy = vi.fn();
+            vi.stubGlobal("requestAnimationFrame", rafSpy);
+            vi.stubGlobal("cancelAnimationFrame", cancelSpy);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                const anyRenderer = renderer as any;
+                expect(anyRenderer._rafId).toBe(42);
+
+                renderer.dispose();
+
+                expect(anyRenderer.animationRunning).toBe(false);
+                expect(anyRenderer._rafId).toBeNull();
+                expect(cancelSpy).toHaveBeenCalledWith(42);
+            } finally {
+                vi.unstubAllGlobals();
                 container.remove();
             }
         });
