@@ -16,6 +16,24 @@ import type {
     RendererStar,
 } from "@/lib/constellation/rendererCatalog";
 import type { CatalogPlacementContext } from "@/lib/constellation/rendererPlacement";
+import type { RendererSkipWarningContext } from "@/lib/constellation/ConstellationCatalogLayer";
+
+/**
+ * Renderer development-warning adapter for catalog-layer skips (malformed
+ * lines, invalid coordinates, unexpected reference markers). Forwards the
+ * structured skip context to `console.warn` only in development mode; in
+ * production builds it is a no-op so malformed data stays silently skipped
+ * without console noise. Mirrors the `import.meta.env.DEV` gating already
+ * used by ErrorLogger.
+ */
+const warnCatalogSkip = (context: RendererSkipWarningContext): void => {
+    if (import.meta.env.DEV) {
+        console.warn(
+            "[constellation-renderer] skipped catalog object",
+            context,
+        );
+    }
+};
 
 const HUD_CYAN = 0x00f0ff;
 // Maximum elevation (pitch) the camera can reach, in radians. Slightly below
@@ -134,8 +152,10 @@ export class ConstellationRenderer {
     private nextShootingStarAt: number = 0;
     private shootingStarStarted: number = 0;
     // Runtime-toggled label visibility (star + constellation name labels).
-    // Both label groups are always created in initialize() so the toggle can
-    // turn them on/off without re-running the (canvas-texture) creation path.
+    // The primary catalog layer lazily creates its label groups on the first
+    // enable, so the toggle only flips the layer's stored state — the
+    // (canvas-texture) creation path is never re-run by initialize()/
+    // updateSky().
     private labelsVisible: boolean = true;
     // True once the runtime has called setLabelsVisible(). When set, a
     // subsequent initialize()/updateSky() must NOT overwrite labelsVisible
@@ -753,7 +773,7 @@ export class ConstellationRenderer {
     async initialize(
         stars: readonly Star[],
         constellations: readonly Constellation[],
-        skyConfig: SkyConfiguration,
+        skyConfig: Readonly<SkyConfiguration>,
     ): Promise<void> {
         this.runSharedInitialization({
             primaryCatalog: adaptLegacyCatalog(stars, constellations),
@@ -832,6 +852,7 @@ export class ConstellationRenderer {
             catalog: request.primaryCatalog,
             placementContext: request.placementContext,
             settings: request.settings,
+            warn: warnCatalogSkip,
             starLabelMagnitudeLimit: request.isLegacyEarth
                 ? LEGACY_STAR_LABEL_MAGNITUDE_LIMIT
                 : undefined,
@@ -844,6 +865,7 @@ export class ConstellationRenderer {
                   catalog: request.referenceCatalog,
                   placementContext: request.placementContext,
                   settings: request.settings,
+                  warn: warnCatalogSkip,
               })
             : null;
 
@@ -997,6 +1019,24 @@ export class ConstellationRenderer {
         points.renderOrder = LEGACY_AMBIENT_RENDER_ORDER;
         this.ambientStarPoints = points;
         this.decorativeRoot.add(points);
+    }
+
+    /**
+     * Renderer-owned decorative tick for the legacy ambient points. The
+     * ambient material declares a `uTime` twinkle uniform but is not part of
+     * either catalog layer, so the layer ticks never advance it; without
+     * this tick the extracted Earth ambient stars would freeze. Advances
+     * only while the points exist and are visible (prepared views hide them
+     * and need no motion).
+     */
+    private tickAmbient(deltaSeconds: number): void {
+        const ambient = this.ambientStarPoints;
+        if (ambient === null || !ambient.visible) return;
+        const material = ambient.material as THREE.ShaderMaterial;
+        const uTime = material.uniforms?.uTime;
+        if (uTime) {
+            uTime.value += deltaSeconds;
+        }
     }
 
     /**
@@ -1464,6 +1504,7 @@ export class ConstellationRenderer {
 
         this.primaryLayer?.tick(delta);
         this.referenceLayer?.tick(delta);
+        this.tickAmbient(delta);
         this.tickShootingStar(now);
         this.maybeSpawnShootingStar(now);
         this.renderer.render(this.scene, this.camera);
@@ -1547,7 +1588,7 @@ export class ConstellationRenderer {
     async updateSky(
         stars: readonly Star[],
         constellations: readonly Constellation[],
-        skyConfig: SkyConfiguration,
+        skyConfig: Readonly<SkyConfiguration>,
     ): Promise<void> {
         await this.initialize(stars, constellations, skyConfig);
     }

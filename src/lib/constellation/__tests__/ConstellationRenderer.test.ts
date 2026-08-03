@@ -2970,6 +2970,140 @@ describe("ConstellationRenderer", () => {
                 container.remove();
             }
         });
+
+        it("animate() advances the ambient uTime uniform on a sparse Earth frame", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                // Sparse Earth pass: 1 ordinary star creates the decorative
+                // ambient points child (visible = true).
+                await renderer.initialize(
+                    [makeStar({ id: "s1", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+                const anyRenderer = renderer as any;
+                const ambient = findAmbient(anyRenderer);
+                expect(ambient).toBeTruthy();
+                const ambientMaterial = ambient.material;
+                const before = ambientMaterial.uniforms.uTime.value as number;
+                // The ambient points are renderer-owned decorative state, not
+                // a member of either catalog layer — their uTime is advanced
+                // by the renderer's own decorative tick, never by the layers.
+                expect(ambient).not.toBe(
+                    anyRenderer.primaryLayer.ordinaryStarPoints,
+                );
+                expect(anyRenderer.referenceLayer).toBeNull();
+                // Force a positive clock delta so the uTime advance is
+                // observable regardless of frame timing, then run one
+                // renderer frame (regression: the extracted ambient material
+                // used to freeze because only the layers were ticked).
+                anyRenderer.clock.getDelta = () => 1.0;
+                anyRenderer.animate();
+                expect(ambientMaterial.uniforms.uTime.value).toBeGreaterThan(
+                    before,
+                );
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — development warning adapter", () => {
+        it("warns for a malformed prepared line through initializePreparedCatalogs", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            const warnSpy = vi
+                .spyOn(console, "warn")
+                .mockImplementation(() => {});
+            try {
+                const primaryCatalog: PreparedConstellationCatalog = {
+                    stars: [makeStar({ id: "p1", magnitude: 1.0 })],
+                    constellations: [
+                        {
+                            id: "bad",
+                            name: "Bad",
+                            abbreviation: "BAD",
+                            description: "Bad",
+                            stars: [makeStar({ id: "p1", magnitude: 1.0 })],
+                            // Out-of-range endpoint: index 99 with a single
+                            // local star. adaptPreparedCatalog is a typed
+                            // identity seam, so the malformed line reaches
+                            // the layer's defensive guards.
+                            lines: [[0, 99]],
+                            visibility: {
+                                hemisphere: "both",
+                                bestMonths: [12],
+                                minLatitude: -90,
+                                maxLatitude: 90,
+                            },
+                        },
+                    ],
+                };
+                await renderer.initializePreparedCatalogs(
+                    { primaryCatalog },
+                    preparedSettings(),
+                );
+                expect(warnSpy).toHaveBeenCalledWith(
+                    "[constellation-renderer] skipped catalog object",
+                    expect.objectContaining({
+                        role: "primary",
+                        objectKind: "constellation-line",
+                        constellationId: "bad",
+                        lineIndex: 0,
+                    }),
+                );
+            } finally {
+                warnSpy.mockRestore();
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("warns for an unexpected reference marker through initializePreparedCatalogs", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            const warnSpy = vi
+                .spyOn(console, "warn")
+                .mockImplementation(() => {});
+            try {
+                // The reference role is comparison-only: any marker record —
+                // including a valid synthetic-Sol marker — is unexpected and
+                // must surface through the renderer's dev warning adapter.
+                const referenceCatalog: PreparedConstellationCatalog = {
+                    stars: [
+                        {
+                            ...makeStar({
+                                id: SYNTHETIC_SOL_STAR_ID,
+                                magnitude: 1.0,
+                            }),
+                            marker: { kind: "synthetic-sol" },
+                        } as unknown as PreparedCatalogStar,
+                    ],
+                    constellations: [],
+                };
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog(),
+                        referenceCatalog,
+                    },
+                    preparedSettings(),
+                );
+                expect(warnSpy).toHaveBeenCalledWith(
+                    "[constellation-renderer] skipped catalog object",
+                    expect.objectContaining({
+                        role: "reference",
+                        objectKind: "marker",
+                        starId: SYNTHETIC_SOL_STAR_ID,
+                    }),
+                );
+            } finally {
+                warnSpy.mockRestore();
+                renderer.dispose();
+                container.remove();
+            }
+        });
     });
 
     describe("ConstellationRenderer — reference visibility", () => {

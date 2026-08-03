@@ -553,6 +553,11 @@ class MockGroup extends (THREE as any).Group {
                 this.parent.remove(this);
             }
         });
+        // Object3D.lookAt — the synthetic-Sol marker group orients its
+        // reticle plane toward the origin camera with lookAt(0, 0, 0). The
+        // mock records the call; real orientation math is covered by the
+        // real-Three marker tests.
+        this.lookAt = vi.fn();
         this.getObjectByName = vi.fn(
             (n: string) => this.children.find((c: any) => c.name === n) || null,
         );
