@@ -341,11 +341,11 @@ describe("ConstellationRenderer", () => {
             makeSkyConfig(),
         );
         // Force the layer's star-point material to be an array so the array
-        // branch executes without throwing
+        // branch executes without throwing. Assert the points exist so the
+        // test always exercises the array-material disposal branch.
         const points = (renderer as any).primaryLayer.ordinaryStarPoints;
-        if (points) {
-            points.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
-        }
+        expect(points).toBeTruthy();
+        points.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
         expect(() => renderer.dispose()).not.toThrow();
     });
 
@@ -356,12 +356,13 @@ describe("ConstellationRenderer", () => {
             [makeConstellation()],
             makeSkyConfig(),
         );
-        // Force a line hit object to have array materials
+        // Force a line hit object to have array materials. Assert the layer
+        // produced at least one line hit object so the test always exercises
+        // the array-material disposal branch.
         const lineObjects = (renderer as any).primaryLayer.lineHitObjects;
-        if (lineObjects.length > 0) {
-            const child = lineObjects[0] as any;
-            child.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
-        }
+        expect(lineObjects.length).toBeGreaterThan(0);
+        const child = lineObjects[0] as any;
+        child.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
         expect(() => renderer.dispose()).not.toThrow();
     });
 
@@ -720,11 +721,17 @@ describe("ConstellationRenderer", () => {
         });
 
         it("does not throw when the primary layer tick is called with no points", async () => {
-            const renderer = new ConstellationRenderer(makeContainer());
-            await renderer.initialize([], [], makeSkyConfig());
-            expect(() =>
-                (renderer as any).primaryLayer.tick(0.5),
-            ).not.toThrow();
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize([], [], makeSkyConfig());
+                expect(() =>
+                    (renderer as any).primaryLayer.tick(0.5),
+                ).not.toThrow();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
         });
     });
 
@@ -3011,6 +3018,17 @@ describe("ConstellationRenderer", () => {
     });
 
     describe("ConstellationRenderer — development warning adapter", () => {
+        // warnCatalogSkip only emits when import.meta.env.DEV is true. Stub
+        // DEV explicitly so the warning tests are independent of the build
+        // mode vitest runs under, then restore the real environment after
+        // each test so later suites observe the original value.
+        beforeEach(() => {
+            vi.stubEnv("DEV", true);
+        });
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
         it("warns for a malformed prepared line through initializePreparedCatalogs", async () => {
             const container = makeContainer();
             const renderer = new ConstellationRenderer(container);
@@ -3273,6 +3291,7 @@ describe("ConstellationRenderer", () => {
                 getWorldPosition: vi.fn(
                     () => new THREE.Vector3(position.x, position.y, position.z),
                 ),
+                dispose: vi.fn(),
             };
             (
                 renderer as unknown as {
@@ -3287,6 +3306,7 @@ describe("ConstellationRenderer", () => {
         it("returns false when the primary layer has no position (absent or reference-only)", () => {
             const primaryLayer = {
                 getWorldPosition: vi.fn(() => null),
+                dispose: vi.fn(),
             };
             (
                 renderer as unknown as {
@@ -3303,6 +3323,7 @@ describe("ConstellationRenderer", () => {
         it("returns false for a zero-length position", () => {
             const primaryLayer = {
                 getWorldPosition: vi.fn(() => new THREE.Vector3(0, 0, 0)),
+                dispose: vi.fn(),
             };
             (
                 renderer as unknown as {
@@ -3323,6 +3344,7 @@ describe("ConstellationRenderer", () => {
                 getWorldPosition: vi.fn(
                     () => new THREE.Vector3(position.x, position.y, position.z),
                 ),
+                dispose: vi.fn(),
             };
             (
                 renderer as unknown as {
@@ -3337,9 +3359,12 @@ describe("ConstellationRenderer", () => {
         it("inherits the existing pitch clamp through tweenCameraTo", () => {
             // A zenith position yields pitch π/2, beyond the ±π/2.2 clamp;
             // the clamp lives in tweenCameraTo and must apply to focus too.
-            tweenSpy.mockRestore();
+            // vi.spyOn calls the original implementation by default, so the
+            // real tweenCameraTo runs through the shared spy and applies the
+            // clamp — no mockRestore, which would kill the spy for later tests.
             const primaryLayer = {
                 getWorldPosition: vi.fn(() => new THREE.Vector3(0, 100, 0)),
+                dispose: vi.fn(),
             };
             (
                 renderer as unknown as {
