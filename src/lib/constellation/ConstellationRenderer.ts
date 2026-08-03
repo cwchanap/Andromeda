@@ -214,6 +214,18 @@ export class ConstellationRenderer {
     private _boundTouchEnd: () => void = () => {};
     private _boundMouseLeave: () => void = () => {};
 
+    // Keyboard navigation + aria-live bridge. The canvas is made focusable
+    // (tabIndex 0) so arrow/enter/escape can drive the same selection path
+    // the pointer/touch controls use (setSelected/getSelectedId/
+    // onConstellationClick), and an visually-hidden polite live region
+    // announces selection changes for screen readers (WCAG §4.1.3).
+    private _boundKeyDown: (event: KeyboardEvent) => void = () => {};
+    private _ariaLiveRegion: HTMLDivElement | null = null;
+    // Cached primary-catalog constellation ids+names, refreshed on every
+    // (re)initialization. Powers next/prev keyboard navigation without a
+    // separate interaction path — selection still flows through setSelected.
+    private _constellationEntries: { id: string; name: string }[] = [];
+
     constructor(
         container: HTMLElement,
         callbacks: ConstellationRendererCallbacks = {},
@@ -222,17 +234,7 @@ export class ConstellationRenderer {
         // Initialize Three.js scene
         this.scene = new THREE.Scene();
 
-        // Create one persistent decorative owner: the shader starfield sphere
-        // (and later the optional legacy ambient points) live inside this root
-        // and survive reinitializations. Only final dispose() releases it.
-        this.decorativeRoot = new THREE.Group();
-        this.decorativeRoot.name = "decorative-background";
-
-        // Create a dark starfield background instead of solid color
-        this.createStarfieldBackground();
-        this.scene.add(this.decorativeRoot);
-
-        // Setup camera
+        // Setup camera (lightweight — no WebGL dependency)
         this.camera = new THREE.PerspectiveCamera(
             75,
             container.clientWidth / container.clientHeight,
@@ -241,19 +243,24 @@ export class ConstellationRenderer {
         );
         this.camera.position.set(0, 0, 0);
 
+        // Gate: probe WebGL support on a throwaway canvas BEFORE creating the
+        // WebGLRenderer or any decorative geometry. This is a framework-
+        // agnostic check (no Svelte store import) mirroring the wrapper's own
+        // checkWebGLSupport(); the wrapper still owns the user-facing
+        // unsupported-device UI and relies on this constructor throwing to
+        // trigger its 2D-canvas fallback. Probing first means a failure
+        // leaves no starfield geometry/materials leaked (the old path built
+        // the decorative root, then disposed only the renderer on failure).
+        if (!ConstellationRenderer.probeWebGLSupport()) {
+            console.error("WebGL context not available");
+            throw new Error("WebGL is not supported or failed to initialize");
+        }
+
         // Setup renderer
         this.renderer = new THREE.WebGLRenderer({
             antialias: true,
             alpha: false, // Opaque background for starfield
         });
-
-        // Check if WebGL context was actually created
-        const gl = this.renderer.getContext();
-        if (!gl) {
-            console.error("WebGL context not available");
-            this.renderer.dispose();
-            throw new Error("WebGL is not supported or failed to initialize");
-        }
 
         this.renderer.setSize(container.clientWidth, container.clientHeight);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -266,6 +273,17 @@ export class ConstellationRenderer {
 
         // Set initial cursor style
         this.canvas.style.cursor = "grab";
+
+        // Create one persistent decorative owner: the shader starfield sphere
+        // (and later the optional legacy ambient points) live inside this root
+        // and survive reinitializations. Only final dispose() releases it.
+        // Built after the WebGL gate so a probe failure leaks nothing.
+        this.decorativeRoot = new THREE.Group();
+        this.decorativeRoot.name = "decorative-background";
+
+        // Create a dark starfield background instead of solid color
+        this.createStarfieldBackground();
+        this.scene.add(this.decorativeRoot);
 
         // Add enhanced ambient lighting for better star visibility
         const ambientLight = new THREE.AmbientLight(0x102040, 0.8); // Slightly blue ambient light
@@ -284,6 +302,7 @@ export class ConstellationRenderer {
         this._boundTouchEnd = this._createTouchEndHandler();
         this._boundMouseLeave = this.onMouseLeave.bind(this);
         this._clickHandler = this.handleCanvasClick.bind(this);
+        this._boundKeyDown = this.onKeyDown.bind(this);
 
         // Handle window resize
         window.addEventListener("resize", this._boundResize);
@@ -294,6 +313,50 @@ export class ConstellationRenderer {
 
         // Register click handler for raycasting
         this.canvas.addEventListener("click", this._clickHandler);
+
+        // Keyboard reachability + aria-live bridge. The canvas joins the tab
+        // order so keyboard users can navigate the catalog with arrows and
+        // confirm/clear with Enter/Escape — reusing the existing selection
+        // path (setSelected/getSelectedId/onConstellationClick) rather than
+        // a parallel interaction channel.
+        this.canvas.setAttribute("tabindex", "0");
+        this.canvas.setAttribute("role", "application");
+        this.canvas.setAttribute(
+            "aria-label",
+            "Constellation sky map. Use arrow keys to navigate constellations, Enter to select, Escape to clear.",
+        );
+        this.canvas.addEventListener("keydown", this._boundKeyDown);
+        this._ariaLiveRegion = this.createAriaLiveRegion();
+        container.appendChild(this._ariaLiveRegion);
+    }
+
+    /**
+     * Framework-agnostic WebGL support probe. Creates a throwaway canvas and
+     * asks for a WebGL (or experimental-WebGL) context, then verifies a
+     * shader can be created — the same shape as the wrapper's
+     * `checkWebGLSupport()`. Kept static and free of any Svelte/store
+     * import so the renderer stays framework-agnostic (mirrors
+     * SolarSystemRenderer, which also does not pull in `webglStore`).
+     * Returns true when WebGL is usable, false otherwise.
+     */
+    private static probeWebGLSupport(): boolean {
+        try {
+            const probeCanvas = document.createElement("canvas");
+            const gl =
+                probeCanvas.getContext("webgl") ||
+                probeCanvas.getContext("experimental-webgl");
+            if (!gl) return false;
+            const webgl = gl as WebGLRenderingContext;
+            // Confirm the context can actually compile shaders, not just
+            // return a non-null object (some drivers hand back a context
+            // that fails on the first shader allocation).
+            const vertexShader = webgl.createShader(webgl.VERTEX_SHADER);
+            const fragmentShader = webgl.createShader(webgl.FRAGMENT_SHADER);
+            if (!vertexShader || !fragmentShader) return false;
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     /**
@@ -848,6 +911,17 @@ export class ConstellationRenderer {
         // 2. clear stale selected/hovered IDs
         this.selectedId = null;
         this.hoveredId = null;
+
+        // Cache the primary catalog's constellation id+name list for keyboard
+        // next/prev navigation. Refreshed on every (re)initialization so the
+        // keyboard path always reflects the active catalog; cleared in
+        // clearScene() so a stale list never outlives the layers it indexes.
+        this._constellationEntries = request.primaryCatalog.constellations.map(
+            (constellation) => ({
+                id: constellation.id,
+                name: constellation.name,
+            }),
+        );
 
         // 3. resolve labels/reference preferences. A request value updates
         // stored state; an omitted request value preserves stored state. A
@@ -1594,6 +1668,10 @@ export class ConstellationRenderer {
 
         this.selectedId = null;
         this.hoveredId = null;
+        // Drop the cached constellation list so a stale keyboard-navigation
+        // index never points at ids from a torn-down catalog. The next
+        // runSharedInitialization repopulates it.
+        this._constellationEntries = [];
     }
 
     /**
@@ -1605,6 +1683,118 @@ export class ConstellationRenderer {
         skyConfig: Readonly<SkyConfiguration>,
     ): Promise<void> {
         await this.initialize(stars, constellations, skyConfig);
+    }
+
+    /**
+     * Create the visually-hidden polite aria-live region used to announce
+     * keyboard-driven selection changes to assistive technology. Styled with
+     * the standard sr-only clip pattern so it never affects canvas layout.
+     */
+    private createAriaLiveRegion(): HTMLDivElement {
+        const region = document.createElement("div");
+        region.setAttribute("aria-live", "polite");
+        region.setAttribute("aria-atomic", "true");
+        region.setAttribute("role", "status");
+        region.style.cssText =
+            "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" +
+            "overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;";
+        return region;
+    }
+
+    /**
+     * Announce a status message to the aria-live region. Setting textContent
+     * on a polite live region reliably triggers AT announcement; clearing it
+     * first forces a re-announcement when the same message repeats.
+     */
+    private announceAriaLive(message: string): void {
+        if (!this._ariaLiveRegion) return;
+        this._ariaLiveRegion.textContent = "";
+        this._ariaLiveRegion.textContent = message;
+    }
+
+    /**
+     * Keyboard handler for catalog navigation and selection. Reuses the
+     * existing selection symbols (setSelected/getSelectedId/
+     * onConstellationClick) — the same path pointer/touch clicks take — so
+     * there is no separate keyboard interaction channel.
+     *
+     * ArrowRight/ArrowDown: select next constellation (wraps).
+     * ArrowLeft/ArrowUp: select previous constellation (wraps).
+     * Enter/Space: confirm the current selection via onConstellationClick.
+     * Escape: clear the current selection.
+     */
+    private onKeyDown(event: KeyboardEvent): void {
+        const entries = this._constellationEntries;
+        if (entries.length === 0) return;
+
+        switch (event.key) {
+            case "ArrowRight":
+            case "ArrowDown": {
+                event.preventDefault();
+                this.moveSelection(1);
+                break;
+            }
+            case "ArrowLeft":
+            case "ArrowUp": {
+                event.preventDefault();
+                this.moveSelection(-1);
+                break;
+            }
+            case "Enter":
+            case " ": {
+                event.preventDefault();
+                const id = this.getSelectedId();
+                if (id) {
+                    this.callbacks.onConstellationClick?.(id);
+                    const name = this.entryNameForId(id) ?? id;
+                    this.announceAriaLive(`Viewing ${name}.`);
+                }
+                break;
+            }
+            case "Escape": {
+                event.preventDefault();
+                if (this.getSelectedId() !== null) {
+                    this.setSelected(null);
+                    this.announceAriaLive("Selection cleared.");
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    /**
+     * Move the keyboard selection by `delta` positions within the cached
+     * constellation list (wrapping). A null current selection starts at the
+     * first entry. Announces the new selection name.
+     */
+    private moveSelection(delta: number): void {
+        const entries = this._constellationEntries;
+        if (entries.length === 0) return;
+        const currentId = this.getSelectedId();
+        let index = currentId
+            ? entries.findIndex((entry) => entry.id === currentId)
+            : -1;
+        if (index === -1) {
+            // No current selection: arrows land on the first (delta > 0) or
+            // last (delta < 0) entry so both directions feel natural.
+            index = delta > 0 ? 0 : entries.length - 1;
+        } else {
+            index = (index + delta + entries.length) % entries.length;
+        }
+        const entry = entries[index];
+        if (!entry) return;
+        this.setSelected(entry.id);
+        this.announceAriaLive(`${entry.name} selected. Press Enter to view.`);
+    }
+
+    /**
+     * Look up the cached display name for a constellation id, or undefined.
+     */
+    private entryNameForId(id: string): string | undefined {
+        return this._constellationEntries.find((entry) => entry.id === id)
+            ?.name;
     }
 
     /**
@@ -1724,6 +1914,9 @@ export class ConstellationRenderer {
             );
             this.canvas.removeEventListener("touchmove", this._boundTouchMove);
             this.canvas.removeEventListener("touchend", this._boundTouchEnd);
+            // Keyboard navigation listener registered with the other canvas
+            // interaction handlers in the constructor.
+            this.canvas.removeEventListener("keydown", this._boundKeyDown);
         } catch (e) {
             console.error(
                 "ConstellationRenderer dispose: event listener cleanup failed",
@@ -1731,11 +1924,17 @@ export class ConstellationRenderer {
             );
         }
 
-        // Phase 3: Remove canvas from DOM
+        // Phase 3: Remove canvas + aria-live region from DOM
         try {
             if (this.canvas.parentElement) {
                 this.canvas.parentElement.removeChild(this.canvas);
             }
+            if (this._ariaLiveRegion && this._ariaLiveRegion.parentElement) {
+                this._ariaLiveRegion.parentElement.removeChild(
+                    this._ariaLiveRegion,
+                );
+            }
+            this._ariaLiveRegion = null;
         } catch (e) {
             console.error(
                 "ConstellationRenderer dispose: canvas removal failed",

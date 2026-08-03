@@ -4108,6 +4108,7 @@ describe("ConstellationRenderer", () => {
                     ["touchstart", anyRenderer._boundTouchStart],
                     ["touchmove", anyRenderer._boundTouchMove],
                     ["touchend", anyRenderer._boundTouchEnd],
+                    ["keydown", anyRenderer._boundKeyDown],
                 ];
                 for (const [type, handler] of pairs) {
                     expect(canvasRemoveSpy).toHaveBeenCalledWith(type, handler);
@@ -4320,5 +4321,219 @@ describe("ConstellationRenderer", () => {
                 container.remove();
             }
         });
+    });
+});
+
+describe("ConstellationRenderer — WebGL probe gate", () => {
+    it("throws when the framework-agnostic WebGL probe fails", () => {
+        const container = makeContainer();
+        // Stub canvas.getContext to simulate no WebGL support — the probe
+        // creates its own throwaway canvas, so the prototype stub is what
+        // it hits. Restore in finally so other suites keep the faithful
+        // WebGL mock from setup.ts.
+        const original = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = vi.fn(() => null);
+        try {
+            expect(() => new ConstellationRenderer(container)).toThrow(
+                "WebGL is not supported or failed to initialize",
+            );
+            // Nothing appended to the container on a failed probe.
+            expect(container.querySelectorAll("canvas")).toHaveLength(0);
+        } finally {
+            HTMLCanvasElement.prototype.getContext = original;
+            container.remove();
+        }
+    });
+});
+
+describe("ConstellationRenderer — keyboard navigation + aria-live", () => {
+    const makeNamedConstellation = (
+        id: string,
+        name: string,
+    ): PreparedConstellation => ({
+        id,
+        name,
+        abbreviation: id.slice(0, 3),
+        description: `${name} description`,
+        stars: [
+            makeStar({ id: `${id}-a`, rightAscension: 5.5, declination: 1.0 }),
+            makeStar({
+                id: `${id}-b`,
+                rightAscension: 5.6,
+                declination: 2.0,
+                magnitude: 1.0,
+            }),
+        ],
+        lines: [[0, 1]] as const,
+        visibility: {
+            hemisphere: "both",
+            bestMonths: [12, 1, 2],
+            minLatitude: -90,
+            maxLatitude: 90,
+        },
+    });
+
+    const setupKeyboardRenderer = async (): Promise<{
+        renderer: ConstellationRenderer;
+        container: HTMLElement;
+        canvas: HTMLCanvasElement;
+        clicks: string[];
+    }> => {
+        const container = makeContainer();
+        const clicks: string[] = [];
+        const renderer = new ConstellationRenderer(container, {
+            onConstellationClick: (id: string) => clicks.push(id),
+        });
+        const catalog: PreparedConstellationCatalog = {
+            stars: [
+                makeStar({ id: "ps1", magnitude: 1.5 }),
+                makeStar({ id: "ps2", magnitude: 1.0 }),
+            ],
+            constellations: [
+                makeNamedConstellation("orion", "Orion"),
+                makeNamedConstellation("ursa", "Ursa Major"),
+                makeNamedConstellation("cygnus", "Cygnus"),
+            ],
+        };
+        await renderer.initializePreparedCatalogs(
+            { primaryCatalog: catalog },
+            preparedSettings(),
+        );
+        const canvas = (renderer as any).canvas as HTMLCanvasElement;
+        return { renderer, container, canvas, clicks };
+    };
+
+    it("makes the canvas keyboard reachable with role and aria-label", async () => {
+        const { renderer, container, canvas } = await setupKeyboardRenderer();
+        try {
+            expect(canvas.getAttribute("tabindex")).toBe("0");
+            expect(canvas.getAttribute("role")).toBe("application");
+            expect(canvas.getAttribute("aria-label")).toContain("arrow keys");
+        } finally {
+            renderer.dispose();
+            container.remove();
+        }
+    });
+
+    it("creates a visually-hidden polite aria-live region attached to the container", async () => {
+        const { renderer, container } = await setupKeyboardRenderer();
+        try {
+            const region = (renderer as any)._ariaLiveRegion as HTMLDivElement;
+            expect(region).not.toBeNull();
+            expect(region.getAttribute("aria-live")).toBe("polite");
+            expect(region.getAttribute("aria-atomic")).toBe("true");
+            expect(region.getAttribute("role")).toBe("status");
+            expect(container.contains(region)).toBe(true);
+        } finally {
+            renderer.dispose();
+            container.remove();
+        }
+    });
+
+    it("ArrowRight selects the first constellation from no selection and announces it", async () => {
+        const { renderer, container, canvas } = await setupKeyboardRenderer();
+        try {
+            expect(renderer.getSelectedId()).toBeNull();
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "ArrowRight" }),
+            );
+            expect(renderer.getSelectedId()).toBe("orion");
+            const region = (renderer as any)._ariaLiveRegion as HTMLDivElement;
+            expect(region.textContent).toContain("Orion");
+            expect(region.textContent).toContain("Press Enter to view");
+        } finally {
+            renderer.dispose();
+            container.remove();
+        }
+    });
+
+    it("ArrowDown advances forward and ArrowLeft wraps from first to last", async () => {
+        const { renderer, container, canvas } = await setupKeyboardRenderer();
+        try {
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "ArrowDown" }),
+            );
+            expect(renderer.getSelectedId()).toBe("orion");
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "ArrowDown" }),
+            );
+            expect(renderer.getSelectedId()).toBe("ursa");
+            // Wrap: ArrowLeft from orion (index 0) -> last (cygnus).
+            renderer.setSelected("orion");
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "ArrowLeft" }),
+            );
+            expect(renderer.getSelectedId()).toBe("cygnus");
+        } finally {
+            renderer.dispose();
+            container.remove();
+        }
+    });
+
+    it("Enter confirms the current selection via onConstellationClick", async () => {
+        const { renderer, container, canvas, clicks } =
+            await setupKeyboardRenderer();
+        try {
+            renderer.setSelected("ursa");
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "Enter" }),
+            );
+            expect(clicks).toEqual(["ursa"]);
+            const region = (renderer as any)._ariaLiveRegion as HTMLDivElement;
+            expect(region.textContent).toContain("Viewing Ursa Major");
+        } finally {
+            renderer.dispose();
+            container.remove();
+        }
+    });
+
+    it("Escape clears the current selection and announces it", async () => {
+        const { renderer, container, canvas } = await setupKeyboardRenderer();
+        try {
+            renderer.setSelected("cygnus");
+            expect(renderer.getSelectedId()).toBe("cygnus");
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "Escape" }),
+            );
+            expect(renderer.getSelectedId()).toBeNull();
+            const region = (renderer as any)._ariaLiveRegion as HTMLDivElement;
+            expect(region.textContent).toContain("Selection cleared");
+        } finally {
+            renderer.dispose();
+            container.remove();
+        }
+    });
+
+    it("keyboard navigation is a no-op before initialization populates the catalog", async () => {
+        const container = makeContainer();
+        const renderer = new ConstellationRenderer(container);
+        try {
+            const canvas = (renderer as any).canvas as HTMLCanvasElement;
+            // No initializePreparedCatalogs call yet — entries empty.
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "ArrowRight" }),
+            );
+            expect(renderer.getSelectedId()).toBeNull();
+        } finally {
+            renderer.dispose();
+            container.remove();
+        }
+    });
+
+    it("dispose removes the aria-live region from the DOM and the keydown listener", async () => {
+        const { renderer, container, canvas } = await setupKeyboardRenderer();
+        const region = (renderer as any)._ariaLiveRegion as HTMLDivElement;
+        const removeSpy = vi.spyOn(canvas, "removeEventListener");
+        renderer.dispose();
+        // keydown listener removed.
+        expect(removeSpy).toHaveBeenCalledWith(
+            "keydown",
+            (renderer as any)._boundKeyDown,
+        );
+        // aria-live region detached.
+        expect(container.contains(region)).toBe(false);
+        // Internal reference cleared.
+        expect((renderer as any)._ariaLiveRegion).toBeNull();
+        container.remove();
     });
 });

@@ -955,6 +955,14 @@ HTMLCanvasElement.prototype.getContext = vi.fn((type: string) => {
                 }
                 return 0;
             },
+            // Real WebGL contexts expose createShader; the framework-agnostic
+            // WebGL probe (and the wrapper's checkWebGLSupport) call it to
+            // confirm the context can actually allocate shaders, not just
+            // return a non-null object. Return a truthy stub so the probe
+            // succeeds in tests the way it does against a real GPU.
+            createShader: vi.fn(() => ({})),
+            VERTEX_SHADER: 35633,
+            FRAGMENT_SHADER: 35632,
         } as any;
     }
     // Fallback 2d context mock

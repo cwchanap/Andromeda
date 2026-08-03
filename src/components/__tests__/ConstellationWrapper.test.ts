@@ -100,15 +100,26 @@ describe("ConstellationWrapper", () => {
     });
 
     it("prioritizes WebGL fallback over generic error when WebGL is unsupported", () => {
-        const { container } = render(ConstellationWrapper);
-        // In jsdom, both webglSupported=false and error may be set.
-        // The WebGL fallback (with amber ⚠️) should take precedence over
-        // the generic error overlay (with red ❌).
-        const webglHeading = container.querySelector(".text-amber-400");
-        const errorHeading = container.querySelector(".text-red-400");
-        // WebGL fallback should be shown, generic error should NOT
-        expect(webglHeading).not.toBeNull();
-        expect(errorHeading).toBeNull();
+        // Explicitly stub canvas.getContext to simulate no WebGL support so
+        // the wrapper's checkWebGLSupport() returns false and the fallback
+        // overlay renders. (The global setup mock now exposes a faithful
+        // WebGL context including createShader, so an explicit stub is the
+        // reliable way to drive the unsupported branch.)
+        const origGetContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = vi.fn(() => null);
+        try {
+            const { container } = render(ConstellationWrapper);
+            // In jsdom, both webglSupported=false and error may be set.
+            // The WebGL fallback (with amber ⚠️) should take precedence over
+            // the generic error overlay (with red ❌).
+            const webglHeading = container.querySelector(".text-amber-400");
+            const errorHeading = container.querySelector(".text-red-400");
+            // WebGL fallback should be shown, generic error should NOT
+            expect(webglHeading).not.toBeNull();
+            expect(errorHeading).toBeNull();
+        } finally {
+            HTMLCanvasElement.prototype.getContext = origGetContext;
+        }
     });
 
     it("unmounts cleanly", () => {
