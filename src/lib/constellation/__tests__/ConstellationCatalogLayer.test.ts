@@ -541,6 +541,27 @@ describe("ConstellationCatalogLayer synthetic Sol markers", () => {
         expect(world?.y).toBeCloseTo(placed.position.y, 5);
         expect(world?.z).toBeCloseTo(placed.position.z, 5);
     });
+
+    it("holds no world-position authority for the reference role", () => {
+        // World positions are registered only for the primary role: the
+        // reference layer is comparison-only, so getWorldPosition must
+        // answer null even for stars it renders (renderer focus queries
+        // only the primary layer and must never resolve reference ids).
+        const sol = makeSyntheticSolStar();
+        const ordinary = makeRendererStar({ id: "alpha" });
+        const layer = new ConstellationCatalogLayer(
+            makeLayerOptions({
+                role: "reference",
+                catalog: makeRendererCatalog({ stars: [sol, ordinary] }),
+            }),
+        );
+
+        expect(layer.renderedOrdinaryStars.map((star) => star.id)).toEqual([
+            "alpha",
+        ]);
+        expect(layer.getWorldPosition("alpha")).toBeNull();
+        expect(layer.getWorldPosition(SYNTHETIC_SOL_STAR_ID)).toBeNull();
+    });
 });
 
 describe("ConstellationCatalogLayer independent line topology and guards", () => {
@@ -1299,6 +1320,7 @@ describe("ConstellationCatalogLayer lazy primary labels", () => {
     });
 
     it("skips constellation labels whose local positions are invalid", () => {
+        const warn = vi.fn();
         const broken = makeRendererStar({
             id: "broken",
             rightAscension: Number.NaN,
@@ -1326,6 +1348,7 @@ describe("ConstellationCatalogLayer lazy primary labels", () => {
                         }),
                     ],
                 }),
+                warn,
             }),
         );
 
@@ -1338,6 +1361,94 @@ describe("ConstellationCatalogLayer lazy primary labels", () => {
         expect(
             constellationLabels?.children.map((sprite) => sprite.name),
         ).toEqual(["label-good"]);
+        // Every individually-invalid local star emits the structured
+        // `constellation-star` warning; the average alone is never trusted.
+        expect(warn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                role: "primary",
+                objectKind: "constellation-star",
+                constellationId: "nan",
+                starId: "broken",
+                error: {
+                    code: "non-finite-render-coordinate",
+                    component: "rightAscension",
+                },
+            }),
+        );
+    });
+
+    it("rejects constellation labels whose local declinations are individually out of range", () => {
+        // Declinations +100° and -100° both fail fixed-equatorial placement
+        // (out of [-90, 90]), but their average is a valid-looking 0°. The
+        // label must be skipped because every local star is validated, and
+        // each rejected star emits the structured `constellation-star`
+        // warning — the declared warning kind must not stay dead code.
+        const warn = vi.fn();
+        const north = makeRendererStar({
+            id: "north",
+            rightAscension: 5,
+            declination: 100,
+        });
+        const south = makeRendererStar({
+            id: "south",
+            rightAscension: 5,
+            declination: -100,
+        });
+        const alpha = makeRendererStar({ id: "alpha" });
+        const layer = new ConstellationCatalogLayer(
+            makeLayerOptions({
+                catalog: makeRendererCatalog({
+                    stars: [alpha],
+                    constellations: [
+                        makeRendererConstellation({
+                            id: "offsetting",
+                            stars: [north, south],
+                            lines: [],
+                        }),
+                        makeRendererConstellation({
+                            id: "good",
+                            stars: [alpha],
+                            lines: [],
+                        }),
+                    ],
+                }),
+                warn,
+            }),
+        );
+
+        layer.setLabelsVisible(true);
+
+        const constellationLabels = layer.root.getObjectByName(
+            "constellation-labels",
+        ) as unknown as THREE.Group | null;
+        expect(
+            constellationLabels?.children.map((sprite) => sprite.name),
+        ).toEqual(["label-good"]);
+        expect(warn).toHaveBeenCalledTimes(2);
+        expect(warn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                role: "primary",
+                objectKind: "constellation-star",
+                constellationId: "offsetting",
+                starId: "north",
+                error: {
+                    code: "declination-out-of-range",
+                    declination: 100,
+                },
+            }),
+        );
+        expect(warn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                role: "primary",
+                objectKind: "constellation-star",
+                constellationId: "offsetting",
+                starId: "south",
+                error: {
+                    code: "declination-out-of-range",
+                    declination: -100,
+                },
+            }),
+        );
     });
 
     it("uses the primary label radii and render orders", () => {
@@ -1405,10 +1516,14 @@ describe("ConstellationCatalogLayer lazy primary labels", () => {
             "marker-labels",
         ) as unknown as THREE.Group;
         const solSprite = markerLabels.children[0] as unknown as THREE.Sprite;
+        // The Sol text label never sits on the marker shape (radius 101): the
+        // design assigns primary star/marker labels to
+        // PRIMARY_STAR_LABEL_RADIUS (105), so the sprite position must match
+        // a placement at 105.
         const solPlaced = placeCatalogCoordinate(
             sol,
             { kind: "fixed-equatorial" },
-            101,
+            105,
         );
         expect(solPlaced.ok).toBe(true);
         if (!solPlaced.ok) return;

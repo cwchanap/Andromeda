@@ -247,6 +247,9 @@ export class ConstellationCatalogLayer {
     }
 
     private readonly role: CatalogLayerRole;
+    private readonly warn:
+        | ((context: RendererSkipWarningContext) => void)
+        | undefined;
     private readonly pointMaterials: readonly THREE.ShaderMaterial[];
     private readonly lineMaterials: readonly THREE.ShaderMaterial[];
     private readonly primaryLineMaterialsByConstellation: ReadonlyMap<
@@ -271,6 +274,7 @@ export class ConstellationCatalogLayer {
         } = options;
 
         this.role = role;
+        this.warn = warn;
         this.root = new THREE.Group();
         this.root.name = `constellation-catalog-${role}`;
         this.labelsVisible = true;
@@ -319,7 +323,21 @@ export class ConstellationCatalogLayer {
                     markerHitObjects.push(
                         this.buildSyntheticSolMarker(star, markerPosition),
                     );
-                    solLabelInput = { star, position: markerPosition };
+                    // The Sol text label sits at its own label radius, never
+                    // on the marker shape itself — the design assigns primary
+                    // star/marker labels to PRIMARY_STAR_LABEL_RADIUS.
+                    const labelPlacement = placeCatalogCoordinate(
+                        star,
+                        placementContext,
+                        PRIMARY_STAR_LABEL_RADIUS,
+                    );
+                    if (labelPlacement.ok) {
+                        const { x: lx, y: ly, z: lz } = labelPlacement.position;
+                        solLabelInput = {
+                            star,
+                            position: new THREE.Vector3(lx, ly, lz),
+                        };
+                    }
                 } else {
                     warn?.({ role, objectKind: "marker", starId: star.id });
                 }
@@ -353,8 +371,13 @@ export class ConstellationCatalogLayer {
             starSeeds.push(fnv1a(`${role}:${star.id}`));
 
             renderedStars.push(star);
-            const position = new THREE.Vector3(x, y, z);
-            positionsByStarId.set(star.id, position);
+            // World positions are registered only for the primary role: the
+            // reference layer is comparison-only and must hold no position
+            // authority (getWorldPosition/focus queries never read it).
+            if (role === "primary") {
+                const position = new THREE.Vector3(x, y, z);
+                positionsByStarId.set(star.id, position);
+            }
             if (role === "primary") {
                 // Star labels sit outside the star sphere at their own
                 // radius; cache the accepted label position so label
@@ -754,6 +777,13 @@ export class ConstellationCatalogLayer {
      * meshes — `THREE.Group` has no raycast — so the child hit must carry
      * the complete `RendererStar` for marker hover to resolve. Its shape
      * stays visible regardless of label visibility.
+     *
+     * Orientation: the ring geometry lives in its local XY plane (normal
+     * +Z), so the group is turned with `lookAt(0, 0, 0)` to point that
+     * normal radially outward from the origin. The camera is always at the
+     * origin, so every marker is a perfect billboard and can never be viewed
+     * edge-on — the "unmistakable" ring/reticle stays visible and hittable
+     * for every catalog direction.
      */
     private buildSyntheticSolMarker(
         star: RendererStar,
@@ -762,6 +792,7 @@ export class ConstellationCatalogLayer {
         const group = new THREE.Group();
         group.name = `marker-${star.id}`;
         group.position.set(position.x, position.y, position.z);
+        group.lookAt(0, 0, 0);
         group.scale.setScalar(SYNTHETIC_SOL_MARKER_SCALE);
         group.renderOrder = SYNTHETIC_SOL_MARKER_RENDER_ORDER;
         const markerUserData = { role: "primary", starId: star.id, star };
@@ -824,8 +855,14 @@ export class ConstellationCatalogLayer {
      * Computes a constellation's label position as the circular-mean
      * (right ascension) and arithmetic-mean (declination) of its local stars,
      * placed at {@link PRIMARY_CONSTELLATION_LABEL_RADIUS}. Returns null for
-     * constellations whose local positions are invalid (no stars, or
-     * non-finite/out-of-range coordinates) so they never create labels.
+     * constellations whose local positions are invalid (no stars, or any
+     * local star with non-finite/out-of-range coordinates in the active
+     * placement context) so they never create labels. Each local star is
+     * validated through the same context-specific placement guard the lines
+     * use, and every rejected star emits a structured
+     * `objectKind: "constellation-star"` warning — the average alone can
+     * hide individually invalid inputs (e.g. declinations +100° and -100°
+     * averaging to a valid-looking 0°).
      */
     private computeConstellationLabelPosition(
         constellation: RendererConstellation,
@@ -836,12 +873,36 @@ export class ConstellationCatalogLayer {
         let sinSum = 0;
         let cosSum = 0;
         let avgDec = 0;
+        let allLocalStarsValid = true;
         for (const star of constellation.stars) {
+            const placement = placeCatalogCoordinate(
+                star,
+                placementContext,
+                PRIMARY_CONSTELLATION_LABEL_RADIUS,
+            );
+            if (!placement.ok) {
+                // Validate every local star and report each rejected input —
+                // the average alone can hide individually invalid values
+                // (e.g. declinations +100° and -100° averaging to a
+                // valid-looking 0°). The aggregate is dropped as soon as any
+                // input fails; valid stars that follow are still counted so
+                // the diagnostic covers the whole constellation.
+                this.warn?.({
+                    role: this.role,
+                    objectKind: "constellation-star",
+                    constellationId: constellation.id,
+                    starId: star.id,
+                    error: placement.error,
+                });
+                allLocalStarsValid = false;
+                continue;
+            }
             const rad = (star.rightAscension / 24) * 2 * Math.PI;
             sinSum += Math.sin(rad);
             cosSum += Math.cos(rad);
             avgDec += star.declination;
         }
+        if (!allLocalStarsValid) return null;
         const avgRA =
             ((Math.atan2(sinSum, cosSum) / (2 * Math.PI) + 1) % 1) * 24;
         avgDec /= constellation.stars.length;
