@@ -498,6 +498,18 @@ describe("ConstellationCatalogLayer synthetic Sol markers", () => {
         const rayPositions = rays.geometry.getAttribute("position")
             .array as Float32Array;
         expect(rayPositions.length).toBe(12); // 4 ray endpoints x 3 components
+
+        // The marker identity is mirrored onto the raycastable children: a
+        // recursive raycaster hit resolves to a child mesh (THREE.Group has
+        // no raycast), so each child must carry the same `{ role, starId,
+        // star }` userData for marker hover to resolve the RendererStar.
+        const markerUserData = {
+            role: "primary",
+            starId: SYNTHETIC_SOL_STAR_ID,
+            star: sol,
+        };
+        expect(reticle.userData).toEqual(markerUserData);
+        expect(rays.userData).toEqual(markerUserData);
     });
 
     it("places the marker and registers its world position at the marker radius", () => {
