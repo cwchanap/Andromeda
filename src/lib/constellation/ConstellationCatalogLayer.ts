@@ -749,7 +749,11 @@ export class ConstellationCatalogLayer {
      * and radial crosshair rays, placed at {@link SYNTHETIC_SOL_MARKER_RADIUS}
      * and scaled by {@link SYNTHETIC_SOL_MARKER_SCALE}. The group is the
      * marker hit object and carries the `{ role, starId, star }` userData;
-     * its shape stays visible regardless of label visibility.
+     * the same userData is mirrored onto the raycastable children (reticle
+     * and rays) because a recursive raycaster hit resolves to the child
+     * meshes — `THREE.Group` has no raycast — so the child hit must carry
+     * the complete `RendererStar` for marker hover to resolve. Its shape
+     * stays visible regardless of label visibility.
      */
     private buildSyntheticSolMarker(
         star: RendererStar,
@@ -760,7 +764,8 @@ export class ConstellationCatalogLayer {
         group.position.set(position.x, position.y, position.z);
         group.scale.setScalar(SYNTHETIC_SOL_MARKER_SCALE);
         group.renderOrder = SYNTHETIC_SOL_MARKER_RENDER_ORDER;
-        group.userData = { role: "primary", starId: star.id, star };
+        const markerUserData = { role: "primary", starId: star.id, star };
+        group.userData = markerUserData;
 
         const reticleMaterial = new THREE.MeshBasicMaterial({
             color: new THREE.Color(star.color),
@@ -774,6 +779,7 @@ export class ConstellationCatalogLayer {
             reticleMaterial,
         );
         reticle.name = "reticle";
+        reticle.userData = markerUserData;
         group.add(reticle);
 
         // Radial rays: two crossing arms in the reticle plane.
@@ -807,6 +813,7 @@ export class ConstellationCatalogLayer {
         );
         const rays = new THREE.LineSegments(rayGeometry, rayMaterial);
         rays.name = "rays";
+        rays.userData = markerUserData;
         group.add(rays);
 
         this.root.add(group);

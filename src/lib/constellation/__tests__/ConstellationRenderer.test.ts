@@ -1422,11 +1422,17 @@ describe("ConstellationRenderer", () => {
                 const primaryLayer = (renderer as any).primaryLayer;
                 expect(primaryLayer.markerHitObjects.length).toBe(1);
 
-                // The marker hit object carries the full RendererStar in
-                // userData; the renderer must pass it through unmodified.
-                globalThis.__threeRaycasterIntersects = [
-                    { object: primaryLayer.markerHitObjects[0] },
-                ];
+                // In production the recursive marker raycast resolves to the
+                // marker group's raycastable children (reticle/rays), never
+                // the group itself — THREE.Group has no raycast, so a real
+                // intersection carries a child mesh. The layer mirrors the
+                // group's `{ role, starId, star }` userData onto each child;
+                // seed the mock with a child so the resolution path matches
+                // what production's recursive raycast actually returns.
+                const markerGroup = primaryLayer.markerHitObjects[0];
+                const reticle = markerGroup.children[0];
+                expect(reticle.userData.star).toBeDefined();
+                globalThis.__threeRaycasterIntersects = [{ object: reticle }];
                 (renderer as any).lastHoverEmit = 0;
                 (renderer as any).onMouseMove({
                     clientX: 100,
