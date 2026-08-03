@@ -13,6 +13,7 @@ import {
 import type {
     RendererCatalog,
     RendererCatalogSettings,
+    RendererStar,
 } from "@/lib/constellation/rendererCatalog";
 import type { CatalogPlacementContext } from "@/lib/constellation/rendererPlacement";
 
@@ -56,6 +57,25 @@ export interface PreparedCatalogRenderRequest {
 export type PreparedCatalogRenderSettings = RendererCatalogSettings;
 
 /**
+ * Interaction callbacks for the layered renderer. Hover/click/selection are
+ * primary-role concepts: the callbacks only ever report primary-catalog
+ * objects, never reference or decorative ones. `onStarHover` receives the
+ * full {@link RendererStar}, including the optional `marker` record for
+ * marker records (e.g. synthetic Sol) — the marker must never be erased.
+ */
+export interface ConstellationRendererCallbacks {
+    onStarHover?: (
+        star: RendererStar | null,
+        screenPos: { x: number; y: number } | null,
+    ) => void;
+    onConstellationHover?: (
+        id: string | null,
+        screenPos: { x: number; y: number } | null,
+    ) => void;
+    onConstellationClick?: (id: string) => void;
+}
+
+/**
  * One shared initialization request consumed by the private
  * {@link ConstellationRenderer.runSharedInitialization} path. The legacy
  * Earth view and the prepared fixed-equatorial view both reduce to this.
@@ -74,9 +94,6 @@ export class ConstellationRenderer {
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
     private canvas: HTMLCanvasElement;
-    private starPoints: THREE.Points | null = null;
-    private _stars: Star[] = []; // Stored for star hover raycasting lookup
-    private constellationLines: THREE.Group | null = null;
     private horizonRing: THREE.LineLoop | null = null;
     private cardinalLabels: THREE.Group | null = null;
     private isMouseDown: boolean = false;
@@ -150,17 +167,7 @@ export class ConstellationRenderer {
     // chain — overlapping async initialization is not supported.
     private animationRunning = false;
 
-    public readonly callbacks: {
-        onStarHover?: (
-            star: Star | null,
-            screenPos: { x: number; y: number } | null,
-        ) => void;
-        onConstellationHover?: (
-            id: string | null,
-            screenPos: { x: number; y: number } | null,
-        ) => void;
-        onConstellationClick?: (id: string) => void;
-    } = {};
+    public readonly callbacks: ConstellationRendererCallbacks = {};
 
     private raycaster: THREE.Raycaster = new THREE.Raycaster();
     private mouseNDC: { x: number; y: number } = { x: 0, y: 0 };
@@ -189,7 +196,7 @@ export class ConstellationRenderer {
 
     constructor(
         container: HTMLElement,
-        callbacks: typeof ConstellationRenderer.prototype.callbacks = {},
+        callbacks: ConstellationRendererCallbacks = {},
     ) {
         this.callbacks = callbacks;
         // Initialize Three.js scene
@@ -544,12 +551,13 @@ export class ConstellationRenderer {
             );
 
             let hoveredId: string | null = null;
+            const lineHitObjects = this.primaryLayer?.lineHitObjects ?? [];
             if (
                 this.callbacks.onConstellationHover &&
-                this.getConstellationHitTargets().length > 0
+                lineHitObjects.length > 0
             ) {
                 const hits = this.raycaster.intersectObjects(
-                    this.getConstellationHitTargets(),
+                    [...lineHitObjects],
                     false,
                 );
                 if (hits.length > 0) {
@@ -573,21 +581,50 @@ export class ConstellationRenderer {
             }
             this.setHovered(hoveredId);
 
-            // Star hover raycasting
-            if (this.callbacks.onStarHover && this.starPoints) {
+            // Star hover raycasting. The primary layer's marker hit objects
+            // are raycast independently of the ordinary-star points, and a
+            // marker hit takes priority (the marker renders above the points
+            // and carries the complete RendererStar — the `marker` record
+            // must never be erased before invoking onStarHover). Reference
+            // and decorative objects are never hover targets.
+            if (this.callbacks.onStarHover && this.primaryLayer) {
                 // Set threshold for point raycasting (larger threshold = easier to hover)
                 this.raycaster.params.Points = { threshold: 2 };
-                const starHits = this.raycaster.intersectObject(
-                    this.starPoints,
-                    false,
-                );
-                if (starHits.length > 0 && starHits[0].index !== undefined) {
-                    const starIdx = starHits[0].index;
-                    const star = this._stars[starIdx] ?? null;
-                    this.callbacks.onStarHover(star, star ? screen : null);
-                } else {
-                    this.callbacks.onStarHover(null, null);
+
+                let hoveredStar: RendererStar | null = null;
+                if (this.primaryLayer.markerHitObjects.length > 0) {
+                    const markerHits = this.raycaster.intersectObjects(
+                        [...this.primaryLayer.markerHitObjects],
+                        true,
+                    );
+                    if (markerHits.length > 0) {
+                        hoveredStar =
+                            (
+                                markerHits[0].object.userData as {
+                                    star?: RendererStar;
+                                }
+                            ).star ?? null;
+                    }
                 }
+                if (!hoveredStar && this.primaryLayer.ordinaryStarPoints) {
+                    const starHits = this.raycaster.intersectObject(
+                        this.primaryLayer.ordinaryStarPoints,
+                        false,
+                    );
+                    if (
+                        starHits.length > 0 &&
+                        starHits[0].index !== undefined
+                    ) {
+                        const starIdx = starHits[0].index;
+                        hoveredStar =
+                            this.primaryLayer.renderedOrdinaryStars[starIdx] ??
+                            null;
+                    }
+                }
+                this.callbacks.onStarHover(
+                    hoveredStar,
+                    hoveredStar ? screen : null,
+                );
             }
         }
     }
@@ -813,26 +850,6 @@ export class ConstellationRenderer {
         // 6. add roots to scene
         this.scene.add(this.primaryLayer.root);
         if (this.referenceLayer) this.scene.add(this.referenceLayer.root);
-
-        // The legacy Earth view keeps a dedicated "constellation-lines"
-        // object so line hover/click raycasting, selection dimming, and
-        // tickUniforms preserve their pre-layer behavior. The layer's line
-        // hit objects are re-parented into this group (three.js moves them
-        // out of the layer root); the layer still owns and disposes their
-        // resources. Prepared views raycast against the layer directly.
-        if (request.isLegacyEarth) {
-            this.constellationLines = new THREE.Group();
-            this.constellationLines.name = "constellation-lines";
-            for (const lineObject of this.primaryLayer.lineHitObjects) {
-                this.constellationLines.add(lineObject);
-            }
-            this.scene.add(this.constellationLines);
-        }
-
-        // Alias the primary layer's star resources so star hover raycasting
-        // and tickUniforms keep working against the objects the layer owns.
-        this.starPoints = this.primaryLayer.ordinaryStarPoints;
-        this._stars = [...this.primaryLayer.renderedOrdinaryStars];
 
         // 7. apply label/reference visibility
         this.primaryLayer.setVisible(true);
@@ -1107,12 +1124,11 @@ export class ConstellationRenderer {
     /**
      * Set the selected constellation by id (or null to deselect).
      * Highlights the selected constellation and dims the rest.
+     * Selection/dimming is a primary-role concept; the layer owns the line
+     * materials and never the reference layer.
      */
     public setSelected(id: string | null): void {
         this.selectedId = id;
-        // Selection/dimming is a primary-role concept; the layer owns the
-        // line materials (legacy lines are the same objects, re-parented
-        // into the legacy "constellation-lines" group).
         this.primaryLayer?.setSelectedConstellation(id);
     }
 
@@ -1135,12 +1151,73 @@ export class ConstellationRenderer {
 
     /**
      * Toggle visibility of star + constellation name labels at runtime.
-     * Lazily (re)creates the star-label group on first enable.
+     * Lazily (re)creates the star-label group on first enable. Labels are a
+     * primary-role concept: the reference layer is comparison-only and never
+     * receives a label toggle.
      */
     public setLabelsVisible(visible: boolean): void {
         this.labelsVisible = visible;
         this._labelsVisibleUserSet = true;
         this.applyLabelsVisibility();
+    }
+
+    /**
+     * Toggle the comparison reference layer at runtime. The request value
+     * updates the stored reference visibility (so it survives a later
+     * re-initialization that omits `referenceVisible`), then forwards to the
+     * reference layer. A call before the reference layer exists only
+     * persists the preference — prepared initialization applies it after
+     * building the layer.
+     */
+    public setReferenceVisible(visible: boolean): void {
+        this.referenceVisible = visible;
+        this.referenceLayer?.setVisible(visible);
+    }
+
+    /**
+     * Return a plain `{x, y, z}` copy of a star's world position from the
+     * primary layer, or null when the id is unknown (including reference-only
+     * ids, which the primary layer does not track). The returned object is
+     * never the live `THREE.Vector3` the layer holds.
+     */
+    public getStarWorldPosition(
+        id: string,
+    ): { x: number; y: number; z: number } | null {
+        const position = this.primaryLayer?.getWorldPosition(id);
+        if (!position) return null;
+        return { x: position.x, y: position.y, z: position.z };
+    }
+
+    /**
+     * Focus the camera on a star by id: invert the camera-forward mapping
+     * (pitch = asin(y / radius), yaw = atan2(x, z)) and tween to it. The
+     * existing pitch clamp and reduced-motion handling live in
+     * {@link tweenCameraTo} and are inherited automatically. Returns false
+     * when the primary layer has no position for the id (absent,
+     * reference-only, unrendered) or the position is non-finite or
+     * zero-length. Focus is an on-demand public API — it is never invoked
+     * automatically during prepared initialization.
+     */
+    public focusStarById(id: string, durationMs?: number): boolean {
+        const position = this.primaryLayer?.getWorldPosition(id);
+        if (!position) return false;
+
+        const { x, y, z } = position;
+        const radius = Math.hypot(x, y, z);
+        if (
+            !Number.isFinite(x) ||
+            !Number.isFinite(y) ||
+            !Number.isFinite(z) ||
+            !Number.isFinite(radius) ||
+            radius <= 0
+        ) {
+            return false;
+        }
+
+        const pitch = Math.asin(y / radius);
+        const yaw = Math.atan2(x, z);
+        this.tweenCameraTo(pitch, yaw, durationMs);
+        return true;
     }
 
     /**
@@ -1265,31 +1342,6 @@ export class ConstellationRenderer {
         return (this.cameraRotationX * 180) / Math.PI;
     }
 
-    /**
-     * Advance time-based shader uniforms by deltaSec seconds.
-     */
-    public tickUniforms(deltaSec: number): void {
-        if (
-            this.starPoints &&
-            (this.starPoints.material as THREE.ShaderMaterial).uniforms?.uTime
-        ) {
-            (
-                this.starPoints.material as THREE.ShaderMaterial
-            ).uniforms.uTime.value += deltaSec;
-        }
-        if (this.constellationLines) {
-            this.constellationLines.children.forEach(
-                (child: THREE.Object3D) => {
-                    const mat = (child as THREE.LineSegments)
-                        .material as THREE.ShaderMaterial;
-                    if (mat?.uniforms?.uTime) {
-                        mat.uniforms.uTime.value += deltaSec;
-                    }
-                },
-            );
-        }
-    }
-
     private prefersReducedMotion(): boolean {
         return (
             typeof window !== "undefined" &&
@@ -1410,7 +1462,8 @@ export class ConstellationRenderer {
             this.updateCameraRotation();
         }
 
-        this.tickUniforms(delta);
+        this.primaryLayer?.tick(delta);
+        this.referenceLayer?.tick(delta);
         this.tickShootingStar(now);
         this.maybeSpawnShootingStar(now);
         this.renderer.render(this.scene, this.camera);
@@ -1464,20 +1517,6 @@ export class ConstellationRenderer {
             this.referenceLayer = null;
         }
 
-        // The legacy "constellation-lines" group held the primary layer's
-        // line hit objects; the layer already disposed their resources, so
-        // only the group itself is detached here.
-        if (this.constellationLines) {
-            this.scene.remove(this.constellationLines);
-            this.constellationLines = null;
-        }
-        // starPoints is an alias of the primary layer's ordinary-star
-        // points. The layer owned and disposed them; the renderer only
-        // drops the reference here. (Star/constellation label groups are
-        // likewise owned and disposed by the layer — no renderer-side
-        // aliases or disposal exist.)
-        this.starPoints = null;
-
         if (this.horizonRing) {
             this.horizonRing.geometry.dispose();
             (this.horizonRing.material as THREE.Material).dispose();
@@ -1514,19 +1553,9 @@ export class ConstellationRenderer {
     }
 
     /**
-     * The constellation line objects to raycast against for hover/click.
-     * Legacy Earth views keep the dedicated "constellation-lines" group;
-     * prepared views hit-test the primary layer's line objects directly.
-     */
-    private getConstellationHitTargets(): THREE.Object3D[] {
-        if (this.constellationLines) {
-            return this.constellationLines.children;
-        }
-        return this.primaryLayer ? [...this.primaryLayer.lineHitObjects] : [];
-    }
-
-    /**
-     * Handle canvas click — raycast against constellation line groups and fire onConstellationClick.
+     * Handle canvas click — raycast against the primary layer's line hit
+     * objects (never reference or decorative objects) and fire
+     * onConstellationClick.
      */
     private handleCanvasClick(event: MouseEvent): void {
         if (!this.callbacks.onConstellationClick) return;
@@ -1549,17 +1578,15 @@ export class ConstellationRenderer {
             this.camera,
         );
 
-        if (this.callbacks.onConstellationClick) {
-            const hits = this.raycaster.intersectObjects(
-                this.getConstellationHitTargets(),
-                false,
-            );
-            if (hits.length > 0) {
-                const id = (
-                    hits[0].object.userData as { constellationId?: string }
-                ).constellationId;
-                if (id) this.callbacks.onConstellationClick(id);
-            }
+        const lineHitObjects = this.primaryLayer?.lineHitObjects ?? [];
+        const hits = this.raycaster.intersectObjects(
+            [...lineHitObjects],
+            false,
+        );
+        if (hits.length > 0) {
+            const id = (hits[0].object.userData as { constellationId?: string })
+                .constellationId;
+            if (id) this.callbacks.onConstellationClick(id);
         }
     }
 
