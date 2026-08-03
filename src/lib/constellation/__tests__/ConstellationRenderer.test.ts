@@ -11,6 +11,8 @@ import {
 import * as THREE from "three";
 import { ConstellationRenderer } from "@/lib/constellation/ConstellationRenderer";
 import type { PreparedCatalogRenderSettings } from "@/lib/constellation/ConstellationRenderer";
+import { ConstellationCatalogLayer } from "@/lib/constellation/ConstellationCatalogLayer";
+import { adaptPreparedCatalog } from "@/lib/constellation/rendererCatalog";
 import type {
     PreparedCatalogStar,
     PreparedConstellation,
@@ -3421,6 +3423,665 @@ describe("ConstellationRenderer", () => {
                 expect(cancelSpy).toHaveBeenCalledWith(42);
             } finally {
                 vi.unstubAllGlobals();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — reinitialization cleanup", () => {
+        const makePreparedConstellationWith = (
+            id: string,
+        ): PreparedConstellation => ({
+            ...makePreparedConstellation(),
+            id,
+        });
+
+        it("removes old layer roots from the scene and disposes old layers exactly once", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                const primaryA = makePreparedCatalog(
+                    [
+                        makeStar({ id: "p1", magnitude: 1.0 }),
+                        makeStar({ id: "p2", magnitude: 2.0 }),
+                    ],
+                    [makePreparedConstellationWith("orion")],
+                );
+                const referenceA = makePreparedCatalog([
+                    makeStar({ id: "r1", magnitude: 1.0 }),
+                ]);
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: primaryA,
+                        referenceCatalog: referenceA,
+                        referenceVisible: true,
+                    },
+                    preparedSettings(),
+                );
+                const anyRenderer = renderer as any;
+                const oldPrimary = anyRenderer.primaryLayer;
+                const oldReference = anyRenderer.referenceLayer;
+                const oldPrimaryRoot = oldPrimary.root;
+                const oldReferenceRoot = oldReference.root;
+                const primaryDisposeSpy = vi.spyOn(oldPrimary, "dispose");
+                const referenceDisposeSpy = vi.spyOn(oldReference, "dispose");
+                expect(anyRenderer.scene.children).toContain(oldPrimaryRoot);
+                expect(anyRenderer.scene.children).toContain(oldReferenceRoot);
+
+                // Reinitialize with a different catalog (new star ids, new
+                // constellation id, same reference catalog).
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog(
+                            [makeStar({ id: "q1", magnitude: 1.0 })],
+                            [makePreparedConstellationWith("lyra")],
+                        ),
+                        referenceCatalog: referenceA,
+                    },
+                    preparedSettings(),
+                );
+
+                // The old layer roots are detached from the scene by the
+                // shared cleanup path, and each old layer is disposed
+                // exactly once.
+                expect(anyRenderer.scene.children).not.toContain(
+                    oldPrimaryRoot,
+                );
+                expect(anyRenderer.scene.children).not.toContain(
+                    oldReferenceRoot,
+                );
+                expect(primaryDisposeSpy).toHaveBeenCalledTimes(1);
+                expect(referenceDisposeSpy).toHaveBeenCalledTimes(1);
+                // New layers replaced the old ones.
+                expect(anyRenderer.primaryLayer).not.toBe(oldPrimary);
+                expect(anyRenderer.referenceLayer).not.toBe(oldReference);
+                expect(anyRenderer.primaryLayer).toBeTruthy();
+                expect(anyRenderer.referenceLayer).toBeTruthy();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("resets selected/hovered ids and makes old positions and hit objects unreachable", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container, {
+                onConstellationHover: vi.fn(),
+                onStarHover: vi.fn(),
+            });
+            try {
+                const solStar = {
+                    ...makeStar({
+                        id: SYNTHETIC_SOL_STAR_ID,
+                        name: "Sol",
+                        magnitude: 0,
+                    }),
+                    marker: { kind: "synthetic-sol" as const },
+                } as PreparedCatalogStar;
+                const primaryA = makePreparedCatalog(
+                    [
+                        makeStar({
+                            id: "p1",
+                            magnitude: 1.0,
+                            rightAscension: 5,
+                            declination: 20,
+                        }),
+                        solStar,
+                    ],
+                    [makePreparedConstellationWith("orion")],
+                );
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: primaryA,
+                        referenceCatalog: makePreparedCatalog([
+                            makeStar({ id: "r1", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const anyRenderer = renderer as any;
+                const oldPrimary = anyRenderer.primaryLayer;
+                const oldPoints = oldPrimary.ordinaryStarPoints;
+                const oldLines = [...oldPrimary.lineHitObjects];
+                const oldMarkers = [...oldPrimary.markerHitObjects];
+
+                renderer.setSelected("orion");
+                renderer.setHovered("orion");
+                expect(renderer.getSelectedId()).toBe("orion");
+                expect(renderer.getStarWorldPosition("p1")).not.toBeNull();
+                expect(renderer.focusStarById("p1", 900)).toBe(true);
+
+                // Reinitialize with a different catalog that has no marker
+                // record and a different constellation.
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog(
+                            [
+                                makeStar({
+                                    id: "q1",
+                                    magnitude: 1.0,
+                                    rightAscension: 6,
+                                    declination: 30,
+                                }),
+                            ],
+                            [makePreparedConstellationWith("lyra")],
+                        ),
+                    },
+                    preparedSettings(),
+                );
+
+                // Stale selection/hover ids are reset.
+                expect(renderer.getSelectedId()).toBeNull();
+                expect(renderer.getHoveredId()).toBeNull();
+                // Old world positions return null (primary lookup is gone).
+                expect(renderer.getStarWorldPosition("p1")).toBeNull();
+                expect(
+                    renderer.getStarWorldPosition(SYNTHETIC_SOL_STAR_ID),
+                ).toBeNull();
+                expect(renderer.focusStarById("p1", 900)).toBe(false);
+                // Old point/marker/line hit objects are unreachable.
+                const newPrimary = anyRenderer.primaryLayer;
+                expect(newPrimary).not.toBe(oldPrimary);
+                expect(newPrimary.ordinaryStarPoints).not.toBe(oldPoints);
+                expect(newPrimary.markerHitObjects).toHaveLength(0);
+                for (const oldLine of oldLines) {
+                    expect(newPrimary.lineHitObjects).not.toContain(oldLine);
+                }
+                for (const oldMarker of oldMarkers) {
+                    expect(newPrimary.markerHitObjects).not.toContain(
+                        oldMarker,
+                    );
+                }
+                // Hover raycasts target the new layer's objects only.
+                const intersectObjects = vi.fn(() => []);
+                anyRenderer.raycaster.intersectObjects = intersectObjects;
+                anyRenderer.raycaster.intersectObject = vi.fn(() => []);
+                anyRenderer.lastHoverEmit = 0;
+                anyRenderer.onMouseMove({
+                    clientX: 100,
+                    clientY: 100,
+                    preventDefault: () => {},
+                });
+                const raycastTargets = intersectObjects.mock.calls.flatMap(
+                    (call: any[]) => call[0],
+                );
+                expect(intersectObjects).toHaveBeenCalledWith(
+                    newPrimary.lineHitObjects,
+                    false,
+                );
+                for (const oldLine of oldLines) {
+                    expect(raycastTargets).not.toContain(oldLine);
+                }
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("preserves label/reference preferences and decorative resources across reinit", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                // A sparse Earth pass creates the ambient child and the
+                // orientation guides.
+                await renderer.initialize(
+                    [makeStar({ id: "s1", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+                const anyRenderer = renderer as any;
+                const decorativeRoot = anyRenderer.decorativeRoot;
+                const ambient = anyRenderer.decorativeRoot.children.find(
+                    (c: any) => c.name === "ambient-stars",
+                );
+                expect(ambient).toBeTruthy();
+                // User-set label preference and stored reference preference.
+                renderer.setLabelsVisible(false);
+                renderer.setReferenceVisible(true);
+
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog(
+                            [makeStar({ id: "p1", magnitude: 1.0 })],
+                            [makePreparedConstellationWith("orion")],
+                        ),
+                        referenceCatalog: makePreparedCatalog([
+                            makeStar({ id: "r1", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+
+                // Stored preferences survive the reinitialization.
+                expect(anyRenderer.labelsVisible).toBe(false);
+                expect(anyRenderer._labelsVisibleUserSet).toBe(true);
+                expect(anyRenderer.referenceVisible).toBe(true);
+                expect(anyRenderer.referenceLayer.root.visible).toBe(true);
+                // The new primary layer applied the stored labels-off choice.
+                expect(
+                    anyRenderer.primaryLayer.root.getObjectByName(
+                        "star-labels",
+                    ),
+                ).toBeNull();
+                // Decorative root and ambient child identity survive, and
+                // prepared mode hides the ambient points.
+                expect(anyRenderer.decorativeRoot).toBe(decorativeRoot);
+                const ambientAfter = anyRenderer.decorativeRoot.children.find(
+                    (c: any) => c.name === "ambient-stars",
+                );
+                expect(ambientAfter).toBe(ambient);
+                expect(ambientAfter.visible).toBe(false);
+                // Earth guides from the legacy pass are gone.
+                expect(
+                    anyRenderer.scene.children.find(
+                        (c: any) => c.name === "horizon-ring",
+                    ),
+                ).toBeFalsy();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("cleanup is safe when a previous initialization failed partway", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                // Simulate a failed previous initialization: a primary layer
+                // exists but the reference never materialized and the
+                // primary root was never added to the scene.
+                const orphaned = new ConstellationCatalogLayer({
+                    role: "primary",
+                    catalog: adaptPreparedCatalog(
+                        makePreparedCatalog([
+                            makeStar({ id: "ghost", magnitude: 1.0 }),
+                        ]),
+                    ),
+                    placementContext: { kind: "fixed-equatorial" },
+                    settings: preparedSettings(),
+                });
+                const disposeSpy = vi.spyOn(orphaned, "dispose");
+                const anyRenderer = renderer as any;
+                anyRenderer.primaryLayer = orphaned;
+                anyRenderer.referenceLayer = null;
+
+                // A fresh init must clear the orphaned primary and rebuild
+                // cleanly without throwing.
+                await expect(
+                    renderer.initializePreparedCatalogs(
+                        {
+                            primaryCatalog: makePreparedCatalog(
+                                [makeStar({ id: "q1", magnitude: 1.0 })],
+                                [makePreparedConstellationWith("lyra")],
+                            ),
+                            referenceCatalog: makePreparedCatalog([
+                                makeStar({ id: "r1", magnitude: 1.0 }),
+                            ]),
+                        },
+                        preparedSettings(),
+                    ),
+                ).resolves.toBeUndefined();
+                expect(disposeSpy).toHaveBeenCalledTimes(1);
+                expect(anyRenderer.primaryLayer).not.toBe(orphaned);
+                expect(anyRenderer.referenceLayer).toBeTruthy();
+                // The orphaned root never entered the scene and its world
+                // positions are gone.
+                expect(anyRenderer.scene.children).not.toContain(orphaned.root);
+                expect(renderer.getStarWorldPosition("ghost")).toBeNull();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — final disposal", () => {
+        it("disposes layer resources, markers, labels, and line distance attributes exactly once", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                const solStar = {
+                    ...makeStar({
+                        id: SYNTHETIC_SOL_STAR_ID,
+                        name: "Sol",
+                        magnitude: 0,
+                    }),
+                    marker: { kind: "synthetic-sol" as const },
+                } as PreparedCatalogStar;
+                const constellation = makePreparedConstellation();
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog(
+                            [
+                                solStar,
+                                makeStar({ id: "alpha", magnitude: 1.0 }),
+                            ],
+                            [constellation],
+                        ),
+                        referenceCatalog: makePreparedCatalog(
+                            [makeStar({ id: "r1", magnitude: 1.0 })],
+                            [constellation],
+                        ),
+                        referenceVisible: true,
+                    },
+                    preparedSettings(),
+                );
+                // Labels are created lazily on the first enable.
+                renderer.setLabelsVisible(true);
+
+                const anyRenderer = renderer as any;
+                const primaryLayer = anyRenderer.primaryLayer;
+                const referenceLayer = anyRenderer.referenceLayer;
+                const disposeSpies = [
+                    vi.spyOn(primaryLayer, "dispose"),
+                    vi.spyOn(referenceLayer, "dispose"),
+                ];
+
+                const disposables: { dispose: () => void }[] = [];
+                const collect = (obj: any): void => {
+                    if (obj?.dispose && !disposables.includes(obj)) {
+                        disposables.push(obj);
+                    }
+                };
+                for (const layer of [primaryLayer, referenceLayer]) {
+                    const points = layer.ordinaryStarPoints;
+                    if (points) {
+                        collect(points.geometry);
+                        collect(points.material);
+                    }
+                    for (const line of layer.lineHitObjects) {
+                        collect(line.geometry);
+                        collect(line.material);
+                        // The mock attributes do not implement dispose();
+                        // install a spy so the layer's guarded attribute
+                        // disposal (including the line distance attributes)
+                        // is observable.
+                        const attributes = Object.values(
+                            line.geometry.attributes,
+                        ) as Array<{ dispose?: () => void }>;
+                        for (const attr of attributes) {
+                            if (typeof attr.dispose !== "function") {
+                                attr.dispose = vi.fn();
+                            }
+                            collect(attr);
+                        }
+                    }
+                    for (const marker of layer.markerHitObjects) {
+                        const stack: any[] = [marker];
+                        while (stack.length > 0) {
+                            const node = stack.pop();
+                            collect(node.geometry);
+                            collect(node.material);
+                            stack.push(...(node.children ?? []));
+                        }
+                    }
+                    // Label sprites (star/constellation/marker label groups).
+                    const walk = (node: any): void => {
+                        for (const child of node.children ?? []) {
+                            if (child.material) {
+                                collect(child.material);
+                                collect(child.material.map);
+                            }
+                            walk(child);
+                        }
+                    };
+                    walk(layer.root);
+                }
+                expect(disposables.length).toBeGreaterThan(0);
+
+                renderer.dispose();
+                renderer.dispose();
+
+                for (const spy of disposeSpies) {
+                    expect(spy).toHaveBeenCalledTimes(1);
+                }
+                for (const resource of disposables) {
+                    expect(resource.dispose).toHaveBeenCalledTimes(1);
+                }
+                // The disposed renderer no longer resolves old positions.
+                expect(renderer.getStarWorldPosition("alpha")).toBeNull();
+                expect(
+                    renderer.getStarWorldPosition(SYNTHETIC_SOL_STAR_ID),
+                ).toBeNull();
+            } finally {
+                try {
+                    renderer.dispose();
+                } catch {
+                    // already disposed
+                }
+                container.remove();
+            }
+        });
+
+        it("disposes Earth guides, ambient points, and the starfield sphere exactly once", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar({ id: "s1", magnitude: 1.0 })],
+                    [],
+                    makeSkyConfig(),
+                );
+                const anyRenderer = renderer as any;
+                const disposables: { dispose: () => void }[] = [];
+                const collect = (obj: any): void => {
+                    if (obj?.dispose && !disposables.includes(obj)) {
+                        disposables.push(obj);
+                    }
+                };
+
+                // Horizon ring geometry + material.
+                const ring = anyRenderer.horizonRing;
+                collect(ring.geometry);
+                collect(ring.material);
+                // Four cardinal label sprite materials + textures.
+                for (const sprite of anyRenderer.cardinalLabels.children) {
+                    collect(sprite.material);
+                    collect(sprite.material.map);
+                }
+                // Ambient points geometry + material.
+                const ambient = anyRenderer.ambientStarPoints;
+                collect(ambient.geometry);
+                collect(ambient.material);
+                // Starfield sphere geometry + material.
+                const starfield = anyRenderer.decorativeRoot.children.find(
+                    (c: any) => c.name === "starfield-background",
+                );
+                collect(starfield.geometry);
+                collect(starfield.material);
+
+                renderer.dispose();
+                renderer.dispose();
+
+                for (const resource of disposables) {
+                    expect(resource.dispose).toHaveBeenCalledTimes(1);
+                }
+                expect(anyRenderer.ambientStarPoints).toBeNull();
+                expect(anyRenderer.scene.children).not.toContain(
+                    anyRenderer.decorativeRoot,
+                );
+            } finally {
+                try {
+                    renderer.dispose();
+                } catch {
+                    // already disposed
+                }
+                container.remove();
+            }
+        });
+
+        it("removes window/canvas listeners, removes the canvas, and disposes the WebGL renderer exactly once", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                const anyRenderer = renderer as any;
+                const canvas = anyRenderer.canvas as HTMLCanvasElement;
+                const windowRemoveSpy = vi.spyOn(window, "removeEventListener");
+                const canvasRemoveSpy = vi.spyOn(canvas, "removeEventListener");
+                const rendererDisposeSpy = vi.spyOn(
+                    anyRenderer.renderer,
+                    "dispose",
+                );
+
+                renderer.dispose();
+                renderer.dispose();
+
+                // The window resize listener is removed exactly once.
+                expect(windowRemoveSpy).toHaveBeenCalledTimes(1);
+                expect(windowRemoveSpy).toHaveBeenCalledWith(
+                    "resize",
+                    anyRenderer._boundResize,
+                );
+                // Each canvas listener is removed exactly once.
+                const pairs: Array<[string, unknown]> = [
+                    ["mousedown", anyRenderer._boundMouseDown],
+                    ["mousemove", anyRenderer._boundMouseMove],
+                    ["mouseup", anyRenderer._boundMouseUp],
+                    ["mouseleave", anyRenderer._boundMouseLeave],
+                    ["wheel", anyRenderer._boundMouseWheel],
+                    ["contextmenu", anyRenderer._boundContextMenu],
+                    ["click", anyRenderer._clickHandler],
+                    ["touchstart", anyRenderer._boundTouchStart],
+                    ["touchmove", anyRenderer._boundTouchMove],
+                    ["touchend", anyRenderer._boundTouchEnd],
+                ];
+                for (const [type, handler] of pairs) {
+                    expect(canvasRemoveSpy).toHaveBeenCalledWith(type, handler);
+                }
+                expect(canvasRemoveSpy.mock.calls.length).toBe(pairs.length);
+                // The WebGL renderer is disposed exactly once.
+                expect(rendererDisposeSpy).toHaveBeenCalledTimes(1);
+                // The canvas is removed from the DOM and the renderer is
+                // marked disposed with both animation chains stopped.
+                expect(container.querySelectorAll("canvas")).toHaveLength(0);
+                expect(anyRenderer._disposed).toBe(true);
+                expect(anyRenderer._rafId).toBeNull();
+                expect(anyRenderer._momentumRafId).toBeNull();
+                expect(anyRenderer.animationRunning).toBe(false);
+            } finally {
+                try {
+                    renderer.dispose();
+                } catch {
+                    // already disposed
+                }
+                container.remove();
+            }
+        });
+
+        it("releases an active shooting star and cancels both animation frame ids exactly once", async () => {
+            const container = makeContainer();
+            const rafSpy = vi.fn(() => 7);
+            const cancelSpy = vi.fn();
+            vi.stubGlobal("requestAnimationFrame", rafSpy);
+            vi.stubGlobal("cancelAnimationFrame", cancelSpy);
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initialize(
+                    [makeStar()],
+                    [makeConstellation()],
+                    makeSkyConfig(),
+                );
+                const anyRenderer = renderer as any;
+                expect(anyRenderer._rafId).toBe(7);
+
+                // Force an active shooting star and a momentum chain so both
+                // RAF ids are outstanding at dispose time.
+                anyRenderer.spawnShootingStar(1000);
+                const line = anyRenderer.activeShootingStar;
+                const geometrySpy = vi.spyOn(line.geometry, "dispose");
+                const materialSpy = vi.spyOn(line.material, "dispose");
+                anyRenderer.startMomentumAnimation();
+                expect(anyRenderer._momentumRafId).toBe(7);
+
+                renderer.dispose();
+                renderer.dispose();
+
+                // The shooting star resources are released exactly once and
+                // both outstanding frame ids are cancelled exactly once.
+                expect(geometrySpy).toHaveBeenCalledTimes(1);
+                expect(materialSpy).toHaveBeenCalledTimes(1);
+                expect(cancelSpy).toHaveBeenCalledTimes(2);
+                expect(anyRenderer._rafId).toBeNull();
+                expect(anyRenderer._momentumRafId).toBeNull();
+            } finally {
+                vi.unstubAllGlobals();
+                container.remove();
+            }
+        });
+
+        it("remains safe on a second call after constructor-only or partial initialization", async () => {
+            // Constructor-only renderer: no initialization ever ran.
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            expect(() => renderer.dispose()).not.toThrow();
+            expect(() => renderer.dispose()).not.toThrow();
+            container.remove();
+
+            // Partial initialization: a primary layer exists but was never
+            // attached to the scene, and no reference layer exists.
+            const container2 = makeContainer();
+            const renderer2 = new ConstellationRenderer(container2);
+            const orphaned = new ConstellationCatalogLayer({
+                role: "primary",
+                catalog: adaptPreparedCatalog(
+                    makePreparedCatalog([
+                        makeStar({ id: "ghost", magnitude: 1.0 }),
+                    ]),
+                ),
+                placementContext: { kind: "fixed-equatorial" },
+                settings: preparedSettings(),
+            });
+            const disposeSpy = vi.spyOn(orphaned, "dispose");
+            (renderer2 as any).primaryLayer = orphaned;
+            (renderer2 as any).referenceLayer = null;
+            expect(() => renderer2.dispose()).not.toThrow();
+            expect(disposeSpy).toHaveBeenCalledTimes(1);
+            // A second call releases nothing further.
+            expect(() => renderer2.dispose()).not.toThrow();
+            expect(disposeSpy).toHaveBeenCalledTimes(1);
+            container2.remove();
+        });
+    });
+
+    describe("ConstellationRenderer — readonly input safety", () => {
+        it("accepts deeply frozen prepared requests and settings without mutation", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                const star = Object.freeze({
+                    ...makeStar({
+                        id: "p1",
+                        magnitude: 1.0,
+                        rightAscension: 5,
+                        declination: 20,
+                    }),
+                });
+                const primaryCatalog: PreparedConstellationCatalog =
+                    Object.freeze({
+                        stars: Object.freeze([star]),
+                        constellations: Object.freeze([]),
+                    });
+                const settings = Object.freeze(preparedSettings());
+
+                await renderer.initializePreparedCatalogs(
+                    { primaryCatalog },
+                    settings,
+                );
+
+                const attr = (
+                    renderer as any
+                ).primaryLayer.ordinaryStarPoints.geometry.getAttribute(
+                    "position",
+                );
+                expect(attr.count).toBe(1);
+                expect(renderer.getStarWorldPosition("p1")).not.toBeNull();
+            } finally {
+                renderer.dispose();
                 container.remove();
             }
         });

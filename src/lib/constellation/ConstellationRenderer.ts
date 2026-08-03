@@ -1592,8 +1592,14 @@ export class ConstellationRenderer {
 
     /**
      * Dispose of resources
+     *
+     * Exactly-once final disposal: the first call releases every resource
+     * (layers, Earth guides, decorative background, event listeners, canvas,
+     * WebGL renderer) and cancels both animation chains. A second call is a
+     * no-op so nothing is disposed or cancelled twice.
      */
     dispose(): void {
+        if (this._disposed) return;
         this._disposed = true;
         this.animationRunning = false;
         this.tweenState.active = false;
