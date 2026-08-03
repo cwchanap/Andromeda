@@ -365,6 +365,8 @@ return star.marker?.kind === "synthetic-sol";
 
 Consumers must not depend on `"marker" in star`, because optional `undefined` properties are omitted by JSON serialization.
 
+The prepared-source-star clone paths must strip any `marker` property present on a runtime/deserialized source star. `Star` does not declare `marker`, but a plain object can carry it; without stripping, an ordinary catalog star could retain `{ kind: "synthetic-sol" }` and be misclassified by `isSyntheticSolStar`. Stripping restores the declared `marker?: undefined` invariant.
+
 ### 7.4 Prepared constellations
 
 ```ts
@@ -420,6 +422,10 @@ export type CatalogStarOmissionReason =
     | {
           readonly code: "coordinate-transform-failed";
           readonly error: CoordinateTransformError;
+      }
+    | {
+          readonly code: "non-finite-metadata";
+          readonly field: "magnitude";
       };
 
 export interface OmittedStarMembership {
@@ -441,10 +447,13 @@ export interface OmittedStarDiagnostic {
 Rules:
 
 - intentional observer-source exclusion → `referenceDisposition: "retained"`;
-- coordinate-transform failure → `referenceDisposition: "omitted"`; and
+- coordinate-transform failure → `referenceDisposition: "omitted"`;
+- non-finite per-star metadata (currently `magnitude`) → `referenceDisposition: "omitted"` and reason `non-finite-metadata`; and
 - one diagnostic exists per omitted canonical source ID.
 
 Diagnostics follow canonical first-appearance order with successful primary stars skipped.
+
+Constellation-level metadata failures (non-finite `visibility.minLatitude`, `visibility.maxLatitude`, or any `visibility.bestMonths` entry) are not per-star omissions: the offending constellation is dropped from both primary and reference output so its non-finite values cannot reach the JSON-safe result. Its stars remain eligible and may still appear in the top-level stars array and in other constellations.
 
 ### 7.7 Result types
 

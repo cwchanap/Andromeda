@@ -55,6 +55,10 @@ export type CatalogStarOmissionReason =
     | {
           readonly code: "coordinate-transform-failed";
           readonly error: CoordinateTransformError;
+      }
+    | {
+          readonly code: "non-finite-metadata";
+          readonly field: "magnitude";
       };
 
 export interface OmittedStarMembership {
@@ -143,16 +147,28 @@ function toEquatorialPosition(source: Star): EquatorialPosition {
 
 const SOL_ORIGIN: CartesianLightYears = { x: 0, y: 0, z: 0 };
 
+// `Star` does not declare `marker`, but runtime/deserialized inputs may carry
+// the reserved synthetic-Sol marker. Stripping it here restores the
+// `PreparedSourceStar` invariant (`marker?: undefined`) so an ordinary catalog
+// star cannot be misclassified by `isSyntheticSolStar`.
 function cloneSourceStar(source: Star): PreparedSourceStar {
-    return { ...source };
+    const { marker: _omittedMarker, ...rest } = source as Star & {
+        marker?: unknown;
+    };
+    void _omittedMarker;
+    return rest;
 }
 
 function cloneTransformedStar(
     source: Star,
     equatorial: EquatorialPosition,
 ): PreparedSourceStar {
+    const { marker: _omittedMarker, ...rest } = source as Star & {
+        marker?: unknown;
+    };
+    void _omittedMarker;
     return {
-        ...source,
+        ...rest,
         rightAscension: equatorial.rightAscensionHours,
         declination: equatorial.declinationDegrees,
         distance: equatorial.distanceLightYears,
@@ -166,6 +182,14 @@ function cloneVisibility(
         ...visibility,
         bestMonths: [...visibility.bestMonths],
     };
+}
+
+function isFiniteVisibility(visibility: Constellation["visibility"]): boolean {
+    return (
+        Number.isFinite(visibility.minLatitude) &&
+        Number.isFinite(visibility.maxLatitude) &&
+        visibility.bestMonths.every((month) => Number.isFinite(month))
+    );
 }
 
 function isUsableSourceLine(
@@ -194,7 +218,13 @@ function buildPreparedCatalog(
             const star = preparedById.get(id);
             return star ? [star] : [];
         }),
-        constellations: sourceConstellations.map((source) => {
+        constellations: sourceConstellations.flatMap((source) => {
+            // Constellation-level metadata failure: drop the constellation so
+            // its non-finite visibility cannot reach the JSON-safe output
+            // (Section 13). Its stars remain valid and may appear in the
+            // top-level stars array and in other constellations.
+            if (!isFiniteVisibility(source.visibility)) return [];
+
             const stars: PreparedSourceStar[] = [];
             const oldToNew = new Map<number, number>();
 
@@ -217,12 +247,14 @@ function buildPreparedCatalog(
                 lines.push([newStart, newEnd]);
             }
 
-            return {
-                ...source,
-                stars,
-                lines,
-                visibility: cloneVisibility(source.visibility),
-            };
+            return [
+                {
+                    ...source,
+                    stars,
+                    lines,
+                    visibility: cloneVisibility(source.visibility),
+                },
+            ];
         }),
     };
 }
@@ -241,6 +273,17 @@ export function transformCatalogToObserver(
 
     for (const id of canonical.order) {
         const entry = canonical.byId.get(id)!;
+
+        if (!Number.isFinite(entry.source.magnitude)) {
+            omittedStars.push({
+                starId: id,
+                starName: entry.source.name,
+                memberships: [...entry.memberships],
+                reason: { code: "non-finite-metadata", field: "magnitude" },
+                referenceDisposition: "omitted",
+            });
+            continue;
+        }
 
         if (excludedIds.has(id)) {
             // Validate source coordinates via an identity transform from the
