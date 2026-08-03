@@ -9,20 +9,23 @@
 
 Extend `ConstellationRenderer` so it can render an immutable prepared primary catalog and an optional Earth/Sol-reference catalog in one shared Three.js scene while preserving the existing Earth-surface sky path.
 
-The renderer will keep one camera, one canvas, one animation loop, and one input system. It will delegate role-owned star, line, marker, lookup, and disposal resources to a reusable internal `ConstellationCatalogLayer`. The existing `initialize()` method remains the backward-compatible Earth-horizontal adapter. A new `initializePreparedCatalogs()` method consumes the authoritative matched catalog pairs produced by HPA-433 and places them in a deterministic fixed-equatorial frame.
+The renderer keeps one camera, one canvas, one animation loop, and one input system. It delegates role-owned star, line, marker, lookup, and disposal resources to a reusable internal `ConstellationCatalogLayer`. The existing `initialize()` method remains the backward-compatible Earth-horizontal adapter. A new `initializePreparedCatalogs()` method consumes the authoritative matched catalog pairs produced by HPA-433 and places them in a deterministic fixed-equatorial frame.
 
-Synthetic Sol is rendered through a dedicated primary marker path identified by `marker.kind === "synthetic-sol"`. It does not enter the ordinary star buffer, does not use magnitude culling, and is not sized solely by the compatibility magnitude value. The optional reference layer uses independent geometry and non-color-only hollow/dashed styling, remains non-interactive, and can be toggled by changing its root group's visibility without rebuilding unrelated resources.
+Synthetic Sol is rendered through a dedicated **primary-only** marker path identified by `marker.kind === "synthetic-sol"`. It does not enter the ordinary star buffer, does not use magnitude culling, and is not sized solely by the compatibility magnitude value. The optional reference layer uses independent geometry and non-color-only hollow/dashed styling, remains non-interactive, and can be toggled by changing its root group's visibility without rebuilding unrelated resources.
+
+The current sparse-catalog procedural points are removed from catalog geometry but not simply discarded. Legacy Earth ambience is moved under the one scene-level decorative-background owner so Earth visual density can be preserved without contaminating catalog point indices or duplicating fallback points across primary/reference layers.
 
 ## Goals
 
-- Preserve the current Earth/Sol constellation experience and its `celestialToSphere()` behavior.
+- Preserve the current Earth/Sol coordinate, interaction, label, camera, and ambience behavior.
 - Render HPA-433 prepared primary and optional reference catalogs without mutation or membership flattening.
 - Place prepared catalogs in a deterministic fixed-equatorial frame independent of browser time and geolocation.
 - Support intentionally different primary/reference top-level stars, local constellation stars, and line topology.
-- Render synthetic Sol as an unmistakable, focusable, hoverable marker.
+- Render synthetic Sol as an unmistakable, focusable, hoverable primary marker.
 - Keep primary as the sole interaction authority while reference remains a visual comparison layer.
-- Remove per-catalog random procedural stars and retain one independent decorative background.
+- Keep random decorative points outside catalog geometry and retain exactly one scene-level decorative background.
 - Ensure reinitialization and final disposal release every new Three.js resource and stale interaction entry.
+- Prevent repeated `initialize()` calls from creating concurrent animation loops.
 
 ## Non-goals
 
@@ -33,6 +36,7 @@ Synthetic Sol is rendered through a dedicated primary marker path identified by 
 - Distance-modulus brightness correction.
 - Surface horizon, atmosphere, latitude, axial tilt, seasons, or local time for alien observers.
 - A second WebGL canvas or synchronized renderer instance.
+- Removing the existing camera pitch clamp or redesigning camera controls.
 
 ## Existing renderer constraints
 
@@ -44,10 +48,11 @@ The current `ConstellationRenderer` assumes one Earth-horizontal catalog:
 - labels, horizon, and cardinal guides are constructed as Earth-view scene objects.
 - star, line, and label coordinates all call `celestialToSphere()` with location and date.
 - sparse star buffers receive 500 random procedural points.
-- `clearScene()` disposes one set of catalog resources.
-- `initialize()` starts the render loop after each initialization.
+- random `aSeed` values are generated with `Math.random()`.
+- `clearScene()` disposes one set of catalog resources while preserving `starfield-background`.
+- `initialize()` calls `animate()` unconditionally, so repeated initialization can create concurrent RAF chains while `_rafId` remembers only the latest request.
 
-HPA-433 now produces immutable authoritative matched pairs:
+HPA-433 produces immutable authoritative matched pairs:
 
 ```text
 primaryCatalog.stars + primaryCatalog.constellations
@@ -66,7 +71,7 @@ This minimizes initial file creation but duplicates behavior and makes future fi
 
 ### B. One reusable internal catalog-layer owner
 
-Create an internal owner for the resources and index spaces of one catalog role. Instantiate it once for primary and optionally once for reference. `ConstellationRenderer` retains scene, camera, input, callbacks, public state, labels policy, orientation guides, and animation orchestration.
+Create an internal owner for the resources and index spaces of one catalog role. Instantiate it once for primary and optionally once for reference. `ConstellationRenderer` retains scene, camera, input, callbacks, public state, labels policy, orientation guides, decorative background, and animation orchestration.
 
 This provides explicit role boundaries, one lifecycle implementation, independent topology, and one camera/input system.
 
@@ -98,7 +103,8 @@ This method adapts the existing arrays into an internal primary catalog and call
 
 - placement mode `"earth-horizontal"`;
 - no reference catalog;
-- Earth orientation guides enabled; and
+- Earth orientation guides enabled;
+- legacy Earth decorative ambience enabled when the explicit catalog is sparse; and
 - existing Earth radii, labels, magnitude behavior, and camera setup.
 
 No Earth caller is required to construct HPA-433 prepared types.
@@ -125,14 +131,9 @@ async initializePreparedCatalogs(
 ): Promise<void>
 ```
 
-Rules:
+HPA-435 normally passes `placementMode: "fixed-equatorial"`. The placement field remains explicit so tests and future internal callers cannot accidentally apply Earth-horizontal conversion to prepared data.
 
-- `primaryCatalog.stars` and `primaryCatalog.constellations` are consumed directly as a matched pair.
-- `referenceCatalog.stars` and `referenceCatalog.constellations` are consumed directly as a second matched pair.
-- Neither input is mutated, sorted, deduplicated, or reconstructed.
-- Primary and reference are permitted to have different star sets and topology.
-- Alternate-observer callers use `"fixed-equatorial"`.
-- The API retains placement mode explicitly so the renderer boundary remains testable and the Earth adapter uses the same shared initialization machinery.
+`initializePreparedCatalogs()` consumes the supplied top-level `stars` arrays directly and never derives them from constellation membership.
 
 ### Runtime APIs
 
@@ -141,58 +142,59 @@ Add:
 ```ts
 setReferenceVisible(visible: boolean): void;
 
-focusStarById(
-    id: string,
-    durationMs?: number,
-): boolean;
+focusStarById(id: string, durationMs?: number): boolean;
 
 getStarWorldPosition(
     id: string,
 ): { x: number; y: number; z: number } | null;
 ```
 
-Semantics:
+`focusStarById()` and `getStarWorldPosition()` resolve primary rendered objects only. A star present only in the reference catalog is intentionally not focusable and does not become a second interaction authority.
 
-- `setReferenceVisible()` stores the requested state even when no reference layer currently exists.
-- When a reference layer exists, the method changes only `referenceLayer.root.visible`.
-- `focusStarById()` resolves only primary rendered stars and primary markers.
-- A reference-only source star is not focusable and cannot become a second interaction authority.
-- `focusStarById()` returns `false` without moving the camera when the ID is absent from the primary world-position registry.
-- `getStarWorldPosition()` returns a new plain object, never a mutable internal `THREE.Vector3`.
+## Renderer-facing readonly boundary
 
-## Renderer-facing catalog boundary
-
-Do not weaken HPA-433's output types globally. Add a narrow renderer-internal structural boundary that accepts both legacy and prepared inputs:
+Do not weaken HPA-433 output types globally. Define a narrow renderer boundary:
 
 ```ts
-interface RendererCatalogStar extends Readonly<Star> {
-    readonly marker?: Readonly<{
+export type RendererLine = readonly [number, number];
+
+export interface RendererStar {
+    readonly id: string;
+    readonly name: string;
+    readonly rightAscension: number;
+    readonly declination: number;
+    readonly magnitude: number;
+    readonly distance: number;
+    readonly spectralClass: string;
+    readonly color: string;
+    readonly marker?: {
         readonly kind: "synthetic-sol";
-    }>;
+    };
 }
 
-interface RendererConstellation {
+export interface RendererConstellation {
     readonly id: string;
     readonly name: string;
     readonly abbreviation: string;
     readonly description: string;
     readonly mythology?: string;
-    readonly stars: readonly RendererCatalogStar[];
-    readonly lines: readonly (readonly number[])[];
-    readonly visibility: Readonly<Constellation["visibility"]>;
+    readonly stars: readonly RendererStar[];
+    readonly lines: readonly RendererLine[];
 }
 
-interface RendererCatalog {
-    readonly stars: readonly RendererCatalogStar[];
+export interface RendererCatalog {
+    readonly stars: readonly RendererStar[];
     readonly constellations: readonly RendererConstellation[];
 }
 ```
 
-The broader `readonly number[]` line boundary is intentional: prepared catalogs provide exact tuples, while legacy `Constellation.lines` is currently typed as `number[][]`. The layer continues to guard for exactly two integer in-range endpoints before reading a segment.
+The prepared path already supplies readonly tuple lines. The legacy adapter converts `number[][]` to validated `RendererLine` pairs once at the boundary. The layer does not discard prepared tuple type-safety merely to accommodate the legacy mutable type.
 
-## Internal component model
+Runtime validation remains necessary because external/deserialized values can violate TypeScript declarations.
 
-Create `src/lib/constellation/ConstellationCatalogLayer.ts`.
+## Internal catalog-layer model
+
+Create `src/lib/constellation/ConstellationCatalogLayer.ts` exporting a class named `ConstellationCatalogLayer`.
 
 ```ts
 export type CatalogLayerRole = "primary" | "reference";
@@ -205,70 +207,109 @@ export interface CatalogLayerBuildOptions {
 }
 ```
 
-Each layer instance owns:
+Each layer owns:
 
-- one root `THREE.Group` added to the renderer scene;
-- one ordinary-star `THREE.Points` object when at least one ordinary star is rendered;
-- one constellation-line `THREE.Group` built only from that catalog's local stars and line indices;
-- one optional marker `THREE.Group` for primary special markers;
-- the exact point-buffer-index to star-record array for its ordinary-star buffer;
-- stable-ID to world-position entries for rendered primary ordinary stars and markers;
-- role-specific shader materials and attributes;
-- marker textures, materials, sprites, and hit objects;
-- disposal state preventing double disposal.
+- one root `THREE.Group`;
+- one ordinary-star `THREE.Points` object when ordinary rendered stars exist;
+- one constellation-line `THREE.Group` built from that catalog's own local stars and line tuples;
+- an optional primary marker group;
+- the exact ordinary point-index-to-star list;
+- primary marker hit objects;
+- a stable-ID-to-world-position map;
+- all geometries, materials, textures, sprites, and disposal state created by the layer.
 
-The layer exposes only the operations needed by `ConstellationRenderer`:
+The class exposes narrow methods/properties needed by the renderer:
 
 ```ts
-interface ConstellationCatalogLayer {
+class ConstellationCatalogLayer {
     readonly root: THREE.Group;
-    readonly starPoints: THREE.Points | null;
-    readonly lineGroup: THREE.Group;
+    readonly ordinaryStarPoints: THREE.Points | null;
+    readonly renderedOrdinaryStars: readonly RendererStar[];
+    readonly lineHitObjects: readonly THREE.Object3D[];
     readonly markerHitObjects: readonly THREE.Object3D[];
 
-    getPointStar(index: number): RendererCatalogStar | null;
-    getWorldPosition(id: string): THREE.Vector3 | null;
+    setVisible(visible: boolean): void;
+    setLabelsVisible(visible: boolean): void;
     setSelectedConstellation(id: string | null): void;
-    tick(deltaSec: number): void;
-    setMarkerLabelsVisible(visible: boolean): void;
+    getWorldPosition(id: string): THREE.Vector3 | null;
+    tick(deltaSeconds: number): void;
     dispose(): void;
 }
 ```
 
-Primary-only operations return empty/no-op results for reference. The renderer does not inspect private geometry arrays or duplicate disposal logic.
+Reference implementations return no marker hit objects, ignore selection changes, and create no labels.
 
-## Scene ownership
+## Catalog partitioning and marker role guard
 
-`ConstellationRenderer` continues to own:
+Partition top-level catalog stars before ordinary magnitude filtering.
 
-- `THREE.Scene`, camera, WebGL renderer, and canvas;
-- persistent decorative `starfield-background`;
-- input listeners, raycaster, camera motion, tweening, reduced motion, and animation loop;
-- current primary and optional reference layer references;
-- ordinary primary star labels and primary constellation labels;
-- Earth horizon/cardinal guides;
-- selected and hovered constellation IDs;
-- reference visibility preference;
-- public callbacks.
+For a **primary** layer:
 
-The catalog layer owns role-specific stars, lines, special markers, and their resource disposal. The renderer owns label visibility policy; it applies that policy to renderer-owned labels and calls `primaryLayer.setMarkerLabelsVisible()` for synthetic Sol's text label.
+1. `marker.kind === "synthetic-sol"` records go to the dedicated marker builder.
+2. All other records go to ordinary-star filtering and point-buffer creation.
+
+For a **reference** layer:
+
+1. Synthetic-marker records are not built as markers.
+2. They are not treated as ordinary stars.
+3. They are skipped defensively with a development warning because HPA-433's reference contract forbids synthetic Sol.
+
+This role guard prevents a malformed or future reference catalog from silently creating a non-interactive duplicate Sol marker. Tests must exercise the defensive skip even though current HPA-433 output never includes such a record.
+
+Constellation-local stars are used only for line and constellation-label geometry. They never populate the top-level ordinary point buffer.
 
 ## Placement model
 
-Create `src/lib/constellation/rendererPlacement.ts` with a pure helper:
+Add `src/lib/constellation/rendererPlacement.ts`.
 
 ```ts
+export type CatalogPlacementError =
+    | {
+          readonly code: "non-finite-render-coordinate";
+          readonly component: "rightAscension" | "declination";
+      }
+    | {
+          readonly code: "declination-out-of-range";
+          readonly declination: number;
+      };
+
+export type CatalogPlacementResult =
+    | {
+          readonly ok: true;
+          readonly position: {
+              readonly x: number;
+              readonly y: number;
+              readonly z: number;
+          };
+      }
+    | {
+          readonly ok: false;
+          readonly error: CatalogPlacementError;
+      };
+
 export function placeCatalogCoordinate(
-    star: Pick<Star, "rightAscension" | "declination">,
+    star: Pick<RendererStar, "rightAscension" | "declination">,
     placementMode: CatalogPlacementMode,
     skyConfig: Readonly<SkyConfiguration>,
     radius: number,
-): { x: number; y: number; z: number };
+): CatalogPlacementResult;
 ```
+
+### Validation
+
+The renderer relies on HPA-433 to validate and normalize prepared catalog coordinates, but it does not blindly allow `NaN` or an out-of-range declination into a Three.js buffer.
+
+Before either placement path:
+
+- require finite right ascension and declination;
+- require declination in `[-90, 90]`;
+- return a typed failure rather than creating non-finite geometry.
+
+A failed top-level star is skipped from rendering and interaction registries with a development warning. A failed constellation-local position skips only the affected segment/label contribution. This is a defensive renderer boundary, not a second catalog-transformation system and not a replacement for HPA-433 diagnostics.
 
 ### Earth-horizontal placement
 
-For `"earth-horizontal"`, delegate directly to the existing function:
+For valid coordinates, delegate exactly to:
 
 ```ts
 celestialToSphere(
@@ -280,11 +321,11 @@ celestialToSphere(
 )
 ```
 
-The returned `x`, `y`, and `z` are used unchanged. This preserves latitude, longitude, date, hour angle, sidereal time, horizon, and existing axis behavior.
+Do not duplicate or alter Earth location, date, hour-angle, altitude, azimuth, or sidereal-time formulas.
 
 ### Fixed-equatorial placement
 
-For `"fixed-equatorial"`, map the already-prepared RA/declination direction directly onto the display sphere:
+For valid prepared coordinates, use the HPA-431 Y-up convention:
 
 ```ts
 radialToCartesian(
@@ -294,517 +335,456 @@ radialToCartesian(
 )
 ```
 
-This follows the HPA-431 Y-up convention:
+Axis fixtures:
 
-- declination `+90°` maps to `+Y`;
-- declination `-90°` maps to `-Y`;
-- RA `0h`, Dec `0°` maps to `+X`;
-- RA `6h`, Dec `0°` maps to `+Z`;
-- RA `12h`, Dec `0°` maps to `-X`;
-- RA `18h`, Dec `0°` maps to `-Z`.
+- Dec `+90°` -> `+Y`.
+- Dec `-90°` -> `-Y`.
+- RA `0h`, Dec `0°` -> `+X`.
+- RA `6h`, Dec `0°` -> `+Z`.
+- RA `12h`, Dec `0°` -> `-X`.
+- RA `18h`, Dec `0°` -> `-Z`.
 
-Fixed-equatorial placement ignores every Earth-local field in `skyConfig`. Two calls with different location, timezone, and date values produce the same result for the same star and radius.
+Fixed-equatorial placement ignores latitude, longitude, timezone, date, hour angle, horizon, and sidereal time. It does not call `equatorialToCartesian()` because display radius is intentionally independent of the star's physical distance; the renderer performs only validated direction-to-display-sphere placement.
 
-No coordinate transformation is performed here. HPA-433 has already prepared the RA and declination values.
+Primary and reference use the same coordinate convention. Small radius differences are display-only and do not change direction from the camera at the origin.
 
-## Display radii and render ordering
+## Display radii and render order
 
-Preserve current Earth radii in legacy mode. For fixed-equatorial mode, use small radial separation and render ordering to avoid line z-fighting while preserving angular direction:
+Use explicit constants rather than relying on insertion-order ties:
 
-| Resource | Radius | Render order |
-| --- | ---: | ---: |
-| Reference lines | 97 | 1 |
-| Primary lines | 98 | 2 |
-| Reference ordinary stars | 99 | 2 |
-| Primary ordinary stars | 100 | 3 |
-| Synthetic Sol marker | 100 | 4 |
-| Primary star labels | 105 | 5 |
-| Synthetic Sol text label | 105 | 5 |
-| Primary constellation labels | 110 | 6 |
+| Object | Radius | `renderOrder` | Purpose |
+| --- | ---: | ---: | --- |
+| Decorative background | 200 / existing ambience radii | 0 | Scene-only backdrop |
+| Reference ordinary stars | 99 | 1 | Hollow comparison markers behind primary |
+| Reference lines | 97 | 2 | Dashed comparison topology |
+| Primary ordinary stars | 100 | 3 | Filled primary catalog stars |
+| Primary constellation lines | 98 | 4 | Selectable primary topology |
+| Synthetic Sol marker shape | 101 | 5 | Primary focus marker |
+| Primary star/marker labels | 105 | 6 | Readable labels |
+| Primary constellation labels | 110 | 7 | Constellation names |
+| Shooting-star decoration | existing | 8 | Foreground decoration |
 
-All star and marker materials remain transparent with `depthWrite: false`. The small radius differences are display-only and never written back to catalog data.
+Earth orientation guides use their existing radius and an order below primary labels. They never coexist with a reference layer because guides are Earth-horizontal only.
 
-## Ordinary-star rendering
+Every primary/reference role has a distinct order. No behavior depends on equal `renderOrder` values or scene insertion order.
 
-### Catalog partitioning
+All catalog materials keep `depthWrite: false` as today. Role-specific shader opacity and shape provide the comparison hierarchy.
 
-For each top-level `catalog.stars` entry:
+## Decorative background and procedural-star boundary
 
-1. identify synthetic Sol by the exact marker kind before magnitude filtering;
-2. route recognized markers to the dedicated marker path;
-3. apply `minimumMagnitude` only to ordinary stars;
-4. place accepted ordinary stars with `placeCatalogCoordinate()`;
-5. append the star to the role's exact point-index lookup list; and
-6. register its world position only when the role is primary.
+Catalog geometry must contain catalog records only.
 
-Constellation membership is not consulted when building the top-level point buffer.
+The current renderer injects 500 random points when the explicit star-position buffer is sparse. HPA-434 removes this injection from `createStars()`/catalog-layer construction for **both** legacy and prepared catalogs so:
 
-### Primary point style
+- point indices map exactly to `renderedOrdinaryStars`;
+- prepared primary/reference layers cannot each create duplicate random stars;
+- repeated prepared builds produce deterministic catalog geometry and shader attributes;
+- decorative points cannot participate in hover, selection, focus, IDs, diagnostics, or comparison semantics.
 
-Retain the existing filled-disc additive point shader and magnitude-derived point size for ordinary primary stars.
-
-### Reference point style
-
-Use a separate hollow-ring fragment shader. The alpha mask must visibly contain a transparent center and a ring band, so the distinction survives grayscale and common color-vision deficiencies. Reference opacity and twinkle amplitude are lower than primary.
-
-### Deterministic seeds
-
-Remove `Math.random()` from catalog point attributes. Derive `aSeed` from a stable 32-bit FNV-1a hash of:
+To avoid an unnecessary Earth visual regression, preserve the legacy sparse-sky ambience under one scene-level decorative-background owner:
 
 ```text
-<role>:<stable-star-id>
+decorative-background (one persistent root)
+├── starfield-background (existing shader sphere)
+└── ambient-star-points (optional legacy ambience)
 ```
 
-Normalize the unsigned hash to `[0, 1)`. Reinitializing the same catalog produces byte-equivalent seed attributes regardless of browser time or observer selection.
+Rules:
 
-The persistent starfield background may continue using its shader-based decorative pattern because it is not catalog geometry and has no IDs or interactions.
+- the root is created once in the constructor and survives catalog reinitialization;
+- optional ambient points are created at most once per renderer instance, not once per catalog layer;
+- prepared primary/reference initialization never creates an additional ambient layer;
+- ambient points contain no star records or semantic user data;
+- ambient points are excluded from all raycasts;
+- their randomness may remain decorative and constructor-scoped;
+- final `dispose()` releases both children and the root;
+- tests assert one decorative root and no random points in catalog buffers.
 
-## Procedural-star boundary
+This preserves legacy ambience while satisfying the issue's one-independent-background and no-per-layer-fallback requirements.
 
-Delete the sparse-buffer branch that appends 500 random points inside `createStars()` or its replacement.
+## Ordinary-star rendering and determinism
 
-Required invariants:
+Ordinary stars continue to respect `skyConfig.minimumMagnitude` and `magnitudeToSize()`.
 
-- prepared primary and reference layers never inject random catalog points;
-- the Earth adapter also uses the same no-injection catalog layer;
-- only the persistent `starfield-background` remains as decorative ambience;
-- decorative pixels never enter point lookup arrays;
-- decorative content cannot be hovered, selected, focused, labelled, or counted as prepared output; and
-- observer changes do not change catalog geometry through randomness.
+For each role:
 
-The renderer therefore has exactly one decorative background, not one fallback per catalog role.
+1. validate placement inputs;
+2. skip marker records according to the role guard;
+3. apply ordinary magnitude filtering;
+4. place the accepted star;
+5. append position, color, size, and deterministic shader seed;
+6. append the same star to `renderedOrdinaryStars`;
+7. register its stable-ID world position when the role is primary.
+
+Use a stable hash such as FNV-1a over `${role}:${star.id}` to derive `aSeed` in `[0, 1)`. Do not use `Math.random()` for catalog seed attributes.
+
+Determinism applies to catalog geometry and attributes. The persistent decorative background and shooting stars are outside catalog semantics and may retain decorative randomness.
 
 ## Constellation-line rendering
 
-Each layer builds lines from its own `catalog.constellations` array.
+Each layer builds line positions from its own `catalog.constellations` and each constellation's own local `stars` and tuple indices.
 
-For each constellation:
+For every segment:
 
-1. place that constellation's local stars using the layer's placement mode and line radius;
-2. accept only line entries containing exactly two integer in-range indices;
-3. append a segment only when both local positions exist;
-4. create one `THREE.LineSegments` object for the accepted segments;
-5. attach `constellationId` and `role` to `userData`; and
-6. add it to that layer's line group.
+- require an exact two-integer in-range tuple at the legacy runtime boundary;
+- place both endpoints using that layer's placement mode and role-specific line radius;
+- skip the segment when either endpoint fails placement;
+- never look up an endpoint in the other role;
+- never invent bridge segments;
+- preserve source segment order.
 
-The renderer never assumes equal constellation counts, equal local star counts, or equal segment indices between roles.
+Primary lines retain current selection/dimming uniforms and pointer metadata.
 
-Primary line materials keep current selected/dimmed uniforms and pulse behavior. Reference line materials use:
-
-- lower base opacity;
-- a repeated dash/gap alpha mask based on per-segment line progress; and
-- no selection/dimming coupling.
-
-Dash pattern, not color alone, distinguishes the reference topology.
-
-## Primary labels
-
-Ordinary star labels and constellation labels remain primary-only and follow current brightness/name behavior unless marker-specific rules below override it.
-
-Every label coordinate uses the same placement mode as its primary catalog. Fixed-equatorial labels must not call Earth-local placement.
-
-Reference receives no ordinary star labels or constellation labels.
-
-`setLabelsVisible()` controls:
-
-- primary ordinary-star label group;
-- primary constellation label group; and
-- synthetic Sol text label.
-
-It does not hide the synthetic Sol marker shape.
+Reference lines use an independent lower-opacity dashed shader and do not expose selection uniforms as a public interaction surface.
 
 ## Synthetic Sol marker
 
-### Detection
-
-Use `isSyntheticSolStar()` from `observerCatalog.ts` or an equivalent exact value check:
+Synthetic Sol is identified only by:
 
 ```ts
 star.marker?.kind === "synthetic-sol"
 ```
 
-Do not infer synthetic Sol from:
+Do not infer it from `id`, magnitude, color, spectral class, or distance.
 
-- `id === "sol"` alone;
-- magnitude;
-- color;
-- spectral class; or
-- distance.
+The primary synthetic marker:
 
-The stable ID remains `sol` for lookup, but marker behavior is selected by the marker contract.
+- bypasses ordinary minimum-magnitude filtering;
+- never enters the ordinary `THREE.Points` buffer;
+- uses validated fixed-equatorial placement;
+- uses a dedicated marker-scale constant rather than `magnitudeToSize()` alone;
+- renders a ring/reticle with radial rays so it remains distinguishable without color;
+- owns a text label whose visibility follows `setLabelsVisible()`;
+- keeps the marker shape visible when labels are hidden;
+- stores `starId`, the star record, and role metadata in `userData`;
+- contributes a primary marker hit object;
+- registers stable ID `sol` in the primary position map;
+- is disposed with the primary layer.
 
-### Rendering
-
-Synthetic Sol never enters ordinary point geometry.
-
-Create a primary marker root at the fixed-equatorial world position containing:
-
-- a camera-facing marker sprite whose texture visibly draws a central ring plus eight radial rays/reticle ticks;
-- a separate text-label sprite reading the star's name;
-- marker `userData` containing `starId`, the source star record, and `markerKind: "synthetic-sol"`; and
-- a hit-test object included in `primaryLayer.markerHitObjects`.
-
-Use a fixed marker scale contract independent of `magnitudeToSize()`:
-
-- marker sprite: `8 × 8` world units at radius `100`;
-- text label: `10 × 2.5` world units at radius `105`.
-
-The marker's compatibility magnitude may remain `0`, but changing `minimumMagnitude` below `0` must not remove the marker.
-
-### Interaction and focus
-
-Register the marker world position under stable ID `sol` in the primary world-position map.
-
-Marker hover returns the original synthetic Sol star through `onStarHover`. Marker pointer hits participate only in the primary interaction pass.
-
-`focusStarById("sol")` computes camera angles from the stored position:
-
-```ts
-const radius = Math.hypot(position.x, position.y, position.z);
-const targetYaw = Math.atan2(position.x, position.z);
-const targetPitch = Math.asin(position.y / radius);
-```
-
-It then calls the existing `tweenCameraTo(targetPitch, targetYaw, durationMs)`. Existing reduced-motion logic continues to apply.
+Reference layers never construct synthetic markers, even for malformed inputs.
 
 ## Reference-layer behavior
 
-The reference layer is the full HPA-433 Sol-observer reference catalog in fixed equatorial coordinates. It is not the current Earth-local visible sky.
+The reference layer is independently built from `referenceCatalog.stars` and `referenceCatalog.constellations`.
 
-It may contain source stars and line segments omitted from primary. It is independently constructed and never indexed through primary arrays.
+Styling is subdued and non-color-only:
 
-Reference rules:
+- ordinary reference stars use a hollow-ring point shader;
+- reference lines use a dashed shader and lower opacity;
+- reference receives no star labels, constellation labels, marker labels, hover, click, selection, or focus behavior;
+- reference does not share primary line materials or uniforms;
+- reference root visibility is the only runtime toggle required by HPA-434.
 
-- hollow ordinary-star marker shader;
-- dashed, lower-opacity lines;
-- no star or constellation labels;
-- no hover or click raycasting;
-- no stable-ID focus registry;
-- no selection uniforms tied to primary;
-- no synthetic Sol marker expected or created;
-- no procedural fallback.
+Primary/reference index and topology equality is never assumed.
 
-`setReferenceVisible()` changes only `referenceLayer.root.visible`. The same root object, geometries, and materials remain allocated while visibility toggles. Repeated visibility changes do not invoke placement, geometry creation, texture creation, or disposal.
+## Reference visibility state
 
-## Interaction model
-
-Primary is the sole authority.
-
-### Constellation interaction
-
-- line hover raycasts `primaryLayer.lineGroup.children` only;
-- line click raycasts `primaryLayer.lineGroup.children` only;
-- `setSelected()` delegates to `primaryLayer.setSelectedConstellation()` only;
-- reference lines never emit callbacks and never dim with primary selection.
-
-### Ordinary-star hover
-
-Raycast `primaryLayer.starPoints` only. Map the returned point index through `primaryLayer.getPointStar(index)`, which reflects the exact filtered ordinary-star buffer.
-
-Procedural background and marker objects never occupy this point index space.
-
-### Marker hover
-
-Raycast `primaryLayer.markerHitObjects`. Combine ordinary point and marker results and choose the nearest valid hit. Emit one `onStarHover` callback with the primary star record and screen position.
-
-Reference objects are absent from all interaction collections.
-
-### Existing controls
-
-Preserve:
-
-- pointer drag and touch drag;
-- momentum;
-- mouse-wheel field-of-view adjustment;
-- auto-rotate;
-- reduced-motion behavior;
-- camera tweening;
-- `worldToScreen()`;
-- camera azimuth/elevation getters.
-
-HPA-434 does not introduce a second camera or mode-specific navigation system.
-
-## Orientation guides and camera setup
-
-Create horizon and cardinal guides only when placement mode is `"earth-horizontal"`.
-
-Fixed-equatorial mode has no surface horizon or local cardinal directions. It must not create misleading N/E/S/W sprites or a horizon ring.
-
-Keep the current `setupSkyCamera()` behavior for both modes in this issue. HPA-434 does not redefine initial camera semantics; HPA-435 supplies product-facing Find Sol and observer controls.
-
-## Shared initialization flow
-
-Refactor both public initialization methods into one internal operation:
+Store one renderer-level preference:
 
 ```ts
-private async initializeCatalogs(
-    primaryCatalog: RendererCatalog,
-    referenceCatalog: RendererCatalog | undefined,
-    placementMode: CatalogPlacementMode,
-    skyConfig: Readonly<SkyConfiguration>,
-    referenceVisible: boolean,
-): Promise<void>
+private referenceVisible = false;
 ```
 
-Sequence:
+`setReferenceVisible(visible)` always performs both steps:
 
-1. dispose and detach existing primary/reference catalog layers;
-2. dispose renderer-owned primary label groups and orientation guides;
-3. clear primary world-position and hit state;
-4. clear selected and hovered IDs and emit null hover state where needed;
-5. preserve the persistent starfield background;
-6. build the new primary layer;
-7. build the optional reference layer independently;
-8. apply the stored reference visibility preference;
-9. create primary ordinary and constellation labels using the same placement mode;
-10. apply runtime label visibility, including the synthetic Sol label;
-11. create Earth orientation guides only for Earth-horizontal mode;
-12. run existing camera setup; and
-13. start the animation loop only when no loop is already active.
+1. update `this.referenceVisible`, regardless of whether a reference layer exists;
+2. when a reference layer exists, set `referenceLayer.root.visible = visible`.
 
-The method does not mutate or clone the caller's catalog solely to change role, visibility, or ordering.
+Prepared initialization semantics:
 
-## Animation loop
+- when `request.referenceVisible` is provided, it updates the stored preference;
+- when it is omitted, preserve the existing stored preference;
+- after building a reference layer, apply the stored preference to its root;
+- when no reference layer exists, retain the preference for a future initialization;
+- toggling visibility never rebuilds, disposes, or mutates either catalog layer.
 
-Use one animation loop for the renderer lifetime.
+Tests must compare primary/reference object identity before and after the toggle.
 
-`initializeCatalogs()` calls `animate()` only when `_rafId === null`. Each animation frame:
+## Interaction behavior
 
-- advances camera tween and auto-rotate as today;
-- calls `primaryLayer?.tick(deltaSec)`;
-- calls `referenceLayer?.tick(deltaSec)`;
-- advances shooting-star decorative behavior as today; and
-- renders the shared scene once.
+Primary remains authoritative:
 
-Reinitialization must not create concurrent loops.
+- constellation hover/click raycasts primary line objects only;
+- ordinary-star hover raycasts primary ordinary points and maps the intersection index to `renderedOrdinaryStars` exactly;
+- marker hover raycasts primary marker hit objects and returns synthetic Sol;
+- decorative background and reference objects are excluded from pointer targets;
+- `setSelected()` updates primary line uniforms only;
+- label toggles affect primary ordinary labels, constellation labels, and synthetic Sol text label;
+- camera drag, momentum, auto-rotate, reduced-motion, tween, and `worldToScreen()` behavior remains shared and unchanged.
+
+If line and star/marker hits occur in the same pointer sample, preserve the existing constellation-hover callback and independently emit the primary star/marker hover callback.
+
+## Focus behavior and pitch clamp
+
+`focusStarById()`:
+
+1. reads a primary world position by stable ID;
+2. returns `false` when the ID is absent or reference-only;
+3. computes `r = hypot(x, y, z)`;
+4. computes yaw with `atan2(x, z)`;
+5. computes pitch with `asin(y / r)`;
+6. delegates to `tweenCameraTo(pitch, yaw, durationMs)`;
+7. returns `true` when the target was resolved and a camera update/tween was requested.
+
+The existing `tweenCameraTo()` clamp of `±MAX_ELEVATION_RAD` remains authoritative. A star at or near an equatorial pole can therefore be approached only to the existing approximately `±81.8°` camera limit, not centered at exact `±90°`. `focusStarById()` returning `true` means the target was found, not that the camera can violate its safety clamp. Tests pin this behavior so HPA-435's Find Sol integration does not assume exact pole centering.
+
+Reduced motion continues to use the existing immediate camera-update path.
+
+## Labels and orientation guides
+
+Primary ordinary-star and constellation labels continue using existing label policy and localization-supplied names.
+
+- reference creates no labels;
+- synthetic Sol creates one primary marker label;
+- `setLabelsVisible()` controls all primary text labels but not the Sol marker shape;
+- Earth-horizontal mode creates the horizon ring and cardinal labels;
+- fixed-equatorial mode creates neither because the view represents a system barycenter, not an alien surface horizon.
+
+Reinitialization removes obsolete guides and labels before creating mode-appropriate resources.
+
+## Shared initialization and animation-loop ownership
+
+Both public initialization methods call one private shared path.
+
+Shared initialization order:
+
+1. dispose old primary/reference catalog layers;
+2. dispose old Earth-only guides and primary external label groups not owned by a layer;
+3. clear stale selected/hovered IDs and hit/focus registries;
+4. preserve the one decorative-background root;
+5. build primary from its authoritative catalog;
+6. build optional reference independently;
+7. apply stored reference visibility;
+8. create Earth guides only for Earth-horizontal mode;
+9. set camera state using the existing sky-camera policy;
+10. start animation only when no RAF chain exists.
+
+Use an explicit loop-running guard rather than treating the latest RAF ID as proof that only one chain exists:
+
+```ts
+private animationRunning = false;
+
+private ensureAnimationRunning(): void {
+    if (this.animationRunning || this._disposed) return;
+    this.animationRunning = true;
+    this.animate();
+}
+```
+
+`animate()` schedules the next frame while `animationRunning` is true. Final `dispose()` clears the flag and cancels the outstanding request.
+
+This is a fix for an existing latent reinitialization bug, not merely a new reference-layer safeguard.
 
 ## Lifecycle and disposal
 
-### Layer disposal
+`ConstellationCatalogLayer.dispose()` is idempotent and releases:
 
-`ConstellationCatalogLayer.dispose()` is idempotent and:
+- ordinary points geometry and shader material;
+- line geometries and materials;
+- marker geometries, materials, textures, and sprites;
+- label textures/materials owned by the layer;
+- child groups and root attachment;
+- point lookup, hit-object, and ID-position collections.
 
-- removes its root group from the scene or leaves detachment to the renderer under one documented convention;
-- disposes ordinary-star geometry and material;
-- disposes every line geometry and material;
-- disposes marker geometries, textures, sprite materials, and hit materials;
-- clears point lookup and world-position maps;
-- clears marker hit arrays;
-- marks the layer disposed.
+Renderer-level cleanup releases:
 
-Choose one detachment owner and use it consistently. The recommended convention is: renderer removes `layer.root` from the scene, then calls `layer.dispose()`.
+- both layer instances;
+- Earth orientation guides;
+- any renderer-owned primary labels retained outside the layer;
+- active shooting-star geometry/material;
+- the full decorative-background root on final disposal only;
+- event listeners, RAF/momentum callbacks, canvas, and WebGL renderer as today.
 
-### Renderer reinitialization
-
-Reinitialization disposes both old layers and all renderer-owned labels/guides but preserves:
-
-- canvas;
-- WebGL renderer;
-- camera;
-- event listeners;
-- persistent starfield background;
-- one active animation loop;
-- runtime label/reference visibility preferences.
-
-### Final renderer disposal
-
-Final `dispose()` additionally:
-
-- cancels render and momentum animation frames;
-- disposes any active shooting star;
-- disposes both catalog layers;
-- disposes all labels and orientation guides;
-- disposes starfield background geometry/material;
-- removes every event listener;
-- removes canvas from the DOM; and
-- disposes the WebGL renderer.
-
-No stable-ID map, point lookup, selected ID, hovered ID, or marker hit object may survive reinitialization or final disposal.
+Reinitialization must leave the decorative root intact and must not retain stale reference visibility objects, selected IDs, hovered IDs, world positions, or hit targets.
 
 ## Error handling
 
-HPA-433 prepared catalogs are already validated, but renderer boundaries remain defensive:
+Renderer failures are local and non-transforming:
 
-- malformed local line entries are skipped rather than throwing;
-- missing line endpoints skip only that segment;
-- an empty catalog builds an empty layer without procedural catalog points;
-- absence of a reference catalog leaves the stored visibility preference intact;
-- `focusStarById()` returns `false` for an unknown or magnitude-culled ordinary star;
-- recognized synthetic Sol bypasses culling and remains focusable;
-- duplicate primary top-level IDs use first rendered occurrence for world-position lookup and do not rewrite input data.
+- invalid top-level coordinate: skip that rendered object and warn in development;
+- invalid constellation endpoint: skip only the affected line segment;
+- malformed legacy line: drop it in the legacy adapter;
+- unexpected reference marker: skip it and warn in development;
+- absent reference catalog: keep the stored visibility preference but build no reference root;
+- missing focus ID: return `false`;
+- repeated disposal: no-op after the first complete cleanup.
 
-WebGL construction failure and wrapper-level fallback remain existing wrapper responsibilities.
-
-## Immutability and determinism
-
-The renderer treats request objects, catalogs, stars, constellations, line arrays, visibility arrays, and configuration as readonly.
-
-It may create Three.js buffers and internal plain lookup records, but it must not:
-
-- assign to input fields;
-- sort input arrays in place;
-- append synthetic Sol;
-- deduplicate top-level stars;
-- rewrite line indices;
-- toggle a caller-owned visibility field; or
-- attach Three.js objects to catalog records.
-
-For identical prepared inputs, placement geometry, role styling attributes, and deterministic seed arrays are identical across reinitialization regardless of current time, geolocation, or `Math.random()` state.
+HPA-434 does not add user-facing fallback copy or catalog diagnostics. HPA-433 remains authoritative for transformation diagnostics, and HPA-435 owns visible fallback handling.
 
 ## Testing strategy
 
-### Pure placement tests
+### Placement tests
 
-Add focused unit tests for `rendererPlacement.ts`:
+Add `src/lib/constellation/__tests__/rendererPlacement.test.ts` covering:
 
-- Earth mode delegates to `celestialToSphere()` and preserves its output.
-- Fixed-equatorial RA/Dec axis fixtures match HPA-431 convention.
-- Fixed-equatorial output is independent of location, timezone, and date.
-- Radius changes scale magnitude without changing direction.
+- Earth-horizontal output matching `celestialToSphere()`;
+- all six fixed-equatorial axis fixtures;
+- fixed placement equality across different dates, locations, and timezones;
+- finite-input and declination-range failures;
+- no use of Earth-horizontal transforms in fixed mode.
 
-### Layer tests
+### Catalog-layer tests
 
-Add focused `ConstellationCatalogLayer` tests for:
+Add `src/lib/constellation/__tests__/ConstellationCatalogLayer.test.ts` covering:
 
-- direct top-level ordinary-star consumption;
-- repeated constellation membership producing one top-level point;
-- malformed line guards;
-- independent primary and reference star counts;
-- independent line topology;
-- no procedural points for empty/small catalogs;
-- deterministic FNV-1a seeds by role and stable ID;
-- primary filled versus reference hollow point shaders;
-- primary solid/pulsing versus reference dashed line shaders;
-- primary stable-ID positions and reference absence from focus registry;
-- idempotent complete disposal.
+- direct top-level star consumption;
+- one top-level point despite repeated constellation membership;
+- independent primary/reference point counts and line topology;
+- no random procedural entries in catalog buffers;
+- deterministic per-role/per-ID shader seeds;
+- readonly/frozen catalog safety;
+- primary marker construction before magnitude filtering;
+- primary-only marker role guard and defensive reference-marker skip;
+- hollow reference stars and dashed reference lines;
+- primary-only hit objects, selection, and position registration;
+- malformed legacy line normalization;
+- placement failure skipping;
+- idempotent disposal of every owned resource.
 
 ### Renderer integration tests
 
-Extend `ConstellationRenderer.test.ts` for:
+Extend `ConstellationRenderer.test.ts` covering:
 
-- unchanged legacy Earth initialization;
-- regression coverage that Earth coordinates still call `celestialToSphere()` with location/date;
-- prepared catalogs consumed as authoritative matched pairs;
-- primary/reference topology differences without lookup corruption;
-- frozen input safety;
-- fixed-equatorial independence from browser time and geolocation;
-- synthetic Sol bypassing magnitude culling;
-- synthetic Sol using marker-specific fixed scale/style;
-- synthetic Sol hover and `focusStarById("sol")`;
-- `getStarWorldPosition("sol")` returning a copy;
-- reference visibility changing root identity-preservingly without reconstruction;
-- reference-only stars not hoverable or focusable;
-- primary-only selection uniforms;
-- Earth guides present only in Earth-horizontal mode;
-- one persistent decorative background;
-- reinitialization disposing stale primary/reference resources;
-- repeated initialization maintaining one animation loop;
-- final disposal releasing all added geometry, materials, textures, sprites, groups, and event state.
+- legacy Earth initialization still delegates to `celestialToSphere()`;
+- Earth ambience remains visible under the one decorative root while catalog point counts contain real stars only;
+- exactly one decorative root survives repeated initialization;
+- prepared primary and reference use authoritative matched pairs;
+- primary/reference topology can differ without lookup corruption;
+- fixed-equatorial output is time/geolocation independent;
+- synthetic Sol remains rendered when ordinary magnitude threshold would reject magnitude `0`;
+- synthetic marker uses a dedicated size/style path;
+- synthetic hover and `getStarWorldPosition("sol")`;
+- `focusStarById("sol")` yaw/pitch math;
+- focus behavior at the camera pitch clamp;
+- reference visibility always updates stored state and changes only root visibility;
+- visibility toggling preserves layer/object identity;
+- reference-only IDs are not hoverable or focusable;
+- Earth-only horizon/cardinal guides;
+- repeated initialization starts one RAF chain;
+- reinitialization clears stale state and disposes old layers;
+- final disposal releases layers, decorative background, listeners, and renderer.
 
-### Test-mock updates
+### Regression verification
 
-Update the shared Three.js test mock only as required to represent:
+Run:
 
-- `Points.visible`, `name`, `renderOrder`, and `userData`;
-- group `visible` state;
-- marker sprite/group raycasting;
-- buffer attributes needed to inspect stable seeds;
-- material shader fields and disposal spies.
-
-Do not broaden unrelated graphics mocks.
-
-## Acceptance mapping
-
-| HPA-434 acceptance criterion | Design mechanism |
-| --- | --- |
-| Existing Earth/Sol mode remains compatible | `initialize()` is an Earth-horizontal adapter and delegates to unchanged `celestialToSphere()` behavior. |
-| Prepared catalogs render without mutation | Readonly renderer boundary and immutable shared initialization path. |
-| Authoritative top-level stars are consumed directly | Layer point buffers iterate only `catalog.stars`; no membership flattening. |
-| Different topology is supported | Independent layer instances, local positions, line geometry, and lookup spaces. |
-| Alien/reference directions bypass Earth transforms | Pure fixed-equatorial placement through HPA-431 `radialToCartesian()`. |
-| Synthetic Sol survives ordinary culling | Marker partition occurs before minimum-magnitude filtering. |
-| Synthetic Sol has dedicated size/style | Fixed ring-and-rays marker sprite and separate label contract. |
-| Prepared layers do not inject random stars | Sparse procedural branch is removed; one independent starfield background remains. |
-| Reference visibility does not rebuild resources | Toggle only `referenceLayer.root.visible`. |
-| Stable hover/selection/focus continue | Primary-only exact point lookup, marker hit objects, line groups, and ID-to-position map. |
-| All resources are disposed | Idempotent layer disposal plus renderer-owned label/guide/background teardown. |
-
-## File boundaries
-
-Expected implementation work after this design is approved:
-
-### Create
-
-- `src/lib/constellation/rendererPlacement.ts`
-- `src/lib/constellation/ConstellationCatalogLayer.ts`
-- focused tests for both modules
-
-### Modify
-
-- `src/lib/constellation/ConstellationRenderer.ts`
-- `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
-- `src/test/setup.ts` only for narrowly required Three.js mock behavior
-
-### Explicitly unchanged in HPA-434
-
-- `src/components/ConstellationWrapper.svelte`
-- route-state utilities
-- Galaxy data and Galaxy components
-- `observerCatalog.ts` transformation semantics
-- `observerTransform.ts` astronomy formulas
-- observer-source mapping
-- localization files
-- HUD and fallback UI
+```bash
+bunx vitest run src/lib/constellation/__tests__/rendererPlacement.test.ts
+bunx vitest run src/lib/constellation/__tests__/ConstellationCatalogLayer.test.ts
+bunx vitest run src/lib/constellation/__tests__/ConstellationRenderer.test.ts
+bun run test:run
+bun run type-check
+bun run lint
+bun run build
+```
 
 ## Risks and mitigations
 
-### Legacy visual regression
-
-Risk: moving existing Earth resource creation behind a shared layer changes placement, point sizes, label coordinates, or interaction indices.
-
-Mitigation: Earth adapter tests pin `celestialToSphere()` calls, radii, culling, labels, and interaction behavior before prepared-mode work is added.
-
 ### Cross-role index corruption
 
-Risk: primary point or line indices are accidentally resolved through reference arrays.
+**Risk:** A reference point or line index is interpreted against primary arrays.
 
-Mitigation: each layer privately owns its point lookup, local line geometry, and role-tagged objects. The renderer never shares index arrays.
+**Mitigation:** Each layer owns its exact point lookup, topology, hit objects, and world-position map. Reference never participates in primary interaction.
 
-### Synthetic marker hidden by generic behavior
+### Marker-role leakage
 
-Risk: compatibility magnitude or generic label toggles remove the marker.
+**Risk:** Generic partitioning builds a duplicate, non-interactive reference synthetic marker.
 
-Mitigation: marker partition precedes culling; shape visibility and label visibility are separate; size is a fixed marker contract.
+**Mitigation:** Marker construction is explicitly primary-only. Unexpected reference markers are skipped and covered by tests.
 
-### Reference overlay harms readability
+### Earth ambience regression
 
-Risk: reference lines and stars obscure primary geometry.
+**Risk:** Removing 500 procedural points from sparse Earth catalog buffers visibly reduces sky density.
 
-Mitigation: hollow points, dashed lines, lower opacity, lower render order, small radial separation, and no labels/interactions.
+**Mitigation:** Move that ambience under the one persistent scene-level decorative-background owner instead of deleting it. Earth regression tests distinguish semantic catalog counts from retained decorative ambience.
 
-### Resource leaks during observer changes
+### Fixed-frame contamination
 
-Risk: repeated prepared initialization accumulates textures, materials, loops, or stale hit objects.
+**Risk:** Prepared coordinates accidentally receive Earth date/location/sidereal rotation.
 
-Mitigation: idempotent per-layer disposal, renderer-owned label disposal, one-loop guard, and resource-identity tests over repeated initialization.
+**Mitigation:** Explicit placement mode, isolated placement helper, axis fixtures, and cross-date/location equality tests.
 
-### Renderer file remains too coupled
+### Non-finite GPU buffers
 
-Risk: prepared mode doubles branching inside an already large renderer.
+**Risk:** A malformed/deserialized coordinate bypasses HPA-433 assumptions and writes `NaN` into geometry.
 
-Mitigation: placement and role-owned resource creation move into two focused modules; renderer branches only at shared initialization, orientation-guide policy, and primary interaction routing.
+**Mitigation:** Finite/range validation at the renderer boundary and local skip behavior.
 
-## Review decisions requested
+### Render-order instability
 
-Approval of this spec confirms the following implementation decisions:
+**Risk:** Equal `renderOrder` values make overlay hierarchy depend on insertion order.
 
-1. one internal catalog-layer abstraction, not duplicated fields or two renderers;
-2. legacy `initialize()` retained as an Earth-horizontal adapter;
-3. prepared catalogs consumed directly through `initializePreparedCatalogs()`;
-4. HPA-431 fixed-equatorial axis convention used for display placement;
-5. primary-only hover, selection, labels, and focus authority;
-6. dedicated ring-and-rays synthetic Sol marker with fixed visual scale;
-7. hollow-star and dashed-line non-color-only reference styling;
-8. reference toggling by root visibility only;
-9. no random procedural points in catalog buffers; and
-10. renderer-focused scope with wrapper/HUD integration deferred to HPA-435.
+**Mitigation:** Assign unique explicit orders for reference stars/lines, primary stars/lines, markers, and labels.
+
+### Pole focus limitation
+
+**Risk:** Find Sol appears not to center a target near `±90°` declination.
+
+**Mitigation:** Document and test the existing `±MAX_ELEVATION_RAD` clamp; `focusStarById()` reports target resolution, not exact unclamped centering.
+
+### Resource leaks
+
+**Risk:** Reinitialization or visibility toggles leave stale geometries, textures, hit objects, or RAF loops.
+
+**Mitigation:** Idempotent layer disposal, root-only visibility toggling, explicit stale-state clearing, and one-loop guard tests.
+
+### Scope leakage into HPA-435
+
+**Risk:** Renderer work starts owning route state, observer mapping, HUD, localization, or fallback UI.
+
+**Mitigation:** Public APIs accept already-prepared catalogs and generic stable IDs only. No Svelte, route, Galaxy-data, or localization dependency enters the new renderer modules.
+
+## Acceptance criteria mapping
+
+- **Existing Earth/Sol mode remains backward compatible:** legacy adapter preserves Earth placement, interactions, guides, labels, camera policy, and moves sparse ambience to the scene-level decorative owner.
+- **Prepared catalogs render without mutation:** readonly renderer boundary and frozen-input tests.
+- **Authoritative top-level stars are consumed directly:** layer points use `catalog.stars`; constellation membership is line/label input only.
+- **Different topology is supported:** independent role-owned layers and fixtures.
+- **Prepared directions bypass Earth transforms:** fixed-equatorial helper and time/geolocation independence tests.
+- **Synthetic Sol bypasses ordinary culling and sizing:** primary-only dedicated marker path.
+- **Prepared layers do not inject random catalog points:** no layer fallback; one independent decorative background.
+- **Reference visibility changes immediately without reconstruction:** stored preference plus root visibility toggle and identity tests.
+- **Stable hover/selection/focus IDs continue to work:** exact primary lookup/hit/position registries.
+- **All added resources are disposed:** idempotent layer and renderer lifecycle tests.
+
+## File plan
+
+Create:
+
+- `src/lib/constellation/rendererPlacement.ts`
+- `src/lib/constellation/ConstellationCatalogLayer.ts`
+- `src/lib/constellation/__tests__/rendererPlacement.test.ts`
+- `src/lib/constellation/__tests__/ConstellationCatalogLayer.test.ts`
+
+Modify:
+
+- `src/lib/constellation/ConstellationRenderer.ts`
+- `src/lib/constellation/__tests__/ConstellationRenderer.test.ts`
+- `src/test/setup.ts` only as required to model new Three.js resources accurately.
+
+Explicitly unchanged:
+
+- `src/components/ConstellationWrapper.svelte`;
+- route state and Galaxy entry;
+- observer-system/source-star mapping;
+- HPA-431 astronomy formulas;
+- HPA-433 catalog preparation;
+- localization and HUD copy;
+- 2D fallback integration.
+
+## Review resolution notes
+
+The design review clarifications are resolved as follows:
+
+1. Marker construction is explicitly primary-only; unexpected reference markers are skipped.
+2. Legacy Earth procedural ambience is extracted into the one decorative-background owner rather than silently removed or left in catalog geometry.
+3. `setReferenceVisible()` always stores the preference and additionally updates an existing root.
+4. Every role/object category receives a unique explicit `renderOrder`.
+5. Fixed-equatorial placement relies on HPA-433 normalization but still performs finite/range validation at the GPU boundary.
+6. Focus semantics explicitly retain and test the existing pitch clamp.
+
+The tuple-safety note is also incorporated: prepared tuple lines remain tuples, while only the legacy adapter normalizes mutable `number[][]` input.
+
+## Open decisions
+
+None. The implementation plan should be reconciled with this reviewed specification before production code begins.
