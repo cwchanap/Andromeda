@@ -543,6 +543,9 @@ class MockGroup extends (THREE as any).Group {
             if (i >= 0) this.children.splice(i, 1);
             return this;
         });
+        // Object3D.removeFromParent() — used by layer disposal (e.g.
+        // ConstellationCatalogLayer.dispose detaches its root group).
+        this.removeFromParent = vi.fn();
         this.getObjectByName = vi.fn(
             (n: string) => this.children.find((c: any) => c.name === n) || null,
         );
