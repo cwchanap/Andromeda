@@ -1,5 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+    describe,
+    it,
+    expect,
+    vi,
+    beforeEach,
+    afterEach,
+    afterAll,
+} from "vitest";
 import * as THREE from "three";
 import { ConstellationRenderer } from "@/lib/constellation/ConstellationRenderer";
 import type { PreparedCatalogRenderSettings } from "@/lib/constellation/ConstellationRenderer";
@@ -8,6 +16,7 @@ import type {
     PreparedConstellation,
     PreparedConstellationCatalog,
 } from "@/lib/constellation/observerCatalog";
+import { SYNTHETIC_SOL_STAR_ID } from "@/lib/constellation/observerCatalog";
 import type {
     Star,
     Constellation,
@@ -322,32 +331,33 @@ describe("ConstellationRenderer", () => {
         expect(() => renderer.dispose()).not.toThrow();
     });
 
-    it("clearScene handles array materials on starPoints", async () => {
+    it("clearScene handles array materials on ordinary star points", async () => {
         renderer = new ConstellationRenderer(container);
         await renderer.initialize(
             [makeStar({ magnitude: 1.0 })],
             [makeConstellation()],
             makeSkyConfig(),
         );
-        // Force starPoints.material to be an array so the array branch executes
-        const sp = (renderer as any).starPoints;
-        if (sp) {
-            sp.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
+        // Force the layer's star-point material to be an array so the array
+        // branch executes without throwing
+        const points = (renderer as any).primaryLayer.ordinaryStarPoints;
+        if (points) {
+            points.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
         }
         expect(() => renderer.dispose()).not.toThrow();
     });
 
-    it("clearScene handles array materials on constellationLines children", async () => {
+    it("clearScene handles array materials on line hit objects", async () => {
         renderer = new ConstellationRenderer(container);
         await renderer.initialize(
             [makeStar({ magnitude: 1.0 })],
             [makeConstellation()],
             makeSkyConfig(),
         );
-        // Force a LineSegments child to have array materials
-        const cl = (renderer as any).constellationLines;
-        if (cl && cl.children.length > 0) {
-            const child = cl.children[0] as any;
+        // Force a line hit object to have array materials
+        const lineObjects = (renderer as any).primaryLayer.lineHitObjects;
+        if (lineObjects.length > 0) {
+            const child = lineObjects[0] as any;
             child.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
         }
         expect(() => renderer.dispose()).not.toThrow();
@@ -683,7 +693,7 @@ describe("ConstellationRenderer", () => {
                 [makeConstellation()],
                 makeSkyConfig(),
             );
-            const stars = (renderer as any).starPoints;
+            const stars = (renderer as any).primaryLayer.ordinaryStarPoints;
             expect(stars.material.uniforms.uTime).toBeDefined();
             // animate() runs once during initialize, so uTime.value is >= 0
             expect(typeof stars.material.uniforms.uTime.value).toBe("number");
@@ -697,23 +707,22 @@ describe("ConstellationRenderer", () => {
                 [makeConstellation()],
                 makeSkyConfig(),
             );
-            const stars = (renderer as any).starPoints;
+            const stars = (renderer as any).primaryLayer.ordinaryStarPoints;
             const initial = stars.material.uniforms.uTime.value;
-            (renderer as any).tickUniforms(0.5);
+            // The layer's tick drives the same point-material uTime that the
+            // legacy renderer-owned tickUniforms used to advance.
+            (renderer as any).primaryLayer.tick(0.5);
             expect(stars.material.uniforms.uTime.value).toBeGreaterThan(
                 initial,
             );
         });
 
-        it("does not throw when tickUniforms is called after dispose clears starPoints", async () => {
+        it("does not throw when the primary layer tick is called with no points", async () => {
             const renderer = new ConstellationRenderer(makeContainer());
-            await renderer.initialize(
-                [makeStar()],
-                [makeConstellation()],
-                makeSkyConfig(),
-            );
-            renderer.dispose();
-            expect(() => (renderer as any).tickUniforms(0.5)).not.toThrow();
+            await renderer.initialize([], [], makeSkyConfig());
+            expect(() =>
+                (renderer as any).primaryLayer.tick(0.5),
+            ).not.toThrow();
         });
     });
 
@@ -724,7 +733,7 @@ describe("ConstellationRenderer", () => {
             const c2 = makeConstellation({ id: "lyra" });
             await renderer.initialize([makeStar()], [c1, c2], makeSkyConfig());
             renderer.setSelected("orion");
-            const children = (renderer as any).constellationLines.children;
+            const children = (renderer as any).primaryLayer.lineHitObjects;
             const orionMat = children.find(
                 (c: any) => c.userData.constellationId === "orion",
             ).material;
@@ -746,7 +755,7 @@ describe("ConstellationRenderer", () => {
             );
             renderer.setSelected("orion");
             renderer.setSelected(null);
-            const mat = (renderer as any).constellationLines.children[0]
+            const mat = (renderer as any).primaryLayer.lineHitObjects[0]
                 .material;
             expect(mat.uniforms.uIsSelected.value).toBe(0);
             expect(mat.uniforms.uIsDimmed.value).toBe(0);
@@ -763,7 +772,7 @@ describe("ConstellationRenderer", () => {
                 makeSkyConfig(),
             );
             renderer.setSelected("nonexistent");
-            const children = (renderer as any).constellationLines.children;
+            const children = (renderer as any).primaryLayer.lineHitObjects;
             children.forEach((c: any) => {
                 expect(c.material.uniforms.uIsSelected.value).toBe(0);
                 expect(c.material.uniforms.uIsDimmed.value).toBe(1);
@@ -805,9 +814,9 @@ describe("ConstellationRenderer", () => {
                 [makeConstellation()],
                 makeSkyConfig(),
             );
-            const group = (renderer as any).constellationLines;
-            expect(group.children.length).toBe(1);
-            const mat = group.children[0].material;
+            const lineObjects = (renderer as any).primaryLayer.lineHitObjects;
+            expect(lineObjects.length).toBe(1);
+            const mat = lineObjects[0].material;
             expect(mat.uniforms.uIsSelected.value).toBe(0);
             expect(mat.uniforms.uIsDimmed.value).toBe(0);
             expect(typeof mat.uniforms.uTime.value).toBe("number");
@@ -821,9 +830,9 @@ describe("ConstellationRenderer", () => {
                 [makeConstellation()],
                 makeSkyConfig(),
             );
-            const line = (renderer as any).constellationLines.children[0];
+            const line = (renderer as any).primaryLayer.lineHitObjects[0];
             const t0 = line.material.uniforms.uTime.value;
-            (renderer as any).tickUniforms(0.25);
+            (renderer as any).primaryLayer.tick(0.25);
             expect(line.material.uniforms.uTime.value).toBeGreaterThan(t0);
         });
     });
@@ -961,11 +970,9 @@ describe("ConstellationRenderer", () => {
                 makeSkyConfig(),
             );
 
-            // Force the raycaster mock to return a hit on the orion line group
-            const group = (renderer as any).constellationLines;
-            globalThis.__threeRaycasterIntersects = [
-                { object: group.children[0] },
-            ];
+            // Force the raycaster mock to return a hit on the orion line object
+            const group = (renderer as any).primaryLayer.lineHitObjects;
+            globalThis.__threeRaycasterIntersects = [{ object: group[0] }];
 
             // Set mouseDown position same as click position (no drag)
             (renderer as any).mouseDownX = 100;
@@ -1011,10 +1018,8 @@ describe("ConstellationRenderer", () => {
                 [makeConstellation()],
                 makeSkyConfig(),
             );
-            const group = (renderer as any).constellationLines;
-            globalThis.__threeRaycasterIntersects = [
-                { object: group.children[0] },
-            ];
+            const group = (renderer as any).primaryLayer.lineHitObjects;
+            globalThis.__threeRaycasterIntersects = [{ object: group[0] }];
 
             // Simulate mousedown at (0, 0) then click at (100, 0) — far apart = drag
             (renderer as any).mouseDownX = 0;
@@ -1039,10 +1044,8 @@ describe("ConstellationRenderer", () => {
                 [makeConstellation()],
                 makeSkyConfig(),
             );
-            const group = (renderer as any).constellationLines;
-            globalThis.__threeRaycasterIntersects = [
-                { object: group.children[0] },
-            ];
+            const group = (renderer as any).primaryLayer.lineHitObjects;
+            globalThis.__threeRaycasterIntersects = [{ object: group[0] }];
 
             // Simulate mousedown at (100, 100) then click at (102, 101) — within threshold
             (renderer as any).mouseDownX = 100;
@@ -1067,10 +1070,8 @@ describe("ConstellationRenderer", () => {
                 [makeConstellation()],
                 makeSkyConfig(),
             );
-            const group = (renderer as any).constellationLines;
-            globalThis.__threeRaycasterIntersects = [
-                { object: group.children[0] },
-            ];
+            const group = (renderer as any).primaryLayer.lineHitObjects;
+            globalThis.__threeRaycasterIntersects = [{ object: group[0] }];
 
             // First call sets lastHoverEmit; force enough time to elapse:
             (renderer as any).lastHoverEmit = 0;
@@ -1228,6 +1229,303 @@ describe("ConstellationRenderer", () => {
             expect(renderer.getHoveredId()).toBeNull();
             expect(onConstellationHover).toHaveBeenCalledWith(null, null);
             expect(onStarHover).toHaveBeenCalledWith(null, null);
+        });
+    });
+
+    describe("layered interaction routing", () => {
+        const makePreparedRenderer = async (
+            callbacks: Record<string, unknown> = {},
+        ): Promise<{
+            container: HTMLElement;
+            renderer: ConstellationRenderer;
+        }> => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(
+                container,
+                callbacks as any,
+            );
+            const primaryCatalog = makePreparedCatalog(
+                [
+                    makeStar({
+                        id: "p1",
+                        magnitude: 1.0,
+                        rightAscension: 5,
+                        declination: 20,
+                    }),
+                    makeStar({
+                        id: "p2",
+                        magnitude: 2.0,
+                        rightAscension: 6,
+                        declination: 30,
+                    }),
+                ],
+                [makePreparedConstellation()],
+            );
+            const referenceCatalog = makePreparedCatalog(
+                [
+                    makeStar({
+                        id: "r1",
+                        magnitude: 1.0,
+                        rightAscension: 10,
+                        declination: -10,
+                    }),
+                ],
+                [makePreparedConstellation()],
+            );
+            await renderer.initializePreparedCatalogs(
+                { primaryCatalog, referenceCatalog },
+                preparedSettings(),
+            );
+            return { container, renderer };
+        };
+
+        const cleanup = (
+            renderer: ConstellationRenderer,
+            container: HTMLElement,
+        ): void => {
+            renderer.dispose();
+            container.remove();
+        };
+
+        it("constellation hover raycasts the primary layer line objects only", async () => {
+            const onConstellationHover = vi.fn();
+            const { container, renderer } = await makePreparedRenderer({
+                onConstellationHover,
+            });
+            try {
+                const primaryLayer = (renderer as any).primaryLayer;
+                const referenceLayer = (renderer as any).referenceLayer;
+                expect(referenceLayer.lineHitObjects.length).toBeGreaterThan(0);
+
+                const intersectObjects = vi.fn<(objs: any[]) => any[]>(
+                    () => [],
+                );
+                (renderer as any).raycaster.intersectObjects = intersectObjects;
+                (renderer as any).lastHoverEmit = 0;
+                (renderer as any).onMouseMove({
+                    clientX: 150,
+                    clientY: 200,
+                    preventDefault: () => {},
+                });
+
+                expect(intersectObjects).toHaveBeenCalledTimes(1);
+                expect(intersectObjects).toHaveBeenCalledWith(
+                    primaryLayer.lineHitObjects,
+                    false,
+                );
+                // Reference lines never enter the hover raycast
+                const allRaycastObjects = intersectObjects.mock.calls.flatMap(
+                    (call: any[]) => call[0],
+                );
+                for (const refLine of referenceLayer.lineHitObjects) {
+                    expect(allRaycastObjects).not.toContain(refLine);
+                }
+            } finally {
+                cleanup(renderer, container);
+            }
+        });
+
+        it("constellation click raycasts the primary layer line objects only", async () => {
+            const onConstellationClick = vi.fn();
+            const { container, renderer } = await makePreparedRenderer({
+                onConstellationClick,
+            });
+            try {
+                const primaryLayer = (renderer as any).primaryLayer;
+                const referenceLayer = (renderer as any).referenceLayer;
+
+                const intersectObjects = vi.fn<(objs: any[]) => any[]>(
+                    () => [],
+                );
+                (renderer as any).raycaster.intersectObjects = intersectObjects;
+                (renderer as any).mouseDownX = 100;
+                (renderer as any).mouseDownY = 100;
+                (renderer as any).handleCanvasClick({
+                    clientX: 100,
+                    clientY: 100,
+                    preventDefault: () => {},
+                });
+
+                expect(intersectObjects).toHaveBeenCalledTimes(1);
+                expect(intersectObjects).toHaveBeenCalledWith(
+                    primaryLayer.lineHitObjects,
+                    false,
+                );
+                const allRaycastObjects = intersectObjects.mock.calls.flatMap(
+                    (call: any[]) => call[0],
+                );
+                for (const refLine of referenceLayer.lineHitObjects) {
+                    expect(allRaycastObjects).not.toContain(refLine);
+                }
+                expect(onConstellationClick).not.toHaveBeenCalled();
+            } finally {
+                cleanup(renderer, container);
+            }
+        });
+
+        it("ordinary-star hover maps the hit point index into the rendered ordinary stars", async () => {
+            const onStarHover = vi.fn();
+            const { container, renderer } = await makePreparedRenderer({
+                onStarHover,
+            });
+            try {
+                const primaryLayer = (renderer as any).primaryLayer;
+                (renderer as any).raycaster.intersectObjects = vi.fn(() => []);
+                (renderer as any).raycaster.intersectObject = vi.fn(() => [
+                    { index: 1 },
+                ]);
+                (renderer as any).lastHoverEmit = 0;
+                (renderer as any).onMouseMove({
+                    clientX: 100,
+                    clientY: 100,
+                    preventDefault: () => {},
+                });
+
+                expect(onStarHover).toHaveBeenCalledWith(
+                    expect.objectContaining({ id: "p2" }),
+                    expect.objectContaining({
+                        x: expect.any(Number),
+                        y: expect.any(Number),
+                    }),
+                );
+                // The point raycast targets the primary layer's ordinary
+                // points only, never the reference points.
+                expect(
+                    (renderer as any).raycaster.intersectObject,
+                ).toHaveBeenCalledWith(primaryLayer.ordinaryStarPoints, false);
+            } finally {
+                cleanup(renderer, container);
+            }
+        });
+
+        it("marker hover returns the complete RendererStar with its marker kind", async () => {
+            const onStarHover = vi.fn();
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container, {
+                onStarHover,
+            });
+            try {
+                const solStar = {
+                    ...makeStar({
+                        id: SYNTHETIC_SOL_STAR_ID,
+                        name: "Sol",
+                        magnitude: 0,
+                    }),
+                    marker: { kind: "synthetic-sol" as const },
+                } as PreparedCatalogStar;
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([solStar]),
+                    },
+                    preparedSettings(),
+                );
+                const primaryLayer = (renderer as any).primaryLayer;
+                expect(primaryLayer.markerHitObjects.length).toBe(1);
+
+                // The marker hit object carries the full RendererStar in
+                // userData; the renderer must pass it through unmodified.
+                globalThis.__threeRaycasterIntersects = [
+                    { object: primaryLayer.markerHitObjects[0] },
+                ];
+                (renderer as any).lastHoverEmit = 0;
+                (renderer as any).onMouseMove({
+                    clientX: 100,
+                    clientY: 100,
+                    preventDefault: () => {},
+                });
+
+                expect(onStarHover).toHaveBeenCalledTimes(1);
+                const [star] = onStarHover.mock.calls[0];
+                expect(star).toMatchObject({
+                    id: SYNTHETIC_SOL_STAR_ID,
+                    name: "Sol",
+                });
+                // The marker record is preserved — never erased before the
+                // callback fires.
+                expect(star.marker?.kind).toBe("synthetic-sol");
+            } finally {
+                globalThis.__threeRaycasterIntersects = undefined;
+                cleanup(renderer, container);
+            }
+        });
+
+        it("reference star points are never star-hover targets", async () => {
+            const onStarHover = vi.fn();
+            const { container, renderer } = await makePreparedRenderer({
+                onStarHover,
+            });
+            try {
+                const primaryLayer = (renderer as any).primaryLayer;
+                const referenceLayer = (renderer as any).referenceLayer;
+                expect(referenceLayer.ordinaryStarPoints).not.toBeNull();
+
+                (renderer as any).raycaster.intersectObjects = vi.fn(() => []);
+                const intersectObject = vi.fn<(obj: any) => any[]>(() => []);
+                (renderer as any).raycaster.intersectObject = intersectObject;
+                (renderer as any).lastHoverEmit = 0;
+                (renderer as any).onMouseMove({
+                    clientX: 100,
+                    clientY: 100,
+                    preventDefault: () => {},
+                });
+
+                expect(intersectObject).toHaveBeenCalledTimes(1);
+                expect(intersectObject).toHaveBeenCalledWith(
+                    primaryLayer.ordinaryStarPoints,
+                    false,
+                );
+                expect(intersectObject.mock.calls[0][0]).not.toBe(
+                    referenceLayer.ordinaryStarPoints,
+                );
+            } finally {
+                cleanup(renderer, container);
+            }
+        });
+
+        it("setSelected forwards to the primary layer only", async () => {
+            const { container, renderer } = await makePreparedRenderer();
+            try {
+                const primaryLayer = (renderer as any).primaryLayer;
+                const referenceLayer = (renderer as any).referenceLayer;
+                const primarySpy = vi.spyOn(
+                    primaryLayer,
+                    "setSelectedConstellation",
+                );
+                const referenceSpy = vi.spyOn(
+                    referenceLayer,
+                    "setSelectedConstellation",
+                );
+
+                renderer.setSelected("orion");
+
+                expect(primarySpy).toHaveBeenCalledWith("orion");
+                expect(referenceSpy).not.toHaveBeenCalled();
+                expect(renderer.getSelectedId()).toBe("orion");
+            } finally {
+                cleanup(renderer, container);
+            }
+        });
+
+        it("setHovered remains renderer-local state", async () => {
+            const { container, renderer } = await makePreparedRenderer();
+            try {
+                const primaryLayer = (renderer as any).primaryLayer;
+                const selectSpy = vi.spyOn(
+                    primaryLayer,
+                    "setSelectedConstellation",
+                );
+                const tickSpy = vi.spyOn(primaryLayer, "tick");
+
+                renderer.setHovered("orion");
+                expect(renderer.getHoveredId()).toBe("orion");
+                renderer.setHovered(null);
+                expect(renderer.getHoveredId()).toBeNull();
+
+                expect(selectSpy).not.toHaveBeenCalled();
+                expect(tickSpy).not.toHaveBeenCalled();
+            } finally {
+                cleanup(renderer, container);
+            }
         });
     });
 
@@ -1672,7 +1970,7 @@ describe("ConstellationRenderer", () => {
             expect(onStarHover).toHaveBeenCalledWith(null, null);
         });
 
-        it("stores filtered stars in _stars for raycasting lookup", async () => {
+        it("stores filtered stars in the primary layer for raycasting lookup", async () => {
             const renderer = new ConstellationRenderer(makeContainer());
             const brightStar = makeStar({ id: "bright", magnitude: 1.0 });
             const dimStar = makeStar({ id: "dim", magnitude: 8.0 });
@@ -1683,7 +1981,8 @@ describe("ConstellationRenderer", () => {
             );
 
             // Only the bright star should be stored (dim is filtered out)
-            const stars = (renderer as any)._stars as Star[];
+            const stars = (renderer as any).primaryLayer
+                .renderedOrdinaryStars as Star[];
             expect(stars.length).toBe(1);
             expect(stars[0].id).toBe("bright");
         });
@@ -2658,6 +2957,401 @@ describe("ConstellationRenderer", () => {
                     "position",
                 ).count;
                 expect(preparedCount).toBe(2);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — reference visibility", () => {
+        const makePrimaryCatalog = (): PreparedConstellationCatalog =>
+            makePreparedCatalog([makeStar({ id: "p1", magnitude: 1.0 })]);
+        const makeReferenceCatalog = (): PreparedConstellationCatalog =>
+            makePreparedCatalog([makeStar({ id: "r1", magnitude: 1.0 })]);
+
+        it("setReferenceVisible before the reference layer exists persists into initialization", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                renderer.setReferenceVisible(true);
+                expect((renderer as any).referenceVisible).toBe(true);
+
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePrimaryCatalog(),
+                        referenceCatalog: makeReferenceCatalog(),
+                    },
+                    preparedSettings(),
+                );
+                // The omitted request value preserved the setter's value
+                expect((renderer as any).referenceVisible).toBe(true);
+                expect((renderer as any).referenceLayer.root.visible).toBe(
+                    true,
+                );
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("setReferenceVisible updates stored state and forwards to the reference layer", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePrimaryCatalog(),
+                        referenceCatalog: makeReferenceCatalog(),
+                        referenceVisible: true,
+                    },
+                    preparedSettings(),
+                );
+                const referenceLayer = (renderer as any).referenceLayer;
+                const setVisibleSpy = vi.spyOn(referenceLayer, "setVisible");
+
+                renderer.setReferenceVisible(false);
+                expect((renderer as any).referenceVisible).toBe(false);
+                expect(setVisibleSpy).toHaveBeenCalledWith(false);
+                expect(referenceLayer.root.visible).toBe(false);
+
+                renderer.setReferenceVisible(true);
+                expect((renderer as any).referenceVisible).toBe(true);
+                expect(setVisibleSpy).toHaveBeenCalledWith(true);
+                expect(referenceLayer.root.visible).toBe(true);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("omitted request referenceVisible preserves the stored value across reinit", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                const primaryCatalog = makePrimaryCatalog();
+                const referenceCatalog = makeReferenceCatalog();
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog,
+                        referenceCatalog,
+                        referenceVisible: true,
+                    },
+                    preparedSettings(),
+                );
+                renderer.setReferenceVisible(false);
+                expect((renderer as any).referenceVisible).toBe(false);
+
+                await renderer.initializePreparedCatalogs(
+                    { primaryCatalog, referenceCatalog },
+                    preparedSettings(),
+                );
+                expect((renderer as any).referenceVisible).toBe(false);
+                expect((renderer as any).referenceLayer.root.visible).toBe(
+                    false,
+                );
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("visibility toggles preserve layer identity and dispose nothing", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePrimaryCatalog(),
+                        referenceCatalog: makeReferenceCatalog(),
+                        referenceVisible: true,
+                    },
+                    preparedSettings(),
+                );
+                const anyRenderer = renderer as any;
+                const primaryLayer = anyRenderer.primaryLayer;
+                const referenceLayer = anyRenderer.referenceLayer;
+                const primaryRoot = primaryLayer.root;
+                const referenceRoot = referenceLayer.root;
+                const disposeSpies = [
+                    vi.spyOn(primaryLayer, "dispose"),
+                    vi.spyOn(referenceLayer, "dispose"),
+                ];
+                const sceneChildren = anyRenderer.scene.children;
+
+                renderer.setReferenceVisible(false);
+                renderer.setReferenceVisible(true);
+                renderer.setReferenceVisible(false);
+
+                expect(anyRenderer.primaryLayer).toBe(primaryLayer);
+                expect(anyRenderer.referenceLayer).toBe(referenceLayer);
+                expect(primaryLayer.root).toBe(primaryRoot);
+                expect(referenceLayer.root).toBe(referenceRoot);
+                expect(sceneChildren).toContain(primaryRoot);
+                expect(sceneChildren).toContain(referenceRoot);
+                for (const spy of disposeSpies) {
+                    expect(spy).not.toHaveBeenCalled();
+                }
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — star world position and focus", () => {
+        // The focus suite swaps the renderer's private primaryLayer with a
+        // stub through the sanctioned test-only cast (never `as any`); the
+        // production code paths do not cast through `unknown`.
+        const focusContainer = makeContainer();
+        const renderer = new ConstellationRenderer(focusContainer);
+        const tweenSpy = vi.spyOn(renderer, "tweenCameraTo");
+
+        afterEach(() => {
+            tweenSpy.mockClear();
+        });
+
+        afterAll(() => {
+            renderer.dispose();
+            if (focusContainer.parentElement) {
+                focusContainer.parentElement.removeChild(focusContainer);
+            }
+        });
+
+        it.each([
+            [{ x: 100, y: 0, z: 0 }, 0, Math.PI / 2],
+            [{ x: 0, y: 0, z: 100 }, 0, 0],
+            [
+                { x: -50, y: 50, z: -50 },
+                Math.asin(1 / Math.sqrt(3)),
+                (-3 * Math.PI) / 4,
+            ],
+        ])("inverts the camera-forward mapping", (position, pitch, yaw) => {
+            const primaryLayer = {
+                getWorldPosition: vi.fn(
+                    () => new THREE.Vector3(position.x, position.y, position.z),
+                ),
+            };
+            (
+                renderer as unknown as {
+                    primaryLayer: typeof primaryLayer;
+                }
+            ).primaryLayer = primaryLayer;
+
+            expect(renderer.focusStarById("target", 900)).toBe(true);
+            expect(tweenSpy).toHaveBeenCalledWith(pitch, yaw, 900);
+        });
+
+        it("returns false when the primary layer has no position (absent or reference-only)", () => {
+            const primaryLayer = {
+                getWorldPosition: vi.fn(() => null),
+            };
+            (
+                renderer as unknown as {
+                    primaryLayer: typeof primaryLayer;
+                }
+            ).primaryLayer = primaryLayer;
+
+            expect(renderer.focusStarById(SYNTHETIC_SOL_STAR_ID, 900)).toBe(
+                false,
+            );
+            expect(tweenSpy).not.toHaveBeenCalled();
+        });
+
+        it("returns false for a zero-length position", () => {
+            const primaryLayer = {
+                getWorldPosition: vi.fn(() => new THREE.Vector3(0, 0, 0)),
+            };
+            (
+                renderer as unknown as {
+                    primaryLayer: typeof primaryLayer;
+                }
+            ).primaryLayer = primaryLayer;
+
+            expect(renderer.focusStarById("target", 900)).toBe(false);
+            expect(tweenSpy).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            [{ x: NaN, y: 0, z: 0 }],
+            [{ x: Infinity, y: 0, z: 0 }],
+            [{ x: 0, y: 0, z: -Infinity }],
+        ])("returns false for non-finite positions", (position) => {
+            const primaryLayer = {
+                getWorldPosition: vi.fn(
+                    () => new THREE.Vector3(position.x, position.y, position.z),
+                ),
+            };
+            (
+                renderer as unknown as {
+                    primaryLayer: typeof primaryLayer;
+                }
+            ).primaryLayer = primaryLayer;
+
+            expect(renderer.focusStarById("target", 900)).toBe(false);
+            expect(tweenSpy).not.toHaveBeenCalled();
+        });
+
+        it("inherits the existing pitch clamp through tweenCameraTo", () => {
+            // A zenith position yields pitch π/2, beyond the ±π/2.2 clamp;
+            // the clamp lives in tweenCameraTo and must apply to focus too.
+            tweenSpy.mockRestore();
+            const primaryLayer = {
+                getWorldPosition: vi.fn(() => new THREE.Vector3(0, 100, 0)),
+            };
+            (
+                renderer as unknown as {
+                    primaryLayer: typeof primaryLayer;
+                }
+            ).primaryLayer = primaryLayer;
+
+            expect(renderer.focusStarById("target", 900)).toBe(true);
+            expect((renderer as any).tweenState.targetX).toBeCloseTo(
+                Math.PI / 2.2,
+                5,
+            );
+            expect((renderer as any).tweenState.targetY).toBeCloseTo(0, 5);
+        });
+
+        it("focusStarById returns false for reference-only ids", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p1", magnitude: 1.0 }),
+                        ]),
+                        referenceCatalog: makePreparedCatalog([
+                            makeStar({ id: "r1", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                expect(renderer.getStarWorldPosition("r1")).toBeNull();
+                expect(renderer.focusStarById("r1", 900)).toBe(false);
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("getStarWorldPosition returns a plain copy for a known primary star", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({
+                                id: "p-star",
+                                magnitude: 1.0,
+                                rightAscension: 5,
+                                declination: 20,
+                            }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const position = renderer.getStarWorldPosition("p-star");
+                // A plain {x,y,z} copy — never the layer's live Vector3
+                expect(position).toEqual({
+                    x: expect.any(Number),
+                    y: expect.any(Number),
+                    z: expect.any(Number),
+                });
+                expect(position).not.toHaveProperty("clone");
+                expect(renderer.getStarWorldPosition("missing")).toBeNull();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+    });
+
+    describe("ConstellationRenderer — labels and layer ticking", () => {
+        it("setLabelsVisible forwards to the primary layer only", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog([
+                            makeStar({ id: "p1", magnitude: 1.0 }),
+                        ]),
+                        referenceCatalog: makePreparedCatalog([
+                            makeStar({ id: "r1", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const primaryLayer = (renderer as any).primaryLayer;
+                const referenceLayer = (renderer as any).referenceLayer;
+                const primarySpy = vi.spyOn(primaryLayer, "setLabelsVisible");
+                const referenceSpy = vi.spyOn(
+                    referenceLayer,
+                    "setLabelsVisible",
+                );
+
+                renderer.setLabelsVisible(false);
+
+                expect(primarySpy).toHaveBeenCalledWith(false);
+                expect(referenceSpy).not.toHaveBeenCalled();
+            } finally {
+                renderer.dispose();
+                container.remove();
+            }
+        });
+
+        it("animate() ticks both the primary and reference layers each frame", async () => {
+            const container = makeContainer();
+            const renderer = new ConstellationRenderer(container);
+            try {
+                await renderer.initializePreparedCatalogs(
+                    {
+                        primaryCatalog: makePreparedCatalog(
+                            [makeStar({ id: "p1", magnitude: 1.0 })],
+                            [makePreparedConstellation()],
+                        ),
+                        referenceCatalog: makePreparedCatalog([
+                            makeStar({ id: "r1", magnitude: 1.0 }),
+                        ]),
+                    },
+                    preparedSettings(),
+                );
+                const primaryLayer = (renderer as any).primaryLayer;
+                const referenceLayer = (renderer as any).referenceLayer;
+                const primaryTick = vi.spyOn(primaryLayer, "tick");
+                const referenceTick = vi.spyOn(referenceLayer, "tick");
+                const primaryU0 =
+                    primaryLayer.ordinaryStarPoints.material.uniforms.uTime
+                        .value;
+                const referenceU0 =
+                    referenceLayer.ordinaryStarPoints.material.uniforms.uTime
+                        .value;
+                const lineU0 =
+                    primaryLayer.lineHitObjects[0].material.uniforms.uTime
+                        .value;
+
+                (renderer as any).animate();
+
+                // The mocked Clock reports a 60fps delta
+                expect(primaryTick).toHaveBeenCalledWith(0.016);
+                expect(referenceTick).toHaveBeenCalledWith(0.016);
+                // Legacy Earth twinkle/pulse and prepared-mode shader
+                // animation both advance through the layer ticks
+                expect(
+                    primaryLayer.ordinaryStarPoints.material.uniforms.uTime
+                        .value,
+                ).toBeGreaterThan(primaryU0);
+                expect(
+                    referenceLayer.ordinaryStarPoints.material.uniforms.uTime
+                        .value,
+                ).toBeGreaterThan(referenceU0);
+                expect(
+                    primaryLayer.lineHitObjects[0].material.uniforms.uTime
+                        .value,
+                ).toBeGreaterThan(lineU0);
             } finally {
                 renderer.dispose();
                 container.remove();
