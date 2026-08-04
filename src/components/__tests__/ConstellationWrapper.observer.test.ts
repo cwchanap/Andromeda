@@ -5,8 +5,10 @@ import type { Constellation } from "@/types/constellation";
 import type {
     OmittedStarDiagnostic,
     PreparedConstellationCatalog,
+    SyntheticSolStar,
 } from "@/lib/constellation/observerCatalog";
 import type { ResolvedObserverState } from "@/lib/constellation/observerRouteState";
+import { routes } from "@/i18n/routes";
 
 // Observer HUD strings the wrapper must render. The i18n dictionaries wire
 // these keys in a later task; until then the tests inject the exact strings
@@ -22,10 +24,23 @@ const OBSERVER_TRANSLATIONS: Record<string, string> = {
     "constellation.observer.webglUnavailable":
         "WebGL is required to view the sky from this observer.",
     "constellation.observer.returnToSol": "Return to Earth/Sol",
+    // Observer ACTION copy (Task 4). The announcement template carries the
+    // {ra}/{dec}/{distance} placeholders the wrapper's t() interpolates.
+    "constellation.observer.referenceToggle": "Show reference stars",
+    "constellation.observer.findSol": "Find Sol",
+    "constellation.observer.findSolAnnouncement":
+        "Sol: right ascension {ra} h, declination {dec}°, distance {distance} ly.",
+    "constellation.observer.findSolUnavailable":
+        "Sol is not visible from this observer.",
+    // HUD shell copy the action tests rely on to open the settings panel.
+    "nav.settings": "Settings",
 };
 
 const FALLBACK_NOTICE = "Observer unavailable; showing the sky from Earth/Sol.";
 const OMISSION_NOTICE = "Some catalog stars could not be displayed.";
+const FIND_SOL_ANNOUNCEMENT =
+    "Sol: right ascension 14.60 h, declination +19.50°, distance 4.25 ly.";
+const FIND_SOL_UNAVAILABLE = "Sol is not visible from this observer.";
 
 // Stable full-catalog fixture. The wrapper must hand this EXACT array to
 // preparation by identity — never a rebuild from constellation membership.
@@ -40,9 +55,18 @@ const {
     initializeMock,
     initializePreparedCatalogsMock,
     resolveObserverStateMock,
+    celestialToSphereMock,
+    setReferenceVisibleMock,
+    getStarWorldPositionMock,
+    focusStarByIdMock,
+    tweenCameraToMock,
+    setSelectedMock,
+    rendererCallbacks,
     fullConstellations,
     preparedPrimaryCatalog,
     preparedReferenceCatalog,
+    solCatalog,
+    focusCatalog,
 } = vi.hoisted(() => {
     const fullConstellations: Constellation[] = [
         {
@@ -82,6 +106,68 @@ const {
         stars: [],
         constellations: [],
     };
+    // Synthetic Sol star the prepared primary catalog carries. RA/dec/distance
+    // are chosen so the localized announcement renders deterministically:
+    // "14.60", "+19.50" (explicit sign), and "4.25" via toLocaleString("en").
+    const syntheticSolStar: SyntheticSolStar = {
+        id: "sol",
+        name: "Sol",
+        rightAscension: 14.6,
+        declination: 19.5,
+        magnitude: 0,
+        distance: 4.25,
+        spectralClass: "G2V",
+        color: "#FFF4E8",
+        marker: { kind: "synthetic-sol" },
+    };
+    const betelgeuse = {
+        id: "betelgeuse",
+        name: "Betelgeuse",
+        rightAscension: 5.92,
+        declination: 7.41,
+        magnitude: 0.5,
+        distance: 640,
+        spectralClass: "M1",
+        color: "#ff6b6b",
+    };
+    const rigel = {
+        id: "rigel",
+        name: "Rigel",
+        rightAscension: 5.24,
+        declination: -8.2,
+        magnitude: 0.13,
+        distance: 860,
+        spectralClass: "B8",
+        color: "#b0c4ff",
+    };
+    // Catalog used by the Find Sol action tests: primary stars carry the
+    // synthetic Sol record; no constellations are needed.
+    const solCatalog: PreparedConstellationCatalog = {
+        stars: [syntheticSolStar],
+        constellations: [],
+    };
+    // Catalog used by the alternate constellation-focus tests: one prepared
+    // constellation with two stars whose world positions the renderer mock
+    // resolves through getStarWorldPosition.
+    const focusCatalog: PreparedConstellationCatalog = {
+        stars: [betelgeuse, rigel],
+        constellations: [
+            {
+                id: "orion",
+                name: "Orion",
+                abbreviation: "Ori",
+                description: "Orion description",
+                stars: [betelgeuse, rigel],
+                lines: [],
+                visibility: {
+                    hemisphere: "both",
+                    bestMonths: [1, 2, 3],
+                    minLatitude: -90,
+                    maxLatitude: 90,
+                },
+            },
+        ],
+    };
     return {
         getCurrentLocationMock: vi.fn(),
         getVisibleConstellationsMock: vi.fn(),
@@ -89,9 +175,27 @@ const {
         initializeMock: vi.fn().mockResolvedValue(undefined),
         initializePreparedCatalogsMock: vi.fn().mockResolvedValue(undefined),
         resolveObserverStateMock: vi.fn(),
+        celestialToSphereMock: vi.fn(() => ({
+            x: 0,
+            y: 0,
+            z: 100,
+            visible: true,
+        })),
+        setReferenceVisibleMock: vi.fn(),
+        getStarWorldPositionMock: vi.fn(),
+        focusStarByIdMock: vi.fn(),
+        tweenCameraToMock: vi.fn(),
+        setSelectedMock: vi.fn(),
+        // Captures the interaction callbacks the wrapper hands to the mocked
+        // renderer constructor so tests can drive onConstellationClick.
+        rendererCallbacks: {
+            onConstellationClick: null as ((id: string) => void) | null,
+        },
         fullConstellations,
         preparedPrimaryCatalog,
         preparedReferenceCatalog,
+        solCatalog,
+        focusCatalog,
     };
 });
 
@@ -102,9 +206,9 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         initializePreparedCatalogs: initializePreparedCatalogsMock,
         dispose: vi.fn(),
         resize: vi.fn(),
-        setSelected: vi.fn(),
+        setSelected: setSelectedMock,
         setHovered: vi.fn(),
-        tweenCameraTo: vi.fn(),
+        tweenCameraTo: tweenCameraToMock,
         worldToScreen: vi.fn(() => ({ x: 0, y: 0, visible: false })),
         getCameraAzimuth: vi.fn(() => 0),
         getCameraElevation: vi.fn(() => 0),
@@ -112,15 +216,30 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         setAutoRotate: vi.fn(),
         setAutoRotateSpeed: vi.fn(),
         setReducedMotion: vi.fn(),
+        setReferenceVisible: setReferenceVisibleMock,
+        getStarWorldPosition: getStarWorldPositionMock,
+        focusStarById: focusStarByIdMock,
     };
     return {
-        ConstellationRenderer: vi.fn().mockImplementation(() => mockRenderer),
+        ConstellationRenderer: vi.fn().mockImplementation(
+            (
+                _container: unknown,
+                callbacks?: {
+                    onConstellationClick?: (id: string) => void;
+                },
+            ) => {
+                rendererCallbacks.onConstellationClick =
+                    callbacks?.onConstellationClick ?? null;
+                return mockRenderer;
+            },
+        ),
     };
 });
 
 // Mock HPA-433 preparation
 vi.mock("@/lib/constellation/observerCatalog", () => ({
     prepareAlternateObserverCatalog: prepareAlternateObserverCatalogMock,
+    SYNTHETIC_SOL_STAR_ID: "sol",
 }));
 
 // Keep the real parseObserverQuery; stub resolveObserverState so the
@@ -143,7 +262,7 @@ vi.mock("@/utils/astronomy", () => ({
     getCurrentLocation: getCurrentLocationMock,
     isConstellationVisible: vi.fn(() => true),
     formatCoordinates: vi.fn(() => "40.71°N, 74.01°W"),
-    celestialToSphere: vi.fn(() => ({ x: 0, y: 0, z: 100, visible: true })),
+    celestialToSphere: celestialToSphereMock,
     azimuthToCardinalKey: vi.fn(() => "compass.n"),
 }));
 
@@ -187,6 +306,11 @@ describe("ConstellationWrapper observer mode", () => {
             new Error("Location unavailable"),
         );
         getVisibleConstellationsMock.mockReturnValue([fullConstellations[0]]);
+        // Interaction defaults: focus succeeds, no star positions resolved
+        // unless a test provides them, and the Earth-relative projection is
+        // never used by the alternate focus path.
+        focusStarByIdMock.mockReturnValue(true);
+        getStarWorldPositionMock.mockReturnValue(null);
     });
 
     it("query-free mount runs the legacy Earth/Sol path", async () => {
@@ -574,5 +698,285 @@ describe("ConstellationWrapper observer WebGL gating", () => {
             expect(container.querySelectorAll("canvas")).toHaveLength(1);
         });
         expect(initializePreparedCatalogsMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("ConstellationWrapper observer actions", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        window.history.replaceState({}, "", "/");
+        getCurrentLocationMock.mockRejectedValue(
+            new Error("Location unavailable"),
+        );
+        getVisibleConstellationsMock.mockReturnValue([fullConstellations[0]]);
+        // Interaction defaults: focus succeeds, no star positions resolved
+        // unless a test provides them, and the Earth-relative projection is
+        // never used by the alternate focus path.
+        focusStarByIdMock.mockReturnValue(true);
+        getStarWorldPositionMock.mockReturnValue(null);
+    });
+
+    // Mounts a genuine alternate observer whose preparation succeeds with the
+    // given catalogs. The settings panel is where the observer action
+    // controls live; tests open it via the HUD Settings button.
+    const mountAlternate = (
+        primaryCatalog: PreparedConstellationCatalog,
+        referenceCatalog: PreparedConstellationCatalog | undefined,
+    ) => {
+        prepareAlternateObserverCatalogMock.mockReturnValue({
+            ok: true,
+            value: {
+                primaryCatalog,
+                referenceCatalog,
+                omittedStars: [],
+            },
+        });
+        window.history.replaceState({}, "", "/?observer=alpha-centauri");
+        return render(ConstellationWrapper, {
+            translations: OBSERVER_TRANSLATIONS,
+        });
+    };
+
+    const openSettings = (container: HTMLElement) => {
+        fireEvent.click(
+            container.querySelector('button[aria-label="Settings"]')!,
+        );
+    };
+
+    const findSolButton = (container: HTMLElement) => {
+        return Array.from(container.querySelectorAll("button")).find((button) =>
+            button.textContent?.includes("Find Sol"),
+        );
+    };
+
+    it("shows the reference toggle only when a reference catalog exists", async () => {
+        const { container } = mountAlternate(
+            preparedPrimaryCatalog,
+            preparedReferenceCatalog,
+        );
+        await waitFor(() => {
+            expect(initializePreparedCatalogsMock).toHaveBeenCalled();
+        });
+
+        openSettings(container);
+        await waitFor(() => {
+            const checkboxes = container.querySelectorAll(
+                'input[type="checkbox"]',
+            );
+            expect(checkboxes).toHaveLength(4);
+        });
+
+        const referenceCheckbox = Array.from(
+            container.querySelectorAll('input[type="checkbox"]'),
+        ).find((checkbox) =>
+            checkbox
+                .closest("label")
+                ?.textContent?.includes("Show reference stars"),
+        );
+        expect(referenceCheckbox).not.toBeUndefined();
+        expect((referenceCheckbox as HTMLInputElement).checked).toBe(false);
+    });
+
+    it("toggling the reference checkbox forwards to setReferenceVisible without re-preparing or re-initializing", async () => {
+        const { container } = mountAlternate(
+            preparedPrimaryCatalog,
+            preparedReferenceCatalog,
+        );
+        await waitFor(() => {
+            expect(initializePreparedCatalogsMock).toHaveBeenCalled();
+        });
+
+        openSettings(container);
+        await waitFor(() => {
+            expect(
+                container.querySelectorAll('input[type="checkbox"]'),
+            ).toHaveLength(4);
+        });
+        const referenceCheckbox = Array.from(
+            container.querySelectorAll('input[type="checkbox"]'),
+        ).find((checkbox) =>
+            checkbox
+                .closest("label")
+                ?.textContent?.includes("Show reference stars"),
+        ) as HTMLInputElement;
+
+        const preparationCalls =
+            prepareAlternateObserverCatalogMock.mock.calls.length;
+        const initCalls = initializePreparedCatalogsMock.mock.calls.length;
+
+        // Checked: forward true and update the local visibility state.
+        fireEvent.click(referenceCheckbox);
+        expect(setReferenceVisibleMock).toHaveBeenLastCalledWith(true);
+        expect(referenceCheckbox.checked).toBe(true);
+        // Unchecked: forward false.
+        fireEvent.click(referenceCheckbox);
+        expect(setReferenceVisibleMock).toHaveBeenLastCalledWith(false);
+        expect(referenceCheckbox.checked).toBe(false);
+
+        // The toggle is a pure renderer forward — no re-preparation and no
+        // re-initialization happened.
+        expect(prepareAlternateObserverCatalogMock.mock.calls.length).toBe(
+            preparationCalls,
+        );
+        expect(initializePreparedCatalogsMock.mock.calls.length).toBe(
+            initCalls,
+        );
+    });
+
+    it("Find Sol focuses the synthetic Sol and announces its coordinates", async () => {
+        const { container, queryAllByText } = mountAlternate(
+            solCatalog,
+            preparedReferenceCatalog,
+        );
+        await waitFor(() => {
+            expect(initializePreparedCatalogsMock).toHaveBeenCalled();
+        });
+
+        openSettings(container);
+        await waitFor(() => {
+            expect(findSolButton(container)).not.toBeUndefined();
+        });
+        fireEvent.click(findSolButton(container)!);
+
+        expect(focusStarByIdMock).toHaveBeenCalledWith("sol");
+        await waitFor(() => {
+            expect(
+                container.querySelector(".observer-announcement")?.textContent,
+            ).toBe(FIND_SOL_ANNOUNCEMENT);
+        });
+
+        // ONE polite atomic aria-live region carries the transient
+        // announcement — never duplicated.
+        const region = container.querySelector(".observer-announcement");
+        expect(region?.getAttribute("role")).toBe("status");
+        expect(region?.getAttribute("aria-live")).toBe("polite");
+        expect(region?.getAttribute("aria-atomic")).toBe("true");
+        expect(queryAllByText(FIND_SOL_ANNOUNCEMENT)).toHaveLength(1);
+    });
+
+    it("Find Sol announces the unavailable copy when focus fails", async () => {
+        focusStarByIdMock.mockReturnValue(false);
+        const { container, queryByText } = mountAlternate(
+            solCatalog,
+            preparedReferenceCatalog,
+        );
+        await waitFor(() => {
+            expect(initializePreparedCatalogsMock).toHaveBeenCalled();
+        });
+
+        openSettings(container);
+        await waitFor(() => {
+            expect(findSolButton(container)).not.toBeUndefined();
+        });
+        fireEvent.click(findSolButton(container)!);
+
+        expect(focusStarByIdMock).toHaveBeenCalledWith("sol");
+        await waitFor(() => {
+            expect(queryByText(FIND_SOL_UNAVAILABLE)).not.toBeNull();
+        });
+    });
+
+    it("alternate constellation selection averages primary world positions and never uses celestialToSphere", async () => {
+        getStarWorldPositionMock.mockImplementation((id: string) =>
+            id === "betelgeuse"
+                ? { x: 4, y: 0, z: 0 }
+                : id === "rigel"
+                  ? { x: 0, y: 0, z: 6 }
+                  : null,
+        );
+        const { container } = mountAlternate(focusCatalog, undefined);
+        await waitFor(() => {
+            expect(initializePreparedCatalogsMock).toHaveBeenCalled();
+        });
+
+        rendererCallbacks.onConstellationClick?.("orion");
+
+        expect(setSelectedMock).toHaveBeenCalledWith("orion");
+        // Average of {4,0,0} and {0,0,6} → {2,0,3}; r = hypot; pitch = asin(y/r)
+        // = 0, yaw = atan2(2,3).
+        expect(tweenCameraToMock).toHaveBeenCalledWith(
+            0,
+            Math.atan2(2, 3),
+            900,
+        );
+        // The Earth-relative projection is banned in alternate mode.
+        expect(celestialToSphereMock).not.toHaveBeenCalled();
+        await waitFor(() => {
+            expect(container.querySelector(".hud-panel")).not.toBeNull();
+        });
+    });
+
+    it("alternate constellation selection averages only the available positions", async () => {
+        getStarWorldPositionMock.mockImplementation((id: string) =>
+            id === "rigel" ? { x: 0, y: 0, z: 6 } : null,
+        );
+        mountAlternate(focusCatalog, undefined);
+        await waitFor(() => {
+            expect(initializePreparedCatalogsMock).toHaveBeenCalled();
+        });
+
+        rendererCallbacks.onConstellationClick?.("orion");
+
+        expect(setSelectedMock).toHaveBeenCalledWith("orion");
+        // Only rigel resolves: center {0,0,6} → pitch 0, yaw atan2(0,6) = 0.
+        expect(tweenCameraToMock).toHaveBeenCalledWith(0, 0, 900);
+        expect(celestialToSphereMock).not.toHaveBeenCalled();
+    });
+
+    it("alternate constellation selection with no available positions retains the selection without moving the camera", async () => {
+        // beforeEach default: getStarWorldPositionMock returns null.
+        mountAlternate(focusCatalog, undefined);
+        await waitFor(() => {
+            expect(initializePreparedCatalogsMock).toHaveBeenCalled();
+        });
+
+        rendererCallbacks.onConstellationClick?.("orion");
+
+        // Selection details are retained...
+        expect(setSelectedMock).toHaveBeenCalledWith("orion");
+        // ...but there is nothing to point the camera at.
+        expect(tweenCameraToMock).not.toHaveBeenCalled();
+        expect(celestialToSphereMock).not.toHaveBeenCalled();
+    });
+
+    it("Return navigates to the localized constellation route without the observer param", async () => {
+        prepareAlternateObserverCatalogMock.mockReturnValue({
+            ok: true,
+            value: {
+                primaryCatalog: preparedPrimaryCatalog,
+                referenceCatalog: preparedReferenceCatalog,
+                omittedStars: [],
+            },
+        });
+        initializePreparedCatalogsMock.mockRejectedValueOnce(
+            new Error("WebGL context creation failed"),
+        );
+        // jsdom ignores location.href assignments, so shadow window.location
+        // with a plain object to capture the navigation target.
+        const stubLocation = {
+            href: "http://localhost/?observer=alpha-centauri",
+            pathname: "/",
+            search: "?observer=alpha-centauri",
+        };
+        Object.defineProperty(window, "location", {
+            configurable: true,
+            value: stubLocation,
+        });
+
+        try {
+            const { queryByText } = render(ConstellationWrapper, {
+                translations: OBSERVER_TRANSLATIONS,
+            });
+            await waitFor(() => {
+                expect(queryByText("Return to Earth/Sol")).not.toBeNull();
+            });
+
+            fireEvent.click(queryByText("Return to Earth/Sol")!);
+
+            expect(stubLocation.href).toBe(routes.constellation("en"));
+            expect(stubLocation.href).not.toContain("observer=sol");
+        } finally {
+            delete (window as unknown as Record<string, unknown>).location;
+        }
     });
 });

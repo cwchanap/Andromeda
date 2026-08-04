@@ -9,8 +9,8 @@
   import { constellations, getVisibleConstellations } from "@/data/constellations";
   import { getCurrentLocation, isConstellationVisible, formatCoordinates, celestialToSphere, azimuthToCardinalKey } from "@/utils/astronomy";
   import type { ConstellationViewState, SkyConfiguration, LocationData, Constellation } from "@/types/constellation";
-  import { parseObserverQuery, resolveObserverState, serializeObserverQuery, type ResolvedObserverState } from "@/lib/constellation/observerRouteState";
-  import { prepareAlternateObserverCatalog, type AlternateObserverCatalogOutput, type PreparedConstellation } from "@/lib/constellation/observerCatalog";
+  import { parseObserverQuery, resolveObserverState, type ResolvedObserverState } from "@/lib/constellation/observerRouteState";
+  import { prepareAlternateObserverCatalog, SYNTHETIC_SOL_STAR_ID, type AlternateObserverCatalogOutput, type PreparedConstellation } from "@/lib/constellation/observerCatalog";
   import { OBSERVER_SOURCE_STAR_IDS } from "@/lib/constellation/observerSourceStarIds";
   import { localGalaxyData } from "@/lib/galaxy/LocalGalaxy";
   import type { StarSystemData } from "@/lib/galaxy/types";
@@ -358,7 +358,8 @@
         {
           primaryCatalog: preparation.value.primaryCatalog,
           referenceCatalog: preparation.value.referenceCatalog,
-          // Hidden by default; the reference toggle is wired in a later task.
+          // Hidden by default; the reference toggle forwards to
+          // renderer.setReferenceVisible() without re-initializing.
           referenceVisible,
         },
         {
@@ -501,17 +502,92 @@
     window.location.href = routes.home(currentLang);
   };
 
-  // Return to the Earth/Sol view from an alternate observer whose WebGL path
-  // failed: drop the observer query parameter (sol serializes to "").
-  const handleReturnToSol = () => {
-    window.location.href = `${window.location.pathname}${serializeObserverQuery("sol")}`;
+  // Canonical return to the Earth/Sol view from any alternate-observer
+  // context: the localized constellation route carries NO observer parameter
+  // (sol serializes to ""), so this single path serves every Return action.
+  const returnToSol = () => {
+    window.location.href = routes.constellation(currentLang);
+  };
+
+  // Native reference-layer visibility toggle. Rendered only when the
+  // prepared output carries a reference catalog. Forwarding to the renderer
+  // is the ONLY side effect — no re-preparation and no re-initialization.
+  const handleReferenceToggle = (event: Event) => {
+    const checkbox = event.currentTarget as HTMLInputElement;
+    referenceVisible = checkbox.checked;
+    renderer?.setReferenceVisible(checkbox.checked);
+  };
+
+  // Find the synthetic Sol star prepared for this observer and focus the
+  // camera on it. The announcement carries RA/declination (two decimals,
+  // explicit declination sign) and a locale-aware distance. Reduced-motion
+  // handling lives in the renderer's tweenCameraTo — no extra branch here.
+  const handleFindSol = () => {
+    if (!renderer) return;
+    const sol = alternateCatalog?.primaryCatalog.stars.find(
+      (star) => star.id === SYNTHETIC_SOL_STAR_ID,
+    );
+    if (!sol || !renderer.focusStarById(SYNTHETIC_SOL_STAR_ID)) {
+      solAnnouncement = t("constellation.observer.findSolUnavailable");
+      return;
+    }
+    solAnnouncement = t("constellation.observer.findSolAnnouncement", {
+      ra: sol.rightAscension.toFixed(2),
+      dec: sol.declination >= 0 ? `+${sol.declination.toFixed(2)}` : sol.declination.toFixed(2),
+      distance: sol.distance.toLocaleString(currentLang),
+    });
   };
 
   const handleSelectConstellation = (constellationId: string) => {
     viewState.selectedConstellation = constellationId;
     selectedId = constellationId;
-    if (!renderer || !viewState.skyConfig) return;
+    if (!renderer) return;
     renderer.setSelected(constellationId);
+
+    if (alternateCatalog) {
+      // Alternate-observer branch: average the primary-layer world positions
+      // of the selected prepared constellation's stars and lock the camera on
+      // the center, reusing the Sol path's target-lock math. The
+      // Earth-relative celestialToSphere projection is never used here.
+      const prepared =
+        alternateCatalog.primaryCatalog.constellations.find(
+          (candidate) => candidate.id === constellationId,
+        ) ??
+        renderedConstellations.find(
+          (candidate) => candidate.id === constellationId,
+        ) ??
+        null;
+      if (!prepared || prepared.stars.length === 0) {
+        selectedCenter = null;
+        return;
+      }
+      const available: Array<{ x: number; y: number; z: number }> = [];
+      for (const star of prepared.stars) {
+        const position = renderer.getStarWorldPosition(star.id);
+        if (position) available.push(position);
+      }
+      if (available.length === 0) {
+        // Selection details are retained (renderer.setSelected already ran),
+        // but with no resolved positions there is nothing to point at.
+        selectedCenter = null;
+        return;
+      }
+      const center = {
+        x: available.reduce((sum, position) => sum + position.x, 0) / available.length,
+        y: available.reduce((sum, position) => sum + position.y, 0) / available.length,
+        z: available.reduce((sum, position) => sum + position.z, 0) / available.length,
+      };
+      // Cache the center for the HUD tick loop
+      selectedCenter = center;
+      const r = Math.hypot(center.x, center.y, center.z) || 1;
+      const targetY = Math.atan2(center.x, center.z);
+      const targetX = Math.asin(center.y / r);
+      renderer.tweenCameraTo(targetX, targetY, 900);
+      return;
+    }
+
+    // Sol branch: the existing Earth-relative calculation, unchanged.
+    if (!viewState.skyConfig) return;
 
     const c = constellations.find(x => x.id === constellationId);
     if (!c || c.stars.length === 0) {
@@ -836,6 +912,37 @@
         <input type="checkbox" bind:checked={autoRotateOn} disabled={reducedMotion} />
         {t('constellation.autoRotate')}
       </label>
+      {#if alternateCatalog?.referenceCatalog}
+        <label class="hud-setting">
+          <input
+            type="checkbox"
+            checked={referenceVisible}
+            on:change={handleReferenceToggle}
+          />
+          {t('constellation.observer.referenceToggle')}
+        </label>
+      {/if}
+      {#if alternateCatalog}
+        <div class="observer-actions">
+          <button
+            type="button"
+            class="observer-action-btn"
+            on:click={handleFindSol}
+          >
+            {t('constellation.observer.findSol')}
+          </button>
+        </div>
+        {#if solAnnouncement}
+          <div
+            class="observer-announcement"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {solAnnouncement}
+          </div>
+        {/if}
+      {/if}
     </div>
   </ViewHud>
 
@@ -858,7 +965,7 @@
             <Button
               variant="outline"
               size="sm"
-              on:click={handleReturnToSol}
+              on:click={returnToSol}
               className="text-white border-white/30 hover:bg-white/10"
             >
               {t('constellation.observer.returnToSol')}
@@ -1058,6 +1165,28 @@
 
   .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
   .hud-setting.is-disabled { opacity: 0.5; }
+
+  .observer-actions { margin-top: 8px; }
+  .observer-action-btn {
+    font-family: var(--hud-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hud-cyan);
+    background: transparent;
+    border: 1px solid var(--hud-cyan);
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  .observer-announcement {
+    margin-top: 6px;
+    font-family: var(--hud-font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    color: var(--hud-cyan);
+    opacity: 0.9;
+  }
 
   .observer-notice {
     margin-top: 10px;
