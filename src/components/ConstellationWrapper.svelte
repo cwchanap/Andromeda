@@ -5,6 +5,7 @@
   import { routes, type AppLocale } from "@/i18n/routes";
   import Button from "@/components/ui/Button.svelte";
   import { ConstellationRenderer } from "@/lib/constellation/ConstellationRenderer";
+  import type { ConstellationAccessibilityText } from "@/lib/constellation/ConstellationRenderer";
   import { constellations, getVisibleConstellations } from "@/data/constellations";
   import { getCurrentLocation, isConstellationVisible, formatCoordinates, celestialToSphere, azimuthToCardinalKey } from "@/utils/astronomy";
   import type { ConstellationViewState, SkyConfiguration, LocationData } from "@/types/constellation";
@@ -40,7 +41,7 @@
   
   // Current language and translations
   let currentLang: AppLocale = lang;
-  let t: (key: string) => string;
+  let t: (key: string, replacements?: Record<string, string>) => string;
 
   // Constellation view state
   let viewState: ConstellationViewState = {
@@ -81,10 +82,32 @@
     currentLang = getLangFromUrl(new URL(window.location.href));
   }
   if (Object.keys(translations).length > 0) {
-    t = (key: string) => translations[key] || key;
+    // Mirror useTranslations' placeholder replacement so the prop-based
+    // path supports the same {name} interpolation the i18n layer does.
+    t = (key, replacements) => {
+      let text = translations[key] || key;
+      if (replacements) {
+        for (const [placeholder, value] of Object.entries(replacements)) {
+          text = text.replace(`{${placeholder}}`, value);
+        }
+      }
+      return text;
+    };
   } else {
     t = useTranslations(currentLang);
   }
+
+  // Localized screen-reader copy for the constellation sky-map canvas and
+  // its aria-live region. The renderer is framework-agnostic and never
+  // imports the i18n layer, so it accepts this object as a constructor
+  // option; built here from t() so non-English screen-reader users get
+  // localized announcements instead of mixed-language UI.
+  const constellationA11yText: ConstellationAccessibilityText = {
+    canvasLabel: t("constellationA11y.canvasLabel"),
+    selected: (name) => t("constellationA11y.selected", { name }),
+    viewing: (name) => t("constellationA11y.viewing", { name }),
+    selectionCleared: t("constellationA11y.selectionCleared"),
+  };
 
   let currentView: ViewId = "constellation";
   if (typeof window !== 'undefined') {
@@ -215,20 +238,24 @@
 
       // Initialize constellation renderer
       try {
-        renderer = new ConstellationRenderer(container, {
-          onConstellationHover: (id, screenPos) => {
-            hoveredConstellationId = id;
-            hoverPos = screenPos;
+        renderer = new ConstellationRenderer(
+          container,
+          {
+            onConstellationHover: (id, screenPos) => {
+              hoveredConstellationId = id;
+              hoverPos = screenPos;
+            },
+            onConstellationClick: (id) => {
+              handleSelectConstellation(id);
+            },
+            onStarHover: (star, screenPos) => {
+              hoverStarPos = star && screenPos
+                ? { x: screenPos.x, y: screenPos.y, name: starName(star), magnitude: star.magnitude }
+                : null;
+            },
           },
-          onConstellationClick: (id) => {
-            handleSelectConstellation(id);
-          },
-          onStarHover: (star, screenPos) => {
-            hoverStarPos = star && screenPos
-              ? { x: screenPos.x, y: screenPos.y, name: starName(star), magnitude: star.magnitude }
-              : null;
-          },
-        });
+          constellationA11yText,
+        );
 
         // Get all stars from visible constellations, with translated names
         // for 3D label rendering

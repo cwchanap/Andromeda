@@ -94,6 +94,34 @@ export interface ConstellationRendererCallbacks {
 }
 
 /**
+ * Localized accessibility copy for the keyboard-navigable canvas and its
+ * aria-live region. The renderer is framework-agnostic and never imports
+ * the Svelte translation layer, so the wrapper constructs this object from
+ * its existing `t()` helper and passes it in. When omitted, the renderer
+ * falls back to English defaults so it remains usable in isolation
+ * (e.g. tests, headless tooling).
+ */
+export interface ConstellationAccessibilityText {
+    /** aria-label for the keyboard-focusable canvas. */
+    canvasLabel: string;
+    /** Announcement when a constellation is selected via arrow keys. */
+    selected: (name: string) => string;
+    /** Announcement when Enter confirms the current selection. */
+    viewing: (name: string) => string;
+    /** Announcement when Escape clears the current selection. */
+    selectionCleared: string;
+}
+
+/** English fallback used when no accessibility text is supplied. */
+const DEFAULT_ACCESSIBILITY_TEXT: ConstellationAccessibilityText = {
+    canvasLabel:
+        "Constellation sky map. Use arrow keys to navigate constellations, Enter to select, Escape to clear.",
+    selected: (name) => `${name} selected. Press Enter to view.`,
+    viewing: (name) => `Viewing ${name}.`,
+    selectionCleared: "Selection cleared.",
+};
+
+/**
  * One shared initialization request consumed by the private
  * {@link ConstellationRenderer.runSharedInitialization} path. The legacy
  * Earth view and the prepared fixed-equatorial view both reduce to this.
@@ -221,16 +249,32 @@ export class ConstellationRenderer {
     // announces selection changes for screen readers (WCAG §4.1.3).
     private _boundKeyDown: (event: KeyboardEvent) => void = () => {};
     private _ariaLiveRegion: HTMLDivElement | null = null;
+    // Pending aria-live announcement timer. announceAriaLive() clears the
+    // region synchronously then defers the actual message text to the next
+    // task; browsers/AT commonly coalesce same-task mutations, so without
+    // this deferral a repeated identical message (re-selecting the same
+    // constellation) would not be re-announced. Cancelled on dispose.
+    private _ariaAnnouncementTimer: ReturnType<typeof setTimeout> | null = null;
     // Cached primary-catalog constellation ids+names, refreshed on every
     // (re)initialization. Powers next/prev keyboard navigation without a
     // separate interaction path — selection still flows through setSelected.
     private _constellationEntries: { id: string; name: string }[] = [];
+    // Localized accessibility copy for the canvas aria-label and aria-live
+    // announcements. Defaults to English; the wrapper overrides it with
+    // translations from its t() helper so non-English screen-reader users
+    // get localized UI.
+    private _accessibilityText: ConstellationAccessibilityText =
+        DEFAULT_ACCESSIBILITY_TEXT;
 
     constructor(
         container: HTMLElement,
         callbacks: ConstellationRendererCallbacks = {},
+        accessibilityText?: ConstellationAccessibilityText,
     ) {
         this.callbacks = callbacks;
+        if (accessibilityText) {
+            this._accessibilityText = accessibilityText;
+        }
         // Initialize Three.js scene
         this.scene = new THREE.Scene();
 
@@ -323,7 +367,7 @@ export class ConstellationRenderer {
         this.canvas.setAttribute("role", "application");
         this.canvas.setAttribute(
             "aria-label",
-            "Constellation sky map. Use arrow keys to navigate constellations, Enter to select, Escape to clear.",
+            this._accessibilityText.canvasLabel,
         );
         this.canvas.addEventListener("keydown", this._boundKeyDown);
         this._ariaLiveRegion = this.createAriaLiveRegion();
@@ -352,8 +396,19 @@ export class ConstellationRenderer {
             // that fails on the first shader allocation).
             const vertexShader = webgl.createShader(webgl.VERTEX_SHADER);
             const fragmentShader = webgl.createShader(webgl.FRAGMENT_SHADER);
-            if (!vertexShader || !fragmentShader) return false;
-            return true;
+            try {
+                if (!vertexShader || !fragmentShader) return false;
+                return true;
+            } finally {
+                // Release the probe shaders and force-lose the probe
+                // context. Browsers cap the number of live WebGL contexts,
+                // so leaving this throwaway context alive can cause later
+                // renderer construction (route remounts, hot reloads,
+                // retries) to fail.
+                if (vertexShader) webgl.deleteShader(vertexShader);
+                if (fragmentShader) webgl.deleteShader(fragmentShader);
+                webgl.getExtension("WEBGL_lose_context")?.loseContext();
+            }
         } catch {
             return false;
         }
@@ -912,17 +967,6 @@ export class ConstellationRenderer {
         this.selectedId = null;
         this.hoveredId = null;
 
-        // Cache the primary catalog's constellation id+name list for keyboard
-        // next/prev navigation. Refreshed on every (re)initialization so the
-        // keyboard path always reflects the active catalog; cleared in
-        // clearScene() so a stale list never outlives the layers it indexes.
-        this._constellationEntries = request.primaryCatalog.constellations.map(
-            (constellation) => ({
-                id: constellation.id,
-                name: constellation.name,
-            }),
-        );
-
         // 3. resolve labels/reference preferences. A request value updates
         // stored state; an omitted request value preserves stored state. A
         // runtime label toggle (setLabelsVisible) always wins over the
@@ -945,6 +989,26 @@ export class ConstellationRenderer {
                 ? LEGACY_STAR_LABEL_MAGNITUDE_LIMIT
                 : undefined,
         });
+
+        // Cache the primary catalog's keyboard-navigation list AFTER the
+        // primary layer is built, filtered to constellations that actually
+        // produced rendered line geometry (lineHitObjects). A constellation
+        // whose lines are empty, malformed, or rejected for invalid
+        // coordinates has no visual or pointer-interaction target, so it
+        // must not be keyboard-selectable either — otherwise arrow
+        // navigation lands on an invisible target, setSelected finds no
+        // matching material (dimming every rendered constellation), and
+        // Enter fires onConstellationClick for an object the user cannot
+        // see. Cleared in clearScene() so a stale list never outlives the
+        // layers it indexes.
+        const interactiveIds = new Set(
+            this.primaryLayer.lineHitObjects
+                .map((object) => object.userData.constellationId)
+                .filter((id): id is string => typeof id === "string"),
+        );
+        this._constellationEntries = request.primaryCatalog.constellations
+            .filter((constellation) => interactiveIds.has(constellation.id))
+            .map(({ id, name }) => ({ id, name }));
 
         // 5. adapt/build optional reference
         this.referenceLayer = request.referenceCatalog
@@ -1702,14 +1766,28 @@ export class ConstellationRenderer {
     }
 
     /**
-     * Announce a status message to the aria-live region. Setting textContent
-     * on a polite live region reliably triggers AT announcement; clearing it
-     * first forces a re-announcement when the same message repeats.
+     * Announce a status message to the aria-live region. The region is
+     * cleared synchronously and the new message is written on the next
+     * task (setTimeout 0). Browsers and assistive technologies commonly
+     * coalesce mutations made within the same task, so writing the message
+     * synchronously after the clear would cause repeated identical
+     * messages (re-selecting the same constellation) to be silently
+     * dropped. Deferring the write to a fresh task forces a re-announce.
+     * Any pending deferred write is cancelled first so a rapid sequence
+     * of announcements only emits the latest one.
      */
     private announceAriaLive(message: string): void {
         if (!this._ariaLiveRegion) return;
         this._ariaLiveRegion.textContent = "";
-        this._ariaLiveRegion.textContent = message;
+        if (this._ariaAnnouncementTimer !== null) {
+            clearTimeout(this._ariaAnnouncementTimer);
+        }
+        this._ariaAnnouncementTimer = setTimeout(() => {
+            if (this._ariaLiveRegion) {
+                this._ariaLiveRegion.textContent = message;
+            }
+            this._ariaAnnouncementTimer = null;
+        }, 0);
     }
 
     /**
@@ -1747,7 +1825,9 @@ export class ConstellationRenderer {
                 if (id) {
                     this.callbacks.onConstellationClick?.(id);
                     const name = this.entryNameForId(id) ?? id;
-                    this.announceAriaLive(`Viewing ${name}.`);
+                    this.announceAriaLive(
+                        this._accessibilityText.viewing(name),
+                    );
                 }
                 break;
             }
@@ -1755,7 +1835,9 @@ export class ConstellationRenderer {
                 event.preventDefault();
                 if (this.getSelectedId() !== null) {
                     this.setSelected(null);
-                    this.announceAriaLive("Selection cleared.");
+                    this.announceAriaLive(
+                        this._accessibilityText.selectionCleared,
+                    );
                 }
                 break;
             }
@@ -1786,7 +1868,7 @@ export class ConstellationRenderer {
         const entry = entries[index];
         if (!entry) return;
         this.setSelected(entry.id);
-        this.announceAriaLive(`${entry.name} selected. Press Enter to view.`);
+        this.announceAriaLive(this._accessibilityText.selected(entry.name));
     }
 
     /**
@@ -1859,6 +1941,13 @@ export class ConstellationRenderer {
         if (this._momentumRafId !== null) {
             cancelAnimationFrame(this._momentumRafId);
             this._momentumRafId = null;
+        }
+
+        // Cancel any pending deferred aria-live announcement so its
+        // setTimeout callback never writes to a torn-down region.
+        if (this._ariaAnnouncementTimer !== null) {
+            clearTimeout(this._ariaAnnouncementTimer);
+            this._ariaAnnouncementTimer = null;
         }
 
         // Phase 1: Clear scene objects (including the decorative background on final dispose)

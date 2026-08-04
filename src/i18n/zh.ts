@@ -766,4 +766,14 @@ export const zh = {
     "boot.stellarDb": "> 恒星数据库 ......... 4,184 个天体",
     "boot.renderPipeline": "> 渲染管线 ......... 在线",
     "boot.awaitingTarget": "> 等待目标",
+
+    // Constellation sky-map accessibility (screen-reader copy for the
+    // keyboard-navigable canvas + aria-live region). The renderer accepts
+    // these as framework-agnostic constructor options; the wrapper builds
+    // them from t() so non-English screen-reader users get localized UI.
+    "constellationA11y.canvasLabel":
+        "星座星图。使用方向键浏览星座，Enter 选择，Escape 清除。",
+    "constellationA11y.selected": "已选择 {name}。按 Enter 查看。",
+    "constellationA11y.viewing": "正在查看 {name}。",
+    "constellationA11y.selectionCleared": "已清除选择。",
 } as const;
