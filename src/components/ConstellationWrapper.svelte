@@ -8,7 +8,12 @@
   import type { ConstellationAccessibilityText } from "@/lib/constellation/ConstellationRenderer";
   import { constellations, getVisibleConstellations } from "@/data/constellations";
   import { getCurrentLocation, isConstellationVisible, formatCoordinates, celestialToSphere, azimuthToCardinalKey } from "@/utils/astronomy";
-  import type { ConstellationViewState, SkyConfiguration, LocationData } from "@/types/constellation";
+  import type { ConstellationViewState, SkyConfiguration, LocationData, Constellation } from "@/types/constellation";
+  import { parseObserverQuery, resolveObserverState, type ResolvedObserverState } from "@/lib/constellation/observerRouteState";
+  import { prepareAlternateObserverCatalog, type AlternateObserverCatalogOutput, type PreparedConstellation } from "@/lib/constellation/observerCatalog";
+  import { OBSERVER_SOURCE_STAR_IDS } from "@/lib/constellation/observerSourceStarIds";
+  import { localGalaxyData } from "@/lib/galaxy/LocalGalaxy";
+  import type { StarSystemData } from "@/lib/galaxy/types";
   import ScanLines from "@/components/hud/ScanLines.svelte";
   import HudReticle from "@/components/hud/HudReticle.svelte";
   import HudCallout from "@/components/hud/HudCallout.svelte";
@@ -52,6 +57,24 @@
     selectedConstellation: null,
     locationPermissionGranted: false
   };
+
+  // Observer-mode state. The wrapper resolves the current observer once per
+  // mount, before any geolocation request, and branches into the legacy
+  // Earth/Sol initialization or the prepared alternate-observer path.
+  type DisplayConstellation = Constellation | PreparedConstellation;
+
+  let resolvedObserverState: ResolvedObserverState = {
+    kind: "sol",
+    observerId: "sol",
+    source: "missing",
+  };
+  let observerSystem: StarSystemData | null = null;
+  let alternateCatalog: AlternateObserverCatalogOutput | null = null;
+  let renderedConstellations: readonly DisplayConstellation[] = [];
+  let referenceVisible = false;
+  let observerNoticeKey: string | null = null;
+  let hasUnexpectedOmissions = false;
+  let solAnnouncement = "";
 
   // UI state
   let showDragInstructions = true;
@@ -167,6 +190,180 @@
     return !translated || translated === key ? s.name : translated;
   };
 
+  function resolveCurrentObserver(): ResolvedObserverState {
+    const params = new URL(window.location.href).searchParams;
+    const parsed = parseObserverQuery(params);
+    return resolveObserverState(parsed, localGalaxyData.starSystems);
+  }
+
+  // Shared renderer factory: both initialization modes create the renderer
+  // with the same interaction callbacks and localized accessibility copy.
+  function createRenderer(): ConstellationRenderer {
+    return new ConstellationRenderer(
+      container,
+      {
+        onConstellationHover: (id, screenPos) => {
+          hoveredConstellationId = id;
+          hoverPos = screenPos;
+        },
+        onConstellationClick: (id) => {
+          handleSelectConstellation(id);
+        },
+        onStarHover: (star, screenPos) => {
+          hoverStarPos = star && screenPos
+            ? { x: screenPos.x, y: screenPos.y, name: starName(star), magnitude: star.magnitude }
+            : null;
+        },
+      },
+      constellationA11yText,
+    );
+  }
+
+  // Legacy Earth/Sol path: geolocation with a 3s timeout and New York
+  // fallback, sky configuration, visibility filtering, translated
+  // membership flat-map, and the legacy renderer.initialize() call.
+  async function initializeSolMode(): Promise<void> {
+    debugInfo = "Getting user location...";
+
+    // Get user's current location
+    let location: LocationData;
+    try {
+      const locationPromise = getCurrentLocation();
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Location timeout")), 3000)
+      );
+
+      location = await Promise.race([locationPromise, timeoutPromise]);
+      viewState.locationPermissionGranted = true;
+      debugInfo = `Location obtained: ${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`;
+    } catch (locationError) {
+      console.warn("Could not get location:", locationError);
+      // Use default location (New York City for better constellation visibility)
+      location = {
+        latitude: 40.7128,
+        longitude: -74.0060,
+        timezone: "America/New_York"
+      };
+      viewState.locationPermissionGranted = false;
+      debugInfo = "Using default location (New York City)";
+    }
+
+    const now = new Date();
+
+    // Create sky configuration
+    const skyConfig: SkyConfiguration = {
+      location,
+      dateTime: now,
+      fieldOfView: 80,
+      showConstellationLines: true,
+      showStarNames: true,
+      minimumMagnitude: 4.0 // Show stars up to magnitude 4
+    };
+
+    viewState.skyConfig = skyConfig;
+
+    // Get visible constellations
+    const visibleConstellations = getVisibleConstellations(
+      location.latitude,
+      now.getMonth() + 1
+    );
+
+    viewState.visibleConstellations = visibleConstellations.map(c => c.id);
+
+    debugInfo = "Initializing 3D renderer...";
+
+    // Initialize constellation renderer
+    try {
+      renderer = createRenderer();
+
+      // Get all stars from visible constellations, with translated names
+      // for 3D label rendering
+      const allStars = visibleConstellations.flatMap(constellation => constellation.stars);
+      const translatedStars = allStars.map(s => ({ ...s, name: starName(s) }));
+      const translatedConstellations = visibleConstellations.map(c => ({
+        ...c,
+        name: constellationName(c),
+      }));
+
+      await renderer.initialize(translatedStars, translatedConstellations, skyConfig);
+    } catch (rendererError) {
+      console.warn('WebGL renderer failed, falling back to 2D canvas:', rendererError);
+      webglSupported = false;
+    }
+
+    // Only create 2D canvas if WebGL failed
+    if (!webglSupported) {
+      try {
+        canvas2D = document.createElement('canvas');
+        canvas2D.width = container.clientWidth;
+        canvas2D.height = container.clientHeight;
+        canvas2D.style.position = 'absolute';
+        canvas2D.style.top = '0';
+        canvas2D.style.left = '0';
+        canvas2D.style.width = '100%';
+        canvas2D.style.height = '100%';
+        canvas2D.style.zIndex = '2';
+
+        ctx2D = canvas2D.getContext('2d');
+        if (ctx2D) {
+          container.appendChild(canvas2D);
+          drawConstellationsOnCanvas();
+        }
+      } catch (canvasError) {
+        console.warn('Failed to create 2D canvas:', canvasError);
+      }
+    }
+  }
+
+  // Prepared alternate-observer path: never requests geolocation and never
+  // calls getVisibleConstellations(). Prepares the exact full exported
+  // constellation catalog from the observer system's position and hands the
+  // prepared catalogs to the renderer BY IDENTITY. Returns "fallback-to-sol"
+  // when preparation fails so the caller degrades to the legacy Earth path.
+  async function initializeAlternateMode(system: StarSystemData): Promise<"ready" | "fallback-to-sol"> {
+    debugInfo = "Preparing alternate observer catalog...";
+
+    const preparation = prepareAlternateObserverCatalog(
+      constellations,
+      system.position,
+      {
+        includeReferenceCatalog: true,
+        observerSourceStarIds: OBSERVER_SOURCE_STAR_IDS[system.id] ?? [],
+      },
+    );
+
+    if (!preparation.ok) {
+      return "fallback-to-sol";
+    }
+
+    alternateCatalog = preparation.value;
+    renderedConstellations = preparation.value.primaryCatalog.constellations;
+
+    debugInfo = "Initializing alternate observer renderer...";
+
+    try {
+      renderer = createRenderer();
+      await renderer.initializePreparedCatalogs(
+        {
+          primaryCatalog: preparation.value.primaryCatalog,
+          referenceCatalog: preparation.value.referenceCatalog,
+          // Hidden by default; the reference toggle is wired in a later task.
+          referenceVisible,
+        },
+        {
+          minimumMagnitude: 4.0,
+          showConstellationLines: true,
+          showStarNames: true,
+        },
+      );
+    } catch (rendererError) {
+      console.warn('WebGL renderer failed in alternate observer mode:', rendererError);
+      webglSupported = false;
+    }
+
+    return "ready";
+  }
+
   async function initConstellationView(): Promise<void> {
     try {
       // Check WebGL support first
@@ -187,112 +384,39 @@
         throw new Error("Container element not found");
       }
 
-      debugInfo = "Getting user location...";
-      
-      // Get user's current location
-      let location: LocationData;
-      try {
-        const locationPromise = getCurrentLocation();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Location timeout")), 3000)
-        );
+      // Resolve the observer once, before any geolocation request, then
+      // branch into the matching initialization mode.
+      resolvedObserverState = resolveCurrentObserver();
 
-        location = await Promise.race([locationPromise, timeoutPromise]);
-        viewState.locationPermissionGranted = true;
-        debugInfo = `Location obtained: ${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`;
-      } catch (locationError) {
-        console.warn("Could not get location:", locationError);
-        // Use default location (New York City for better constellation visibility)
-        location = {
-          latitude: 40.7128,
-          longitude: -74.0060,
-          timezone: "America/New_York"
-        };
-        viewState.locationPermissionGranted = false;
-        debugInfo = "Using default location (New York City)";
-      }
+      if (resolvedObserverState.kind === "system") {
+        // Defensive second lookup: the resolver and this lookup share the
+        // same starSystems source, so it should always hit. Guard anyway so
+        // an unexpected mismatch degrades to Sol mode — no non-null assertion.
+        const system = localGalaxyData.starSystems.find(
+          (candidate) => candidate.id === resolvedObserverState.observerId,
+        ) ?? null;
 
-      const now = new Date();
-      
-      // Create sky configuration
-      const skyConfig: SkyConfiguration = {
-        location,
-        dateTime: now,
-        fieldOfView: 80,
-        showConstellationLines: true,
-        showStarNames: true,
-        minimumMagnitude: 4.0 // Show stars up to magnitude 4
-      };
-
-      viewState.skyConfig = skyConfig;
-
-      // Get visible constellations
-      const visibleConstellations = getVisibleConstellations(
-        location.latitude,
-        now.getMonth() + 1
-      );
-      
-      viewState.visibleConstellations = visibleConstellations.map(c => c.id);
-
-      debugInfo = "Initializing 3D renderer...";
-
-      // Initialize constellation renderer
-      try {
-        renderer = new ConstellationRenderer(
-          container,
-          {
-            onConstellationHover: (id, screenPos) => {
-              hoveredConstellationId = id;
-              hoverPos = screenPos;
-            },
-            onConstellationClick: (id) => {
-              handleSelectConstellation(id);
-            },
-            onStarHover: (star, screenPos) => {
-              hoverStarPos = star && screenPos
-                ? { x: screenPos.x, y: screenPos.y, name: starName(star), magnitude: star.magnitude }
-                : null;
-            },
-          },
-          constellationA11yText,
-        );
-
-        // Get all stars from visible constellations, with translated names
-        // for 3D label rendering
-        const allStars = visibleConstellations.flatMap(constellation => constellation.stars);
-        const translatedStars = allStars.map(s => ({ ...s, name: starName(s) }));
-        const translatedConstellations = visibleConstellations.map(c => ({
-          ...c,
-          name: constellationName(c),
-        }));
-
-        await renderer.initialize(translatedStars, translatedConstellations, skyConfig);
-      } catch (rendererError) {
-        console.warn('WebGL renderer failed, falling back to 2D canvas:', rendererError);
-        webglSupported = false;
-      }
-
-      // Only create 2D canvas if WebGL failed
-      if (!webglSupported) {
-        try {
-          canvas2D = document.createElement('canvas');
-          canvas2D.width = container.clientWidth;
-          canvas2D.height = container.clientHeight;
-          canvas2D.style.position = 'absolute';
-          canvas2D.style.top = '0';
-          canvas2D.style.left = '0';
-          canvas2D.style.width = '100%';
-          canvas2D.style.height = '100%';
-          canvas2D.style.zIndex = '2';
-
-          ctx2D = canvas2D.getContext('2d');
-          if (ctx2D) {
-            container.appendChild(canvas2D);
-            drawConstellationsOnCanvas();
+        if (!system) {
+          if (import.meta.env.DEV) {
+            console.warn(
+              "Observer mode invariant mismatch: resolved observer system not found in localGalaxyData",
+              resolvedObserverState.observerId,
+            );
           }
-        } catch (canvasError) {
-          console.warn('Failed to create 2D canvas:', canvasError);
+          observerNoticeKey = "constellation.observer.fallback";
+          await initializeSolMode();
+        } else {
+          observerSystem = system;
+          if ((await initializeAlternateMode(system)) === "fallback-to-sol") {
+            observerNoticeKey = "constellation.observer.fallback";
+            await initializeSolMode();
+          }
         }
+      } else {
+        if (resolvedObserverState.kind === "fallback") {
+          observerNoticeKey = "constellation.observer.fallback";
+        }
+        await initializeSolMode();
       }
 
       loading = false;
@@ -324,7 +448,7 @@
       error = err instanceof Error ? err.message : "Unknown error occurred";
       viewState.error = error;
       loading = false;
-      
+
       // Retry after 3 seconds (skip if WebGL is fundamentally unsupported)
       if (webglSupported) {
         retryTimeout = setTimeout(() => {
