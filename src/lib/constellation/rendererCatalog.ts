@@ -60,10 +60,13 @@ export function adaptPreparedCatalog(
 }
 
 function isValidLegacyLine(
-    line: readonly number[],
+    line: unknown,
     starCount: number,
 ): line is RendererLine {
-    if (line.length !== 2) return false;
+    // Array.isArray first so a deserialized runtime null/undefined is skipped
+    // with a structured warning instead of throwing on .length — matches the
+    // guard in ConstellationCatalogLayer's line-build path.
+    if (!Array.isArray(line) || line.length !== 2) return false;
     const [start, end] = line;
     return (
         Number.isInteger(start) &&

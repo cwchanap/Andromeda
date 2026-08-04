@@ -345,8 +345,36 @@ describe("ConstellationRenderer", () => {
         // test always exercises the array-material disposal branch.
         const points = (renderer as any).primaryLayer.ordinaryStarPoints;
         expect(points).toBeTruthy();
-        points.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
-        expect(() => renderer.dispose()).not.toThrow();
+        const materialSpies = [vi.fn(), vi.fn()];
+        points.material = [
+            { dispose: materialSpies[0] },
+            { dispose: materialSpies[1] },
+        ];
+        // The starfield-background is a later resource disposed after
+        // clearScene() in the same try block; capture it before dispose so we
+        // can assert its disposal was not skipped by a swallowed throw.
+        const anyRenderer = renderer as any;
+        const scene = anyRenderer.scene as THREE.Scene;
+        const background = scene.getObjectByName("starfield-background") as any;
+        expect(background).toBeTruthy();
+        const bgGeometryDispose = vi.spyOn(background.geometry, "dispose");
+        const bgMaterialDispose = vi.spyOn(background.material, "dispose");
+        const errorSpy = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+
+        renderer.dispose();
+
+        // Both array materials were disposed exactly once.
+        expect(materialSpies[0]).toHaveBeenCalledTimes(1);
+        expect(materialSpies[1]).toHaveBeenCalledTimes(1);
+        // No swallowed throw reached the renderer's clearScene error log.
+        expect(errorSpy).not.toHaveBeenCalled();
+        // Later resources (the decorative background) were disposed too, so
+        // clearScene completed without aborting partway through.
+        expect(bgGeometryDispose).toHaveBeenCalledTimes(1);
+        expect(bgMaterialDispose).toHaveBeenCalledTimes(1);
+        errorSpy.mockRestore();
     });
 
     it("clearScene handles array materials on line hit objects", async () => {
@@ -362,8 +390,36 @@ describe("ConstellationRenderer", () => {
         const lineObjects = (renderer as any).primaryLayer.lineHitObjects;
         expect(lineObjects.length).toBeGreaterThan(0);
         const child = lineObjects[0] as any;
-        child.material = [{ dispose: vi.fn() }, { dispose: vi.fn() }];
-        expect(() => renderer.dispose()).not.toThrow();
+        const materialSpies = [vi.fn(), vi.fn()];
+        child.material = [
+            { dispose: materialSpies[0] },
+            { dispose: materialSpies[1] },
+        ];
+        // The starfield-background is a later resource disposed after
+        // clearScene() in the same try block; capture it before dispose so we
+        // can assert its disposal was not skipped by a swallowed throw.
+        const anyRenderer = renderer as any;
+        const scene = anyRenderer.scene as THREE.Scene;
+        const background = scene.getObjectByName("starfield-background") as any;
+        expect(background).toBeTruthy();
+        const bgGeometryDispose = vi.spyOn(background.geometry, "dispose");
+        const bgMaterialDispose = vi.spyOn(background.material, "dispose");
+        const errorSpy = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+
+        renderer.dispose();
+
+        // Both array materials were disposed exactly once.
+        expect(materialSpies[0]).toHaveBeenCalledTimes(1);
+        expect(materialSpies[1]).toHaveBeenCalledTimes(1);
+        // No swallowed throw reached the renderer's clearScene error log.
+        expect(errorSpy).not.toHaveBeenCalled();
+        // Later resources (the decorative background) were disposed too, so
+        // clearScene completed without aborting partway through.
+        expect(bgGeometryDispose).toHaveBeenCalledTimes(1);
+        expect(bgMaterialDispose).toHaveBeenCalledTimes(1);
+        errorSpy.mockRestore();
     });
 
     it("animate calls updateCameraRotation when isMouseDown is true", async () => {
