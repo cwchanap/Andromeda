@@ -640,6 +640,29 @@ export const en = {
     "constellation.stars": "stars",
     "constellation.mag": "MAG",
 
+    // Alternate observer HUD (HPA-435): localized readout, actions, and
+    // notices for the ?observer=<system> view. The findSolAnnouncement
+    // template carries {ra}/{dec}/{distance} placeholders the wrapper
+    // interpolates with the synthetic Sol star's coordinates.
+    "constellation.observer.label": "Observer",
+    "constellation.observer.distanceFromSol": "Distance from Sol",
+    "constellation.observer.frameSystemBarycenter": "Frame: System barycenter",
+    "constellation.observer.viewDirection": "View direction",
+    "constellation.observer.referenceToggle": "Show Earth/Sol reference",
+    "constellation.observer.findSol": "Find Sol",
+    "constellation.observer.findSolAnnouncement":
+        "Sol: right ascension {ra} h, declination {dec}°, distance {distance} ly.",
+    "constellation.observer.findSolUnavailable": "Sol could not be focused.",
+    "constellation.observer.returnToSol": "Return to Earth/Sol",
+    "constellation.observer.education":
+        "Constellation lines preserve Earth cultural reference shapes; star brightness is approximate for this observer.",
+    "constellation.observer.fallback":
+        "Observer unavailable; showing the sky from Earth/Sol.",
+    "constellation.observer.omissions":
+        "Some catalog stars could not be displayed.",
+    "constellation.observer.webglUnavailable":
+        "This observer view requires WebGL.",
+
     // Terrain explorer navigation
     "terrain.navigationControls": "Navigation Controls",
     "terrain.pan": "Pan",
