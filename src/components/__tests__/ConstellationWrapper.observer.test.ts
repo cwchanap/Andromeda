@@ -35,6 +35,9 @@ const OBSERVER_TRANSLATIONS: Record<string, string> = {
         "Sol is not visible from this observer.",
     // HUD shell copy the action tests rely on to open the settings panel.
     "nav.settings": "Settings",
+    // Generic error overlay (prepared-catalog failure path surfaces this
+    // instead of the observer-specific WebGL-required copy).
+    "constellation.error": "An error occurred",
 };
 
 const FALLBACK_NOTICE = "Observer unavailable; showing the sky from Earth/Sol.";
@@ -64,6 +67,7 @@ const {
     setSelectedMock,
     getCameraAzimuthMock,
     getCameraElevationMock,
+    constellationRendererCtorMock,
     rendererCallbacks,
     fullConstellations,
     preparedPrimaryCatalog,
@@ -195,6 +199,11 @@ const {
         // while the direction-readout test overrides then restores them.
         getCameraAzimuthMock: vi.fn(() => 0),
         getCameraElevationMock: vi.fn(() => 0),
+        // The ConstellationRenderer constructor mock. The default
+        // implementation (returns mockRenderer) is wired in the vi.mock
+        // factory below; tests can override it via mockImplementationOnce to
+        // simulate a genuine createRenderer()/WebGL-creation failure.
+        constellationRendererCtorMock: vi.fn(),
         // Captures the interaction callbacks the wrapper hands to the mocked
         // renderer constructor so tests can drive onConstellationClick.
         rendererCallbacks: {
@@ -229,19 +238,23 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         getStarWorldPosition: getStarWorldPositionMock,
         focusStarById: focusStarByIdMock,
     };
-    return {
-        ConstellationRenderer: vi.fn().mockImplementation(
-            (
-                _container: unknown,
-                callbacks?: {
-                    onConstellationClick?: (id: string) => void;
-                },
-            ) => {
-                rendererCallbacks.onConstellationClick =
-                    callbacks?.onConstellationClick ?? null;
-                return mockRenderer;
+    // Wire the default implementation onto the hoisted constructor mock so
+    // tests can override it per-call (e.g. throw to simulate a WebGL-creation
+    // failure). mockImplementation survives vi.clearAllMocks.
+    constellationRendererCtorMock.mockImplementation(
+        (
+            _container: unknown,
+            callbacks?: {
+                onConstellationClick?: (id: string) => void;
             },
-        ),
+        ) => {
+            rendererCallbacks.onConstellationClick =
+                callbacks?.onConstellationClick ?? null;
+            return mockRenderer;
+        },
+    );
+    return {
+        ConstellationRenderer: constellationRendererCtorMock,
     };
 });
 
@@ -716,7 +729,7 @@ describe("ConstellationWrapper observer WebGL gating", () => {
         }
     });
 
-    it("alternate mode whose WebGL path fails shows WebGL-required copy and NO Earth 2D fallback", async () => {
+    it("prepared-catalog failure surfaces the generic error (not WebGL-required) and does not start the HUD loop", async () => {
         prepareAlternateObserverCatalogMock.mockReturnValue({
             ok: true,
             value: {
@@ -725,9 +738,65 @@ describe("ConstellationWrapper observer WebGL gating", () => {
                 omittedStars: [],
             },
         });
+        // Renderer construction succeeds; only prepared-catalog init fails.
+        // This is NOT a WebGL failure, so it must surface the generic error
+        // overlay + retry path rather than the observer-specific
+        // WebGL-required copy.
         initializePreparedCatalogsMock.mockRejectedValueOnce(
-            new Error("WebGL context creation failed"),
+            new Error("Prepared catalog layer construction failed"),
         );
+        window.history.replaceState({}, "", "/?observer=alpha-centauri");
+
+        const { container, queryByText } = render(ConstellationWrapper, {
+            translations: OBSERVER_TRANSLATIONS,
+        });
+
+        await waitFor(() => {
+            expect(queryByText("An error occurred")).not.toBeNull();
+        });
+        // The real cause is surfaced, not the misleading WebGL-required copy.
+        expect(
+            queryByText(
+                "WebGL is required to view the sky from this observer.",
+            ),
+        ).toBeNull();
+        expect(queryByText("Return to Earth/Sol")).toBeNull();
+        expect(
+            queryByText("Prepared catalog layer construction failed"),
+        ).not.toBeNull();
+        // No Earth-oriented 2D canvas fallback is created in a genuine
+        // alternate mode.
+        expect(container.querySelectorAll("canvas")).toHaveLength(0);
+        // The alternate mode does NOT degrade to the Sol legacy path...
+        expect(getCurrentLocationMock).not.toHaveBeenCalled();
+        expect(initializeMock).not.toHaveBeenCalled();
+        // ...and this is not a fallback-to-Sol, so no fallback notice.
+        expect(queryByText(FALLBACK_NOTICE)).toBeNull();
+
+        // Regression (finding 2): with no renderer, the HUD rAF loop must
+        // not be scheduled. BootSequence has unmounted (loading is false),
+        // so any requestAnimationFrame call here indicates the stray loop.
+        const rafSpy = vi.spyOn(globalThis, "requestAnimationFrame");
+        await new Promise((resolve) => setTimeout(resolve, 120));
+        expect(rafSpy).not.toHaveBeenCalled();
+        rafSpy.mockRestore();
+    });
+
+    it("genuine WebGL/renderer failure shows the WebGL-required overlay and keeps observer controls non-interactive", async () => {
+        prepareAlternateObserverCatalogMock.mockReturnValue({
+            ok: true,
+            value: {
+                // A catalog WITH a constellation so the prepared rows would
+                // render unless the observerWebglFailed guard hides them.
+                primaryCatalog: focusCatalog,
+                referenceCatalog: preparedReferenceCatalog,
+                omittedStars: [],
+            },
+        });
+        // createRenderer() throws: a genuine WebGL/renderer-creation failure.
+        constellationRendererCtorMock.mockImplementationOnce(() => {
+            throw new Error("WebGL context creation failed");
+        });
         window.history.replaceState({}, "", "/?observer=alpha-centauri");
 
         const { container, queryByText } = render(ConstellationWrapper, {
@@ -742,14 +811,25 @@ describe("ConstellationWrapper observer WebGL gating", () => {
             ).not.toBeNull();
         });
         expect(queryByText("Return to Earth/Sol")).not.toBeNull();
-        // No Earth-oriented 2D canvas fallback is created in a genuine
-        // alternate mode.
         expect(container.querySelectorAll("canvas")).toHaveLength(0);
-        // The alternate mode does NOT degrade to the Sol legacy path...
-        expect(getCurrentLocationMock).not.toHaveBeenCalled();
         expect(initializeMock).not.toHaveBeenCalled();
-        // ...and this is not a fallback-to-Sol, so no generic fallback notice.
+        // createRenderer threw before prepared init could run.
+        expect(initializePreparedCatalogsMock).not.toHaveBeenCalled();
         expect(queryByText(FALLBACK_NOTICE)).toBeNull();
+
+        // Regression (finding 1): with no renderer, the prepared
+        // constellation rows must NOT render behind the pointer-events-none
+        // overlay where they'd otherwise be click-through reachable.
+        expect(queryByText("Orion")).toBeNull();
+
+        // The observer-specific settings actions must stay unavailable too.
+        fireEvent.click(queryByText("Settings")!);
+        await waitFor(() => {
+            // Panel is open when a non-observer setting renders.
+            expect(queryByText("constellation.scanlines")).not.toBeNull();
+        });
+        expect(queryByText("Show Earth/Sol reference")).toBeNull();
+        expect(queryByText("Find Sol")).toBeNull();
     });
 
     it("creates the Earth 2D canvas when alternate mode falls back to Sol and Sol WebGL fails", async () => {
@@ -1020,6 +1100,9 @@ describe("ConstellationWrapper observer actions", () => {
     });
 
     it("Return navigates to the localized constellation route without the observer param", async () => {
+        // A successfully mounted alternate observer exposes the Return to
+        // Earth/Sol action in its working HUD. (The WebGL-required overlay's
+        // Return button is covered by the genuine-renderer-failure test.)
         prepareAlternateObserverCatalogMock.mockReturnValue({
             ok: true,
             value: {
@@ -1028,9 +1111,6 @@ describe("ConstellationWrapper observer actions", () => {
                 omittedStars: [],
             },
         });
-        initializePreparedCatalogsMock.mockRejectedValueOnce(
-            new Error("WebGL context creation failed"),
-        );
         // jsdom ignores location.href assignments, so shadow window.location
         // with a plain object to capture the navigation target.
         const stubLocation = {
