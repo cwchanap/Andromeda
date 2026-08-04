@@ -20,12 +20,12 @@ Add one small module containing the explicit observer-system to source-star mapp
 alpha-centauri -> alpha_cen
 ```
 
-Extend the existing HUD with observer identity, distance from Sol, **System barycenter**, neutral view direction, reference visibility, Find Sol, Return to Earth/Sol, required educational copy, visible fallback/omission notices, and screen-reader status.
+Extend the existing HUD with observer identity, distance from Sol, **Frame: System barycenter**, neutral view direction, reference visibility, Find Sol, Return to Earth/Sol, required educational copy, visible fallback/omission notices, and a screen-reader status for Find Sol.
 
 ## Goals
 
 - Preserve query-free Earth/Sol behavior.
-- Resolve observer state through HPA-432 and retain its typed provenance internally.
+- Resolve observer state through HPA-432 and retain typed provenance internally.
 - Use the full unfiltered constellation export in alternate mode.
 - Pass prepared top-level arrays without membership flattening.
 - Exclude mapped observer-source stars from primary while retaining valid records in the reference layer.
@@ -71,6 +71,8 @@ referenceCatalog.stars + referenceCatalog.constellations
 
 Synthetic Sol exists only in the primary top-level star list under `SYNTHETIC_SOL_STAR_ID`. `observer-source-star-excluded` is expected behavior. `synthetic-sol-unavailable` is fatal and returns no partial catalogs.
 
+`referenceCatalog` remains optional in the public type even when `includeReferenceCatalog: true`. HPA-435 therefore passes it through without a non-null assertion and exposes the reference checkbox only when the value is present.
+
 ### HPA-434 renderer
 
 ```ts
@@ -90,7 +92,7 @@ This removes one file, but makes integrity tests import or expose component inte
 
 ### B. Export one mapping constant from a small module
 
-The wrapper performs a direct `record[id] ?? []` lookup. One focused integrity test validates configured observer IDs, source IDs, and duplicates.
+The wrapper performs a direct `record[id] ?? []` lookup. One focused integrity test validates configured observer IDs, source IDs, and duplicate assignments.
 
 ### C. Add an observer coordinator service
 
@@ -115,7 +117,7 @@ const observerSourceStarIds =
     OBSERVER_SOURCE_STAR_IDS[system.id] ?? [];
 ```
 
-A dedicated module remains worthwhile because HPA-435 explicitly owns this mapping and requires integrity checks, but the module should contain only the constant.
+A dedicated module remains worthwhile because HPA-435 owns this mapping and requires integrity checks, but the module contains only the constant.
 
 ## File changes
 
@@ -146,16 +148,16 @@ A dedicated module remains worthwhile because HPA-435 explicitly owns this mappi
 
 ## Mapping integrity
 
-The mapping test iterates the configured record and verifies:
+One compact test iterates the configured record and verifies:
 
 1. each observer ID exists in `localGalaxyData.starSystems`;
 2. each configured observer is eligible through `isObserverCandidateEligible()`;
 3. each mapped source ID exists in canonical membership of the full exported `constellations` array; and
 4. no source ID is duplicated within one mapping or assigned to multiple observers.
 
-The Alpha Centauri wrapper test separately verifies that `['alpha_cen']` reaches `prepareAlternateObserverCatalog()`.
+Checks 1–2 protect the mapping against regenerated Galaxy-data drift. Check 3 protects the production-visible exclusion behavior. The cross-observer part of check 4 is dormant with one mapping, but remains in the same small loop because the issue requires duplicate assignment rejection when the mapping grows.
 
-These checks are required by the Linear issue. They validate configured data only; they do not infer additional mappings.
+The Alpha Centauri wrapper test separately verifies that `['alpha_cen']` reaches `prepareAlternateObserverCatalog()`.
 
 ## Wrapper state
 
@@ -180,7 +182,7 @@ let solAnnouncement = "";
 
 The union is read-only from the HUD's perspective. Sol mode uses filtered source constellations; alternate mode uses prepared primary constellations.
 
-## Route resolution and fallback
+## Route resolution and system lookup
 
 Resolve before geolocation:
 
@@ -196,8 +198,10 @@ function resolveCurrentObserver(): ResolvedObserverState {
 Behavior:
 
 - `sol`: initialize normal Sol mode;
-- `system`: initialize the exact matching Galaxy system;
-- `fallback`: initialize Sol mode and show `constellation.observer.fallback`.
+- `fallback`: initialize Sol mode and show `constellation.observer.fallback`;
+- `system`: re-look up the exact `StarSystemData` by `observerId` before calling `initializeAlternateMode()`.
+
+Although `resolveObserverState()` already validated the ID, `Array.find()` is typed as possibly undefined. Do not use a non-null assertion. If the second lookup unexpectedly fails, log the invariant mismatch in development, show the generic fallback notice, and initialize Sol mode.
 
 All HPA-432 fallback reasons use the same user copy. Typed provenance remains available for tests and development logging.
 
@@ -239,14 +243,16 @@ The membership flat-map remains only in the legacy Earth path.
 6. Pass `OBSERVER_SOURCE_STAR_IDS[system.id] ?? []`.
 7. On success, retain the exact output and assign `primaryCatalog.constellations` to `renderedConstellations`.
 8. Set `hasUnexpectedOmissions` when any omission reason is not `observer-source-star-excluded`.
-9. Pass the exact prepared catalog objects to the renderer:
+9. Pass `referenceCatalog` through as optional and set `referenceVisible` to `false` when it is absent.
+10. Pass the exact prepared catalog objects to the renderer:
 
 ```ts
 await renderer.initializePreparedCatalogs(
     {
         primaryCatalog: result.value.primaryCatalog,
         referenceCatalog: result.value.referenceCatalog,
-        referenceVisible,
+        referenceVisible:
+            result.value.referenceCatalog !== undefined && referenceVisible,
     },
     {
         minimumMagnitude: 4,
@@ -256,13 +262,13 @@ await renderer.initializePreparedCatalogs(
 );
 ```
 
-Do not clone, translate, merge, flatten, or reconstruct prepared catalogs.
+Do not clone, translate, merge, flatten, reconstruct, or non-null assert prepared catalogs.
 
 ## Interactions
 
 ### Reference visibility
 
-`referenceVisible` defaults to `false` per mount. A native checkbox calls `renderer.setReferenceVisible(referenceVisible)`. It does not change the URL, persist state, re-prepare catalogs, or reinitialize the renderer.
+`referenceVisible` defaults to `false` per mount. Render the native checkbox only when `alternateCatalog.referenceCatalog` exists. Its checked state reports reference visibility directly to assistive technology. Toggling it calls `renderer.setReferenceVisible(referenceVisible)` without changing the URL, persisting state, re-preparing catalogs, or reinitializing the renderer.
 
 ### Find Sol
 
@@ -310,18 +316,21 @@ Show:
 
 - localized observer system name;
 - existing `distanceFromEarth` value labeled Distance from Sol;
-- **System barycenter** frame;
+- one localized **Frame: System barycenter** string;
 - neutral azimuth/elevation view direction without cardinal wording;
 - prepared primary constellation list and star counts;
-- reference checkbox;
+- reference checkbox when a reference catalog exists;
 - Find Sol and Return to Earth/Sol buttons;
-- one required educational sentence explaining that lines are Earth cultural references and brightness is approximate;
-- one static nonblocking omission notice when genuine omissions exist; and
-- a hidden observer/reference summary plus polite atomic Find Sol status.
+- one required educational sentence explaining that lines are Earth cultural references and brightness is approximate; and
+- one static nonblocking omission notice when genuine omissions exist.
 
 Hide Earth geolocation, UTC/local-sky framing, cardinal compass wording, `View from Earth`, and best-viewing-month strip.
 
-The educational copy remains because the Linear issue explicitly requires both concepts and prohibits claims of observer-correct apparent magnitude. Combine them into one localization key to minimize HUD and translation surface.
+The visible observer readout and the labeled native checkbox form the required text summary: the observer is text, while checkbox semantics report whether the reference layer is shown. Do not add duplicate hidden summary or shown/hidden localization strings.
+
+Keep only the polite atomic status region for transient Find Sol results.
+
+The omission notice remains user-facing even though current production data does not trigger it, because HPA-435 explicitly requires coordinate-failure omissions to surface as nonblocking diagnostics.
 
 ### WebGL fallback
 
@@ -336,18 +345,14 @@ Add these keys to `en`, `zh`, and `ja`:
 ```text
 constellation.observer.label
 constellation.observer.distanceFromSol
-constellation.observer.frame
-constellation.observer.systemBarycenter
+constellation.observer.frameSystemBarycenter
 constellation.observer.viewDirection
 constellation.observer.referenceToggle
-constellation.observer.referenceShown
-constellation.observer.referenceHidden
 constellation.observer.findSol
 constellation.observer.findSolAnnouncement
 constellation.observer.findSolUnavailable
 constellation.observer.returnToSol
 constellation.observer.education
-constellation.observer.summary
 constellation.observer.fallback
 constellation.observer.omissions
 constellation.observer.webglUnavailable
@@ -364,6 +369,8 @@ Focused tests cover:
 - alternate mode skipping Earth inputs and using the full exported catalog;
 - Alpha Centauri passing `['alpha_cen']`;
 - exact prepared catalog handoff without flattening;
+- absent optional reference catalog hiding the checkbox without a non-null assertion;
+- a defensive post-resolution lookup miss falling back to Sol;
 - every typed fallback reason returning to Sol with one generic notice;
 - fatal preparation returning to Sol without prepared initialization;
 - intentional exclusions staying silent and genuine omissions showing one static notice;
@@ -379,7 +386,7 @@ Broad browser/system matrices remain in HPA-436.
 
 - Legacy Earth/Sol behavior is unchanged.
 - Alternate mode is independent of Earth location/month filtering.
-- Alpha Centauri primary omits `alpha_cen`; the reference layer retains it.
+- Alpha Centauri primary omits `alpha_cen`; the reference layer retains it when available.
 - Prepared top-level arrays reach the renderer directly.
 - Reference visibility updates without re-preparation or reinitialization.
 - Find Sol works by pointer/keyboard and announces direction/distance.
@@ -387,6 +394,10 @@ Broad browser/system matrices remain in HPA-436.
 - Intentional exclusions produce no warning; genuine omissions produce one nonblocking notice.
 - Alternate mode does not use the Earth-oriented 2D fallback.
 - Locale switching emits no raw keys.
+
+## Extraction threshold
+
+Concentrating this work in the existing wrapper is the right trade while there is one orchestration consumer and one alternate-mode behavior. Do not extract merely because the mapping gains another observer. Reconsider a pure coordinator only if the orchestration gains a second consumer or materially divergent observer modes create duplicated branching and test setup.
 
 ## Non-goals
 
