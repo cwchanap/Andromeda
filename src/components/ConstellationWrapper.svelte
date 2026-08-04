@@ -335,7 +335,10 @@
   // constellation catalog from the observer system's position and hands the
   // prepared catalogs to the renderer BY IDENTITY. Returns "fallback-to-sol"
   // when preparation fails so the caller degrades to the legacy Earth path.
-  async function initializeAlternateMode(system: StarSystemData): Promise<"ready" | "fallback-to-sol"> {
+  // Returns "renderer-failed" when WebGL/renderer construction fails so the
+  // caller leaves the observer-specific WebGL-required overlay in place and
+  // skips the HUD animation loop (no renderer exists to drive it).
+  async function initializeAlternateMode(system: StarSystemData): Promise<"ready" | "fallback-to-sol" | "renderer-failed"> {
     debugInfo = "Preparing alternate observer catalog...";
 
     const preparation = prepareAlternateObserverCatalog(
@@ -366,8 +369,32 @@
 
     debugInfo = "Initializing alternate observer renderer...";
 
+    // Split renderer construction from prepared-catalog initialization so the
+    // two failure modes are classified correctly:
+    //  - createRenderer() throwing is a genuine WebGL/renderer-creation
+    //    failure: mark observerWebglFailed and return "renderer-failed" so
+    //    the caller shows the observer-specific WebGL-required UI and does
+    //    NOT start the HUD animation loop (no renderer exists to drive it).
+    //  - initializePreparedCatalogs() throwing means WebGL and the renderer
+    //    are fine but catalog adaptation/layer/label setup failed. That is
+    //    NOT a WebGL problem, so it must not set observerWebglFailed. Dispose
+    //    the renderer and rethrow so the caller's generic error/retry path
+    //    surfaces the real cause instead of misreporting WebGL as unavailable.
     try {
       renderer = createRenderer();
+    } catch (rendererError) {
+      console.warn('WebGL renderer failed in alternate observer mode:', rendererError);
+      webglSupported = false;
+      // Genuine alternate mode whose WebGL path failed: no Earth-oriented 2D
+      // canvas fallback and no degrade to the Sol legacy path — the
+      // observer-specific WebGL-required UI (with Return to Earth/Sol) is
+      // shown instead.
+      observerWebglFailed = true;
+      // createRenderer threw before assigning, so renderer is still null.
+      return "renderer-failed";
+    }
+
+    try {
       await renderer.initializePreparedCatalogs(
         {
           primaryCatalog: preparation.value.primaryCatalog,
@@ -382,20 +409,14 @@
           showStarNames: true,
         },
       );
-    } catch (rendererError) {
-      console.warn('WebGL renderer failed in alternate observer mode:', rendererError);
-      webglSupported = false;
-      // Genuine alternate mode whose WebGL path failed: no Earth-oriented 2D
-      // canvas fallback and no degrade to the Sol legacy path — the
-      // observer-specific WebGL-required UI (with Return to Earth/Sol) is
-      // shown instead.
-      observerWebglFailed = true;
-      // Dispose the partially-initialized renderer and clear the reference
-      // so subsequent HUD/reactive/toggle/focus calls cannot use it.
-      if (renderer) {
-        renderer.dispose();
-        renderer = null;
-      }
+    } catch (catalogError) {
+      console.warn('Prepared catalog initialization failed:', catalogError);
+      // WebGL itself is fine — dispose the constructed renderer and
+      // propagate so the generic error/retry path reports the real cause
+      // rather than the misleading WebGL-required overlay.
+      renderer.dispose();
+      renderer = null;
+      throw catalogError;
     }
 
     return "ready";
@@ -473,9 +494,15 @@
 
       loading = false;
       viewState.loading = false;
-      debugInfo = "Constellation view ready";
+      debugInfo = observerWebglFailed
+        ? "WebGL is required for this observer view"
+        : "Constellation view ready";
 
-      // Start HUD rAF loop for screen-coords projection
+      // Start HUD rAF loop for screen-coords projection. Skipped when the
+      // alternate observer's renderer failed to construct: there is no
+      // renderer to project from, and the static WebGL-required overlay is
+      // shown instead. (Prepared-catalog failures throw before reaching here,
+      // so they never start the loop either.)
       const tickHud = () => {
         if (renderer && selectedId && selectedCenter) {
           lockedPos = renderer.worldToScreen(selectedCenter);
@@ -488,7 +515,9 @@
         }
         hudRafId = requestAnimationFrame(tickHud);
       };
-      tickHud();
+      if (renderer) {
+        tickHud();
+      }
 
       // Hide drag instructions after 5 seconds
       setTimeout(() => {
@@ -903,28 +932,34 @@
                 </div>
               {/if}
 
-              <!-- Prepared constellation catalog for this observer -->
-              <div>
-                <h4 class="hud-section-label">{t('constellation.visible')}</h4>
-                <ul class="hud-list" aria-label={t('constellation.visible')}>
-                  {#each renderedConstellations as constellation}
-                    <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
-                      <button
-                        type="button"
-                        class="hud-list-row"
-                        class:is-selected={viewState.selectedConstellation === constellation.id}
-                        on:click={() => handleSelectConstellation(constellation.id)}
-                        data-constellation-id={constellation.id}
-                      >
-                        <span class="row-abbr">[{constellation.abbreviation}]</span>
-                        <span class="row-name">{constellationName(constellation)}</span>
-                        <span class="row-leader"></span>
-                        <span class="row-count">{constellation.stars.length}★ <span class="sr-only">{t('constellation.stars')}</span></span>
-                      </button>
-                    </li>
-                  {/each}
-                </ul>
-              </div>
+              <!-- Prepared constellation catalog for this observer.
+                   Suppressed when the renderer failed: with no renderer the
+                   rows can't drive selection, and they sit behind the
+                   pointer-events-none WebGL-required overlay where they'd
+                   otherwise be click-through reachable. -->
+              {#if !observerWebglFailed}
+                <div>
+                  <h4 class="hud-section-label">{t('constellation.visible')}</h4>
+                  <ul class="hud-list" aria-label={t('constellation.visible')}>
+                    {#each renderedConstellations as constellation}
+                      <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
+                        <button
+                          type="button"
+                          class="hud-list-row"
+                          class:is-selected={viewState.selectedConstellation === constellation.id}
+                          on:click={() => handleSelectConstellation(constellation.id)}
+                          data-constellation-id={constellation.id}
+                        >
+                          <span class="row-abbr">[{constellation.abbreviation}]</span>
+                          <span class="row-name">{constellationName(constellation)}</span>
+                          <span class="row-leader"></span>
+                          <span class="row-count">{constellation.stars.length}★ <span class="sr-only">{t('constellation.stars')}</span></span>
+                        </button>
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
+              {/if}
             {:else}
               <!-- Location/time HUD readout -->
               <div class="hud-readout">
@@ -1067,7 +1102,7 @@
         <input type="checkbox" bind:checked={autoRotateOn} disabled={reducedMotion} />
         {t('constellation.autoRotate')}
       </label>
-      {#if alternateCatalog?.referenceCatalog}
+      {#if alternateCatalog?.referenceCatalog && !observerWebglFailed}
         <label class="hud-setting">
           <input
             type="checkbox"
@@ -1077,7 +1112,7 @@
           {t('constellation.observer.referenceToggle')}
         </label>
       {/if}
-      {#if alternateCatalog}
+      {#if alternateCatalog && !observerWebglFailed}
         <div class="observer-actions">
           <button
             type="button"

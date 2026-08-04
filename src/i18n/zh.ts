@@ -755,22 +755,22 @@ export const zh = {
     // notices for the ?observer=<system> view. The findSolAnnouncement
     // template carries {ra}/{dec}/{distance} placeholders the wrapper
     // interpolates with the synthetic Sol star's coordinates.
-    "constellation.observer.label": "觀測者",
-    "constellation.observer.distanceFromSol": "距離太陽",
-    "constellation.observer.frameSystemBarycenter": "座標框架：系統質心",
-    "constellation.observer.viewDirection": "視線方向",
-    "constellation.observer.referenceToggle": "顯示地球／太陽參考層",
-    "constellation.observer.findSol": "尋找太陽",
+    "constellation.observer.label": "观测者",
+    "constellation.observer.distanceFromSol": "距离太阳",
+    "constellation.observer.frameSystemBarycenter": "坐标框架：系统质心",
+    "constellation.observer.viewDirection": "视线方向",
+    "constellation.observer.referenceToggle": "显示地球／太阳参考层",
+    "constellation.observer.findSol": "寻找太阳",
     "constellation.observer.findSolAnnouncement":
-        "太陽：赤經 {ra} 小時，赤緯 {dec}°，距離 {distance} 光年。",
-    "constellation.observer.findSolUnavailable": "無法將視角移至太陽。",
-    "constellation.observer.returnToSol": "返回地球／太陽",
+        "太阳：赤经 {ra} 小时，赤纬 {dec}°，距离 {distance} 光年。",
+    "constellation.observer.findSolUnavailable": "无法将视角移至太阳。",
+    "constellation.observer.returnToSol": "返回地球／太阳",
     "constellation.observer.education":
-        "星座連線保留源自地球文化的參考形狀；此觀測位置所顯示的恆星亮度僅為近似值。",
+        "星座连线保留源自地球文化的参考形状；此观测位置所显示的恒星亮度仅为近似值。",
     "constellation.observer.fallback":
-        "無法使用此觀測者；目前顯示地球／太陽視角。",
-    "constellation.observer.omissions": "部分星表恆星無法顯示。",
-    "constellation.observer.webglUnavailable": "此觀測者視角需要 WebGL。",
+        "无法使用此观测者；目前显示地球／太阳视角。",
+    "constellation.observer.omissions": "部分星表恒星无法显示。",
+    "constellation.observer.webglUnavailable": "此观测者视角需要 WebGL。",
 
     // Terrain explorer navigation
     "terrain.navigationControls": "导航控制",
