@@ -9,7 +9,7 @@
   import { constellations, getVisibleConstellations } from "@/data/constellations";
   import { getCurrentLocation, isConstellationVisible, formatCoordinates, celestialToSphere, azimuthToCardinalKey } from "@/utils/astronomy";
   import type { ConstellationViewState, SkyConfiguration, LocationData, Constellation } from "@/types/constellation";
-  import { parseObserverQuery, resolveObserverState, type ResolvedObserverState } from "@/lib/constellation/observerRouteState";
+  import { parseObserverQuery, resolveObserverState, serializeObserverQuery, type ResolvedObserverState } from "@/lib/constellation/observerRouteState";
   import { prepareAlternateObserverCatalog, type AlternateObserverCatalogOutput, type PreparedConstellation } from "@/lib/constellation/observerCatalog";
   import { OBSERVER_SOURCE_STAR_IDS } from "@/lib/constellation/observerSourceStarIds";
   import { localGalaxyData } from "@/lib/galaxy/LocalGalaxy";
@@ -74,6 +74,10 @@
   let referenceVisible = false;
   let observerNoticeKey: string | null = null;
   let hasUnexpectedOmissions = false;
+  // True only when a GENUINE alternate observer mode (preparation succeeded)
+  // hits a WebGL failure. In that case the Earth-oriented 2D canvas fallback
+  // must NOT be created and the observer-specific WebGL-required UI is shown.
+  let observerWebglFailed = false;
   let solAnnouncement = "";
 
   // UI state
@@ -339,6 +343,13 @@
     alternateCatalog = preparation.value;
     renderedConstellations = preparation.value.primaryCatalog.constellations;
 
+    // Surface omissions non-blockingly: expected observer-source-star
+    // exclusions are silent, anything else (coordinate-transform-failed,
+    // non-finite-metadata) shows the one static omission notice. No count.
+    hasUnexpectedOmissions = alternateCatalog.omittedStars.some(
+      (omitted) => omitted.reason.code !== "observer-source-star-excluded",
+    );
+
     debugInfo = "Initializing alternate observer renderer...";
 
     try {
@@ -359,6 +370,11 @@
     } catch (rendererError) {
       console.warn('WebGL renderer failed in alternate observer mode:', rendererError);
       webglSupported = false;
+      // Genuine alternate mode whose WebGL path failed: no Earth-oriented 2D
+      // canvas fallback and no degrade to the Sol legacy path — the
+      // observer-specific WebGL-required UI (with Return to Earth/Sol) is
+      // shown instead.
+      observerWebglFailed = true;
     }
 
     return "ready";
@@ -483,6 +499,12 @@
 
   const handleBackToMenu = () => {
     window.location.href = routes.home(currentLang);
+  };
+
+  // Return to the Earth/Sol view from an alternate observer whose WebGL path
+  // failed: drop the observer query parameter (sol serializes to "").
+  const handleReturnToSol = () => {
+    window.location.href = `${window.location.pathname}${serializeObserverQuery("sol")}`;
   };
 
   const handleSelectConstellation = (constellationId: string) => {
@@ -678,6 +700,21 @@
               <span class="hud-panel-tick"></span>
             </div>
 
+            <!-- Observer-mode notices: the generic fallback (route-level or
+                 fatal preparation) and the static unexpected-omissions
+                 notice. Both surface non-blockingly inside the HUD panel;
+                 the omission notice never shows a count. -->
+            {#if observerNoticeKey || hasUnexpectedOmissions}
+              <div class="observer-notice" role="status">
+                {#if observerNoticeKey}
+                  <p class="observer-notice-line">{t(observerNoticeKey)}</p>
+                {/if}
+                {#if hasUnexpectedOmissions}
+                  <p class="observer-notice-line">{t('constellation.observer.omissions')}</p>
+                {/if}
+              </div>
+            {/if}
+
             <!-- Location/time HUD readout -->
             <div class="hud-readout">
               <div class="readout-row">
@@ -814,26 +851,40 @@
           <div class="mb-4">
             <div class="text-amber-400 text-4xl">⚠️</div>
           </div>
-          <h2 class="text-xl font-semibold mb-2 text-amber-400">{t('constellation.webglNotAvailable')}</h2>
-          <p class="text-sm text-gray-300 mb-4">
-            {t('constellation.webglDescription')}
-          </p>
-          <div class="text-xs text-gray-400 mb-4">
-            <p class="mb-2">{t('constellation.trySolutions')}</p>
-            <ul class="text-left list-disc list-inside space-y-1">
-              <li>{t('constellation.solutionUpdateBrowser')}</li>
-              <li>{t('constellation.solutionEnableHardwareAcceleration')}</li>
-              <li>{t('constellation.solutionTryDifferentBrowser')}</li>
-            </ul>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            on:click={handleBackToMenu}
-            className="text-white border-white/30 hover:bg-white/10"
-          >
-            {t('constellation.return')}
-          </Button>
+          {#if observerWebglFailed}
+            <!-- Genuine alternate mode whose WebGL path failed: no Earth 2D
+                 fallback — show WebGL-required copy and Return to Earth/Sol. -->
+            <h2 class="text-xl font-semibold mb-2 text-amber-400">{t('constellation.observer.webglUnavailable')}</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              on:click={handleReturnToSol}
+              className="text-white border-white/30 hover:bg-white/10"
+            >
+              {t('constellation.observer.returnToSol')}
+            </Button>
+          {:else}
+            <h2 class="text-xl font-semibold mb-2 text-amber-400">{t('constellation.webglNotAvailable')}</h2>
+            <p class="text-sm text-gray-300 mb-4">
+              {t('constellation.webglDescription')}
+            </p>
+            <div class="text-xs text-gray-400 mb-4">
+              <p class="mb-2">{t('constellation.trySolutions')}</p>
+              <ul class="text-left list-disc list-inside space-y-1">
+                <li>{t('constellation.solutionUpdateBrowser')}</li>
+                <li>{t('constellation.solutionEnableHardwareAcceleration')}</li>
+                <li>{t('constellation.solutionTryDifferentBrowser')}</li>
+              </ul>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              on:click={handleBackToMenu}
+              className="text-white border-white/30 hover:bg-white/10"
+            >
+              {t('constellation.return')}
+            </Button>
+          {/if}
         </div>
       </div>
     </div>
@@ -1007,4 +1058,17 @@
 
   .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
   .hud-setting.is-disabled { opacity: 0.5; }
+
+  .observer-notice {
+    margin-top: 10px;
+    padding: 8px 10px;
+    font-family: var(--hud-font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
+    color: var(--hud-amber);
+    border: 1px solid var(--hud-amber);
+    background: color-mix(in srgb, var(--hud-void) 60%, transparent);
+  }
+  .observer-notice-line { margin: 0; }
 </style>
