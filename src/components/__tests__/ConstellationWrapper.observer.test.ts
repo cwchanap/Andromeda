@@ -9,6 +9,7 @@ import type {
 } from "@/lib/constellation/observerCatalog";
 import type { ResolvedObserverState } from "@/lib/constellation/observerRouteState";
 import { routes } from "@/i18n/routes";
+import { localGalaxyData } from "@/lib/galaxy/LocalGalaxy";
 
 // Observer HUD strings the wrapper must render. The i18n dictionaries wire
 // these keys in a later task; until then the tests inject the exact strings
@@ -26,7 +27,7 @@ const OBSERVER_TRANSLATIONS: Record<string, string> = {
     "constellation.observer.returnToSol": "Return to Earth/Sol",
     // Observer ACTION copy (Task 4). The announcement template carries the
     // {ra}/{dec}/{distance} placeholders the wrapper's t() interpolates.
-    "constellation.observer.referenceToggle": "Show reference stars",
+    "constellation.observer.referenceToggle": "Show Earth/Sol reference",
     "constellation.observer.findSol": "Find Sol",
     "constellation.observer.findSolAnnouncement":
         "Sol: right ascension {ra} h, declination {dec}°, distance {distance} ly.",
@@ -363,6 +364,12 @@ describe("ConstellationWrapper observer mode", () => {
         expect(prepareAlternateObserverCatalogMock.mock.calls[0][0]).toBe(
             fullConstellations,
         );
+        // The forwarded observer position is a plain copy, not the source
+        // system.position reference (the catalog boundary must not alias
+        // mutable Three.js state).
+        expect(prepareAlternateObserverCatalogMock.mock.calls[0][1]).not.toBe(
+            localGalaxyData.starSystems[0].position,
+        );
 
         // Alternate mode must never request geolocation or visibility filtering.
         expect(getCurrentLocationMock).not.toHaveBeenCalled();
@@ -664,7 +671,11 @@ describe("ConstellationWrapper observer WebGL gating", () => {
                 ) {
                     return null;
                 }
-                return originalGetContext(contextId, ...args);
+                return originalGetContext.call(
+                    HTMLCanvasElement.prototype,
+                    contextId,
+                    ...args,
+                );
             },
         );
         window.history.replaceState({}, "", "/?observer=alpha-centauri");
@@ -840,7 +851,7 @@ describe("ConstellationWrapper observer actions", () => {
         ).find((checkbox) =>
             checkbox
                 .closest("label")
-                ?.textContent?.includes("Show reference stars"),
+                ?.textContent?.includes("Show Earth/Sol reference"),
         );
         expect(referenceCheckbox).not.toBeUndefined();
         expect((referenceCheckbox as HTMLInputElement).checked).toBe(false);
@@ -866,7 +877,7 @@ describe("ConstellationWrapper observer actions", () => {
         ).find((checkbox) =>
             checkbox
                 .closest("label")
-                ?.textContent?.includes("Show reference stars"),
+                ?.textContent?.includes("Show Earth/Sol reference"),
         ) as HTMLInputElement;
 
         const preparationCalls =
@@ -1027,6 +1038,10 @@ describe("ConstellationWrapper observer actions", () => {
             pathname: "/",
             search: "?observer=alpha-centauri",
         };
+        const originalLocationDescriptor = Object.getOwnPropertyDescriptor(
+            window,
+            "location",
+        );
         Object.defineProperty(window, "location", {
             configurable: true,
             value: stubLocation,
@@ -1045,7 +1060,13 @@ describe("ConstellationWrapper observer actions", () => {
             expect(stubLocation.href).toBe(routes.constellation("en"));
             expect(stubLocation.href).not.toContain("observer=sol");
         } finally {
-            delete (window as unknown as Record<string, unknown>).location;
+            if (originalLocationDescriptor) {
+                Object.defineProperty(
+                    window,
+                    "location",
+                    originalLocationDescriptor,
+                );
+            }
         }
     });
 });
@@ -1067,19 +1088,8 @@ describe("ConstellationWrapper observer HUD", () => {
     const EDUCATION_COPY =
         "Constellation lines preserve Earth cultural reference shapes; star brightness is approximate for this observer.";
 
-    // Captured before the Return-navigation test shadows window.location (and
-    // deletes it on teardown); restored per-test so renders can read it.
-    const jsdomLocation = window.location;
-
     beforeEach(() => {
         vi.clearAllMocks();
-        if (!window.location) {
-            Object.defineProperty(window, "location", {
-                configurable: true,
-                writable: true,
-                value: jsdomLocation,
-            });
-        }
     });
 
     const mountAlternateHud = (
