@@ -707,13 +707,13 @@ export class ConstellationCatalogLayer {
 
         if (this.pointsInternal) {
             this.pointsInternal.geometry.dispose();
-            (this.pointsInternal.material as { dispose: () => void }).dispose();
+            this.disposeMaterial(this.pointsInternal.material);
         }
 
         for (const line of this.lineHitObjectsInternal) {
             const lineSegments = line as THREE.LineSegments;
             this.disposeGeometry(lineSegments.geometry);
-            (lineSegments.material as { dispose: () => void }).dispose();
+            this.disposeMaterial(lineSegments.material);
         }
 
         // Marker groups own their reticle mesh and ray line segments.
@@ -1087,12 +1087,27 @@ export class ConstellationCatalogLayer {
             );
         }
         if (withResources.material) {
-            (withResources.material as { dispose: () => void }).dispose();
+            this.disposeMaterial(withResources.material);
         }
         // Real Object3D always owns a children array; the test mock for
         // LineSegments does not, so default defensively.
         for (const child of object.children ?? []) {
             this.disposeObjectTree(child);
+        }
+    }
+
+    /**
+     * Disposes a material that may be a single material or an array of
+     * materials. Three.js allows `Object3D.material` to be either; casting to
+     * `{ dispose }` and calling it on an array throws (arrays have no
+     * `dispose`), which would abort disposal partway through and leave later
+     * resources undisposed.
+     */
+    private disposeMaterial(material: THREE.Material | THREE.Material[]): void {
+        if (Array.isArray(material)) {
+            for (const item of material) item.dispose();
+        } else {
+            material.dispose();
         }
     }
 

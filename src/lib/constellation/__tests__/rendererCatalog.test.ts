@@ -171,6 +171,20 @@ describe("adaptLegacyCatalog", () => {
         expect(adapted.constellations[0].lines).toEqual([[0, 1]]);
     });
 
+    it("skips a non-array runtime line value (null) before .length dereference", () => {
+        const constellation = makeLegacyConstellation({
+            stars: [makeLegacyStar({ id: "a" }), makeLegacyStar({ id: "b" })],
+            // A deserialized runtime null must be skipped, not throw on
+            // .length. Cast through unknown to inject the malformed value
+            // past the typed lines field.
+            lines: [null as unknown as number[], [0, 1]],
+        });
+
+        const adapted = adaptLegacyCatalog([], [constellation]);
+
+        expect(adapted.constellations[0].lines).toEqual([[0, 1]]);
+    });
+
     it("preserves legacy star object identity and top-level order", () => {
         const shared = makeLegacyStar({ id: "shared" });
         const constellation = makeLegacyConstellation({
