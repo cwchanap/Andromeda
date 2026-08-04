@@ -61,6 +61,8 @@ const {
     focusStarByIdMock,
     tweenCameraToMock,
     setSelectedMock,
+    getCameraAzimuthMock,
+    getCameraElevationMock,
     rendererCallbacks,
     fullConstellations,
     preparedPrimaryCatalog,
@@ -186,6 +188,12 @@ const {
         focusStarByIdMock: vi.fn(),
         tweenCameraToMock: vi.fn(),
         setSelectedMock: vi.fn(),
+        // HUD tick camera readouts. The default implementations persist
+        // through vi.clearAllMocks (clearing never removes implementations),
+        // so every existing HUD test keeps the deterministic 0°/0° baseline
+        // while the direction-readout test overrides then restores them.
+        getCameraAzimuthMock: vi.fn(() => 0),
+        getCameraElevationMock: vi.fn(() => 0),
         // Captures the interaction callbacks the wrapper hands to the mocked
         // renderer constructor so tests can drive onConstellationClick.
         rendererCallbacks: {
@@ -210,8 +218,8 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         setHovered: vi.fn(),
         tweenCameraTo: tweenCameraToMock,
         worldToScreen: vi.fn(() => ({ x: 0, y: 0, visible: false })),
-        getCameraAzimuth: vi.fn(() => 0),
-        getCameraElevation: vi.fn(() => 0),
+        getCameraAzimuth: getCameraAzimuthMock,
+        getCameraElevation: getCameraElevationMock,
         setLabelsVisible: vi.fn(),
         setAutoRotate: vi.fn(),
         setAutoRotateSpeed: vi.fn(),
@@ -636,6 +644,67 @@ describe("ConstellationWrapper observer omissions", () => {
 });
 
 describe("ConstellationWrapper observer WebGL gating", () => {
+    it("WebGL-unsupported device with a valid observer shows the observer WebGL UI and skips Sol mode entirely", async () => {
+        // Stub the canvas WebGL probe so the REAL checkWebGLSupport() returns
+        // false, as it would on an unsupported device. The probe happens
+        // BEFORE the observer-mode branch, so this exercises the preflight
+        // gate itself (the sibling test below covers the post-preparation
+        // renderer-init failure). 2d contexts are delegated to the test
+        // setup's canvas mock so unrelated paths stay intact.
+        const originalGetContext = HTMLCanvasElement.prototype.getContext;
+        const getContextSpy = vi.spyOn(
+            HTMLCanvasElement.prototype,
+            "getContext",
+        );
+        getContextSpy.mockImplementation(
+            (contextId: string, ...args: unknown[]) => {
+                if (
+                    contextId === "webgl" ||
+                    contextId === "experimental-webgl"
+                ) {
+                    return null;
+                }
+                return originalGetContext(contextId, ...args);
+            },
+        );
+        window.history.replaceState({}, "", "/?observer=alpha-centauri");
+
+        try {
+            const { container, queryByText } = render(ConstellationWrapper, {
+                translations: OBSERVER_TRANSLATIONS,
+            });
+
+            // The observer-specific WebGL-required UI shows (localized copy
+            // + Return to Earth/Sol) — NOT the generic Earth WebGL overlay.
+            await waitFor(() => {
+                expect(
+                    queryByText(
+                        "WebGL is required to view the sky from this observer.",
+                    ),
+                ).not.toBeNull();
+            });
+            expect(queryByText("Return to Earth/Sol")).not.toBeNull();
+            // The generic Earth WebGL copy (raw key: the injected dictionary
+            // has no constellation.webglNotAvailable) never renders.
+            expect(queryByText("constellation.webglNotAvailable")).toBeNull();
+
+            // No Earth 2D canvas fallback is created...
+            expect(container.querySelectorAll("canvas")).toHaveLength(0);
+            // ...and the observer-specific failure path does NOT run Sol
+            // mode: no geolocation, no visibility filtering, no legacy
+            // renderer init, and no catalog preparation.
+            expect(getCurrentLocationMock).not.toHaveBeenCalled();
+            expect(getVisibleConstellationsMock).not.toHaveBeenCalled();
+            expect(initializeMock).not.toHaveBeenCalled();
+            expect(prepareAlternateObserverCatalogMock).not.toHaveBeenCalled();
+            expect(initializePreparedCatalogsMock).not.toHaveBeenCalled();
+            // Not a fallback-to-Sol, so no generic fallback notice.
+            expect(queryByText(FALLBACK_NOTICE)).toBeNull();
+        } finally {
+            getContextSpy.mockRestore();
+        }
+    });
+
     it("alternate mode whose WebGL path fails shows WebGL-required copy and NO Earth 2D fallback", async () => {
         prepareAlternateObserverCatalogMock.mockReturnValue({
             ok: true,
@@ -1091,6 +1160,43 @@ describe("ConstellationWrapper observer HUD", () => {
             expect(queryByText("Orion description")).not.toBeNull();
         });
         expect(container.querySelector(".hud-month-strip")).toBeNull();
+    });
+
+    it("alternate mode renders the numeric azimuth/elevation view direction without cardinal wording", async () => {
+        // The HUD tick reads the camera once (synchronously on init; the
+        // test rAF stub never fires the loop), so the readout reflects the
+        // mocked renderer's azimuth/elevation deterministically.
+        getCameraAzimuthMock.mockReturnValue(122.5);
+        getCameraElevationMock.mockReturnValue(35);
+
+        try {
+            const { container } = mountAlternateHud(
+                focusCatalog,
+                preparedReferenceCatalog,
+            );
+            await waitFor(() => {
+                expect(container.querySelector(".hud-panel")).not.toBeNull();
+            });
+
+            // The neutral direction readout renders the numeric
+            // azimuth/elevation from the live HUD tick — no "—" placeholder.
+            const directionRow = Array.from(
+                container.querySelectorAll(".readout-row"),
+            ).find((row) => row.textContent?.includes(DIRECTION_LABEL));
+            expect(directionRow).not.toBeNull();
+            const valueSpan = directionRow?.querySelector(".readout-value");
+            // Math.round(122.5) % 360 → 123; elevation always signed → +35°.
+            expect(valueSpan?.textContent).toBe("123° +35°");
+
+            // Cardinal wording stays hidden in alternate mode: the compass
+            // readout (the only cardinal-bearing element) is absent, and the
+            // cardinalized compass string never appears anywhere.
+            expect(container.querySelector(".compass-readout")).toBeNull();
+            expect(container.textContent).not.toContain("N (123°)");
+        } finally {
+            getCameraAzimuthMock.mockReturnValue(0);
+            getCameraElevationMock.mockReturnValue(0);
+        }
     });
 
     it("alternate mode falls back to systems.unknown when the system name key is missing", async () => {

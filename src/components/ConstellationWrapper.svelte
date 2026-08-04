@@ -329,7 +329,10 @@
 
     const preparation = prepareAlternateObserverCatalog(
       constellations,
-      system.position,
+      // Plain-copy the position: StarSystemData.position is a Three.js
+      // Vector3 (a mutable class instance), and the catalog preparation is
+      // a deliberately pure data boundary that only reads x/y/z.
+      { x: system.position.x, y: system.position.y, z: system.position.z },
       {
         includeReferenceCatalog: true,
         observerSourceStarIds: OBSERVER_SOURCE_STAR_IDS[system.id] ?? [],
@@ -383,9 +386,34 @@
 
   async function initConstellationView(): Promise<void> {
     try {
-      // Check WebGL support first
+      // Resolve the current observer once per mount, before the WebGL gate:
+      // a valid alternate observer whose WebGL is unsupported must surface
+      // the observer-specific WebGL-required UI (with Return to Earth/Sol) —
+      // never the generic Earth overlay or the Earth 2D canvas fallback.
+      resolvedObserverState = resolveCurrentObserver();
+
+      // Check WebGL support next
       webglSupported = checkWebGLSupport();
       if (!webglSupported) {
+        // A GENUINE alternate observer (kind "system" whose system is found
+        // in the local galaxy data) gets the observer-specific WebGL failure
+        // UI: no geolocation, no getVisibleConstellations, no Earth 2D
+        // canvas, and no degrade to the Sol legacy path. Every other case
+        // (Sol mode, route fallbacks, defensive miss) keeps the existing
+        // generic Earth WebGL overlay via the throw below.
+        const system = resolvedObserverState.kind === "system"
+          ? localGalaxyData.starSystems.find(
+              (candidate) => candidate.id === resolvedObserverState.observerId,
+            ) ?? null
+          : null;
+        if (system) {
+          observerSystem = system;
+          observerWebglFailed = true;
+          loading = false;
+          viewState.loading = false;
+          debugInfo = "WebGL is not supported by your browser or graphics card";
+          return;
+        }
         throw new Error("WebGL is not supported by your browser or graphics card");
       }
 
@@ -400,10 +428,6 @@
       if (!container) {
         throw new Error("Container element not found");
       }
-
-      // Resolve the observer once, before any geolocation request, then
-      // branch into the matching initialization mode.
-      resolvedObserverState = resolveCurrentObserver();
 
       if (resolvedObserverState.kind === "system") {
         // Defensive second lookup: the resolver and this lookup share the
@@ -639,11 +663,15 @@
 
   // Alternate-observer HUD state (HPA-435). The HUD panel branches into the
   // observer readout only for a GENUINE alternate mode: a resolved system
-  // observer whose preparation succeeded (alternateCatalog set). Every
-  // fallback-to-Sol path leaves alternateCatalog null, so the legacy Earth
-  // HUD (geoLock/UTC/compass/View from Earth/month strip) stays untouched.
+  // observer whose preparation succeeded (alternateCatalog set), or a genuine
+  // alternate observer whose WebGL preflight failed (observerWebglFailed —
+  // no catalog exists, but the Earth readout must still not leak behind the
+  // observer-specific WebGL overlay). Every fallback-to-Sol path leaves both
+  // false, so the legacy Earth HUD (geoLock/UTC/compass/View from Earth/month
+  // strip) stays untouched.
   $: observerHudActive =
-    resolvedObserverState.kind === "system" && alternateCatalog !== null;
+    resolvedObserverState.kind === "system" &&
+    (alternateCatalog !== null || observerWebglFailed);
 
   // Localized observer system name via the systems.${id}.name fallback
   // pattern used elsewhere in the codebase: if t() returns the raw key (no
@@ -844,7 +872,7 @@
                 <div class="readout-row">
                   <span class="readout-label">{t('constellation.observer.viewDirection')}</span>
                   <span></span>
-                  <span class="readout-value">—</span>
+                  <span class="readout-value">{facingDegDisplay}° {facingElevDisplay}</span>
                 </div>
               </div>
               <p class="view-from-earth">{t('constellation.observer.education')}</p>
