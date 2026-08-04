@@ -777,6 +777,30 @@ export const ja = {
     "constellation.stars": "個の星",
     "constellation.mag": "等級",
 
+    // Alternate observer HUD (HPA-435): localized readout, actions, and
+    // notices for the ?observer=<system> view. The findSolAnnouncement
+    // template carries {ra}/{dec}/{distance} placeholders the wrapper
+    // interpolates with the synthetic Sol star's coordinates.
+    "constellation.observer.label": "観測者",
+    "constellation.observer.distanceFromSol": "太陽からの距離",
+    "constellation.observer.frameSystemBarycenter": "座標系：系の重心",
+    "constellation.observer.viewDirection": "視線方向",
+    "constellation.observer.referenceToggle": "地球／太陽の参照レイヤーを表示",
+    "constellation.observer.findSol": "太陽を探す",
+    "constellation.observer.findSolAnnouncement":
+        "太陽：赤経 {ra} 時、赤緯 {dec}°、距離 {distance} 光年。",
+    "constellation.observer.findSolUnavailable":
+        "太陽に視点を合わせられませんでした。",
+    "constellation.observer.returnToSol": "地球／太陽へ戻る",
+    "constellation.observer.education":
+        "星座線は地球文化に由来する参照形状を保っています。この観測地点での恒星の明るさは概算です。",
+    "constellation.observer.fallback":
+        "この観測者は利用できないため、地球／太陽からの空を表示しています。",
+    "constellation.observer.omissions":
+        "一部の星表データを表示できませんでした。",
+    "constellation.observer.webglUnavailable":
+        "この観測者表示には WebGL が必要です。",
+
     // Terrain explorer navigation
     "terrain.navigationControls": "ナビゲーション操作",
     "terrain.pan": "パン",

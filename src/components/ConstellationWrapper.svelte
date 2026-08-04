@@ -637,6 +637,33 @@
     ? viewState.skyConfig.dateTime.toISOString().slice(0, 16).replace("T", " ")
     : "";
 
+  // Alternate-observer HUD state (HPA-435). The HUD panel branches into the
+  // observer readout only for a GENUINE alternate mode: a resolved system
+  // observer whose preparation succeeded (alternateCatalog set). Every
+  // fallback-to-Sol path leaves alternateCatalog null, so the legacy Earth
+  // HUD (geoLock/UTC/compass/View from Earth/month strip) stays untouched.
+  $: observerHudActive =
+    resolvedObserverState.kind === "system" && alternateCatalog !== null;
+
+  // Localized observer system name via the systems.${id}.name fallback
+  // pattern used elsewhere in the codebase: if t() returns the raw key (no
+  // translation), fall back to the generic unknown-system copy.
+  const resolveSystemName = (system: StarSystemData): string => {
+    const key = `systems.${system.id}.name`;
+    const translated = t(key);
+    return !translated || translated === key
+      ? t("systems.unknown")
+      : translated;
+  };
+  $: observerSystemName = observerSystem
+    ? resolveSystemName(observerSystem)
+    : "";
+
+  // Locale-aware distance readout, e.g. "4.247 ly" (en) or "4.247 光年" (ja).
+  $: observerDistanceReadout = observerSystem
+    ? `${observerSystem.distanceFromEarth.toLocaleString(currentLang)} ${t("unit.lightYears")}`
+    : "";
+
   // Check WebGL support
   function checkWebGLSupport(): boolean {
     try {
@@ -791,38 +818,57 @@
               </div>
             {/if}
 
-            <!-- Location/time HUD readout -->
-            <div class="hud-readout">
-              <div class="readout-row">
-                <span class="readout-label">{t('constellation.geoLock')}</span>
-                <span class="readout-blink" data-state={viewState.locationPermissionGranted ? "live" : "fallback"}></span>
-                <span class="readout-value">
-                  {#if viewState.skyConfig}
-                    {Math.abs(viewState.skyConfig.location.latitude).toFixed(4)}°{viewState.skyConfig.location.latitude >= 0 ? "N" : "S"}
-                    {Math.abs(viewState.skyConfig.location.longitude).toFixed(4)}°{viewState.skyConfig.location.longitude >= 0 ? "E" : "W"}
-                  {/if}
-                </span>
+            <!-- Alternate observer HUD (genuine alternate mode): localized
+                 observer readout (name / distance / frame / neutral
+                 direction), education copy, Return to Earth/Sol, and the
+                 prepared constellation catalog. The Earth-geolocated
+                 readout, compass/cardinal wording, "View from Earth" note,
+                 and month strip are never rendered here. -->
+            {#if observerHudActive}
+              <div class="hud-readout observer-readout">
+                <div class="readout-row">
+                  <span class="readout-label">{t('constellation.observer.label')}</span>
+                  <span></span>
+                  <span class="readout-value">{observerSystemName}</span>
+                </div>
+                <div class="readout-row">
+                  <span class="readout-label">{t('constellation.observer.distanceFromSol')}</span>
+                  <span></span>
+                  <span class="readout-value">{observerDistanceReadout}</span>
+                </div>
+                <div class="readout-row">
+                  <span class="readout-label">{t('constellation.observer.frameSystemBarycenter')}</span>
+                  <span></span>
+                  <span class="readout-value">—</span>
+                </div>
+                <div class="readout-row">
+                  <span class="readout-label">{t('constellation.observer.viewDirection')}</span>
+                  <span></span>
+                  <span class="readout-value">—</span>
+                </div>
               </div>
-              <div class="readout-row">
-                <span class="readout-label">{t('constellation.utc')}</span>
-                <span></span>
-                <span class="readout-value">{utcReadout}</span>
-              </div>
-            </div>
+              <p class="view-from-earth">{t('constellation.observer.education')}</p>
 
-            <!-- Compass / orientation readout -->
-            <div class="compass-readout">
-              <span class="compass-label">{t('constellation.compass')}</span>
-              <span class="compass-value">{facingCardinal} ({facingDegDisplay}°) {facingElevDisplay}</span>
-            </div>
-            <p class="view-from-earth">{t('constellation.viewFromEarth')}</p>
+              {#if !observerWebglFailed}
+                <!-- Return to Earth/Sol lives here for the working observer
+                     HUD. The WebGL-required overlay carries its own Return
+                     button, so it is suppressed here to keep one copy. -->
+                <div class="observer-actions">
+                  <button
+                    type="button"
+                    class="observer-action-btn"
+                    on:click={returnToSol}
+                  >
+                    {t('constellation.observer.returnToSol')}
+                  </button>
+                </div>
+              {/if}
 
-            <!-- Visible constellations -->
-            <div>
-              <h4 class="hud-section-label">{t('constellation.visible')}</h4>
-              <ul class="hud-list" aria-label={t('constellation.visible')}>
-                {#each viewState.visibleConstellations as constellationId}
-                  {#each constellations.filter(c => c.id === constellationId) as constellation}
+              <!-- Prepared constellation catalog for this observer -->
+              <div>
+                <h4 class="hud-section-label">{t('constellation.visible')}</h4>
+                <ul class="hud-list" aria-label={t('constellation.visible')}>
+                  {#each renderedConstellations as constellation}
                     <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
                       <button
                         type="button"
@@ -838,36 +884,106 @@
                       </button>
                     </li>
                   {/each}
-                {/each}
-              </ul>
-            </div>
+                </ul>
+              </div>
+            {:else}
+              <!-- Location/time HUD readout -->
+              <div class="hud-readout">
+                <div class="readout-row">
+                  <span class="readout-label">{t('constellation.geoLock')}</span>
+                  <span class="readout-blink" data-state={viewState.locationPermissionGranted ? "live" : "fallback"}></span>
+                  <span class="readout-value">
+                    {#if viewState.skyConfig}
+                      {Math.abs(viewState.skyConfig.location.latitude).toFixed(4)}°{viewState.skyConfig.location.latitude >= 0 ? "N" : "S"}
+                      {Math.abs(viewState.skyConfig.location.longitude).toFixed(4)}°{viewState.skyConfig.location.longitude >= 0 ? "E" : "W"}
+                    {/if}
+                  </span>
+                </div>
+                <div class="readout-row">
+                  <span class="readout-label">{t('constellation.utc')}</span>
+                  <span></span>
+                  <span class="readout-value">{utcReadout}</span>
+                </div>
+              </div>
+
+              <!-- Compass / orientation readout -->
+              <div class="compass-readout">
+                <span class="compass-label">{t('constellation.compass')}</span>
+                <span class="compass-value">{facingCardinal} ({facingDegDisplay}°) {facingElevDisplay}</span>
+              </div>
+              <p class="view-from-earth">{t('constellation.viewFromEarth')}</p>
+
+              <!-- Visible constellations -->
+              <div>
+                <h4 class="hud-section-label">{t('constellation.visible')}</h4>
+                <ul class="hud-list" aria-label={t('constellation.visible')}>
+                  {#each viewState.visibleConstellations as constellationId}
+                    {#each constellations.filter(c => c.id === constellationId) as constellation}
+                      <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
+                        <button
+                          type="button"
+                          class="hud-list-row"
+                          class:is-selected={viewState.selectedConstellation === constellation.id}
+                          on:click={() => handleSelectConstellation(constellation.id)}
+                          data-constellation-id={constellation.id}
+                        >
+                          <span class="row-abbr">[{constellation.abbreviation}]</span>
+                          <span class="row-name">{constellationName(constellation)}</span>
+                          <span class="row-leader"></span>
+                          <span class="row-count">{constellation.stars.length}★ <span class="sr-only">{t('constellation.stars')}</span></span>
+                        </button>
+                      </li>
+                    {/each}
+                  {/each}
+                </ul>
+              </div>
+            {/if}
 
             <!-- Selected constellation info -->
             {#if viewState.selectedConstellation}
-              {#each constellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
-                <div class="hud-details">
-                  <div class="hud-divider">
-                    <span class="hud-divider-diamond"></span>
+              {#if observerHudActive}
+                <!-- Alternate mode: prepared constellation details without
+                     the Earth best-viewing-months strip. -->
+                {#each renderedConstellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
+                  <div class="hud-details">
+                    <div class="hud-divider">
+                      <span class="hud-divider-diamond"></span>
+                    </div>
+                    <h4 class="hud-details-name">
+                      <GlitchText text={constellationName(constellation).toUpperCase()} />
+                    </h4>
+                    <p class="hud-details-desc">{constellationDescription(constellation)}</p>
+                    {#if constellation.mythology}
+                      <p class="hud-details-myth">// {constellationMythology(constellation)}</p>
+                    {/if}
                   </div>
-                  <h4 class="hud-details-name">
-                    <GlitchText text={constellationName(constellation).toUpperCase()} />
-                  </h4>
-                  <p class="hud-details-desc">{constellationDescription(constellation)}</p>
-                  {#if constellation.mythology}
-                    <p class="hud-details-myth">// {constellationMythology(constellation)}</p>
-                  {/if}
-                  <div class="hud-month-strip" aria-label="{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
-                    <span class="sr-only">{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}</span>
-                    {#each Array(12) as _, m}
-                      <div
-                        class="month-cell"
-                        class:is-best={constellation.visibility.bestMonths.includes(m + 1)}
-                        title={new Date(2000, m).toLocaleDateString(currentLang, { month: "short" })}
-                      ></div>
-                    {/each}
+                {/each}
+              {:else}
+                {#each constellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
+                  <div class="hud-details">
+                    <div class="hud-divider">
+                      <span class="hud-divider-diamond"></span>
+                    </div>
+                    <h4 class="hud-details-name">
+                      <GlitchText text={constellationName(constellation).toUpperCase()} />
+                    </h4>
+                    <p class="hud-details-desc">{constellationDescription(constellation)}</p>
+                    {#if constellation.mythology}
+                      <p class="hud-details-myth">// {constellationMythology(constellation)}</p>
+                    {/if}
+                    <div class="hud-month-strip" aria-label="{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
+                      <span class="sr-only">{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}</span>
+                      {#each Array(12) as _, m}
+                        <div
+                          class="month-cell"
+                          class:is-best={constellation.visibility.bestMonths.includes(m + 1)}
+                          title={new Date(2000, m).toLocaleDateString(currentLang, { month: "short" })}
+                        ></div>
+                      {/each}
+                    </div>
                   </div>
-                </div>
-              {/each}
+                {/each}
+              {/if}
             {/if}
           </div>
         </HudFrame>
@@ -1142,6 +1258,12 @@
     align-items: center;
     gap: 8px;
     padding: 2px 0;
+  }
+
+  /* Alternate observer readout carries longer localized labels
+     (e.g. "Frame: System barycenter"), so its label column flexes. */
+  .observer-readout .readout-row {
+    grid-template-columns: 1.25fr 12px 1fr;
   }
 
   .compass-readout {

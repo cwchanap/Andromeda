@@ -751,6 +751,27 @@ export const zh = {
     "constellation.stars": "颗星",
     "constellation.mag": "星等",
 
+    // Alternate observer HUD (HPA-435): localized readout, actions, and
+    // notices for the ?observer=<system> view. The findSolAnnouncement
+    // template carries {ra}/{dec}/{distance} placeholders the wrapper
+    // interpolates with the synthetic Sol star's coordinates.
+    "constellation.observer.label": "觀測者",
+    "constellation.observer.distanceFromSol": "距離太陽",
+    "constellation.observer.frameSystemBarycenter": "座標框架：系統質心",
+    "constellation.observer.viewDirection": "視線方向",
+    "constellation.observer.referenceToggle": "顯示地球／太陽參考層",
+    "constellation.observer.findSol": "尋找太陽",
+    "constellation.observer.findSolAnnouncement":
+        "太陽：赤經 {ra} 小時，赤緯 {dec}°，距離 {distance} 光年。",
+    "constellation.observer.findSolUnavailable": "無法將視角移至太陽。",
+    "constellation.observer.returnToSol": "返回地球／太陽",
+    "constellation.observer.education":
+        "星座連線保留源自地球文化的參考形狀；此觀測位置所顯示的恆星亮度僅為近似值。",
+    "constellation.observer.fallback":
+        "無法使用此觀測者；目前顯示地球／太陽視角。",
+    "constellation.observer.omissions": "部分星表恆星無法顯示。",
+    "constellation.observer.webglUnavailable": "此觀測者視角需要 WebGL。",
+
     // Terrain explorer navigation
     "terrain.navigationControls": "导航控制",
     "terrain.pan": "平移",

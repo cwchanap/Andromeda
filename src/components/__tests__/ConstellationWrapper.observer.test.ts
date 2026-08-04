@@ -980,3 +980,177 @@ describe("ConstellationWrapper observer actions", () => {
         }
     });
 });
+
+describe("ConstellationWrapper observer HUD", () => {
+    // Task 5: the alternate observer HUD renders from the REAL en dictionary
+    // (no translations prop), so these tests pin the actual i18n wiring: the
+    // 13 constellation.observer.* keys, the systems.${id}.name fallback, and
+    // the locale-aware distance readout. URL "/" resolves lang "en".
+    const OBSERVER_LABEL = "Observer";
+    const OBSERVER_NAME = "Alpha Centauri System"; // systems.alpha-centauri.name
+    const DISTANCE_LABEL = "Distance from Sol";
+    const DISTANCE_VALUE = "4.247 ly"; // 4.2465.toLocaleString("en") + " ly"
+    const FRAME_LABEL = "Frame: System barycenter";
+    const DIRECTION_LABEL = "View direction";
+    const REFERENCE_LABEL = "Show Earth/Sol reference";
+    const FIND_SOL_LABEL = "Find Sol";
+    const RETURN_LABEL = "Return to Earth/Sol";
+    const EDUCATION_COPY =
+        "Constellation lines preserve Earth cultural reference shapes; star brightness is approximate for this observer.";
+
+    // Captured before the Return-navigation test shadows window.location (and
+    // deletes it on teardown); restored per-test so renders can read it.
+    const jsdomLocation = window.location;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        if (!window.location) {
+            Object.defineProperty(window, "location", {
+                configurable: true,
+                writable: true,
+                value: jsdomLocation,
+            });
+        }
+    });
+
+    const mountAlternateHud = (
+        primaryCatalog: PreparedConstellationCatalog,
+        referenceCatalog: PreparedConstellationCatalog | undefined,
+    ) => {
+        prepareAlternateObserverCatalogMock.mockReturnValue({
+            ok: true,
+            value: {
+                primaryCatalog,
+                referenceCatalog,
+                omittedStars: [],
+            },
+        });
+        window.history.replaceState({}, "", "/?observer=alpha-centauri");
+        return render(ConstellationWrapper);
+    };
+
+    const openSettings = (container: HTMLElement) => {
+        fireEvent.click(
+            container.querySelector('button[aria-label="Settings"]')!,
+        );
+    };
+
+    it("alternate mode shows the localized observer HUD and hides the Earth HUD", async () => {
+        const { container, queryByText } = mountAlternateHud(
+            focusCatalog,
+            preparedReferenceCatalog,
+        );
+        await waitFor(() => {
+            expect(container.querySelector(".hud-panel")).not.toBeNull();
+        });
+
+        // Observer readout: localized system name, locale-aware distance,
+        // the combined frame string, and the neutral direction label.
+        expect(queryByText(OBSERVER_LABEL)).not.toBeNull();
+        expect(queryByText(OBSERVER_NAME)).not.toBeNull();
+        expect(queryByText(DISTANCE_LABEL)).not.toBeNull();
+        expect(container.textContent).toContain(DISTANCE_VALUE);
+        expect(queryByText(FRAME_LABEL)).not.toBeNull();
+        expect(queryByText(DIRECTION_LABEL)).not.toBeNull();
+        // Education copy renders visibly.
+        expect(queryByText(EDUCATION_COPY)).not.toBeNull();
+        // The Return to Earth/Sol action lives in the alternate HUD panel.
+        expect(queryByText(RETURN_LABEL)).not.toBeNull();
+
+        // The reference checkbox and Find Sol (Task 4 controls) remain in the
+        // settings panel — one copy each, integrated with the observer HUD.
+        openSettings(container);
+        await waitFor(() => {
+            expect(queryByText(REFERENCE_LABEL)).not.toBeNull();
+        });
+        const findSolButton = Array.from(
+            container.querySelectorAll("button"),
+        ).find((button) => button.textContent?.includes(FIND_SOL_LABEL));
+        expect(findSolButton).not.toBeUndefined();
+
+        // Earth HUD elements are hidden: geolocation, UTC, compass/cardinal
+        // wording, "View from Earth", and the month strip.
+        expect(queryByText("GEO-LOCK")).toBeNull();
+        expect(queryByText("UTC")).toBeNull();
+        expect(queryByText("FACING")).toBeNull();
+        expect(container.querySelector(".compass-readout")).toBeNull();
+        expect(queryByText("View from Earth")).toBeNull();
+
+        // The alternate constellation list iterates the prepared catalog
+        // directly (the Earth visible list is empty in alternate mode).
+        const orionRow = container.querySelector(
+            'button[data-constellation-id="orion"]',
+        );
+        expect(orionRow).not.toBeNull();
+        expect(orionRow?.textContent).toContain("Orion");
+
+        // Selecting a prepared constellation shows its details WITHOUT the
+        // Earth best-viewing-months strip.
+        fireEvent.click(orionRow!);
+        await waitFor(() => {
+            expect(queryByText("Orion description")).not.toBeNull();
+        });
+        expect(container.querySelector(".hud-month-strip")).toBeNull();
+    });
+
+    it("alternate mode falls back to systems.unknown when the system name key is missing", async () => {
+        // Inject a dictionary that lacks systems.alpha-centauri.name but has
+        // the generic unknown-system copy, proving the name-fallback pattern
+        // (raw key returned by t() → t("systems.unknown")).
+        prepareAlternateObserverCatalogMock.mockReturnValue({
+            ok: true,
+            value: {
+                primaryCatalog: preparedPrimaryCatalog,
+                referenceCatalog: preparedReferenceCatalog,
+                omittedStars: [],
+            },
+        });
+        window.history.replaceState({}, "", "/?observer=alpha-centauri");
+
+        const { container, queryByText } = render(ConstellationWrapper, {
+            translations: { "systems.unknown": "Unknown System" },
+        });
+
+        await waitFor(() => {
+            expect(container.querySelector(".hud-panel")).not.toBeNull();
+        });
+        expect(queryByText("Unknown System")).not.toBeNull();
+        expect(queryByText(OBSERVER_NAME)).toBeNull();
+    });
+
+    it("Sol mode keeps the Earth HUD unchanged", async () => {
+        window.history.replaceState({}, "", "/");
+        const { container, queryByText } = render(ConstellationWrapper);
+
+        await waitFor(() => {
+            expect(container.querySelector(".hud-panel")).not.toBeNull();
+        });
+
+        // Earth HUD elements remain: geolocation, UTC, compass, and the
+        // "View from Earth" note.
+        expect(queryByText("GEO-LOCK")).not.toBeNull();
+        expect(queryByText("UTC")).not.toBeNull();
+        expect(queryByText("FACING")).not.toBeNull();
+        expect(queryByText("View from Earth")).not.toBeNull();
+        expect(container.querySelector(".compass-readout")).not.toBeNull();
+
+        // Observer HUD elements are absent in Sol mode.
+        expect(queryByText(OBSERVER_LABEL)).toBeNull();
+        expect(queryByText(DISTANCE_LABEL)).toBeNull();
+        expect(queryByText(FRAME_LABEL)).toBeNull();
+        expect(queryByText(DIRECTION_LABEL)).toBeNull();
+        expect(queryByText(EDUCATION_COPY)).toBeNull();
+        expect(queryByText(RETURN_LABEL)).toBeNull();
+
+        // The Earth month strip still appears when a constellation is
+        // selected.
+        const orionRow = container.querySelector(
+            'button[data-constellation-id="orion"]',
+        );
+        expect(orionRow).not.toBeNull();
+        fireEvent.click(orionRow!);
+        await waitFor(() => {
+            expect(container.querySelector(".hud-month-strip")).not.toBeNull();
+        });
+    });
+});
