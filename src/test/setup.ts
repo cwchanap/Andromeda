@@ -961,6 +961,10 @@ HTMLCanvasElement.prototype.getContext = vi.fn((type: string) => {
             // return a non-null object. Return a truthy stub so the probe
             // succeeds in tests the way it does against a real GPU.
             createShader: vi.fn(() => ({})),
+            // The probe also calls deleteShader + loseContext to release the
+            // throwaway context/shaders (browsers cap live WebGL contexts).
+            // Stub both so the cleanup path does not throw under jsdom.
+            deleteShader: vi.fn(),
             VERTEX_SHADER: 35633,
             FRAGMENT_SHADER: 35632,
         } as any;

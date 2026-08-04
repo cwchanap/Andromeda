@@ -4403,6 +4403,13 @@ describe("ConstellationRenderer — WebGL probe gate", () => {
 });
 
 describe("ConstellationRenderer — keyboard navigation + aria-live", () => {
+    // announceAriaLive() defers the textContent write to the next task
+    // (setTimeout 0) so browsers/AT re-announce repeated identical
+    // messages. Tests that assert on the announced text must await this
+    // microtask boundary before reading region.textContent.
+    const awaitAriaAnnouncement = () =>
+        new Promise<void>((resolve) => setTimeout(resolve, 0));
+
     const makeNamedConstellation = (
         id: string,
         name: string,
@@ -4495,6 +4502,7 @@ describe("ConstellationRenderer — keyboard navigation + aria-live", () => {
             );
             expect(renderer.getSelectedId()).toBe("orion");
             const region = (renderer as any)._ariaLiveRegion as HTMLDivElement;
+            await awaitAriaAnnouncement();
             expect(region.textContent).toContain("Orion");
             expect(region.textContent).toContain("Press Enter to view");
         } finally {
@@ -4536,6 +4544,7 @@ describe("ConstellationRenderer — keyboard navigation + aria-live", () => {
             );
             expect(clicks).toEqual(["ursa"]);
             const region = (renderer as any)._ariaLiveRegion as HTMLDivElement;
+            await awaitAriaAnnouncement();
             expect(region.textContent).toContain("Viewing Ursa Major");
         } finally {
             renderer.dispose();
@@ -4553,6 +4562,7 @@ describe("ConstellationRenderer — keyboard navigation + aria-live", () => {
             );
             expect(renderer.getSelectedId()).toBeNull();
             const region = (renderer as any)._ariaLiveRegion as HTMLDivElement;
+            await awaitAriaAnnouncement();
             expect(region.textContent).toContain("Selection cleared");
         } finally {
             renderer.dispose();
@@ -4591,5 +4601,92 @@ describe("ConstellationRenderer — keyboard navigation + aria-live", () => {
         // Internal reference cleared.
         expect((renderer as any)._ariaLiveRegion).toBeNull();
         container.remove();
+    });
+
+    it("keyboard navigation skips constellations whose lines were rejected", async () => {
+        // Regression: _constellationEntries used to be populated from every
+        // constellation in the requested catalog before the primary layer
+        // determined which actually produced valid line geometry. A
+        // constellation whose lines are rejected (here: out-of-bounds
+        // endpoint index) has no visual or pointer target, so it must not
+        // be keyboard-selectable either.
+        const container = makeContainer();
+        const renderer = new ConstellationRenderer(container);
+        try {
+            const catalog: PreparedConstellationCatalog = {
+                stars: [
+                    makeStar({ id: "v-a", magnitude: 1.0 }),
+                    makeStar({ id: "v-b", magnitude: 1.0 }),
+                    makeStar({ id: "r-a", magnitude: 1.0 }),
+                    makeStar({ id: "r-b", magnitude: 1.0 }),
+                ],
+                constellations: [
+                    makeNamedConstellation("valid", "Valid"),
+                    {
+                        id: "rejected",
+                        name: "Rejected",
+                        abbreviation: "rej",
+                        description: "Rejected description",
+                        stars: [
+                            makeStar({
+                                id: "r-a",
+                                rightAscension: 7.0,
+                                declination: 5.0,
+                            }),
+                            makeStar({
+                                id: "r-b",
+                                rightAscension: 7.1,
+                                declination: 5.1,
+                                magnitude: 1.0,
+                            }),
+                        ],
+                        // Out-of-bounds endpoint index → the catalog layer
+                        // skips this line and the constellation produces no
+                        // lineHitObjects entry.
+                        lines: [[0, 2]] as unknown as readonly [
+                            number,
+                            number,
+                        ][],
+                        visibility: {
+                            hemisphere: "both",
+                            bestMonths: [12, 1, 2],
+                            minLatitude: -90,
+                            maxLatitude: 90,
+                        },
+                    },
+                ],
+            };
+            await renderer.initializePreparedCatalogs(
+                { primaryCatalog: catalog },
+                preparedSettings(),
+            );
+
+            const entries = (renderer as any)._constellationEntries as {
+                id: string;
+                name: string;
+            }[];
+            expect(entries.map((e) => e.id)).toEqual(["valid"]);
+
+            const canvas = (renderer as any).canvas as HTMLCanvasElement;
+            // ArrowRight from no selection lands on the only interactive
+            // constellation — never on "rejected".
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "ArrowRight" }),
+            );
+            expect(renderer.getSelectedId()).toBe("valid");
+            // Forward navigation wraps back to "valid" (skipping "rejected").
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "ArrowDown" }),
+            );
+            expect(renderer.getSelectedId()).toBe("valid");
+            // Backward navigation also wraps to "valid".
+            canvas.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "ArrowUp" }),
+            );
+            expect(renderer.getSelectedId()).toBe("valid");
+        } finally {
+            renderer.dispose();
+            container.remove();
+        }
     });
 });

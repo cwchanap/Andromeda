@@ -655,4 +655,14 @@ export const en = {
     "boot.stellarDb": "> STELLAR DB ......... 4,184 OBJ",
     "boot.renderPipeline": "> RENDER PIPELINE .... ONLINE",
     "boot.awaitingTarget": "> AWAITING TARGET",
+
+    // Constellation sky-map accessibility (screen-reader copy for the
+    // keyboard-navigable canvas + aria-live region). The renderer accepts
+    // these as framework-agnostic constructor options; the wrapper builds
+    // them from t() so non-English screen-reader users get localized UI.
+    "constellationA11y.canvasLabel":
+        "Constellation sky map. Use arrow keys to navigate constellations, Enter to select, Escape to clear.",
+    "constellationA11y.selected": "{name} selected. Press Enter to view.",
+    "constellationA11y.viewing": "Viewing {name}.",
+    "constellationA11y.selectionCleared": "Selection cleared.",
 } as const;

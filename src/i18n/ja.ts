@@ -792,4 +792,14 @@ export const ja = {
     "boot.stellarDb": "> 恒星DB ......... 4,184 天体",
     "boot.renderPipeline": "> レンダーパイプライン .... オンライン",
     "boot.awaitingTarget": "> ターゲット待機",
+
+    // Constellation sky-map accessibility (screen-reader copy for the
+    // keyboard-navigable canvas + aria-live region). The renderer accepts
+    // these as framework-agnostic constructor options; the wrapper builds
+    // them from t() so non-English screen-reader users get localized UI.
+    "constellationA11y.canvasLabel":
+        "星座スカイマップ。矢印キーで星座を移動、Enter で選択、Escape でクリア。",
+    "constellationA11y.selected": "{name} を選択中。Enter で表示。",
+    "constellationA11y.viewing": "{name} を表示中。",
+    "constellationA11y.selectionCleared": "選択をクリアしました。",
 } as const;
