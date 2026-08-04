@@ -2,31 +2,25 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Integrate observer query resolution, full alternate catalog preparation, prepared primary/reference rendering, observer HUD controls, Find Sol, visible fallbacks, and `en`/`zh`/`ja` localization into the constellation view while preserving the existing Earth/Sol experience.
+**Goal:** Integrate observer route state, prepared alternate catalogs, observer HUD controls, Find Sol, visible fallbacks, and `en`/`zh`/`ja` localization while preserving the current Earth/Sol experience.
 
-**Architecture:** Keep orchestration local to `ConstellationWrapper.svelte`. Add one pure stable-ID mapping module, resolve HPA-432 observer state once per mount, and branch into either the existing Earth path or the HPA-433/HPA-434 prepared fixed-equatorial path. Reuse current renderer APIs for reference visibility, focus, prepared world positions, keyboard access, and reduced motion.
+**Architecture:** Keep orchestration in `ConstellationWrapper.svelte`. Add one mapping constant module, resolve observer state once per mount, and branch into the existing Earth path or the completed HPA-433/HPA-434 prepared path. Reuse current renderer APIs; add no new service, store, renderer contract, route preference, or alternate 2D renderer.
 
-**Tech Stack:** Astro 5, Svelte 4, TypeScript 5.8, Three.js 0.178, Vitest 3.2, Testing Library Svelte, Happy DOM, Bun.
+**Tech Stack:** Astro 5, Svelte 5 using the component's existing legacy syntax, TypeScript 5.8, Three.js 0.178, Vitest 3.2, Testing Library Svelte, Happy DOM, Bun.
 
 ## Global Constraints
 
-- Preserve query-free Earth/Sol geolocation, New York fallback, date/month filtering, Earth-horizontal placement, horizon/cardinal guides, compass copy, sidereal-time behavior, and Earth-oriented 2D fallback.
-- Alternate mode must not call `getCurrentLocation()` or `getVisibleConstellations()`.
-- Pass the exact full exported `constellations` array to alternate preparation.
-- Treat `primaryCatalog.stars + primaryCatalog.constellations` and `referenceCatalog.stars + referenceCatalog.constellations` as authoritative pairs.
-- Never rebuild prepared top-level stars through constellation membership.
-- Map observer/source identity only by exact stable IDs; map `alpha-centauri` to `alpha_cen`.
-- Request `includeReferenceCatalog: true`.
-- Use `SYNTHETIC_SOL_STAR_ID` for Find Sol.
-- Ignore intentional `observer-source-star-excluded` diagnostics in user-facing notices.
-- Aggregate all other omissions into one nonblocking count.
-- On `synthetic-sol-unavailable`, initialize Sol mode and never pass partial prepared data.
-- Reference visibility is component-local, defaults to hidden, and is not persisted.
-- Alternate selection uses prepared primary world positions, not `celestialToSphere()`.
-- Alternate mode never creates the current Earth-oriented 2D grid.
-- Find Sol reuses the renderer's reduced-motion-aware focus path.
-- Add every new string to `en`, `zh`, and `ja`; no raw keys may render.
-- Do not modify HPA-432 route contracts, HPA-433 preparation internals, HPA-434 renderer/layer internals, Galaxy entry, global stores, or HPA-436 E2E scope.
+- Preserve query-free Earth/Sol behavior and its Earth-oriented 2D fallback.
+- Alternate mode must not request geolocation or call `getVisibleConstellations()`.
+- Pass the exact full exported `constellations` array to preparation.
+- Pass prepared primary/reference catalogs directly; never rebuild top-level stars from membership.
+- Map observer/source identity only by exact stable IDs; `alpha-centauri` maps to `alpha_cen`.
+- Keep typed fallback provenance internally, but show one generic observer fallback message.
+- Ignore `observer-source-star-excluded`; show one static notice for any other omission.
+- Reference visibility is component-local and defaults to hidden.
+- Alternate selection uses prepared world positions, not `celestialToSphere()`.
+- Keep required educational copy about Earth cultural lines and approximate brightness.
+- Do not modify HPA-432/433/434 internals unless implementation exposes a contract defect.
 
 ---
 
@@ -34,9 +28,9 @@
 
 ### Create
 
-- `src/lib/constellation/observerSourceStarIds.ts` — exact readonly mapping and lookup.
-- `src/lib/constellation/__tests__/observerSourceStarIds.test.ts` — mapping integrity.
-- `src/components/__tests__/ConstellationWrapper.observer.test.ts` — observer-mode integration.
+- `src/lib/constellation/observerSourceStarIds.ts` — one exported mapping constant.
+- `src/lib/constellation/__tests__/observerSourceStarIds.test.ts` — configured mapping integrity.
+- `src/components/__tests__/ConstellationWrapper.observer.test.ts` — observer integration coverage.
 
 ### Modify
 
@@ -47,64 +41,65 @@
 - `src/i18n/ja.ts`
 - `src/i18n/__tests__/observerUiI18nSync.test.ts`
 
-### Explicitly Unchanged
-
-- `src/pages/constellation.astro`
-- `src/lib/constellation/observerRouteState.ts`
-- `src/lib/constellation/observerCatalog.ts`
-- `src/lib/constellation/ConstellationRenderer.ts`
-- `src/lib/constellation/ConstellationCatalogLayer.ts`
-- `src/components/GalaxyWrapper.svelte`
-- source Galaxy/constellation data
-- global stores
-- broad E2E suites
-
 ---
 
-### Task 1: Add Exact Observer/Source-Star Mapping
+### Task 1: Add the Explicit Observer/Source-Star Mapping
 
 **Files:**
 - Create: `src/lib/constellation/observerSourceStarIds.ts`
 - Create: `src/lib/constellation/__tests__/observerSourceStarIds.test.ts`
 
-**Interfaces:**
+**Produces:**
 
 ```ts
 export const OBSERVER_SOURCE_STAR_IDS: Readonly<
     Record<string, readonly string[]>
 >;
-
-export function getObserverSourceStarIds(
-    observerId: string,
-): readonly string[];
 ```
 
-- [ ] **Step 1: Write failing lookup tests**
+- [ ] **Step 1: Write the failing integrity test**
+
+Use one test that validates every configured mapping without inferring new mappings:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import {
-    getObserverSourceStarIds,
-    OBSERVER_SOURCE_STAR_IDS,
-} from "@/lib/constellation/observerSourceStarIds";
+import { constellations } from "@/data/constellations";
+import { isObserverCandidateEligible } from "@/lib/constellation/observerRouteState";
+import { OBSERVER_SOURCE_STAR_IDS } from "@/lib/constellation/observerSourceStarIds";
+import { localGalaxyData } from "@/lib/galaxy";
 
-it("maps Alpha Centauri to alpha_cen", () => {
-    expect(getObserverSourceStarIds("alpha-centauri")).toEqual([
-        "alpha_cen",
-    ]);
-});
+describe("OBSERVER_SOURCE_STAR_IDS", () => {
+    it("contains only eligible observers, canonical source IDs, and unique assignments", () => {
+        const canonicalIds = new Set(
+            constellations.flatMap((constellation) =>
+                constellation.stars.map((star) => star.id),
+            ),
+        );
+        const assigned = new Set<string>();
 
-it("returns one stable empty list for unmapped observers", () => {
-    const first = getObserverSourceStarIds("barnards-star");
-    const second = getObserverSourceStarIds("unknown-system");
+        for (const [observerId, sourceIds] of Object.entries(
+            OBSERVER_SOURCE_STAR_IDS,
+        )) {
+            const observer = localGalaxyData.starSystems.find(
+                ({ id }) => id === observerId,
+            );
+            expect(observer, `missing observer ${observerId}`).toBeDefined();
+            expect(isObserverCandidateEligible(observer!)).toEqual({
+                eligible: true,
+            });
+            expect(new Set(sourceIds).size).toBe(sourceIds.length);
 
-    expect(first).toEqual([]);
-    expect(second).toBe(first);
-    expect(OBSERVER_SOURCE_STAR_IDS).not.toHaveProperty("barnards-star");
+            for (const sourceId of sourceIds) {
+                expect(canonicalIds.has(sourceId)).toBe(true);
+                expect(assigned.has(sourceId)).toBe(false);
+                assigned.add(sourceId);
+            }
+        }
+    });
 });
 ```
 
-- [ ] **Step 2: Run the tests and verify failure**
+- [ ] **Step 2: Run the test and verify failure**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerSourceStarIds.test.ts
@@ -112,108 +107,54 @@ bunx vitest run src/lib/constellation/__tests__/observerSourceStarIds.test.ts
 
 Expected: exit code 1 because the module does not exist.
 
-- [ ] **Step 3: Implement the mapping**
+- [ ] **Step 3: Add the minimal mapping module**
 
 ```ts
-export const OBSERVER_SOURCE_STAR_IDS = {
+export const OBSERVER_SOURCE_STAR_IDS: Readonly<
+    Record<string, readonly string[]>
+> = {
     "alpha-centauri": ["alpha_cen"],
-} as const satisfies Readonly<Record<string, readonly string[]>>;
-
-const EMPTY_SOURCE_STAR_IDS: readonly string[] = [];
-
-export function getObserverSourceStarIds(
-    observerId: string,
-): readonly string[] {
-    return OBSERVER_SOURCE_STAR_IDS[
-        observerId as keyof typeof OBSERVER_SOURCE_STAR_IDS
-    ] ?? EMPTY_SOURCE_STAR_IDS;
-}
+};
 ```
 
-Do not import production catalogs into this module.
+Do not add a lookup function, empty-array singleton, normalization, aliases, or catalog imports.
 
-- [ ] **Step 4: Add production-integrity tests**
-
-```ts
-import { constellations } from "@/data/constellations";
-import { localGalaxyData } from "@/lib/galaxy";
-import { isObserverCandidateEligible } from "@/lib/constellation/observerRouteState";
-
-it("references only eligible production observers", () => {
-    for (const observerId of Object.keys(OBSERVER_SOURCE_STAR_IDS)) {
-        const candidate = localGalaxyData.starSystems.find(
-            ({ id }) => id === observerId,
-        );
-        expect(candidate, `missing observer ${observerId}`).toBeDefined();
-        expect(isObserverCandidateEligible(candidate!)).toEqual({
-            eligible: true,
-        });
-    }
-});
-
-it("references only canonical exported constellation members", () => {
-    const canonicalIds = new Set(
-        constellations.flatMap((constellation) =>
-            constellation.stars.map((star) => star.id),
-        ),
-    );
-
-    for (const [observerId, sourceIds] of Object.entries(
-        OBSERVER_SOURCE_STAR_IDS,
-    )) {
-        for (const sourceId of sourceIds) {
-            expect(
-                canonicalIds.has(sourceId),
-                `${observerId} maps missing source ${sourceId}`,
-            ).toBe(true);
-        }
-    }
-});
-
-it("contains no duplicate source IDs", () => {
-    const assigned = new Map<string, string>();
-
-    for (const [observerId, sourceIds] of Object.entries(
-        OBSERVER_SOURCE_STAR_IDS,
-    )) {
-        expect(new Set(sourceIds).size).toBe(sourceIds.length);
-        for (const sourceId of sourceIds) {
-            expect(assigned.get(sourceId)).toBeUndefined();
-            assigned.set(sourceId, observerId);
-        }
-    }
-});
-```
-
-Do not add name/proximity inference.
-
-- [ ] **Step 5: Run the complete mapping suite**
+- [ ] **Step 4: Run the mapping test**
 
 ```bash
 bunx vitest run src/lib/constellation/__tests__/observerSourceStarIds.test.ts
 ```
 
-Expected: exit code 0 and zero failed tests.
+Expected: exit code 0.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add \
-  src/lib/constellation/observerSourceStarIds.ts \
+git add src/lib/constellation/observerSourceStarIds.ts \
   src/lib/constellation/__tests__/observerSourceStarIds.test.ts
-git commit -m "feat(constellation): map observer systems to source stars"
+git commit -m "feat(constellation): add observer source-star mapping"
 ```
 
 ---
 
-### Task 2: Add Sol/Alternate Initialization Branches
+### Task 2: Branch Wrapper Initialization by Observer Mode
 
 **Files:**
 - Modify: `src/components/ConstellationWrapper.svelte`
 - Create: `src/components/__tests__/ConstellationWrapper.observer.test.ts`
-- Modify: `src/components/__tests__/ConstellationWrapper.test.ts`
+- Modify: `src/components/__tests__/ConstellationWrapper.test.ts` only if required by the shared renderer mock
 
-**Interfaces:**
+**Consumes:**
+
+```ts
+OBSERVER_SOURCE_STAR_IDS[observerId] ?? [];
+parseObserverQuery(searchParams);
+resolveObserverState(parsed, localGalaxyData.starSystems);
+prepareAlternateObserverCatalog(source, observerPosition, options);
+renderer.initializePreparedCatalogs(request, settings);
+```
+
+**Produces:**
 
 ```ts
 type DisplayConstellation = Constellation | PreparedConstellation;
@@ -226,9 +167,9 @@ async function initializeAlternateMode(
 ): Promise<"ready" | "fallback-to-sol">;
 ```
 
-- [ ] **Step 1: Create a deterministic observer test harness**
+- [ ] **Step 1: Add a focused observer test harness**
 
-In `ConstellationWrapper.observer.test.ts`, define reusable mocks:
+In `ConstellationWrapper.observer.test.ts`, mock:
 
 ```ts
 const rendererMock = {
@@ -248,132 +189,60 @@ const rendererMock = {
     getCameraAzimuth: vi.fn(() => 0),
     getCameraElevation: vi.fn(() => 0),
 };
-
-const prepareAlternateObserverCatalogMock = vi.fn();
-const getCurrentLocationMock = vi.fn();
-const getVisibleConstellationsMock = vi.fn();
 ```
 
-Mock `@/data/constellations` with one stable `fullConstellations` array reference. Mock `@/lib/galaxy` with a valid `alpha-centauri` candidate whose position is `{ x: 1, y: 2, z: 3 }` and `distanceFromEarth` is `4.2465`.
+Use one stable `fullConstellations` array in the data mock and one eligible `alpha-centauri` system at `{ x: 1, y: 2, z: 3 }`.
 
-Use:
+- [ ] **Step 2: Add failing Sol and alternate tests**
+
+The Sol test must assert:
 
 ```ts
-function setUrl(search = ""): void {
-    window.history.replaceState({}, "", `/constellation${search}`);
-}
+expect(getCurrentLocationMock).toHaveBeenCalledTimes(1);
+expect(getVisibleConstellationsMock).toHaveBeenCalled();
+expect(rendererMock.initialize).toHaveBeenCalled();
+expect(prepareAlternateObserverCatalogMock).not.toHaveBeenCalled();
+expect(rendererMock.initializePreparedCatalogs).not.toHaveBeenCalled();
 ```
 
-Stub WebGL with the same `createShader()` shape used by the current wrapper tests.
-
-- [ ] **Step 2: Write the failing Sol regression**
+The Alpha Centauri test must assert:
 
 ```ts
-it("keeps query-free Sol mode on the Earth path", async () => {
-    setUrl();
-    getCurrentLocationMock.mockResolvedValue({
-        latitude: 49.2827,
-        longitude: -123.1207,
-        timezone: "America/Vancouver",
-    });
-
-    render(ConstellationWrapper, {
-        props: { lang: "en", translations: EN_TEST_TRANSLATIONS },
-    });
-
-    await waitFor(() => expect(rendererMock.initialize).toHaveBeenCalled());
-
-    expect(getCurrentLocationMock).toHaveBeenCalledTimes(1);
-    expect(getVisibleConstellationsMock).toHaveBeenCalledWith(
-        49.2827,
-        expect.any(Number),
-    );
-    expect(prepareAlternateObserverCatalogMock).not.toHaveBeenCalled();
-    expect(rendererMock.initializePreparedCatalogs).not.toHaveBeenCalled();
-});
+expect(getCurrentLocationMock).not.toHaveBeenCalled();
+expect(getVisibleConstellationsMock).not.toHaveBeenCalled();
+expect(prepareAlternateObserverCatalogMock).toHaveBeenCalledWith(
+    fullConstellations,
+    { x: 1, y: 2, z: 3 },
+    {
+        includeReferenceCatalog: true,
+        observerSourceStarIds: ["alpha_cen"],
+    },
+);
+expect(rendererMock.initializePreparedCatalogs).toHaveBeenCalledWith(
+    {
+        primaryCatalog,
+        referenceCatalog,
+        referenceVisible: false,
+    },
+    {
+        minimumMagnitude: 4,
+        showConstellationLines: true,
+        showStarNames: true,
+    },
+);
 ```
 
-- [ ] **Step 3: Write the failing alternate regression**
+Use object identity assertions for `primaryCatalog` and `referenceCatalog` so a future membership rebuild fails the test.
 
-Define exact prepared objects. Synthetic Sol must exist only in `primaryCatalog.stars`:
-
-```ts
-const primaryCatalog = {
-    stars: [
-        {
-            id: "sol",
-            name: "Sol",
-            rightAscension: 1,
-            declination: 2,
-            magnitude: 0,
-            distance: 4.2465,
-            spectralClass: "G2V",
-            color: "#fff",
-            marker: { kind: "synthetic-sol" as const },
-        },
-    ],
-    constellations: [],
-};
-const referenceCatalog = { stars: [], constellations: [] };
-```
-
-```ts
-it("uses full prepared catalogs for Alpha Centauri", async () => {
-    setUrl("?observer=alpha-centauri");
-    prepareAlternateObserverCatalogMock.mockReturnValue({
-        ok: true,
-        value: {
-            primaryCatalog,
-            referenceCatalog,
-            omittedStars: [],
-        },
-    });
-
-    render(ConstellationWrapper, {
-        props: { lang: "en", translations: EN_TEST_TRANSLATIONS },
-    });
-
-    await waitFor(() =>
-        expect(rendererMock.initializePreparedCatalogs).toHaveBeenCalled(),
-    );
-
-    expect(getCurrentLocationMock).not.toHaveBeenCalled();
-    expect(getVisibleConstellationsMock).not.toHaveBeenCalled();
-    expect(prepareAlternateObserverCatalogMock).toHaveBeenCalledWith(
-        fullConstellations,
-        { x: 1, y: 2, z: 3 },
-        {
-            includeReferenceCatalog: true,
-            observerSourceStarIds: ["alpha_cen"],
-        },
-    );
-    expect(rendererMock.initializePreparedCatalogs).toHaveBeenCalledWith(
-        {
-            primaryCatalog,
-            referenceCatalog,
-            referenceVisible: false,
-        },
-        {
-            minimumMagnitude: 4,
-            showConstellationLines: true,
-            showStarNames: true,
-        },
-    );
-    expect(rendererMock.initialize).not.toHaveBeenCalled();
-});
-```
-
-- [ ] **Step 4: Run the two tests and verify failure**
+- [ ] **Step 3: Run the focused suite and verify failure**
 
 ```bash
-bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts -t "query-free Sol|full prepared catalogs"
+bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts
 ```
 
-Expected: exit code 1 because the wrapper always executes the Earth path.
+Expected: exit code 1 because the wrapper always follows the Earth path.
 
-- [ ] **Step 5: Add imports and local state**
-
-Import:
+- [ ] **Step 4: Add imports and component-local observer state**
 
 ```ts
 import { localGalaxyData, type StarSystemData } from "@/lib/galaxy";
@@ -387,12 +256,8 @@ import {
     type AlternateObserverCatalogOutput,
     type PreparedConstellation,
 } from "@/lib/constellation/observerCatalog";
-import { getObserverSourceStarIds } from "@/lib/constellation/observerSourceStarIds";
-```
+import { OBSERVER_SOURCE_STAR_IDS } from "@/lib/constellation/observerSourceStarIds";
 
-Define:
-
-```ts
 type DisplayConstellation = Constellation | PreparedConstellation;
 
 let resolvedObserverState: ResolvedObserverState = {
@@ -404,496 +269,264 @@ let observerSystem: StarSystemData | null = null;
 let alternateCatalog: AlternateObserverCatalogOutput | null = null;
 let renderedConstellations: readonly DisplayConstellation[] = [];
 let referenceVisible = false;
+let observerNoticeKey: string | null = null;
+let hasUnexpectedOmissions = false;
+let solAnnouncement = "";
 ```
 
-- [ ] **Step 6: Extract renderer creation without changing callbacks**
+- [ ] **Step 5: Extract renderer creation without changing callbacks**
 
-```ts
-function createRenderer(): ConstellationRenderer {
-    return new ConstellationRenderer(
-        container,
-        {
-            onConstellationHover: (id, screenPos) => {
-                hoveredConstellationId = id;
-                hoverPos = screenPos;
-            },
-            onConstellationClick: handleSelectConstellation,
-            onStarHover: (star, screenPos) => {
-                hoverStarPos = star && screenPos
-                    ? {
-                          x: screenPos.x,
-                          y: screenPos.y,
-                          name: starName(star),
-                          magnitude: star.magnitude,
-                      }
-                    : null;
-            },
-        },
-        constellationA11yText,
-    );
-}
-```
+Move the current constructor and callback object into `createRenderer()`. Keep the existing accessibility text and callback behavior unchanged.
 
-- [ ] **Step 7: Extract the current Earth path into `initializeSolMode()`**
+- [ ] **Step 6: Extract the current Earth path into `initializeSolMode()`**
 
-Move the existing location timeout, New York fallback, `SkyConfiguration`, `getVisibleConstellations()`, translated membership flat-map, and `renderer.initialize()` unchanged.
+Move, without semantic changes:
 
-Add only:
+- location timeout and New York fallback;
+- current `SkyConfiguration` values;
+- `getVisibleConstellations()`;
+- translated legacy star membership flat-map; and
+- `renderer.initialize(...)`.
+
+Assign:
 
 ```ts
 renderedConstellations = visibleConstellations;
 viewState.visibleConstellations = visibleConstellations.map(({ id }) => id);
 ```
 
-Keep this legacy flat-map inside Sol mode:
+- [ ] **Step 7: Implement `initializeAlternateMode()`**
 
 ```ts
-const allStars = visibleConstellations.flatMap(
-    (constellation) => constellation.stars,
+const prepared = prepareAlternateObserverCatalog(
+    constellations,
+    {
+        x: system.position.x,
+        y: system.position.y,
+        z: system.position.z,
+    },
+    {
+        includeReferenceCatalog: true,
+        observerSourceStarIds:
+            OBSERVER_SOURCE_STAR_IDS[system.id] ?? [],
+    },
 );
 ```
 
-- [ ] **Step 8: Implement valid alternate initialization**
+Return `"fallback-to-sol"` when `prepared.ok` is false. On success:
 
 ```ts
-async function initializeAlternateMode(
-    system: StarSystemData,
-): Promise<"ready" | "fallback-to-sol"> {
-    const result = prepareAlternateObserverCatalog(
-        constellations,
-        {
-            x: system.position.x,
-            y: system.position.y,
-            z: system.position.z,
-        },
-        {
-            includeReferenceCatalog: true,
-            observerSourceStarIds: getObserverSourceStarIds(system.id),
-        },
-    );
+observerSystem = system;
+alternateCatalog = prepared.value;
+renderedConstellations = prepared.value.primaryCatalog.constellations;
+hasUnexpectedOmissions = prepared.value.omittedStars.some(
+    ({ reason }) => reason.code !== "observer-source-star-excluded",
+);
 
-    if (!result.ok) return "fallback-to-sol";
-
-    alternateCatalog = result.value;
-    renderedConstellations = result.value.primaryCatalog.constellations;
-    viewState.visibleConstellations = renderedConstellations.map(({ id }) => id);
-    viewState.skyConfig = null;
-    viewState.locationPermissionGranted = false;
-
-    await renderer!.initializePreparedCatalogs(
-        {
-            primaryCatalog: result.value.primaryCatalog,
-            referenceCatalog: result.value.referenceCatalog,
-            referenceVisible,
-        },
-        {
-            minimumMagnitude: 4,
-            showConstellationLines: true,
-            showStarNames: true,
-        },
-    );
-
-    return "ready";
-}
+await renderer!.initializePreparedCatalogs(
+    {
+        primaryCatalog: prepared.value.primaryCatalog,
+        referenceCatalog: prepared.value.referenceCatalog,
+        referenceVisible,
+    },
+    {
+        minimumMagnitude: 4,
+        showConstellationLines: true,
+        showStarNames: true,
+    },
+);
 ```
 
-Do not copy or transform prepared catalogs.
+- [ ] **Step 8: Resolve once and select the mode before geolocation**
 
-- [ ] **Step 9: Resolve once and choose a path**
-
-```ts
-function resolveCurrentObserver(): ResolvedObserverState {
-    return resolveObserverState(
-        parseObserverQuery(new URL(window.location.href).searchParams),
-        localGalaxyData.starSystems,
-    );
-}
-```
-
-At the start of `initConstellationView()`, before WebGL/geolocation work:
+At the start of initialization:
 
 ```ts
 resolvedObserverState = resolveCurrentObserver();
-observerSystem =
-    resolvedObserverState.kind === "system"
-        ? localGalaxyData.starSystems.find(
-              ({ id }) => id === resolvedObserverState.observerId,
-          ) ?? null
-        : null;
-```
-
-After container/WebGL checks:
-
-```ts
 renderer = createRenderer();
 
-if (resolvedObserverState.kind === "system" && observerSystem) {
-    const outcome = await initializeAlternateMode(observerSystem);
-    if (outcome === "fallback-to-sol") {
-        observerSystem = null;
-        alternateCatalog = null;
-        await initializeSolMode();
+if (resolvedObserverState.kind === "system") {
+    const system = localGalaxyData.starSystems.find(
+        ({ id }) => id === resolvedObserverState.observerId,
+    );
+    if (system && (await initializeAlternateMode(system)) === "ready") {
+        return;
     }
-} else {
-    await initializeSolMode();
 }
+
+await initializeSolMode();
 ```
 
-- [ ] **Step 10: Run focused and legacy tests**
+Keep loading completion, HUD RAF startup, retries, and cleanup in the existing lifecycle owner rather than returning before those shared steps.
+
+- [ ] **Step 9: Run wrapper tests**
 
 ```bash
-bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts -t "query-free Sol|full prepared catalogs"
-bunx vitest run src/components/__tests__/ConstellationWrapper.test.ts
-```
-
-Expected: both commands exit 0 with zero failures.
-
-- [ ] **Step 11: Commit**
-
-```bash
-git add \
-  src/components/ConstellationWrapper.svelte \
+bunx vitest run \
   src/components/__tests__/ConstellationWrapper.observer.test.ts \
   src/components/__tests__/ConstellationWrapper.test.ts
-git commit -m "feat(constellation): initialize observer sky modes"
+```
+
+Expected: exit code 0.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add src/components/ConstellationWrapper.svelte \
+  src/components/__tests__/ConstellationWrapper.observer.test.ts \
+  src/components/__tests__/ConstellationWrapper.test.ts
+git commit -m "feat(constellation): initialize observer sky mode"
 ```
 
 ---
 
-### Task 3: Add Typed Fallbacks, Omission Classification, and 2D Gating
+### Task 3: Add Generic Fallbacks, Omission Notice, and 2D Gating
 
 **Files:**
 - Modify: `src/components/ConstellationWrapper.svelte`
 - Modify: `src/components/__tests__/ConstellationWrapper.observer.test.ts`
 
-**Interfaces:**
+**Produces:**
 
 ```ts
-let observerNoticeKey: string | null;
-let unexpectedOmissionCount: number;
-
-function fallbackNoticeKey(
-    state: Extract<ResolvedObserverState, { kind: "fallback" }>,
-): string;
-
-function countUnexpectedOmissions(
-    output: AlternateObserverCatalogOutput,
-): number;
+observerNoticeKey: string | null;
+hasUnexpectedOmissions: boolean;
 ```
 
-- [ ] **Step 1: Write failing route fallback tests**
+- [ ] **Step 1: Add failing fallback tests**
+
+Use `it.each` for all HPA-432 fallback reasons and assert each case:
 
 ```ts
-it.each([
-    ["?observer=", "observer link unavailable"],
-    ["?observer=missing-system", "observer link unavailable"],
-])("falls back to Sol for %s", async (search, expectedText) => {
-    setUrl(search);
-
-    render(ConstellationWrapper, {
-        props: { lang: "en", translations: EN_TEST_TRANSLATIONS },
-    });
-
-    await waitFor(() => expect(rendererMock.initialize).toHaveBeenCalled());
-
-    expect(rendererMock.initializePreparedCatalogs).not.toHaveBeenCalled();
-    expect(screen.getByRole("status")).toHaveTextContent(expectedText);
-});
+expect(rendererMock.initialize).toHaveBeenCalled();
+expect(rendererMock.initializePreparedCatalogs).not.toHaveBeenCalled();
+expect(screen.getByRole("status")).toHaveTextContent(
+    "Observer unavailable; showing the sky from Earth/Sol.",
+);
 ```
 
-Add two deterministic mocked candidates, one with `NaN` position and one at `{ x: 0, y: 0, z: 0 }`. Assert both use the localized observer-position fallback text and legacy `initialize()`.
+Add a fatal preparation case with `{ ok: false, error: { code: "synthetic-sol-unavailable", cause } }` and the same visible fallback assertion.
 
-- [ ] **Step 2: Write the fatal preparation test**
+- [ ] **Step 2: Add failing omission tests**
 
-```ts
-it("falls back without partial handoff when synthetic Sol is unavailable", async () => {
-    setUrl("?observer=alpha-centauri");
-    prepareAlternateObserverCatalogMock.mockReturnValue({
-        ok: false,
-        error: {
-            code: "synthetic-sol-unavailable",
-            cause: { code: "undefined-direction" },
-        },
-    });
-
-    render(ConstellationWrapper, {
-        props: { lang: "en", translations: EN_TEST_TRANSLATIONS },
-    });
-
-    await waitFor(() => expect(rendererMock.initialize).toHaveBeenCalled());
-
-    expect(rendererMock.initializePreparedCatalogs).not.toHaveBeenCalled();
-    expect(screen.getByRole("status")).toHaveTextContent(
-        "alternate sky could not be prepared",
-    );
-});
-```
-
-- [ ] **Step 3: Write omission classification tests**
-
-Use one expected exclusion and one transform failure. Assert the notice count is `1`, and rendered text contains neither `alpha_cen` nor `observer-source-star-excluded`.
-
-Use a second successful result containing only the expected exclusion and assert no omission message exists.
-
-- [ ] **Step 4: Write alternate 2D-gating test**
-
-Make the wrapper WebGL pre-check succeed and the mocked renderer constructor throw. Render `?observer=alpha-centauri` and assert:
+Test one expected exclusion and one genuine omission:
 
 ```ts
 expect(
-    screen.queryByTestId("constellation-2d-fallback"),
-).toBeNull();
+    screen.queryByText("Some catalog stars could not be displayed."),
+).not.toBeInTheDocument();
 ```
 
-Render query-free Sol with the same renderer failure and assert the test ID exists.
+for only `observer-source-star-excluded`, and:
 
-- [ ] **Step 5: Run and verify failure**
+```ts
+expect(
+    screen.getByText("Some catalog stars could not be displayed."),
+).toBeInTheDocument();
+```
+
+when any other omission is present. Do not assert a count.
+
+- [ ] **Step 3: Add the failing alternate WebGL test**
+
+Force renderer construction or initialization to fail under `?observer=alpha-centauri` and assert:
+
+```ts
+expect(container.querySelector("canvas[data-earth-fallback]")).toBeNull();
+expect(screen.getByText("This observer view requires WebGL.")).toBeInTheDocument();
+expect(screen.getByRole("button", { name: "Return to Earth/Sol" })).toBeInTheDocument();
+```
+
+If the current fallback canvas has no identifying attribute, add `data-earth-fallback` when it is created so the test targets behavior rather than layout classes.
+
+- [ ] **Step 4: Run the focused suite and verify failure**
 
 ```bash
-bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts -t "falls back|partial handoff|omission|2D"
-```
-
-Expected: exit code 1 because notices/classification/gating do not exist.
-
-- [ ] **Step 6: Implement fallback grouping**
-
-```ts
-let observerNoticeKey: string | null = null;
-let unexpectedOmissionCount = 0;
-
-function fallbackNoticeKey(
-    state: Extract<ResolvedObserverState, { kind: "fallback" }>,
-): string {
-    switch (state.reason) {
-        case "empty":
-        case "duplicate":
-        case "unknown-system":
-            return "constellation.observer.fallbackLink";
-        case "invalid-coordinates":
-        case "origin-collision":
-            return "constellation.observer.fallbackPosition";
-    }
-}
-```
-
-After resolution:
-
-```ts
-if (resolvedObserverState.kind === "fallback") {
-    observerNoticeKey = fallbackNoticeKey(resolvedObserverState);
-}
-```
-
-When alternate preparation fails:
-
-```ts
-observerNoticeKey = "constellation.observer.fallbackPreparation";
-observerSystem = null;
-alternateCatalog = null;
-unexpectedOmissionCount = 0;
-```
-
-- [ ] **Step 7: Count only genuine omissions**
-
-```ts
-function countUnexpectedOmissions(
-    output: AlternateObserverCatalogOutput,
-): number {
-    return output.omittedStars.filter(
-        ({ reason }) => reason.code !== "observer-source-star-excluded",
-    ).length;
-}
-```
-
-Set the count after successful preparation.
-
-Render one semantic status block:
-
-```svelte
-{#if observerNoticeKey}
-  <p role="status">{t(observerNoticeKey)}</p>
-{:else if unexpectedOmissionCount > 0}
-  <p role="status">
-    {t("constellation.observer.omissions", {
-      count: String(unexpectedOmissionCount),
-    })}
-  </p>
-{/if}
-```
-
-Task 5 places it in the final HUD layout.
-
-- [ ] **Step 8: Gate the existing 2D fallback**
-
-Add a test ID and preserve its current creation/draw logic only for Sol:
-
-```ts
-if (!webglSupported && observerSystem === null) {
-    canvas2D = document.createElement("canvas");
-    canvas2D.dataset.testid = "constellation-2d-fallback";
-    // existing dimensions, context, append, and draw call
-}
-```
-
-Do not create another canvas in alternate mode.
-
-- [ ] **Step 9: Run tests and commit**
-
-```bash
-bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts -t "falls back|partial handoff|omission|2D"
-```
-
-Expected: exit code 0 and zero failures.
-
-```bash
-git add \
-  src/components/ConstellationWrapper.svelte \
-  src/components/__tests__/ConstellationWrapper.observer.test.ts
-git commit -m "feat(constellation): add observer fallbacks and diagnostics"
-```
-
----
-
-### Task 4: Add Prepared Selection and Observer Actions
-
-**Files:**
-- Modify: `src/components/ConstellationWrapper.svelte`
-- Modify: `src/components/__tests__/ConstellationWrapper.observer.test.ts`
-
-**Interfaces:**
-
-```ts
-function preparedConstellationCenter(
-    constellationId: string,
-): { x: number; y: number; z: number } | null;
-
-function handleFindSol(): void;
-function returnToSol(): void;
-```
-
-- [ ] **Step 1: Write prepared selection tests**
-
-Create a prepared constellation with stars `a` and `b`. Return positions `{ x: 10, y: 20, z: 30 }` and `{ x: 30, y: 40, z: 50 }`.
-
-After clicking its list row, assert:
-
-```ts
-expect(rendererMock.setSelected).toHaveBeenCalledWith("centaurus");
-expect(rendererMock.getStarWorldPosition).toHaveBeenCalledWith("a");
-expect(rendererMock.getStarWorldPosition).toHaveBeenCalledWith("b");
-expect(celestialToSphereMock).not.toHaveBeenCalled();
-expect(rendererMock.tweenCameraTo).toHaveBeenCalledWith(
-    expect.any(Number),
-    expect.any(Number),
-    900,
-);
-```
-
-When all positions are `null`, assert selection remains and tween is not called.
-
-- [ ] **Step 2: Write reference toggle test**
-
-Click the localized checkbox and assert:
-
-```ts
-expect(rendererMock.setReferenceVisible).toHaveBeenLastCalledWith(true);
-expect(prepareAlternateObserverCatalogMock).toHaveBeenCalledTimes(1);
-expect(rendererMock.initializePreparedCatalogs).toHaveBeenCalledTimes(1);
-```
-
-- [ ] **Step 3: Write Find Sol tests**
-
-On success:
-
-```ts
-fireEvent.click(screen.getByRole("button", { name: "Find Sol" }));
-expect(rendererMock.focusStarById).toHaveBeenCalledWith("sol");
-expect(screen.getByTestId("sol-announcement")).toHaveTextContent(
-    /right ascension 1\.00 h.*declination \+2\.00°.*4\.25/i,
-);
-```
-
-When `focusStarById()` returns `false`, assert localized unavailable copy.
-
-- [ ] **Step 4: Write canonical return test**
-
-Mock `routes.constellation("ja")` to return `/ja/constellation`. Render Japanese alternate mode, click Return to Earth/Sol, and assert `window.location.href` ends with `/ja/constellation` and contains no `?observer=`.
-
-Use the existing Happy DOM location replacement pattern from the repository tests; restore the original location object after the test.
-
-- [ ] **Step 5: Run and verify failure**
-
-```bash
-bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts -t "prepared selection|reference toggle|Find Sol|canonical return"
+bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts
 ```
 
 Expected: exit code 1.
 
-- [ ] **Step 6: Implement prepared center calculation**
+- [ ] **Step 5: Implement one generic fallback path**
 
-Import `SYNTHETIC_SOL_STAR_ID` and add:
-
-```ts
-function preparedConstellationCenter(
-    constellationId: string,
-): { x: number; y: number; z: number } | null {
-    if (!renderer || !alternateCatalog) return null;
-
-    const constellation = alternateCatalog.primaryCatalog.constellations.find(
-        ({ id }) => id === constellationId,
-    );
-    if (!constellation) return null;
-
-    const positions = constellation.stars.flatMap((star) => {
-        const position = renderer!.getStarWorldPosition(star.id);
-        return position ? [position] : [];
-    });
-    if (positions.length === 0) return null;
-
-    const total = positions.reduce(
-        (sum, position) => ({
-            x: sum.x + position.x,
-            y: sum.y + position.y,
-            z: sum.z + position.z,
-        }),
-        { x: 0, y: 0, z: 0 },
-    );
-
-    return {
-        x: total.x / positions.length,
-        y: total.y / positions.length,
-        z: total.z / positions.length,
-    };
-}
-```
-
-Branch `handleSelectConstellation()`:
+When `resolvedObserverState.kind === "fallback"`, set:
 
 ```ts
-if (!renderer) return;
-renderer.setSelected(constellationId);
-
-if (alternateCatalog) {
-    selectedCenter = preparedConstellationCenter(constellationId);
-    if (!selectedCenter) return;
-} else {
-    if (!viewState.skyConfig) return;
-    // preserve current circular mean + celestialToSphere implementation
-}
-
-const radius = Math.hypot(
-    selectedCenter.x,
-    selectedCenter.y,
-    selectedCenter.z,
-) || 1;
-renderer.tweenCameraTo(
-    Math.asin(selectedCenter.y / radius),
-    Math.atan2(selectedCenter.x, selectedCenter.z),
-    900,
-);
+observerNoticeKey = "constellation.observer.fallback";
 ```
 
-- [ ] **Step 7: Wire reference visibility**
+Log the typed result only under the project's development guard. For fatal preparation, clear alternate state, set the same key, and call `initializeSolMode()` on the current renderer.
+
+- [ ] **Step 6: Render one static omission notice**
+
+```svelte
+{#if hasUnexpectedOmissions}
+    <p role="status">{t("constellation.observer.omissions")}</p>
+{/if}
+```
+
+Do not show IDs, raw transform errors, or an omission count.
+
+- [ ] **Step 7: Gate the Earth 2D fallback by mode**
+
+Create/draw the existing fallback canvas only when `resolvedObserverState.kind !== "system"` or alternate preparation has already fallen back to Sol. For a successful alternate request whose WebGL path fails, show WebGL-required copy and the canonical return action instead.
+
+- [ ] **Step 8: Run the focused suite**
+
+```bash
+bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts
+```
+
+Expected: exit code 0.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/components/ConstellationWrapper.svelte \
+  src/components/__tests__/ConstellationWrapper.observer.test.ts
+git commit -m "feat(constellation): add observer fallbacks"
+```
+
+---
+
+### Task 4: Add Prepared Selection, Reference Toggle, Find Sol, and Return
+
+**Files:**
+- Modify: `src/components/ConstellationWrapper.svelte`
+- Modify: `src/components/__tests__/ConstellationWrapper.observer.test.ts`
+
+- [ ] **Step 1: Add failing interaction tests**
+
+Cover:
+
+1. checking the reference checkbox calls `setReferenceVisible(true)` and does not call preparation or initialization again;
+2. Find Sol calls `focusStarById(SYNTHETIC_SOL_STAR_ID)`;
+3. Find Sol announces localized RA, declination, and distance;
+4. reduced motion adds no wrapper-side focus branch;
+5. alternate constellation selection asks for prepared star world positions and does not call `celestialToSphere()`; and
+6. Return sets `window.location.href` to `routes.constellation(lang)` without `observer=sol`.
+
+Key assertions:
+
+```ts
+expect(rendererMock.focusStarById).toHaveBeenCalledWith("sol");
+expect(rendererMock.getStarWorldPosition).toHaveBeenCalledWith("prepared-a");
+expect(celestialToSphereMock).not.toHaveBeenCalled();
+expect(prepareAlternateObserverCatalogMock).toHaveBeenCalledTimes(1);
+expect(rendererMock.initializePreparedCatalogs).toHaveBeenCalledTimes(1);
+```
+
+- [ ] **Step 2: Run the focused suite and verify failure**
+
+```bash
+bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts
+```
+
+Expected: exit code 1.
+
+- [ ] **Step 3: Wire reference visibility**
+
+Use a native checkbox bound to `referenceVisible` and one reactive call:
 
 ```ts
 $: if (renderer && alternateCatalog) {
@@ -901,15 +534,9 @@ $: if (renderer && alternateCatalog) {
 }
 ```
 
-- [ ] **Step 8: Implement Find Sol**
+- [ ] **Step 4: Implement Find Sol**
 
 ```ts
-let solAnnouncement = "";
-
-function signedDegrees(value: number): string {
-    return `${value >= 0 ? "+" : ""}${value.toFixed(2)}°`;
-}
-
 function handleFindSol(): void {
     const sol = alternateCatalog?.primaryCatalog.stars.find(
         ({ id }) => id === SYNTHETIC_SOL_STAR_ID,
@@ -917,27 +544,51 @@ function handleFindSol(): void {
     const focused =
         renderer?.focusStarById(SYNTHETIC_SOL_STAR_ID) ?? false;
 
-    if (!focused || !sol) {
-        solAnnouncement = t(
-            "constellation.observer.findSolUnavailable",
-        );
+    if (!sol || !focused) {
+        solAnnouncement = t("constellation.observer.findSolUnavailable");
         return;
     }
 
-    solAnnouncement = t(
-        "constellation.observer.findSolAnnouncement",
-        {
-            ra: sol.rightAscension.toFixed(2),
-            dec: signedDegrees(sol.declination),
-            distance: new Intl.NumberFormat(currentLang, {
-                maximumFractionDigits: 2,
-            }).format(sol.distance),
-        },
-    );
+    solAnnouncement = t("constellation.observer.findSolAnnouncement", {
+        ra: sol.rightAscension.toFixed(2),
+        dec: `${sol.declination >= 0 ? "+" : ""}${sol.declination.toFixed(2)}`,
+        distance: new Intl.NumberFormat(currentLang, {
+            maximumFractionDigits: 2,
+        }).format(sol.distance),
+    });
 }
 ```
 
-- [ ] **Step 9: Implement canonical return**
+Render `solAnnouncement` in a polite atomic status region.
+
+- [ ] **Step 5: Branch constellation focus by mode**
+
+Keep the current Earth calculation unchanged. In alternate mode:
+
+```ts
+const positions = constellation.stars.flatMap((star) => {
+    const position = renderer?.getStarWorldPosition(star.id);
+    return position ? [position] : [];
+});
+
+if (positions.length === 0) {
+    selectedCenter = null;
+    return;
+}
+
+selectedCenter = positions.reduce(
+    (sum, position) => ({
+        x: sum.x + position.x / positions.length,
+        y: sum.y + position.y / positions.length,
+        z: sum.z + position.z / positions.length,
+    }),
+    { x: 0, y: 0, z: 0 },
+);
+```
+
+Reuse the current pitch/yaw calculation and `tweenCameraTo()` call.
+
+- [ ] **Step 6: Add canonical return**
 
 ```ts
 function returnToSol(): void {
@@ -945,49 +596,25 @@ function returnToSol(): void {
 }
 ```
 
-- [ ] **Step 10: Add semantic controls before final styling**
-
-Gate on `observerSystem && alternateCatalog`:
-
-```svelte
-<button type="button" on:click={handleFindSol}>
-  {t("constellation.observer.findSol")}
-</button>
-<button type="button" on:click={returnToSol}>
-  {t("constellation.observer.returnToSol")}
-</button>
-<label>
-  <input type="checkbox" bind:checked={referenceVisible} />
-  {t("constellation.observer.referenceToggle")}
-</label>
-<div
-  data-testid="sol-announcement"
-  role="status"
-  aria-live="polite"
-  aria-atomic="true"
->
-  {solAnnouncement}
-</div>
-```
-
-- [ ] **Step 11: Run tests and commit**
+- [ ] **Step 7: Run the focused suite**
 
 ```bash
-bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts -t "prepared selection|reference toggle|Find Sol|canonical return"
+bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts
 ```
 
-Expected: exit code 0 and zero failures.
+Expected: exit code 0.
+
+- [ ] **Step 8: Commit**
 
 ```bash
-git add \
-  src/components/ConstellationWrapper.svelte \
+git add src/components/ConstellationWrapper.svelte \
   src/components/__tests__/ConstellationWrapper.observer.test.ts
 git commit -m "feat(constellation): add observer sky interactions"
 ```
 
 ---
 
-### Task 5: Add Localized HUD and Accessibility Copy
+### Task 5: Add the Localized Alternate HUD and Accessibility Copy
 
 **Files:**
 - Modify: `src/components/ConstellationWrapper.svelte`
@@ -997,317 +624,91 @@ git commit -m "feat(constellation): add observer sky interactions"
 - Modify: `src/i18n/ja.ts`
 - Modify: `src/i18n/__tests__/observerUiI18nSync.test.ts`
 
-**Localization Keys:**
+- [ ] **Step 1: Add exact locale strings**
+
+Add the following values:
+
+| Key suffix | English | Traditional Chinese | Japanese |
+| --- | --- | --- | --- |
+| `label` | Observer | 觀測者 | 観測者 |
+| `distanceFromSol` | Distance from Sol | 距離太陽 | 太陽からの距離 |
+| `frame` | Frame | 座標框架 | 座標系 |
+| `systemBarycenter` | System barycenter | 系統質心 | 系の重心 |
+| `viewDirection` | View direction | 視線方向 | 視線方向 |
+| `referenceToggle` | Show Earth/Sol reference | 顯示地球／太陽參考層 | 地球／太陽の参照レイヤーを表示 |
+| `referenceShown` | shown | 顯示中 | 表示中 |
+| `referenceHidden` | hidden | 已隱藏 | 非表示 |
+| `findSol` | Find Sol | 尋找太陽 | 太陽を探す |
+| `findSolAnnouncement` | Sol: right ascension {ra} h, declination {dec}°, distance {distance} ly. | 太陽：赤經 {ra} 小時，赤緯 {dec}°，距離 {distance} 光年。 | 太陽：赤経 {ra} 時、赤緯 {dec}°、距離 {distance} 光年。 |
+| `findSolUnavailable` | Sol could not be focused. | 無法將視角移至太陽。 | 太陽に視点を合わせられませんでした。 |
+| `returnToSol` | Return to Earth/Sol | 返回地球／太陽 | 地球／太陽へ戻る |
+| `education` | Constellation lines preserve Earth cultural reference shapes; star brightness is approximate for this observer. | 星座連線保留源自地球文化的參考形狀；此觀測位置所顯示的恆星亮度僅為近似值。 | 星座線は地球文化に由来する参照形状を保っています。この観測地点での恒星の明るさは概算です。 |
+| `summary` | Observer: {observer}. Earth/Sol reference: {reference}. | 觀測者：{observer}。地球／太陽參考層：{reference}。 | 観測者：{observer}。地球／太陽の参照レイヤー：{reference}。 |
+| `fallback` | Observer unavailable; showing the sky from Earth/Sol. | 無法使用此觀測者；目前顯示地球／太陽視角。 | この観測者は利用できないため、地球／太陽からの空を表示しています。 |
+| `omissions` | Some catalog stars could not be displayed. | 部分星表恆星無法顯示。 | 一部の星表データを表示できませんでした。 |
+| `webglUnavailable` | This observer view requires WebGL. | 此觀測者視角需要 WebGL。 | この観測者表示には WebGL が必要です。 |
+
+Prefix each suffix with `constellation.observer.`.
+
+- [ ] **Step 2: Extend the parity test before changing the HUD**
+
+Add all exact keys to `observerUiKeys`. Add placeholder parity assertions for:
 
 ```text
-constellation.observer.label
-constellation.observer.distanceFromSol
-constellation.observer.frame
-constellation.observer.systemBarycenter
-constellation.observer.viewDirection
-constellation.observer.referenceToggle
-constellation.observer.referenceShown
-constellation.observer.referenceHidden
-constellation.observer.findSol
-constellation.observer.findSolAnnouncement
-constellation.observer.findSolUnavailable
-constellation.observer.returnToSol
-constellation.observer.educationLines
-constellation.observer.educationBrightness
-constellation.observer.summary
-constellation.observer.fallbackLink
-constellation.observer.fallbackPosition
-constellation.observer.fallbackPreparation
-constellation.observer.omissions
-constellation.observer.webglUnavailable
+findSolAnnouncement -> {ra}, {dec}, {distance}
+summary -> {observer}, {reference}
 ```
 
-- [ ] **Step 1: Extend the parity test and verify failure**
-
-Add all keys above to the existing `observerUiKeys` tuple, retaining `action.viewSkyFromHere` and `galaxy.skyUnavailable`.
+Run:
 
 ```bash
 bunx vitest run src/i18n/__tests__/observerUiI18nSync.test.ts
 ```
 
-Expected: exit code 1 with missing-key assertions.
+Expected: exit code 1 until all three locale dictionaries contain the keys.
 
-- [ ] **Step 2: Add exact English copy**
+- [ ] **Step 3: Add failing HUD assertions**
 
-```ts
-"constellation.observer.label": "Observer",
-"constellation.observer.distanceFromSol": "Distance from Sol",
-"constellation.observer.frame": "Frame",
-"constellation.observer.systemBarycenter": "System barycenter",
-"constellation.observer.viewDirection": "View direction",
-"constellation.observer.referenceToggle": "Show Earth/Sol reference",
-"constellation.observer.referenceShown": "shown",
-"constellation.observer.referenceHidden": "hidden",
-"constellation.observer.findSol": "Find Sol",
-"constellation.observer.findSolAnnouncement":
-    "Sol: right ascension {ra} h, declination {dec}, distance {distance} ly.",
-"constellation.observer.findSolUnavailable":
-    "Sol is unavailable in this view.",
-"constellation.observer.returnToSol": "Return to Earth/Sol",
-"constellation.observer.educationLines":
-    "Constellation lines preserve Earth cultural reference shapes.",
-"constellation.observer.educationBrightness":
-    "Star brightness is approximate and is not corrected for this observer.",
-"constellation.observer.summary":
-    "Observer {name}. Earth/Sol reference {reference}.",
-"constellation.observer.fallbackLink":
-    "The requested observer link is unavailable. Showing the sky from Earth/Sol.",
-"constellation.observer.fallbackPosition":
-    "The requested observer position is unavailable. Showing the sky from Earth/Sol.",
-"constellation.observer.fallbackPreparation":
-    "The alternate sky could not be prepared. Showing the sky from Earth/Sol.",
-"constellation.observer.omissions":
-    "{count} catalog star(s) could not be displayed in this observer frame.",
-"constellation.observer.webglUnavailable":
-    "This alternate sky requires WebGL. Return to Earth/Sol to use the standard fallback.",
-```
+For alternate mode, assert the rendered HUD contains observer name, distance, System barycenter, neutral direction, checkbox, Find Sol, Return, and the combined education sentence.
 
-- [ ] **Step 3: Add exact Traditional Chinese copy**
+Also assert it does not contain Earth-only geo lock, UTC, `View from Earth`, cardinal compass text, or the viewing-month strip.
+
+For Sol mode, retain the current Earth HUD assertions.
+
+- [ ] **Step 4: Render the alternate HUD branch**
+
+Use the existing system localization pattern:
 
 ```ts
-"constellation.observer.label": "觀測位置",
-"constellation.observer.distanceFromSol": "與太陽的距離",
-"constellation.observer.frame": "參考框架",
-"constellation.observer.systemBarycenter": "系統質心",
-"constellation.observer.viewDirection": "視線方向",
-"constellation.observer.referenceToggle": "顯示地球／太陽參考層",
-"constellation.observer.referenceShown": "已顯示",
-"constellation.observer.referenceHidden": "已隱藏",
-"constellation.observer.findSol": "尋找太陽",
-"constellation.observer.findSolAnnouncement":
-    "太陽：赤經 {ra} 小時，赤緯 {dec}，距離 {distance} 光年。",
-"constellation.observer.findSolUnavailable":
-    "此視圖中無法定位太陽。",
-"constellation.observer.returnToSol": "返回地球／太陽",
-"constellation.observer.educationLines":
-    "星座連線保留源自地球文化傳統的參考形狀。",
-"constellation.observer.educationBrightness":
-    "恆星亮度為近似值，未依此觀測位置校正。",
-"constellation.observer.summary":
-    "觀測位置：{name}。地球／太陽參考層：{reference}。",
-"constellation.observer.fallbackLink":
-    "要求的觀測連結無法使用，現正顯示從地球／太陽觀看的星空。",
-"constellation.observer.fallbackPosition":
-    "要求的觀測位置無法使用，現正顯示從地球／太陽觀看的星空。",
-"constellation.observer.fallbackPreparation":
-    "無法準備其他恆星系的星空，現正顯示從地球／太陽觀看的星空。",
-"constellation.observer.omissions":
-    "此觀測框架中有 {count} 顆星表恆星無法顯示。",
-"constellation.observer.webglUnavailable":
-    "此星空視圖需要 WebGL。請返回地球／太陽以使用標準備援視圖。",
-```
-
-- [ ] **Step 4: Add exact Japanese copy**
-
-```ts
-"constellation.observer.label": "観測地点",
-"constellation.observer.distanceFromSol": "太陽からの距離",
-"constellation.observer.frame": "基準座標系",
-"constellation.observer.systemBarycenter": "系の重心",
-"constellation.observer.viewDirection": "視線方向",
-"constellation.observer.referenceToggle": "地球／太陽基準レイヤーを表示",
-"constellation.observer.referenceShown": "表示中",
-"constellation.observer.referenceHidden": "非表示",
-"constellation.observer.findSol": "太陽を探す",
-"constellation.observer.findSolAnnouncement":
-    "太陽：赤経 {ra} 時、赤緯 {dec}、距離 {distance} 光年。",
-"constellation.observer.findSolUnavailable":
-    "このビューでは太陽を特定できません。",
-"constellation.observer.returnToSol": "地球／太陽へ戻る",
-"constellation.observer.educationLines":
-    "星座線は地球文化に由来する基準形状を保持しています。",
-"constellation.observer.educationBrightness":
-    "星の明るさは概算であり、この観測地点向けには補正されていません。",
-"constellation.observer.summary":
-    "観測地点：{name}。地球／太陽基準レイヤー：{reference}。",
-"constellation.observer.fallbackLink":
-    "指定された観測リンクは利用できません。地球／太陽からの星空を表示します。",
-"constellation.observer.fallbackPosition":
-    "指定された観測位置は利用できません。地球／太陽からの星空を表示します。",
-"constellation.observer.fallbackPreparation":
-    "別の恒星系からの星空を準備できませんでした。地球／太陽からの星空を表示します。",
-"constellation.observer.omissions":
-    "この観測座標系では星表の恒星 {count} 個を表示できませんでした。",
-"constellation.observer.webglUnavailable":
-    "この星空ビューには WebGL が必要です。標準のフォールバックを使用するには地球／太陽へ戻ってください。",
-```
-
-- [ ] **Step 5: Run parity tests**
-
-```bash
-bunx vitest run src/i18n/__tests__/observerUiI18nSync.test.ts
-```
-
-Expected: exit code 0 and zero failures.
-
-- [ ] **Step 6: Write HUD rendering tests**
-
-```ts
-it("shows observer identity and hides Earth-only readouts", async () => {
-    setUrl("?observer=alpha-centauri");
-    prepareSuccessfulAlternateCatalog();
-
-    render(ConstellationWrapper, {
-        props: { lang: "en", translations: EN_TEST_TRANSLATIONS },
-    });
-
-    expect(await screen.findByText("Alpha Centauri System")).toBeTruthy();
-    expect(screen.getByText("System barycenter")).toBeTruthy();
-    expect(screen.getByText("Distance from Sol")).toBeTruthy();
-    expect(screen.getByText("View direction")).toBeTruthy();
-    expect(screen.queryByText("View from Earth")).toBeNull();
-    expect(screen.queryByText("GEO LOCK")).toBeNull();
-});
-```
-
-Add exact assertions:
-
-```ts
-expect(screen.queryByLabelText(/best viewing months/i)).toBeNull();
-expect(screen.getByTestId("observer-summary")).toHaveTextContent(
-    "Observer Alpha Centauri System. Earth/Sol reference hidden.",
-);
-```
-
-After checking the reference checkbox:
-
-```ts
-expect(screen.getByTestId("observer-summary")).toHaveTextContent(
-    "Earth/Sol reference shown.",
-);
-```
-
-Render `zh` and `ja` with their actual dictionaries and assert:
-
-```ts
-expect(document.body.textContent).not.toContain("constellation.observer.");
-```
-
-When renderer construction fails in alternate mode, assert the WebGL requirement copy and Return to Earth/Sol button are visible, while the Earth 2D test ID is absent.
-
-- [ ] **Step 7: Run HUD tests and verify failure**
-
-```bash
-bunx vitest run src/components/__tests__/ConstellationWrapper.observer.test.ts -t "observer identity|Earth-only|observer-summary|WebGL requirement|raw keys"
-```
-
-Expected: exit code 1 because the final HUD branch does not exist.
-
-- [ ] **Step 8: Add localized system/distance/summary helpers**
-
-```ts
-const systemName = (system: { id: string; name: string }) => {
+function observerSystemName(system: StarSystemData): string {
     const key = `systems.${system.id}.name`;
     const translated = t(key);
-    return !translated || translated === key ? system.name : translated;
-};
-
-$: observerDistance = observerSystem
-    ? new Intl.NumberFormat(currentLang, {
-          maximumFractionDigits: 2,
-      }).format(observerSystem.distanceFromEarth)
-    : "";
-$: referenceStatus = t(
-    referenceVisible
-        ? "constellation.observer.referenceShown"
-        : "constellation.observer.referenceHidden",
-);
-$: observerSummary = observerSystem
-    ? t("constellation.observer.summary", {
-          name: systemName(observerSystem),
-          reference: referenceStatus,
-      })
-    : "";
+    return translated === key ? system.name : translated;
+}
 ```
 
-- [ ] **Step 9: Branch the HUD readout**
+Iterate `renderedConstellations` directly for both modes. In alternate mode, omit the month strip and use prepared constellation star counts.
 
-For alternate prepared mode, render observer name, distance, frame, and neutral direction:
-
-```svelte
-{#if observerSystem && alternateCatalog}
-  <div class="hud-readout observer-readout">
-    <div class="readout-row">
-      <span class="readout-label">{t("constellation.observer.label")}</span>
-      <span></span>
-      <span class="readout-value">{systemName(observerSystem)}</span>
-    </div>
-    <div class="readout-row">
-      <span class="readout-label">{t("constellation.observer.distanceFromSol")}</span>
-      <span></span>
-      <span class="readout-value">{observerDistance} ly</span>
-    </div>
-    <div class="readout-row">
-      <span class="readout-label">{t("constellation.observer.frame")}</span>
-      <span></span>
-      <span class="readout-value">{t("constellation.observer.systemBarycenter")}</span>
-    </div>
-  </div>
-  <div class="compass-readout">
-    <span class="compass-label">{t("constellation.observer.viewDirection")}</span>
-    <span class="compass-value">{facingDegDisplay}° {facingElevDisplay}</span>
-  </div>
-{:else}
-  <!-- keep the current GEO LOCK, UTC, cardinal compass, and View from Earth markup unchanged -->
-{/if}
-```
-
-- [ ] **Step 10: Iterate `renderedConstellations` directly**
-
-Replace the current nested ID/filter list with:
+Add:
 
 ```svelte
-{#each renderedConstellations as constellation}
-  <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
-    <button
-      type="button"
-      class="hud-list-row"
-      class:is-selected={viewState.selectedConstellation === constellation.id}
-      on:click={() => handleSelectConstellation(constellation.id)}
-      data-constellation-id={constellation.id}
-    >
-      <span class="row-abbr">[{constellation.abbreviation}]</span>
-      <span class="row-name">{constellationName(constellation)}</span>
-      <span class="row-leader"></span>
-      <span class="row-count">
-        {constellation.stars.length}★
-        <span class="sr-only">{t("constellation.stars")}</span>
-      </span>
-    </button>
-  </li>
-{/each}
-```
-
-Use the same list for selected details. Render the viewing-month strip only when `alternateCatalog === null`.
-
-- [ ] **Step 11: Finalize controls, copy, notices, and summaries**
-
-Use existing `Button` styling for the two actions. Keep the reference input in the settings slot.
-
-```svelte
-<p class="observer-education">
-  {t("constellation.observer.educationLines")}
+<p class="sr-only">
+    {t("constellation.observer.summary", {
+        observer: observerSystemName(observerSystem),
+        reference: t(
+            referenceVisible
+                ? "constellation.observer.referenceShown"
+                : "constellation.observer.referenceHidden",
+        ),
+    })}
 </p>
-<p class="observer-education">
-  {t("constellation.observer.educationBrightness")}
-</p>
-<p id="observer-summary" data-testid="observer-summary" class="sr-only">
-  {observerSummary}
+
+<p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+    {solAnnouncement}
 </p>
 ```
 
-Keep the Sol announcement region polite and atomic. Place fallback/omission copy visibly inside the HUD with `role="status"`, never `role="alert"`.
-
-For alternate WebGL failure, show `constellation.observer.webglUnavailable` and Return to Earth/Sol. For Sol failure, keep current copy and Back to Menu behavior.
-
-Add only minimal layout classes for observer readout, actions, education, and notice; reuse existing HUD variables and add no animations.
-
-- [ ] **Step 12: Run all focused suites and commit**
+- [ ] **Step 5: Run focused HUD and locale tests**
 
 ```bash
 bunx vitest run \
@@ -1316,138 +717,105 @@ bunx vitest run \
   src/i18n/__tests__/observerUiI18nSync.test.ts
 ```
 
-Expected: exit code 0 and zero failures.
+Expected: exit code 0.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add \
-  src/components/ConstellationWrapper.svelte \
+git add src/components/ConstellationWrapper.svelte \
   src/components/__tests__/ConstellationWrapper.observer.test.ts \
-  src/i18n/en.ts \
-  src/i18n/zh.ts \
-  src/i18n/ja.ts \
+  src/components/__tests__/ConstellationWrapper.test.ts \
+  src/i18n/en.ts src/i18n/zh.ts src/i18n/ja.ts \
   src/i18n/__tests__/observerUiI18nSync.test.ts
 git commit -m "feat(constellation): add localized observer HUD"
 ```
 
 ---
 
-### Task 6: Verify Integration and Prepare the PR
+### Task 6: Verify the Integration and Scope Boundary
 
 **Files:**
-- Change only files already listed when verification exposes a defect.
+- Modify implementation files only if verification exposes a defect
 
-- [ ] **Step 1: Run focused HPA-435 suites**
+- [ ] **Step 1: Run focused tests**
 
 ```bash
 bunx vitest run \
   src/lib/constellation/__tests__/observerSourceStarIds.test.ts \
   src/components/__tests__/ConstellationWrapper.observer.test.ts \
   src/components/__tests__/ConstellationWrapper.test.ts \
-  src/i18n/__tests__/observerUiI18nSync.test.ts
-```
-
-Expected: exit code 0 and zero failures.
-
-- [ ] **Step 2: Run consumed contract suites**
-
-```bash
-bunx vitest run \
+  src/i18n/__tests__/observerUiI18nSync.test.ts \
   src/lib/constellation/__tests__/observerRouteState.test.ts \
   src/lib/constellation/__tests__/observerCatalog.test.ts \
   src/lib/constellation/__tests__/ConstellationRenderer.test.ts
 ```
 
-Expected: exit code 0 and zero failures.
+Expected: exit code 0.
 
-- [ ] **Step 3: Run complete verification**
+- [ ] **Step 2: Run the full unit suite**
 
 ```bash
 bun run test:run
+```
+
+Expected: exit code 0 and zero failed tests.
+
+- [ ] **Step 3: Run static verification**
+
+```bash
 bun run type-check
 bunx eslint src
 bun run build
 ```
 
-Expected: every command exits 0. Record exact test totals and command output in the PR description after running them; do not predict totals in advance.
+Expected: every command exits 0.
 
-- [ ] **Step 4: Review the diff boundary**
+- [ ] **Step 4: Review the final diff**
 
 ```bash
-git diff --name-only main...HEAD
 git diff --stat main...HEAD
+git diff --name-only main...HEAD
 ```
 
-Production changes should be limited to:
+Expected production scope:
 
 ```text
-src/lib/constellation/observerSourceStarIds.ts
 src/components/ConstellationWrapper.svelte
 src/i18n/en.ts
-src/i18n/zh.ts
 src/i18n/ja.ts
+src/i18n/zh.ts
+src/lib/constellation/observerSourceStarIds.ts
 ```
 
-plus focused tests and the approved docs.
+Expected focused tests:
 
-Remove accidental changes to route state, catalog preparation, renderer/layer internals, Galaxy entry, stores, source data, or broad E2E suites unless a concrete dependency defect is documented.
+```text
+src/components/__tests__/ConstellationWrapper.observer.test.ts
+src/components/__tests__/ConstellationWrapper.test.ts (only if mock changes were required)
+src/i18n/__tests__/observerUiI18nSync.test.ts
+src/lib/constellation/__tests__/observerSourceStarIds.test.ts
+```
 
-- [ ] **Step 5: Check the acceptance matrix**
+Investigate any change to route, catalog-preparation, renderer, Galaxy, store, or broad E2E files before keeping it.
 
-| Scenario | Required result |
-| --- | --- |
-| query-free constellation route | unchanged Earth path |
-| `?observer=alpha-centauri` | full unfiltered prepared path |
-| Alpha Centauri primary | no phantom `alpha_cen` |
-| reference enabled | immediate display; no preparation/reinit |
-| Find Sol | focuses `sol`; announces RA/Dec/distance |
-| invalid route state | visible Sol fallback |
-| synthetic Sol fatal | Sol fallback; no partial handoff |
-| expected exclusion only | no corruption notice |
-| genuine omission | one aggregate status notice |
-| alternate WebGL failure | no Earth 2D grid; Return to Earth/Sol |
-| `en`/`zh`/`ja` | no raw observer keys |
-| reduced motion | existing renderer focus policy applies |
-
-Use automated tests for every row except the final local visual smoke check of layout.
-
-- [ ] **Step 6: Commit verification fixes only when needed**
+- [ ] **Step 5: Commit verification fixes, when present**
 
 ```bash
-git add src/lib/constellation/observerSourceStarIds.ts \
-  src/lib/constellation/__tests__/observerSourceStarIds.test.ts \
-  src/components/ConstellationWrapper.svelte \
-  src/components/__tests__/ConstellationWrapper.observer.test.ts \
-  src/components/__tests__/ConstellationWrapper.test.ts \
-  src/i18n/en.ts src/i18n/zh.ts src/i18n/ja.ts \
-  src/i18n/__tests__/observerUiI18nSync.test.ts
-git commit -m "fix(constellation): close observer integration gaps"
+git add <only-files-changed-by-verification>
+git commit -m "fix(constellation): resolve observer integration verification"
 ```
 
-Skip this commit when the worktree is clean after verification.
+Skip this commit when verification required no changes.
 
-- [ ] **Step 7: Write the PR description from fresh evidence**
+- [ ] **Step 6: Record evidence in the PR**
 
-Use these headings and fill each verification bullet with the exact output from Step 3:
+Report exact results for:
 
-```markdown
-## Summary
+- focused tests;
+- full unit tests;
+- type check;
+- ESLint;
+- production build; and
+- final changed-file scope.
 
-Implements HPA-435 by wiring observer route state, prepared catalogs, and renderer layers into `ConstellationWrapper`, with a localized observer HUD, Earth/Sol-reference toggle, Find Sol, canonical return, and visible typed fallbacks.
-
-## YAGNI Boundary
-
-- one stable-ID mapping module;
-- wrapper-local state;
-- no new service, store, renderer API, URL preference, or persistence;
-- no alternate 2D renderer;
-- HPA-436 retains broad E2E/performance ownership.
-
-## Verification
-
-- complete test suite: exact command and result
-- type-check: exact command and result
-- scoped ESLint: exact command and result
-- production build: exact command and result
-```
-
-Do not write passing claims until those commands have run in the implementation branch.
+Do not claim passing status until each command has run on the implementation branch.
