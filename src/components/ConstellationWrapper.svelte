@@ -200,6 +200,17 @@
     return resolveObserverState(parsed, localGalaxyData.starSystems);
   }
 
+  // Shared star-system lookup for the resolved observer. Returns null for
+  // non-system observers or when the system id is not found in the local
+  // galaxy data; both the WebGL-preflight branch and the main init branch
+  // use this so the lookup behavior stays identical.
+  function findObserverSystem(state: ResolvedObserverState): StarSystemData | null {
+    if (state.kind !== "system") return null;
+    return localGalaxyData.starSystems.find(
+      (candidate) => candidate.id === state.observerId,
+    ) ?? null;
+  }
+
   // Shared renderer factory: both initialization modes create the renderer
   // with the same interaction callbacks and localized accessibility copy.
   function createRenderer(): ConstellationRenderer {
@@ -379,6 +390,12 @@
       // observer-specific WebGL-required UI (with Return to Earth/Sol) is
       // shown instead.
       observerWebglFailed = true;
+      // Dispose the partially-initialized renderer and clear the reference
+      // so subsequent HUD/reactive/toggle/focus calls cannot use it.
+      if (renderer) {
+        renderer.dispose();
+        renderer = null;
+      }
     }
 
     return "ready";
@@ -401,11 +418,7 @@
         // canvas, and no degrade to the Sol legacy path. Every other case
         // (Sol mode, route fallbacks, defensive miss) keeps the existing
         // generic Earth WebGL overlay via the throw below.
-        const system = resolvedObserverState.kind === "system"
-          ? localGalaxyData.starSystems.find(
-              (candidate) => candidate.id === resolvedObserverState.observerId,
-            ) ?? null
-          : null;
+        const system = findObserverSystem(resolvedObserverState);
         if (system) {
           observerSystem = system;
           observerWebglFailed = true;
@@ -433,9 +446,7 @@
         // Defensive second lookup: the resolver and this lookup share the
         // same starSystems source, so it should always hit. Guard anyway so
         // an unexpected mismatch degrades to Sol mode — no non-null assertion.
-        const system = localGalaxyData.starSystems.find(
-          (candidate) => candidate.id === resolvedObserverState.observerId,
-        ) ?? null;
+        const system = findObserverSystem(resolvedObserverState);
 
         if (!system) {
           if (import.meta.env.DEV) {
@@ -1327,6 +1338,10 @@
     border: 1px solid var(--hud-cyan);
     padding: 4px 10px;
     cursor: pointer;
+  }
+  .observer-action-btn:focus-visible {
+    outline: 2px solid var(--hud-ivory);
+    outline-offset: 2px;
   }
   .observer-announcement {
     margin-top: 6px;
