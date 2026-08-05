@@ -1102,7 +1102,7 @@
         <input type="checkbox" bind:checked={autoRotateOn} disabled={reducedMotion} />
         {t('constellation.autoRotate')}
       </label>
-      {#if alternateCatalog?.referenceCatalog && !observerWebglFailed}
+      {#if renderer && alternateCatalog?.referenceCatalog && !error}
         <label class="hud-setting">
           <input
             type="checkbox"
@@ -1112,7 +1112,7 @@
           {t('constellation.observer.referenceToggle')}
         </label>
       {/if}
-      {#if alternateCatalog && !observerWebglFailed}
+      {#if renderer && alternateCatalog && !error}
         <div class="observer-actions">
           <button
             type="button"

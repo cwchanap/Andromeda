@@ -780,6 +780,22 @@ describe("ConstellationWrapper observer WebGL gating", () => {
         await new Promise((resolve) => setTimeout(resolve, 120));
         expect(rafSpy).not.toHaveBeenCalled();
         rafSpy.mockRestore();
+
+        // Regression (P2): the observer settings controls must NOT render
+        // after prepared-catalog failure. alternateCatalog stays populated
+        // and observerWebglFailed is false (this is not a WebGL error), so
+        // the prior guards (alternateCatalog && !observerWebglFailed) left
+        // the reference toggle and Find Sol button reachable via keyboard
+        // tab order behind the pointer-events-none error overlay. The
+        // renderer is now the source of truth: it is null here, so both
+        // controls must be absent — matching the constructor-failure test.
+        fireEvent.click(queryByText("Settings")!);
+        await waitFor(() => {
+            // Panel is open when a non-observer setting renders.
+            expect(queryByText("constellation.scanlines")).not.toBeNull();
+        });
+        expect(queryByText("Show Earth/Sol reference")).toBeNull();
+        expect(queryByText("Find Sol")).toBeNull();
     });
 
     it("genuine WebGL/renderer failure shows the WebGL-required overlay and keeps observer controls non-interactive", async () => {
