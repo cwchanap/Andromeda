@@ -547,11 +547,13 @@ describe("GalaxyWrapper — observer sky action", () => {
             actionRow!.querySelectorAll<HTMLButtonElement>("button"),
         );
         expect(actions.map((button) => button.textContent?.trim())).toEqual([
+            "Close",
             "View sky from here",
             "Coming Soon",
         ]);
         expect(actions[0].classList.contains("secondary")).toBe(true);
-        expect(actions[1].classList.contains("primary")).toBe(true);
+        expect(actions[1].classList.contains("secondary")).toBe(true);
+        expect(actions[2].classList.contains("primary")).toBe(true);
     });
 
     it("renders Explore for a registered system", async () => {
