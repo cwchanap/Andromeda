@@ -7,6 +7,9 @@ on:
     paths:
       - .github/workflows/hpa-564-quality-final.yml
 
+permissions:
+  pull-requests: write
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -22,3 +25,7 @@ jobs:
         run: bun run type-check
       - name: Lint
         run: bun run lint
+      - name: Record success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment 41 --body "Final quality verification on commit $GITHUB_SHA: type-check and lint passed."
