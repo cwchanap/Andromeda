@@ -1,19 +1,24 @@
 name: HPA-564 quality gates
 
 on:
-  push:
-    branches:
-      - agent/hpa-564-observer-switching
+  pull_request:
+    branches: [main]
     paths:
       - .github/workflows/hpa-564-quality.yml
+      - src/components/GalaxyWrapper.svelte
+      - src/components/ConstellationWrapper.svelte
+      - src/components/__tests__/GalaxyWrapper.test.ts
+      - src/components/__tests__/ConstellationWrapper.observer.test.ts
+      - src/i18n/en.ts
+      - src/i18n/zh.ts
+      - src/i18n/ja.ts
+      - src/i18n/__tests__/observerUiI18nSync.test.ts
 
 jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/hpa-564-observer-switching
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
