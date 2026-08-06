@@ -1,0 +1,24 @@
+name: HPA-564 quality gates
+
+on:
+  push:
+    branches:
+      - agent/hpa-564-observer-switching
+    paths:
+      - .github/workflows/hpa-564-quality.yml
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/hpa-564-observer-switching
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install
+      - name: Type check
+        run: bun run type-check
+      - name: Lint
+        run: bun run lint
