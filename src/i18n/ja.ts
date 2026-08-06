@@ -792,6 +792,7 @@ export const ja = {
     "constellation.observer.findSolUnavailable":
         "太陽に視点を合わせられませんでした。",
     "constellation.observer.returnToSol": "地球／太陽へ戻る",
+    "constellation.observer.chooseAnother": "別の観測地点を選ぶ",
     "constellation.observer.education":
         "星座線は地球文化に由来する参照形状を保っています。この観測地点での恒星の明るさは概算です。",
     "constellation.observer.fallback":

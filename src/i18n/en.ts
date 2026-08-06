@@ -654,6 +654,7 @@ export const en = {
         "Sol: right ascension {ra} h, declination {dec}°, distance {distance} ly.",
     "constellation.observer.findSolUnavailable": "Sol could not be focused.",
     "constellation.observer.returnToSol": "Return to Earth/Sol",
+    "constellation.observer.chooseAnother": "Choose another observer",
     "constellation.observer.education":
         "Constellation lines preserve Earth cultural reference shapes; star brightness is approximate for this observer.",
     "constellation.observer.fallback":

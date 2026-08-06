@@ -765,6 +765,7 @@ export const zh = {
         "太阳：赤经 {ra} 小时，赤纬 {dec}°，距离 {distance} 光年。",
     "constellation.observer.findSolUnavailable": "无法将视角移至太阳。",
     "constellation.observer.returnToSol": "返回地球／太阳",
+    "constellation.observer.chooseAnother": "选择其他观测点",
     "constellation.observer.education":
         "星座连线保留源自地球文化的参考形状；此观测位置所显示的恒星亮度仅为近似值。",
     "constellation.observer.fallback":
