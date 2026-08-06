@@ -106,6 +106,7 @@
       
       case 'Enter':
       case ' ':
+        if (!document.activeElement?.classList.contains('menu-button')) break;
         event.preventDefault();
         menuItems[focusedIndex].action();
         break;

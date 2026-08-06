@@ -327,6 +327,34 @@ describe("MainMenu", () => {
             }
         });
 
+        it("should let Enter activate Settings after tab focus", async () => {
+            const { container } = render(MainMenu, {
+                props: { translations: testTranslations },
+            });
+            const settingsButton = Array.from(
+                container.querySelectorAll<HTMLButtonElement>("button"),
+            ).find((button) => button.textContent?.includes("Settings"));
+
+            expect(settingsButton).toBeTruthy();
+            settingsButton?.focus();
+            expect(document.activeElement).toBe(settingsButton);
+
+            const keydown = new KeyboardEvent("keydown", {
+                key: "Enter",
+                bubbles: true,
+                cancelable: true,
+            });
+            settingsButton?.dispatchEvent(keydown);
+
+            // jsdom does not perform the browser's native button activation.
+            if (!keydown.defaultPrevented) {
+                await fireEvent.click(settingsButton!);
+            }
+
+            expect(container.textContent).toContain("Game Settings");
+            expect(gameActions.navigateToView).not.toHaveBeenCalled();
+        });
+
         it("should move focus to next item on ArrowDown", async () => {
             const { container } = render(MainMenu, {
                 props: { translations: testTranslations },
@@ -378,8 +406,10 @@ describe("MainMenu", () => {
         });
 
         it("should trigger Solar System action on Enter at index 0", async () => {
-            render(MainMenu, { props: { translations: testTranslations } });
-            // focusedIndex starts at 0 (Solar System)
+            const { container } = render(MainMenu, {
+                props: { translations: testTranslations },
+            });
+            container.querySelector<HTMLButtonElement>(".menu-button")?.focus();
             await fireEvent.keyDown(window, { key: "Enter" });
             expect(gameActions.navigateToView).toHaveBeenCalledWith(
                 "solar-system",
@@ -387,7 +417,10 @@ describe("MainMenu", () => {
         });
 
         it("should trigger Solar System action on Space at index 0", async () => {
-            render(MainMenu, { props: { translations: testTranslations } });
+            const { container } = render(MainMenu, {
+                props: { translations: testTranslations },
+            });
+            container.querySelector<HTMLButtonElement>(".menu-button")?.focus();
             await fireEvent.keyDown(window, { key: " " });
             expect(gameActions.navigateToView).toHaveBeenCalledWith(
                 "solar-system",
