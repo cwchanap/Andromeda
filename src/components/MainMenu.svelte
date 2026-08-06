@@ -222,7 +222,7 @@
   </div>
 
   <!-- Settings -->
-  <div class="absolute right-4 top-4 z-30">
+  <div class="home-settings-control absolute right-4 top-4 z-30">
     <HudButton aria-describedby="settings-desc" on:click={handleOpenSettings}>
       {t ? t('main.settings') : 'Settings'}
     </HudButton>
