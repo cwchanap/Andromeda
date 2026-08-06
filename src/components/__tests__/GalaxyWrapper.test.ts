@@ -526,21 +526,31 @@ describe("GalaxyWrapper — observer sky action", () => {
         installDefaultMatchMedia();
     });
 
-    it("renders ordered secondary View Sky and primary Explore actions", async () => {
+    it("keeps the primary observer action above the scrollable details body", async () => {
         const { container } = await openSystemDialog();
-        const actions = Array.from(
-            container.querySelectorAll<HTMLButtonElement>(
-                ".system-dialog .dialog-actions button",
-            ),
+        const actionRow = container.querySelector(
+            ".system-dialog .dialog-primary-actions",
+        );
+        const detailsBody = container.querySelector(
+            ".system-dialog .dialog-content",
         );
 
+        expect(actionRow).not.toBeNull();
+        expect(detailsBody).not.toBeNull();
+        expect(
+            actionRow!.compareDocumentPosition(detailsBody!) &
+                Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+
+        const actions = Array.from(
+            actionRow!.querySelectorAll<HTMLButtonElement>("button"),
+        );
         expect(actions.map((button) => button.textContent?.trim())).toEqual([
-            "Close",
             "View sky from here",
             "Coming Soon",
         ]);
+        expect(actions[0].classList.contains("primary")).toBe(true);
         expect(actions[1].classList.contains("secondary")).toBe(true);
-        expect(actions[2].classList.contains("primary")).toBe(true);
     });
 
     it("navigates an eligible non-explorable system", async () => {

@@ -25,6 +25,7 @@ const OBSERVER_TRANSLATIONS: Record<string, string> = {
     "constellation.observer.webglUnavailable":
         "WebGL is required to view the sky from this observer.",
     "constellation.observer.returnToSol": "Return to Earth/Sol",
+    "constellation.observer.chooseAnother": "Choose another observer",
     // Observer ACTION copy (Task 4). The announcement template carries the
     // {ra}/{dec}/{distance} placeholders the wrapper's t() interpolates.
     "constellation.observer.referenceToggle": "Show Earth/Sol reference",
@@ -827,6 +828,7 @@ describe("ConstellationWrapper observer WebGL gating", () => {
             ).not.toBeNull();
         });
         expect(queryByText("Return to Earth/Sol")).not.toBeNull();
+        expect(queryByText("Choose another observer")).not.toBeNull();
         expect(container.querySelectorAll("canvas")).toHaveLength(0);
         expect(initializeMock).not.toHaveBeenCalled();
         // createRenderer threw before prepared init could run.
@@ -1155,6 +1157,52 @@ describe("ConstellationWrapper observer actions", () => {
 
             expect(stubLocation.href).toBe(routes.constellation("en"));
             expect(stubLocation.href).not.toContain("observer=sol");
+        } finally {
+            if (originalLocationDescriptor) {
+                Object.defineProperty(
+                    window,
+                    "location",
+                    originalLocationDescriptor,
+                );
+            }
+        }
+    });
+
+    it("Choose another observer navigates to the localized Galaxy route", async () => {
+        prepareAlternateObserverCatalogMock.mockReturnValue({
+            ok: true,
+            value: {
+                primaryCatalog: preparedPrimaryCatalog,
+                referenceCatalog: preparedReferenceCatalog,
+                omittedStars: [],
+            },
+        });
+        const stubLocation = {
+            href: "http://localhost/ja/constellation?observer=alpha-centauri",
+            pathname: "/ja/constellation",
+            search: "?observer=alpha-centauri",
+        };
+        const originalLocationDescriptor = Object.getOwnPropertyDescriptor(
+            window,
+            "location",
+        );
+        Object.defineProperty(window, "location", {
+            configurable: true,
+            value: stubLocation,
+        });
+
+        try {
+            const { queryByText } = render(ConstellationWrapper, {
+                lang: "ja",
+                translations: OBSERVER_TRANSLATIONS,
+            });
+            await waitFor(() => {
+                expect(queryByText("Choose another observer")).not.toBeNull();
+            });
+
+            fireEvent.click(queryByText("Choose another observer")!);
+
+            expect(stubLocation.href).toBe(routes.galaxy("ja"));
         } finally {
             if (originalLocationDescriptor) {
                 Object.defineProperty(
