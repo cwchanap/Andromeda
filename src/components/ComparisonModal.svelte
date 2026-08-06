@@ -10,14 +10,7 @@
         COMPARISON_ATTRIBUTES,
         type SelectableBody,
     } from "../utils/comparisonUtils";
-
-    // Generate star field once (not per render)
-    const BACKGROUND_STARS = Array.from({ length: 75 }, () => ({
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        delay: Math.random() * 4,
-        opacity: 0.2 + Math.random() * 0.8,
-    }));
+    import ModalShell from "@/components/ModalShell.svelte";
 
     export let isOpen: boolean = false;
     export let bodies: CelestialBodyData[] = [];
@@ -54,22 +47,11 @@
     // Size ratios for table
     $: sizeRatios = calculateSizeRatios(bodies);
 
-    // Keyboard handlers
-    const handleKeydown = (event: KeyboardEvent) => {
-        if (event.key === "Escape") {
-            if (showBodySelector) {
-                showBodySelector = false;
-            } else {
-                onClose();
-            }
-        }
-    };
-
-    const handleOverlayClick = (event: MouseEvent) => {
-        if (event.target === event.currentTarget) {
-            onClose();
-        }
-    };
+    function handleShellEscape(): boolean {
+        if (!showBodySelector) return false;
+        showBodySelector = false;
+        return true;
+    }
 
     // Body selection
     const handleSelectBody = (selectableBody: SelectableBody) => {
@@ -162,53 +144,22 @@
 </script>
 
 {#if isOpen}
-    <div
-        class="modal-overlay"
-        on:click={handleOverlayClick}
-        on:keydown={handleKeydown}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="comparison-title"
-        tabindex="-1"
+    <ModalShell
+        {isOpen}
+        {onClose}
+        onEscape={handleShellEscape}
+        closeLabel={t("action.close")}
+        ariaLabelledby="comparison-title"
+        maxWidth="1000px"
+        decoration="stars"
+        theme={{
+            primary: "#60a5fa",
+            secondary: "#3b82f6",
+            accent: "#ddd6fe",
+        }}
     >
-        <div class="modal-container">
-            <div class="modal-content">
-                <!-- Star field background -->
-                <div class="star-field">
-                    {#each BACKGROUND_STARS as star, i}
-                        <div
-                            class="star"
-                            style="
-                                left: {star.left}%;
-                                top: {star.top}%;
-                                animation-delay: {star.delay}s;
-                                opacity: {star.opacity};
-                            "
-                        ></div>
-                    {/each}
-                </div>
-
-                <!-- Close button -->
-                <button
-                    class="modal-close"
-                    on:click={onClose}
-                    aria-label={t("action.close")}
-                    type="button"
-                >
-                    <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-
-                <!-- Header -->
+        <svelte:fragment slot="header">
+            <!-- Header -->
                 <div class="modal-header">
                     <div class="header-content">
                         <svg
@@ -269,6 +220,7 @@
                         {t("comparison.export")}
                     </button>
                 </div>
+        </svelte:fragment>
 
                 <!-- Export error message -->
                 {#if exportError}
@@ -483,122 +435,15 @@
                     </div>
                 {/if}
 
-                <!-- Footer -->
-                <div class="modal-footer">
-                    <div class="cosmic-divider"></div>
-                    <p>{t("comparison.footerText")}</p>
-                </div>
-            </div>
+        <!-- Footer -->
+        <div class="modal-footer">
+            <div class="cosmic-divider"></div>
+            <p>{t("comparison.footerText")}</p>
         </div>
-    </div>
+    </ModalShell>
 {/if}
 
 <style>
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 17, 0.95);
-        backdrop-filter: blur(8px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        animation: fadeIn 0.3s ease-out;
-    }
-
-    .modal-container {
-        position: relative;
-        max-width: 1000px;
-        width: 95%;
-        max-height: 90vh;
-        overflow: hidden;
-    }
-
-    .modal-content {
-        position: relative;
-        background: linear-gradient(
-            135deg,
-            rgba(15, 23, 42, 0.98) 0%,
-            rgba(30, 41, 59, 0.95) 50%,
-            rgba(15, 23, 42, 0.98) 100%
-        );
-        color: white;
-        border: 2px solid;
-        border-image: linear-gradient(45deg, #60a5fa, #ddd6fe, #3b82f6) 1;
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow:
-            0 25px 50px -12px rgba(0, 0, 0, 0.8),
-            0 0 100px rgba(96, 165, 250, 0.2);
-        overflow-y: auto;
-        max-height: calc(90vh - 40px);
-    }
-
-    .modal-content::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: linear-gradient(
-            90deg,
-            transparent 0%,
-            #60a5fa 25%,
-            #ddd6fe 50%,
-            #3b82f6 75%,
-            transparent 100%
-        );
-        z-index: 1;
-    }
-
-    .star-field {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 0;
-        overflow: hidden;
-    }
-
-    .star {
-        position: absolute;
-        width: 2px;
-        height: 2px;
-        background: white;
-        border-radius: 50%;
-        animation: twinkle 4s ease-in-out infinite;
-    }
-
-    .modal-close {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        cursor: pointer;
-        z-index: 10;
-        transition: all 0.2s ease;
-    }
-
-    .modal-close:hover {
-        background: rgba(239, 68, 68, 0.2);
-        border-color: rgba(239, 68, 68, 0.5);
-        transform: scale(1.1);
-    }
-
     .modal-header {
         display: flex;
         justify-content: space-between;
@@ -956,25 +801,6 @@
         font-style: italic;
     }
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-
-    @keyframes twinkle {
-        0%,
-        100% {
-            opacity: 0.3;
-        }
-        50% {
-            opacity: 1;
-        }
-    }
-
     @keyframes spin {
         from {
             transform: rotate(0deg);
@@ -986,10 +812,6 @@
 
     /* Responsive */
     @media (max-width: 768px) {
-        .modal-content {
-            padding: 20px;
-        }
-
         .modal-header {
             flex-direction: column;
             gap: 16px;

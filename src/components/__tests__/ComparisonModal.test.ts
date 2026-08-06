@@ -76,14 +76,20 @@ describe("ComparisonModal", () => {
             props: { ...defaultProps, isOpen: false },
         });
         // The {#if isOpen} block should be inactive
-        const overlay = container.querySelector(".modal-overlay");
+        const overlay = container.querySelector(".modal-shell-overlay");
         expect(overlay).toBeNull();
     });
 
-    it("renders modal-overlay when isOpen=true", () => {
-        const { container } = render(ComparisonModal, { props: defaultProps });
-        const overlay = container.querySelector(".modal-overlay");
+    it("renders the modal shell dialog with an accessible name when isOpen=true", () => {
+        const { container, getByRole } = render(ComparisonModal, {
+            props: defaultProps,
+        });
+        const overlay = container.querySelector(".modal-shell-overlay");
         expect(overlay).not.toBeNull();
+        expect(container.querySelector(".modal-shell-dialog")).not.toBeNull();
+        expect(
+            getByRole("dialog", { name: "comparison.title" }),
+        ).toBeTruthy();
     });
 
     it("renders empty-state element when bodies array is empty", () => {
@@ -91,17 +97,19 @@ describe("ComparisonModal", () => {
         expect(container.querySelector(".empty-state")).not.toBeNull();
     });
 
-    it("renders modal-close button", () => {
+    it("renders modal shell close button", () => {
         const { container } = render(ComparisonModal, { props: defaultProps });
-        expect(container.querySelector(".modal-close")).not.toBeNull();
+        expect(container.querySelector(".modal-shell-close")).not.toBeNull();
     });
 
-    it("clicking modal-close button calls onClose", async () => {
+    it("clicking modal shell close button calls onClose", async () => {
         const onClose = vi.fn();
         const { container } = render(ComparisonModal, {
             props: { ...defaultProps, onClose },
         });
-        const closeBtn = container.querySelector(".modal-close") as HTMLElement;
+        const closeBtn = container.querySelector(
+            ".modal-shell-close",
+        ) as HTMLElement;
         await fireEvent.click(closeBtn);
         expect(onClose).toHaveBeenCalled();
     });
@@ -112,7 +120,7 @@ describe("ComparisonModal", () => {
             props: { ...defaultProps, onClose },
         });
         const overlay = container.querySelector(
-            ".modal-overlay",
+            ".modal-shell-overlay",
         ) as HTMLElement;
         await fireEvent.keyDown(overlay, { key: "Escape" });
         expect(onClose).toHaveBeenCalled();
@@ -124,7 +132,7 @@ describe("ComparisonModal", () => {
             props: { ...defaultProps, onClose },
         });
         const overlay = container.querySelector(
-            ".modal-overlay",
+            ".modal-shell-overlay",
         ) as HTMLElement;
         // Simulate clicking directly on the overlay (not a child)
         await fireEvent.click(overlay);
@@ -142,8 +150,8 @@ describe("ComparisonModal", () => {
 
     it("renders star-field background stars", () => {
         const { container } = render(ComparisonModal, { props: defaultProps });
-        const stars = container.querySelectorAll(".star");
-        // 75 background stars are generated
+        const stars = container.querySelectorAll(".modal-shell-star");
+        // ModalShell renders 75 stars for the stars decoration
         expect(stars.length).toBe(75);
     });
 
@@ -185,19 +193,17 @@ describe("ComparisonModal – body selector", () => {
         expect(container.querySelector(".body-selector")).not.toBeNull();
     });
 
-    it("pressing Escape when body selector is open closes selector instead of modal", async () => {
+    it("Escape closes the body selector before the modal", async () => {
         const onClose = vi.fn();
-        const { container } = render(ComparisonModal, {
+        const { container, getByRole } = render(ComparisonModal, {
             props: { ...defaultProps, onClose },
         });
         const addBtn = container.querySelector(".add-body-btn") as HTMLElement;
         await fireEvent.click(addBtn);
         expect(container.querySelector(".body-selector")).not.toBeNull();
 
-        const overlay = container.querySelector(
-            ".modal-overlay",
-        ) as HTMLElement;
-        await fireEvent.keyDown(overlay, { key: "Escape" });
+        const dialog = getByRole("dialog", { name: "comparison.title" });
+        await fireEvent.keyDown(dialog, { key: "Escape" });
 
         expect(container.querySelector(".body-selector")).toBeNull();
         expect(onClose).not.toHaveBeenCalled();
