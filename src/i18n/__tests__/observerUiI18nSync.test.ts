@@ -16,6 +16,7 @@ const observerUiKeys = [
     "constellation.observer.findSolAnnouncement",
     "constellation.observer.findSolUnavailable",
     "constellation.observer.returnToSol",
+    "constellation.observer.chooseAnother",
     "constellation.observer.education",
     "constellation.observer.fallback",
     "constellation.observer.omissions",
