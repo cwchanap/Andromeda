@@ -1,0 +1,29 @@
+name: HPA-564 E2E update
+
+on:
+  push:
+    branches:
+      - agent/hpa-564-observer-switching
+    paths:
+      - scripts/apply-hpa-564-e2e-fix.mjs
+      - .github/workflows/hpa-564-e2e-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-e2e-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/hpa-564-observer-switching
+      - name: Update the existing narrow viewport E2E
+        run: node scripts/apply-hpa-564-e2e-fix.mjs
+      - name: Commit the E2E update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e/main-user-journeys.spec.ts
+          git commit -m "test: align Galaxy dialog E2E with promoted actions"
+          git push origin HEAD:agent/hpa-564-observer-switching
