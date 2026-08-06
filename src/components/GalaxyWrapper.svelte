@@ -361,6 +361,33 @@
                         <h2>{systemName(selectedSystemData)}</h2>
                         <button class="dialog-close-button" on:click={closeSystemDialog} aria-label={t('action.close')}>×</button>
                     </div>
+                    <div class="dialog-actions dialog-primary-actions">
+                        <button
+                            type="button"
+                            class="action-button primary"
+                            aria-disabled={observerEligibility?.eligible === false ? 'true' : undefined}
+                            aria-describedby={observerEligibility?.eligible === false ? 'galaxy-sky-unavailable' : undefined}
+                            on:click={navigateToObserverSky}
+                        >
+                            {t('action.viewSkyFromHere')}
+                        </button>
+                        <button
+                            class="action-button secondary"
+                            on:click={() => navigateToSystem(selectedSystemId!)}
+                        >
+                            {canExplore ? t('action.explore') : t('common.comingSoon')}
+                        </button>
+                    </div>
+                    {#if observerEligibility?.eligible === false}
+                        <div id="galaxy-sky-unavailable" class="sky-unavailable-notice" role="status">
+                            {t('galaxy.skyUnavailable')}
+                        </div>
+                    {/if}
+                    {#if comingSoonNotice}
+                        <div class="coming-soon-notice" role="status">
+                            {t('galaxy.comingSoonNotice')}
+                        </div>
+                    {/if}
                     <div class="dialog-content">
                         <p class="system-overview">{systemDescription(selectedSystemData)}</p>
 
@@ -420,36 +447,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="dialog-actions">
-                        <button class="action-button secondary" on:click={closeSystemDialog}>
-                            {t('action.close')}
-                        </button>
-                        <button
-                            type="button"
-                            class="action-button secondary"
-                            aria-disabled={observerEligibility?.eligible === false ? 'true' : undefined}
-                            aria-describedby={observerEligibility?.eligible === false ? 'galaxy-sky-unavailable' : undefined}
-                            on:click={navigateToObserverSky}
-                        >
-                            {t('action.viewSkyFromHere')}
-                        </button>
-                        <button
-                            class="action-button primary"
-                            on:click={() => navigateToSystem(selectedSystemId!)}
-                        >
-                            {canExplore ? t('action.explore') : t('common.comingSoon')}
-                        </button>
-                    </div>
-                    {#if observerEligibility?.eligible === false}
-                        <div id="galaxy-sky-unavailable" class="sky-unavailable-notice" role="status">
-                            {t('galaxy.skyUnavailable')}
-                        </div>
-                    {/if}
-                    {#if comingSoonNotice}
-                        <div class="coming-soon-notice" role="status">
-                            {t('galaxy.comingSoonNotice')}
-                        </div>
-                    {/if}
                 </div>
             </div>
         {/if}
@@ -484,13 +481,13 @@
     .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
     .hud-setting input[type="range"] { flex: 1; }
     .system-dialog-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.8); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; }
-    .system-dialog { background: rgba(0,0,17,0.95); border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 12px; width: min(700px, 90vw); max-height: 85vh; overflow-y: auto; padding: 20px; color: #e0f7ff; }
+    .system-dialog { background: rgba(0,0,17,0.95); border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 12px; width: min(700px, 90vw); max-height: 85vh; overflow: hidden; padding: 20px; color: #e0f7ff; display: flex; flex-direction: column; box-sizing: border-box; }
     .dialog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .dialog-header h2 { margin: 0; color: var(--hud-cyan, #00f0ff); }
     .dialog-close-button { background: transparent; border: none; color: var(--hud-cyan, #00f0ff); font-size: 24px; cursor: pointer; }
-    .dialog-content { display: flex; flex-direction: column; gap: 12px; }
+    .dialog-content { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; padding-right: 4px; }
     .system-overview { margin: 0; color: rgba(255,255,255,0.85); line-height: 1.5; }
-    .dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+    .dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin: 0 0 16px; flex: 0 0 auto; }
     .action-button { padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; letter-spacing: 0.08em; }
     @media (max-width: 400px) {
         .dialog-actions { flex-direction: column; }
@@ -501,7 +498,7 @@
     .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
     .action-button[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
     .sky-unavailable-notice {
-        margin-top: 12px;
+        margin: 0 0 12px;
         padding: 10px 14px;
         border: 1px solid rgba(0, 240, 255, 0.45);
         border-radius: 6px;
@@ -510,5 +507,5 @@
         font-size: 13px;
         text-align: center;
     }
-    .coming-soon-notice { margin-top: 12px; padding: 10px 14px; border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 6px; background: rgba(0,240,255,0.08); color: var(--hud-cyan, #00f0ff); font-size: 13px; text-align: center; }
+    .coming-soon-notice { margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 6px; background: rgba(0,240,255,0.08); color: var(--hud-cyan, #00f0ff); font-size: 13px; text-align: center; }
 </style>

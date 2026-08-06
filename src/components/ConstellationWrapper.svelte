@@ -573,6 +573,13 @@
     window.location.href = routes.constellation(currentLang);
   };
 
+  // Return to the existing localized Galaxy selection flow so the user can
+  // pick another eligible system. Observer state remains URL-only and is not
+  // carried back to Galaxy.
+  const chooseAnotherObserver = () => {
+    window.location.href = routes.galaxy(currentLang);
+  };
+
   // Native reference-layer visibility toggle. Rendered only when the
   // prepared output carries a reference catalog. Forwarding to the renderer
   // is the ONLY side effect — no re-preparation and no re-initialization.
@@ -918,10 +925,16 @@
               <p class="view-from-earth">{t('constellation.observer.education')}</p>
 
               {#if !observerWebglFailed}
-                <!-- Return to Earth/Sol lives here for the working observer
-                     HUD. The WebGL-required overlay carries its own Return
-                     button, so it is suppressed here to keep one copy. -->
+                <!-- Working alternate mode offers both observer reselection
+                     through Galaxy and the direct query-free Sol reset. -->
                 <div class="observer-actions">
+                  <button
+                    type="button"
+                    class="observer-action-btn"
+                    on:click={chooseAnotherObserver}
+                  >
+                    {t('constellation.observer.chooseAnother')}
+                  </button>
                   <button
                     type="button"
                     class="observer-action-btn"
@@ -1152,14 +1165,24 @@
             <!-- Genuine alternate mode whose WebGL path failed: no Earth 2D
                  fallback — show WebGL-required copy and Return to Earth/Sol. -->
             <h2 class="text-xl font-semibold mb-2 text-amber-400">{t('constellation.observer.webglUnavailable')}</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              on:click={returnToSol}
-              className="text-white border-white/30 hover:bg-white/10"
-            >
-              {t('constellation.observer.returnToSol')}
-            </Button>
+            <div class="flex flex-wrap justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                on:click={chooseAnotherObserver}
+                className="text-white border-white/30 hover:bg-white/10"
+              >
+                {t('constellation.observer.chooseAnother')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                on:click={returnToSol}
+                className="text-white border-white/30 hover:bg-white/10"
+              >
+                {t('constellation.observer.returnToSol')}
+              </Button>
+            </div>
           {:else}
             <h2 class="text-xl font-semibold mb-2 text-amber-400">{t('constellation.webglNotAvailable')}</h2>
             <p class="text-sm text-gray-300 mb-4">
