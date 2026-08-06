@@ -65,7 +65,7 @@ test.describe("observer selection round trip", () => {
         await expect(viewSky).toBeVisible();
         await viewSky.click();
         await expect(page).toHaveURL(
-            //ja/constellation?observer=alpha-centauri$/,
+            /\/ja\/constellation\?observer=alpha-centauri$/,
             { timeout: 15000 },
         );
 
@@ -74,7 +74,7 @@ test.describe("observer selection round trip", () => {
         });
         await expect(chooseAnother).toBeVisible({ timeout: 20000 });
         await chooseAnother.click();
-        await expect(page).toHaveURL(//ja/galaxy/?$/, {
+        await expect(page).toHaveURL(/\/ja\/galaxy\/?$/, {
             timeout: 15000,
         });
         expect(new URL(page.url()).searchParams.has("observer")).toBe(false);
