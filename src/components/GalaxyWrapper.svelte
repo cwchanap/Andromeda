@@ -364,7 +364,7 @@
                     <div class="dialog-actions dialog-primary-actions">
                         <button
                             type="button"
-                            class="action-button primary"
+                            class="action-button secondary"
                             aria-disabled={observerEligibility?.eligible === false ? 'true' : undefined}
                             aria-describedby={observerEligibility?.eligible === false ? 'galaxy-sky-unavailable' : undefined}
                             on:click={navigateToObserverSky}
@@ -372,7 +372,7 @@
                             {t('action.viewSkyFromHere')}
                         </button>
                         <button
-                            class="action-button secondary"
+                            class="action-button primary"
                             on:click={() => navigateToSystem(selectedSystemId!)}
                         >
                             {canExplore ? t('action.explore') : t('common.comingSoon')}

@@ -526,7 +526,7 @@ describe("GalaxyWrapper — observer sky action", () => {
         installDefaultMatchMedia();
     });
 
-    it("keeps the primary observer action above the scrollable details body", async () => {
+    it("keeps the fixed product actions above the scrollable details body", async () => {
         const { container } = await openSystemDialog();
         const actionRow = container.querySelector(
             ".system-dialog .dialog-primary-actions",
@@ -549,8 +549,8 @@ describe("GalaxyWrapper — observer sky action", () => {
             "View sky from here",
             "Coming Soon",
         ]);
-        expect(actions[0].classList.contains("primary")).toBe(true);
-        expect(actions[1].classList.contains("secondary")).toBe(true);
+        expect(actions[0].classList.contains("secondary")).toBe(true);
+        expect(actions[1].classList.contains("primary")).toBe(true);
     });
 
     it("navigates an eligible non-explorable system", async () => {
