@@ -46,6 +46,9 @@ describe("SettingsPanel — open state", () => {
         expect(labels).toContain("English");
         expect(labels).toContain("中文");
         expect(labels).toContain("日本語");
+        expect(
+            container.querySelector('[role="group"][aria-label="Language"]'),
+        ).toBeTruthy();
     });
 
     it("marks the current language button as pressed/active", () => {

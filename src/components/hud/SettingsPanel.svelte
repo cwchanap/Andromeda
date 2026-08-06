@@ -1,8 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { languages } from "@/i18n/ui";
-  import { switchLocaleUrl, type AppLocale } from "@/i18n/routes";
+  import { type AppLocale } from "@/i18n/routes";
   import { useTranslations } from "@/i18n/utils";
+  import LanguageOptions from "@/components/LanguageOptions.svelte";
   import { focusTrap } from "@/lib/hud/focusTrap";
   import { gameState } from "@/stores/gameStore";
   import HudPanel from "./HudPanel.svelte";
@@ -25,14 +25,6 @@
     translations && Object.keys(translations).length
       ? (key: string) => translations[key] || key
       : (useTranslations(effectiveLang) as Translate);
-
-  function changeLanguage(newLang: AppLocale) {
-    if (typeof window === "undefined") return;
-    window.location.href = switchLocaleUrl(
-      new URL(window.location.href),
-      newLang,
-    );
-  }
 
   function handleKeydown(event: KeyboardEvent) {
     // Only react to Escape while the panel is open.
@@ -60,19 +52,7 @@
         <div class="settings-body">
           <section class="settings-section">
             <h4 class="settings-heading">{t("settings.language")}</h4>
-            <div class="lang-row">
-              {#each Object.entries(languages) as [code, name] (code)}
-                <button
-                  type="button"
-                  class="lang-btn"
-                  class:is-active={effectiveLang === code}
-                  aria-pressed={effectiveLang === code}
-                  on:click={() => changeLanguage(code as AppLocale)}
-                >
-                  {name}
-                </button>
-              {/each}
-            </div>
+            <LanguageOptions lang={effectiveLang} {translations} />
           </section>
 
           <section class="settings-section">
@@ -130,26 +110,6 @@
     letter-spacing: 0.2em;
     color: var(--hud-cyan, #00f0ff);
     text-transform: uppercase;
-  }
-  .lang-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .lang-btn {
-    flex: 1;
-    background: transparent;
-    border: 1px solid rgba(0, 240, 255, 0.4);
-    color: rgba(255, 255, 255, 0.8);
-    padding: 6px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-  }
-  .lang-btn.is-active {
-    background: var(--hud-cyan, #00f0ff);
-    color: #001011;
-    border-color: var(--hud-cyan, #00f0ff);
   }
   .settings-actions {
     display: flex;
