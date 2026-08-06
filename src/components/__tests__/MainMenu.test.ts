@@ -24,6 +24,14 @@ vi.mock("@/i18n/utils", () => ({
 }));
 
 const testTranslations: Record<string, string> = {
+    "main.solar": "Solar System",
+    "main.explore": "Explore Systems",
+    "main.galaxy": "Galaxy View",
+    "main.settings": "Settings",
+    "constellation.title": "Constellation View",
+    "instructions.mouse": "Mouse to rotate",
+    "instructions.scroll": "Scroll to zoom",
+    "instructions.click": "Click planets to explore",
     "settings.title": "Game Settings",
     "settings.visual": "Visual Settings",
     "settings.graphicsQuality": "Graphics Quality",
@@ -156,6 +164,59 @@ describe("MainMenu", () => {
             });
             expect(container).toBeTruthy();
         });
+
+        it("should render the HUD command hub with four destinations in order", () => {
+            const { container } = render(MainMenu, {
+                props: { translations: testTranslations },
+            });
+
+            expect(container.querySelector(".home-command-hub")).toBeTruthy();
+            expect(container.querySelector(".hud-panel")).toBeTruthy();
+
+            const destinationButtons = Array.from(
+                container.querySelectorAll<HTMLButtonElement>(".menu-button"),
+            );
+            expect(destinationButtons).toHaveLength(4);
+            expect(destinationButtons[0].querySelector(".hud-btn-bracket")).toBeTruthy();
+            expect(
+                destinationButtons.map((button) =>
+                    (button.getAttribute("aria-label") ?? button.textContent ?? "")
+                        .replace(/^</, "")
+                        .trim(),
+                ),
+            ).toEqual([
+                "Solar System",
+                "Explore Systems",
+                "Galaxy View",
+                "Constellation View",
+            ]);
+        });
+
+        it("should remove the scene-control hints from the home command hub", () => {
+            const { container } = render(MainMenu, {
+                props: { translations: testTranslations },
+            });
+
+            expect(container.textContent).not.toMatch(
+                /Mouse to rotate|Scroll to zoom|Click planets to explore/,
+            );
+        });
+
+        it("should keep Settings outside the destination buttons and focusable by Tab", () => {
+            const { container } = render(MainMenu, {
+                props: { translations: testTranslations },
+            });
+
+            const settingsButton = Array.from(
+                container.querySelectorAll<HTMLButtonElement>("button"),
+            ).find((button) => button.textContent?.includes("Settings"));
+
+            expect(settingsButton).toBeTruthy();
+            expect(settingsButton?.classList.contains("menu-button")).toBe(false);
+            expect(settingsButton?.tabIndex).toBeGreaterThanOrEqual(0);
+            settingsButton?.focus();
+            expect(document.activeElement).toBe(settingsButton);
+        });
     });
 
     describe("Settings Modal", () => {
@@ -242,6 +303,30 @@ describe("MainMenu", () => {
     });
 
     describe("Keyboard Navigation", () => {
+        it("should cycle arrow focus through only the four destination buttons", async () => {
+            const { container } = render(MainMenu, {
+                props: { translations: testTranslations },
+            });
+            const destinationButtons = Array.from(
+                container.querySelectorAll<HTMLButtonElement>(".menu-button"),
+            );
+            const settingsButton = Array.from(
+                container.querySelectorAll<HTMLButtonElement>("button"),
+            ).find((button) => button.textContent?.includes("Settings"));
+
+            expect(destinationButtons).toHaveLength(4);
+            expect(settingsButton).toBeTruthy();
+
+            for (let index = 1; index <= destinationButtons.length; index += 1) {
+                await fireEvent.keyDown(window, { key: "ArrowDown" });
+                expect(destinationButtons).toContain(document.activeElement);
+                expect(document.activeElement).not.toBe(settingsButton);
+                expect(document.activeElement).toBe(
+                    destinationButtons[index % destinationButtons.length],
+                );
+            }
+        });
+
         it("should move focus to next item on ArrowDown", async () => {
             const { container } = render(MainMenu, {
                 props: { translations: testTranslations },
