@@ -237,6 +237,7 @@
     on:close={handleCloseSettings}
     on:save={(event) => handleSaveSettings(event.detail)}
     currentSettings={$settings}
+    lang={currentLang}
     {translations}
   />
 

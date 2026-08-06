@@ -1,7 +1,6 @@
 ---
 import MainLayout from "@/layouts/main.astro";
 import MainMenu from "@/components/MainMenu.svelte";
-import GlobalLanguageSelector from "@/components/GlobalLanguageSelector.svelte";
 import ErrorBoundary from "@/components/ErrorBoundary.svelte";
 import { getLangFromUrl, useTranslations } from "@/i18n/utils";
 import { planetarySystemRegistry } from "@/lib/planetary-system";
@@ -51,6 +50,7 @@ const translations = {
   "sr.mainMenuLoaded": t("sr.mainMenuLoaded"),
   // SettingsModal keys — without these the modal falls back to raw key strings
   "settings.title": t("settings.title"),
+  "settings.language": t("settings.language"),
   "settings.configuration": t("settings.configuration"),
   "settings.visual": t("settings.visual"),
   "settings.enableAnimations": t("settings.enableAnimations"),
@@ -103,9 +103,6 @@ const content = {
 ---
 
 <MainLayout {content} lang={lang}>
-  <!-- Global Language Selector -->
-  <GlobalLanguageSelector client:only="svelte" />
-
   <ErrorBoundary client:idle>
     <MainMenu lang={lang} translations={translations} client:idle />
   </ErrorBoundary>

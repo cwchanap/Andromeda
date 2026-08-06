@@ -1,21 +1,18 @@
 <script lang="ts">
-  import Dialog from "./ui/Dialog.svelte";
+  import ModalShell from "@/components/ModalShell.svelte";
+  import HudPanel from "@/components/hud/HudPanel.svelte";
+  import LanguageOptions from "@/components/LanguageOptions.svelte";
   import Button from "./ui/Button.svelte";
   import Card from "./ui/Card.svelte";
   import CardContent from "./ui/CardContent.svelte";
   import CardHeader from "./ui/CardHeader.svelte";
   import CardTitle from "./ui/CardTitle.svelte";
-  import Separator from "./ui/Separator.svelte";
-  import Badge from "./ui/Badge.svelte";
   import type { GameSettings } from "../stores/gameStore";
-
-  interface SettingsModalProps {
-    isOpen: boolean;
-    currentSettings: GameSettings;
-  }
+  import type { AppLocale } from "@/i18n/routes";
 
   export let isOpen: boolean;
   export let currentSettings: GameSettings;
+  export let lang: AppLocale = "en";
   export let translations: Record<string, string> = {};
 
   // Translation function
@@ -65,15 +62,23 @@
   }
 </script>
 
-<Dialog open={isOpen} on:close={onClose} className="max-h-[80vh] max-w-2xl overflow-y-auto">
-  <div class="space-y-4">
-    <!-- Header -->
-    <div class="flex items-center gap-3 pb-4">
-      <h2 class="text-lg font-semibold">{t('settings.title')}</h2>
-      <Badge variant="secondary">{t('settings.configuration')}</Badge>
-    </div>
+<ModalShell
+  {isOpen}
+  onClose={onClose}
+  closeLabel={t('action.close')}
+  ariaLabel={t('settings.title')}
+  maxWidth="672px"
+  decoration="none"
+  theme={{
+    primary: 'var(--hud-cyan)',
+    secondary: 'var(--hud-magenta)',
+    accent: 'var(--hud-ivory)',
+  }}
+>
+  <HudPanel title={t('settings.title')} animate={false}>
+    <LanguageOptions {lang} {translations} />
 
-    <div class="space-y-6">
+    <div class="mt-4 space-y-6">
       <!-- Visual Settings -->
       <Card>
         <CardHeader>
@@ -95,7 +100,7 @@
             />
           </div>
 
-          <Separator />
+          <hr class="settings-divider" />
 
           <div class="flex items-center justify-between">
             <div>
@@ -114,7 +119,7 @@
             </select>
           </div>
 
-          <Separator />
+          <hr class="settings-divider" />
 
           <div class="flex items-center justify-between">
             <div>
@@ -207,7 +212,7 @@
             />
           </div>
 
-          <Separator />
+          <hr class="settings-divider" />
 
           <div class="flex items-center justify-between">
             <div>
@@ -225,7 +230,7 @@
             />
           </div>
 
-          <Separator />
+          <hr class="settings-divider" />
 
           <div class="flex items-center justify-between">
             <div>
@@ -243,7 +248,7 @@
             />
           </div>
 
-          <Separator />
+          <hr class="settings-divider" />
 
           <div class="flex items-center justify-between">
             <div>
@@ -261,7 +266,7 @@
             />
           </div>
 
-          <Separator />
+          <hr class="settings-divider" />
 
           <div class="flex items-center justify-between">
             <div>
@@ -281,18 +286,41 @@
         </CardContent>
       </Card>
 
-      <!-- Action Buttons -->
-      <div class="flex justify-between gap-3">
-        <Button variant="outline" on:click={handleReset}>
-          {t('settings.resetDefaults')}
+    </div>
+  </HudPanel>
+
+  <svelte:fragment slot="actions">
+    <div class="settings-actions">
+      <Button variant="outline" on:click={handleReset}>
+        {t('settings.resetDefaults')}
+      </Button>
+      <div class="settings-actions-trailing">
+        <Button variant="outline" on:click={onClose}>
+          {t('action.cancel')}
         </Button>
-        <div class="flex gap-3">
-          <Button variant="outline" on:click={onClose}>
-            {t('action.cancel')}
-          </Button>
-          <Button on:click={handleSave}>{t('settings.save')}</Button>
-        </div>
+        <Button on:click={handleSave}>{t('settings.save')}</Button>
       </div>
     </div>
-  </div>
-</Dialog>
+  </svelte:fragment>
+</ModalShell>
+
+<style>
+  .settings-divider {
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    margin: 12px 0;
+  }
+
+  .settings-actions {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .settings-actions-trailing {
+    display: flex;
+    gap: 12px;
+  }
+</style>

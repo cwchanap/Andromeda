@@ -33,6 +33,7 @@ const testTranslations: Record<string, string> = {
     "instructions.scroll": "Scroll to zoom",
     "instructions.click": "Click planets to explore",
     "settings.title": "Game Settings",
+    "settings.language": "Language",
     "settings.visual": "Visual Settings",
     "settings.graphicsQuality": "Graphics Quality",
     "settings.enableAnimations": "Enable Animations",
@@ -238,6 +239,23 @@ describe("MainMenu", () => {
             expect(settingsBtn).toBeTruthy();
             await fireEvent.click(settingsBtn!);
             expect(container.textContent).toContain("Game Settings");
+        });
+
+        it("should pass the current locale to the settings modal", async () => {
+            const { container } = render(MainMenu, {
+                props: { lang: "zh", translations: testTranslations },
+            });
+            const settingsBtn = Array.from(container.querySelectorAll("button")).find(
+                (button) => button.textContent?.includes("Settings"),
+            );
+
+            await fireEvent.click(settingsBtn!);
+
+            expect(
+                container.querySelector(
+                    '.lang-btn.is-active[aria-pressed="true"]',
+                )?.textContent?.trim(),
+            ).toBe("中文");
         });
     });
 

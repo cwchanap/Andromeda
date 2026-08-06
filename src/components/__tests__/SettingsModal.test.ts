@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, fireEvent, cleanup } from "@testing-library/svelte";
+import { render, fireEvent, cleanup, waitFor } from "@testing-library/svelte";
 import SettingsModal from "@/components/SettingsModal.svelte";
+import SettingsModalHarness from "./fixtures/SettingsModalHarness.svelte";
 import type { GameSettings } from "@/stores/gameStore";
 
 const defaultSettings: GameSettings = {
@@ -20,6 +21,7 @@ const defaultSettings: GameSettings = {
 const testTranslations: Record<string, string> = {
     "settings.title": "Game Settings",
     "settings.configuration": "Configuration",
+    "settings.language": "Language",
     "settings.visual": "Visual Settings",
     "settings.enableAnimations": "Enable Animations",
     "settings.enableAnimationsDesc":
@@ -102,6 +104,28 @@ describe("SettingsModal", () => {
             expect(getByText("Game Settings")).toBeTruthy();
         });
 
+        it("should render the shared modal shell with the settings label and active language", () => {
+            const { container } = render(SettingsModal, {
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    lang: "zh",
+                    translations: testTranslations,
+                },
+            });
+            const dialog = container.querySelector(".modal-shell-dialog");
+            const languageGroup = container.querySelector(
+                '[role="group"][aria-label="Language"]',
+            );
+
+            expect(dialog?.getAttribute("aria-label")).toBe("Game Settings");
+            expect(languageGroup).toBeTruthy();
+            expect(
+                languageGroup?.querySelector('.lang-btn.is-active[aria-pressed="true"]')
+                    ?.textContent?.trim(),
+            ).toBe("中文");
+        });
+
         it("should show Visual Settings section", () => {
             const { getByText } = render(SettingsModal, {
                 props: {
@@ -154,6 +178,30 @@ describe("SettingsModal", () => {
             expect(resetBtn).toBeTruthy();
         });
 
+        it("should dispatch save and close when Save is clicked", async () => {
+            const save = vi.fn();
+            const close = vi.fn();
+            const { container } = render(SettingsModalHarness, {
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                    onSave: save,
+                    onClose: close,
+                },
+            });
+
+            const saveButton = Array.from(container.querySelectorAll("button")).find(
+                (button) => button.textContent?.includes("Save Settings"),
+            );
+            await fireEvent.click(saveButton!);
+
+            expect(save).toHaveBeenCalledWith(
+                expect.objectContaining({ graphicsQuality: "medium" }),
+            );
+            expect(close).toHaveBeenCalledTimes(1);
+        });
+
         it("should show graphics quality options", () => {
             const { container } = render(SettingsModal, {
                 props: {
@@ -167,6 +215,89 @@ describe("SettingsModal", () => {
     });
 
     describe("Interactions", () => {
+        it("should dispatch close from the shell close button, Escape, and backdrop", async () => {
+            const closeFromButton = vi.fn();
+            const buttonRender = render(SettingsModalHarness, {
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                    onClose: closeFromButton,
+                },
+            });
+            await fireEvent.click(
+                buttonRender.container.querySelector(".modal-shell-close")!,
+            );
+            expect(closeFromButton).toHaveBeenCalledTimes(1);
+            buttonRender.unmount();
+
+            const closeFromEscape = vi.fn();
+            const escapeRender = render(SettingsModalHarness, {
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                    onClose: closeFromEscape,
+                },
+            });
+            await fireEvent.keyDown(
+                escapeRender.container.querySelector(".modal-shell-overlay")!,
+                { key: "Escape" },
+            );
+            expect(closeFromEscape).toHaveBeenCalledTimes(1);
+            escapeRender.unmount();
+
+            const closeFromBackdrop = vi.fn();
+            const backdropRender = render(SettingsModalHarness, {
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                    onClose: closeFromBackdrop,
+                },
+            });
+            await fireEvent.click(
+                backdropRender.container.querySelector(".modal-shell-overlay")!,
+            );
+            expect(closeFromBackdrop).toHaveBeenCalledTimes(1);
+        });
+
+        it("should restore focus after the shell closes", async () => {
+            const requestAnimationFrame = vi
+                .spyOn(globalThis, "requestAnimationFrame")
+                .mockImplementation((callback) => {
+                    queueMicrotask(() => callback(0));
+                    return 1;
+                });
+            const trigger = document.createElement("button");
+            trigger.type = "button";
+            document.body.append(trigger);
+            trigger.focus();
+
+            try {
+                const { container, rerender } = render(SettingsModal, {
+                    props: {
+                        isOpen: false,
+                        currentSettings: defaultSettings,
+                        translations: testTranslations,
+                    },
+                });
+
+                await rerender({ isOpen: true });
+                await waitFor(() =>
+                    expect(document.activeElement).toBe(
+                        container.querySelector(".modal-shell-close"),
+                    ),
+                );
+
+                await rerender({ isOpen: false });
+                await waitFor(() => expect(document.activeElement).toBe(trigger));
+            } finally {
+                requestAnimationFrame.mockRestore();
+                trigger.remove();
+            }
+        });
+
         it("should reset form to default values when Reset button is clicked", async () => {
             // Start with non-default value for animations
             const modifiedSettings = {
