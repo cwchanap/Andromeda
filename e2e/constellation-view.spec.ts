@@ -16,9 +16,12 @@ test.describe("Constellation View Navigation", () => {
         await page.waitForLoadState("networkidle");
         await page.waitForTimeout(1000);
 
-        // Find the constellation button
-        const constellationButton = page.getByRole("button", {
-            name: /Constellation View/,
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
+        // Find the constellation button in the Home command hub
+        const constellationButton = home.getByRole("button", {
+            name: /Constellation View/i,
         });
         await expect(constellationButton).toBeVisible({ timeout: 10000 });
 
@@ -42,8 +45,10 @@ test.describe("Constellation View Navigation", () => {
         await page.goto("/");
 
         // Check that constellation button exists with proper text
-        const constellationButton = page.getByRole("button", {
-            name: /✨ Constellation View/,
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+        const constellationButton = home.getByRole("button", {
+            name: /Constellation View/i,
         });
         await expect(constellationButton).toBeVisible({ timeout: 10000 });
     });
@@ -525,8 +530,10 @@ test.describe("Constellation View Integration", () => {
         await page.waitForTimeout(500);
 
         // Navigate to constellation view
-        const constellationButton = page.getByRole("button", {
-            name: /Constellation View/,
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+        const constellationButton = home.getByRole("button", {
+            name: /Constellation View/i,
         });
         await expect(constellationButton).toBeVisible({ timeout: 10000 });
         await constellationButton.click({ force: true });
@@ -548,8 +555,10 @@ test.describe("Constellation View Integration", () => {
         await page.waitForTimeout(500);
 
         // Return to constellation view
-        await page
-            .getByRole("button", { name: /Constellation View/ })
+        const homeAfterReturn = page.locator(".home-command-hub");
+        await expect(homeAfterReturn).toBeVisible();
+        await homeAfterReturn
+            .getByRole("button", { name: /Constellation View/i })
             .click({ force: true });
 
         // Should load successfully again

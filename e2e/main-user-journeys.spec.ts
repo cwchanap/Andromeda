@@ -22,17 +22,20 @@ test.describe("Main Menu Navigation", () => {
             PAGE_TITLES.MAIN,
         );
 
-        // Check navigation buttons (use emoji prefixes for specificity)
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
+        // Check navigation buttons within the Home command hub
         await expect(
-            page.getByRole("button", { name: /☀️ Solar System/ }),
+            home.getByRole("button", { name: /Solar System/i }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", {
-                name: /🌌 Explore Exoplanets/,
-            }),
+            home.getByRole("button", { name: /Explore Exoplanets/i }),
         ).toBeVisible();
+        const settingsControl = page.locator(".home-settings-control");
+        await expect(settingsControl).toBeVisible();
         await expect(
-            page.getByRole("button", { name: /⚙️ Settings/ }),
+            settingsControl.getByRole("button", { name: /Settings/i }),
         ).toBeVisible();
     });
 
@@ -45,9 +48,12 @@ test.describe("Main Menu Navigation", () => {
         ).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(500);
 
-        // Click Solar System button (use emoji prefix for specificity)
-        const solarButton = page.getByRole("button", {
-            name: /☀️ Solar System/,
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
+        // Click the Solar System button in the Home command hub
+        const solarButton = home.getByRole("button", {
+            name: /Solar System/i,
         });
         await expect(solarButton).toBeVisible({ timeout: 5000 });
         await solarButton.click({ force: true });
@@ -67,9 +73,13 @@ test.describe("Main Menu Navigation", () => {
         ).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(500);
 
-        // Click Settings button (exclude Astro toolbar buttons)
-        const settingsButton = page.getByRole("button", {
-            name: /⚙️ Settings/,
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
+        // Click the Home Settings button without matching Astro toolbar buttons
+        const settingsControl = page.locator(".home-settings-control");
+        const settingsButton = settingsControl.getByRole("button", {
+            name: /Settings/i,
         });
         await expect(settingsButton).toBeVisible({ timeout: 5000 });
         await settingsButton.click({ force: true });
@@ -152,6 +162,48 @@ test.describe("Solar System View", () => {
             );
         }
     });
+
+    test("should open and close comparison from a solar body detail", async ({
+        page,
+    }) => {
+        await page.goto(ROUTES.SOLAR_SYSTEM);
+
+        // Wait for the scene controls so keyboard navigation is initialized.
+        const sceneControl = page.getByRole("button", {
+            name: /Jump to body/i,
+        });
+        await expect(sceneControl).toBeVisible({ timeout: 15000 });
+
+        // Use the accessible keyboard navigation path to open the first body
+        // detail without relying on a pixel-specific 3D canvas click.
+        await sceneControl.focus();
+        await page.keyboard.press("Home");
+
+        const bodyDialog = page.locator(".modal-shell-dialog").first();
+        await expect(bodyDialog).toBeVisible({ timeout: 10000 });
+
+        const addToCompareButton = bodyDialog.getByRole("button", {
+            name: /Add to Comparison/i,
+        });
+        await expect(addToCompareButton).toBeVisible();
+        await addToCompareButton.click();
+
+        const viewComparisonButton = bodyDialog.getByRole("button", {
+            name: /View Comparison/i,
+        });
+        await expect(viewComparisonButton).toBeVisible();
+        await viewComparisonButton.click();
+
+        const comparisonDialog = page.getByRole("dialog", {
+            name: /Comparative Planetology/i,
+        });
+        await expect(comparisonDialog).toBeVisible({ timeout: 10000 });
+        await expect(comparisonDialog).toHaveClass(/modal-shell-dialog/);
+
+        await comparisonDialog.locator(".modal-shell-close").click();
+        await expect(comparisonDialog).not.toBeVisible();
+        await expect(viewComparisonButton).toBeFocused();
+    });
 });
 
 test.describe("System Selector", () => {
@@ -164,9 +216,12 @@ test.describe("System Selector", () => {
         ).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(500);
 
-        // Click Explore Exoplanets button (use emoji prefix for specificity)
-        const exoplanetsButton = page.getByRole("button", {
-            name: /Explore Exoplanets/,
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
+        // Click the Explore Exoplanets button in the Home command hub
+        const exoplanetsButton = home.getByRole("button", {
+            name: /Explore Exoplanets/i,
         });
         await expect(exoplanetsButton).toBeVisible({ timeout: 5000 });
         await exoplanetsButton.click({ force: true });
@@ -185,9 +240,12 @@ test.describe("System Selector", () => {
             page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
         ).toBeVisible({ timeout: 10000 });
 
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
         // Open system selector - wait a bit for Svelte hydration
-        const exoplanetsButton = page.getByRole("button", {
-            name: /Explore Exoplanets/,
+        const exoplanetsButton = home.getByRole("button", {
+            name: /Explore Exoplanets/i,
         });
         await expect(exoplanetsButton).toBeVisible({ timeout: 5000 });
 
@@ -227,9 +285,13 @@ test.describe("Settings Management", () => {
         ).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(500);
 
-        // Open settings (use emoji prefix to avoid Astro toolbar)
-        const settingsButton = page.getByRole("button", {
-            name: /⚙️ Settings/,
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
+        // Open the Home Settings control without matching Astro toolbar buttons
+        const settingsControl = page.locator(".home-settings-control");
+        const settingsButton = settingsControl.getByRole("button", {
+            name: /Settings/i,
         });
         await expect(settingsButton).toBeVisible({ timeout: 5000 });
         await settingsButton.click({ force: true });
@@ -253,9 +315,13 @@ test.describe("Settings Management", () => {
         await page.waitForLoadState("networkidle");
         await page.waitForTimeout(1000);
 
-        // Open settings (use emoji prefix to avoid Astro toolbar)
-        const settingsButton = page.getByRole("button", {
-            name: /⚙️ Settings/,
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
+        // Open the Home Settings control without matching Astro toolbar buttons
+        const settingsControl = page.locator(".home-settings-control");
+        const settingsButton = settingsControl.getByRole("button", {
+            name: /Settings/i,
         });
         await expect(settingsButton).toBeVisible({ timeout: 5000 });
         await settingsButton.dispatchEvent("click");
@@ -303,13 +369,16 @@ test.describe("Accessibility", () => {
     test("should be keyboard navigable", async ({ page }) => {
         await page.goto(ROUTES.HOME);
 
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
         // Focus on the first interactive element
         await page.keyboard.press("Tab");
 
         // Verify we can tab through menu buttons - just check that buttons are focusable
         // Tab order may vary based on layout, so we verify key buttons can receive focus
-        const solarSystemButton = page.getByRole("button", {
-            name: /☀️ Solar System/,
+        const solarSystemButton = home.getByRole("button", {
+            name: /Solar System/i,
         });
         await solarSystemButton.focus();
         await expect(solarSystemButton).toBeFocused();
@@ -320,8 +389,9 @@ test.describe("Accessibility", () => {
         await expect(focusedElement).toBeVisible();
 
         // Verify settings button can also be focused
-        const settingsButton = page.getByRole("button", {
-            name: /⚙️ Settings/,
+        const settingsControl = page.locator(".home-settings-control");
+        const settingsButton = settingsControl.getByRole("button", {
+            name: /Settings/i,
         });
         await settingsButton.focus();
         await expect(settingsButton).toBeFocused();
@@ -334,28 +404,21 @@ test.describe("Accessibility", () => {
         await expect(
             page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
         ).toBeVisible({ timeout: 10000 });
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
 
         // Wait for potential Svelte hydration to complete
         await page.waitForTimeout(1000);
 
-        // Note: The MainMenu component has a global keydown handler that tracks focusedIndex internally.
-        // When using programmatic .focus(), the component's internal focusedIndex doesn't update.
-        // So we need to use the component's own keyboard navigation to set focusedIndex to Settings.
-        // Settings is the 5th item (index 4), so we press ArrowDown 4 times from the first item.
-
-        // First, focus on any menu button to activate keyboard navigation context
-        const solarButton = page.getByRole("button", {
-            name: /☀️ Solar System/,
+        // Settings is a separate Home control rather than one of the four
+        // destination buttons tracked by MainMenu's arrow-key navigation.
+        const settingsControl = page.locator(".home-settings-control");
+        const settingsButton = settingsControl.getByRole("button", {
+            name: /Settings/i,
         });
-        await solarButton.focus();
+        await settingsButton.focus();
 
-        // Navigate down to Settings (4 times: Solar -> Exoplanets -> Galaxy -> Constellation -> Settings)
-        await page.keyboard.press("ArrowDown"); // -> Exoplanets
-        await page.keyboard.press("ArrowDown"); // -> Galaxy
-        await page.keyboard.press("ArrowDown"); // -> Constellation
-        await page.keyboard.press("ArrowDown"); // -> Settings
-
-        // Now press Enter - should activate Settings
+        // Press Enter on the actual Settings button.
         await page.keyboard.press("Enter");
 
         // Settings modal should open - check for the dialog role
@@ -365,15 +428,19 @@ test.describe("Accessibility", () => {
     test("should have proper ARIA labels", async ({ page }) => {
         await page.goto(ROUTES.HOME);
 
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
         // Check for proper labeling - verify buttons are accessible by role
-        const solarButton = page.getByRole("button", {
-            name: /☀️ Solar System/,
+        const solarButton = home.getByRole("button", {
+            name: /Solar System/i,
         });
         await expect(solarButton).toBeVisible();
         await expect(solarButton).toBeEnabled();
 
-        const settingsButton = page.getByRole("button", {
-            name: /⚙️ Settings/,
+        const settingsControl = page.locator(".home-settings-control");
+        const settingsButton = settingsControl.getByRole("button", {
+            name: /Settings/i,
         });
         await expect(settingsButton).toBeVisible();
         await expect(settingsButton).toBeEnabled();
@@ -385,12 +452,17 @@ test.describe("Responsive Design", () => {
         await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE
         await page.goto(ROUTES.HOME);
 
-        // Main menu should be visible and functional (use emoji prefixes)
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+        const settingsControl = page.locator(".home-settings-control");
+        await expect(settingsControl).toBeVisible();
+
+        // Main menu should be visible and functional
         await expect(
-            page.getByRole("button", { name: /☀️ Solar System/ }),
+            home.getByRole("button", { name: /Solar System/i }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", { name: /⚙️ Settings/ }),
+            settingsControl.getByRole("button", { name: /Settings/i }),
         ).toBeVisible();
     });
 
@@ -398,17 +470,20 @@ test.describe("Responsive Design", () => {
         await page.setViewportSize({ width: 768, height: 1024 }); // iPad
         await page.goto(ROUTES.HOME);
 
-        // All elements should be visible (use emoji prefixes)
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+        const settingsControl = page.locator(".home-settings-control");
+        await expect(settingsControl).toBeVisible();
+
+        // All elements should be visible
         await expect(
-            page.getByRole("button", { name: /☀️ Solar System/ }),
+            home.getByRole("button", { name: /Solar System/i }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", {
-                name: /🌌 Explore Exoplanets/,
-            }),
+            home.getByRole("button", { name: /Explore Exoplanets/i }),
         ).toBeVisible();
         await expect(
-            page.getByRole("button", { name: /⚙️ Settings/ }),
+            settingsControl.getByRole("button", { name: /Settings/i }),
         ).toBeVisible();
     });
 });
@@ -418,9 +493,12 @@ test.describe("Performance", () => {
         const startTime = Date.now();
         await page.goto(ROUTES.HOME);
 
-        // Wait for main content to be visible (use emoji prefix)
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
+
+        // Wait for main content to be visible
         await expect(
-            page.getByRole("button", { name: /☀️ Solar System/ }),
+            home.getByRole("button", { name: /Solar System/i }),
         ).toBeVisible();
 
         const loadTime = Date.now() - startTime;
@@ -458,6 +536,8 @@ test.describe("Error Handling", () => {
         // This would test error boundaries, but requires triggering an actual error
         // For now, we can check that error handling components exist
         await page.goto(ROUTES.HOME);
+        const home = page.locator(".home-command-hub");
+        await expect(home).toBeVisible();
 
         // Check that the page loads without throwing uncaught errors
         const errors: string[] = [];
@@ -502,7 +582,7 @@ test.describe("30 Nearest Systems", () => {
         });
         await expect(alphaCentauriItem).toBeVisible();
         await alphaCentauriItem.click();
-        const dialog = page.locator(".system-dialog");
+        const dialog = page.locator(".modal-shell-dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
         await expect(dialog.getByText(/Known Exoplanets.*2/i)).toBeVisible();
     });
@@ -528,14 +608,14 @@ test.describe("30 Nearest Systems", () => {
             hasText: /Alpha Centauri/i,
         });
         await alphaCentauriItem.click();
-        const dialog = page.locator(".system-dialog");
+        const dialog = page.locator(".modal-shell-dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
-        await expect(dialog.locator(".dialog-close-button")).toBeVisible();
+        await expect(dialog.locator(".modal-shell-close")).toBeVisible();
 
-        const actions = dialog.locator(".dialog-actions");
-        const actionButtons = actions.locator(".action-button");
-        await expect(actionButtons).toHaveCount(2);
+        const actions = dialog.locator(".modal-shell-actions");
+        const actionButtons = actions.getByRole("button");
+        await expect(actionButtons).toHaveCount(3);
 
         // Every action button must be fully visible inside the dialog's
         // horizontal bounds (no horizontal overflow / clipping).
@@ -631,7 +711,7 @@ test.describe("30 Nearest Systems", () => {
                 await canvas.click({
                     position: { x: centerX + off.x, y: centerY + off.y },
                 });
-                const modal = page.locator('[role="dialog"].modal-overlay');
+                const modal = page.locator(".modal-shell-dialog");
                 modalVisible = await modal.isVisible().catch(() => false);
                 if (modalVisible) {
                     await expect(
