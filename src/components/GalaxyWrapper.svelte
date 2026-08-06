@@ -356,7 +356,7 @@
                 <h2>{systemName(selectedSystemData)}</h2>
             </svelte:fragment>
 
-            <div class="dialog-content">
+            <div class="galaxy-dialog-body">
                 <p class="system-overview">{systemDescription(selectedSystemData)}</p>
 
                 <div class="system-stats-grid">
@@ -481,6 +481,7 @@
     .row-count { font-size: 11px; opacity: 0.8; }
     .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
     .hud-setting input[type="range"] { flex: 1; }
+    .galaxy-dialog-body { display: flex; flex-direction: column; gap: 12px; }
     .system-overview { margin: 0; color: rgba(255,255,255,0.85); line-height: 1.5; }
     .action-button { padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; letter-spacing: 0.08em; }
     @media (max-width: 400px) {
