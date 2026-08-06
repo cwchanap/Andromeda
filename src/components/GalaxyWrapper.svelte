@@ -12,7 +12,7 @@
     import ViewHud from '@/components/hud/ViewHud.svelte';
     import HudPanel from '@/components/hud/HudPanel.svelte';
     import HudSearch from '@/components/hud/HudSearch.svelte';
-    import { focusTrap } from '@/lib/hud/focusTrap';
+    import ModalShell from '@/components/ModalShell.svelte';
     import { addMediaQueryListener, removeMediaQueryListener } from '@/utils/mediaQuery';
 
     export let lang: AppLocale = 'en';
@@ -159,11 +159,6 @@
         comingSoonNotice = false;
     };
 
-    // Escape closes the system dialog (mirrors SettingsPanel's pattern).
-    function handleDialogKeydown(event: KeyboardEvent) {
-        if (showSystemDialog && event.key === 'Escape') closeSystemDialog();
-    }
-
     // Resolve the route-safe id for a given galaxy system id, mirroring the
     // mapping used by navigateToSystem so the CTA label stays in sync with
     // actual navigability.
@@ -270,7 +265,7 @@
     }
 </script>
 
-<svelte:window on:resize={() => renderer?.onResize()} on:keydown={handleDialogKeydown} />
+<svelte:window on:resize={() => renderer?.onResize()} />
 
 <div class="galaxy-wrapper">
     <div id="galaxy-renderer" class="galaxy-container" bind:this={container}>
@@ -343,113 +338,119 @@
         </div>
     </ViewHud>
 
-    {#if isSceneReady && showSystemDialog && selectedSystemData}
-            <div
-                class="system-dialog-overlay"
-                use:focusTrap={".dialog-close-button"}
-                on:click={(e) => {
-                    if (e.target === e.currentTarget) closeSystemDialog();
-                }}
-                on:keydown={handleDialogKeydown}
-                role="dialog"
-                aria-modal="true"
-                aria-label={systemName(selectedSystemData)}
-                tabindex="-1"
-            >
-                <div class="system-dialog">
-                    <div class="dialog-header">
-                        <h2>{systemName(selectedSystemData)}</h2>
-                        <button class="dialog-close-button" on:click={closeSystemDialog} aria-label={t('action.close')}>×</button>
+    {#if selectedSystemData}
+        <ModalShell
+            isOpen={isSceneReady && showSystemDialog && selectedSystemData !== null}
+            onClose={closeSystemDialog}
+            closeLabel={t("action.close")}
+            ariaLabel={systemName(selectedSystemData)}
+            maxWidth="700px"
+            decoration="none"
+            theme={{
+                primary: "var(--hud-cyan)",
+                secondary: "var(--hud-magenta)",
+                accent: "var(--hud-ivory)",
+            }}
+        >
+            <svelte:fragment slot="header">
+                <h2>{systemName(selectedSystemData)}</h2>
+            </svelte:fragment>
+
+            <div class="dialog-content">
+                <p class="system-overview">{systemDescription(selectedSystemData)}</p>
+
+                <div class="system-stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">{t('galaxy.distanceFromEarth')}</div>
+                        <div class="stat-value">{selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</div>
                     </div>
-                    <div class="dialog-actions">
-                        <button
-                            type="button"
-                            class="action-button secondary"
-                            aria-disabled={observerEligibility?.eligible === false ? 'true' : undefined}
-                            aria-describedby={observerEligibility?.eligible === false ? 'galaxy-sky-unavailable' : undefined}
-                            on:click={navigateToObserverSky}
-                        >
-                            {t('action.viewSkyFromHere')}
-                        </button>
-                        <button
-                            class="action-button primary"
-                            on:click={() => navigateToSystem(selectedSystemId!)}
-                        >
-                            {canExplore ? t('action.explore') : t('common.comingSoon')}
-                        </button>
+
+                    <div class="stat-card">
+                        <div class="stat-label">{t('galaxy.systemType')}</div>
+                        <div class="stat-value">{getSystemTypeLabel(selectedSystemData.systemType)}</div>
                     </div>
-                    {#if observerEligibility?.eligible === false}
-                        <div id="galaxy-sky-unavailable" class="sky-unavailable-notice" role="status">
-                            {t('galaxy.skyUnavailable')}
+
+                    <div class="stat-card">
+                        <div class="stat-label">{t('galaxy.numberOfStars')}</div>
+                        <div class="stat-value">{selectedSystemData.stars.length}</div>
+                    </div>
+
+                    {#if selectedSystemData.metadata.hasExoplanets}
+                        <div class="stat-card">
+                            <div class="stat-label">{t('galaxy.knownExoplanets')}</div>
+                            <div class="stat-value">{selectedSystemData.metadata.numberOfPlanets ?? t('common.yes')}</div>
                         </div>
                     {/if}
-                    {#if comingSoonNotice}
-                        <div class="coming-soon-notice" role="status">
-                            {t('galaxy.comingSoonNotice')}
-                        </div>
-                    {/if}
-                    <div class="dialog-content">
-                        <p class="system-overview">{systemDescription(selectedSystemData)}</p>
+                </div>
 
-                        <div class="system-stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-label">{t('galaxy.distanceFromEarth')}</div>
-                                <div class="stat-value">{selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</div>
+                {#if selectedSystemData.metadata.spectralClass}
+                    <div class="additional-info">
+                        <h4>{t('galaxy.spectralClassification')}</h4>
+                        <p>{selectedSystemData.metadata.spectralClass}</p>
+                    </div>
+                {/if}
+
+                {#if selectedSystemData.metadata.constellation}
+                    <div class="additional-info">
+                        <h4>{t('galaxy.constellation')}</h4>
+                        <p>{selectedSystemData.metadata.constellation}</p>
+                    </div>
+                {/if}
+
+                <div class="star-details">
+                    <h4>{t('galaxy.starInformation')}</h4>
+                    <div class="stars-grid">
+                        {#each selectedSystemData.stars as star, index}
+                            <div class="star-card">
+                                <div class="star-name">{t('galaxy.star')} {index + 1}</div>
+                                <div class="star-type">{t('galaxy.starType')}: {star.stellarType}</div>
+                                {#if star.temperature}
+                                    <div class="star-temp">{t('modal.temperature')}: {star.temperature} {t('unit.kelvin')}</div>
+                                {/if}
+                                {#if star.mass}
+                                    <div class="star-mass">{t('galaxy.mass')}: {star.mass} M☉</div>
+                                {/if}
                             </div>
-
-                            <div class="stat-card">
-                                <div class="stat-label">{t('galaxy.systemType')}</div>
-                                <div class="stat-value">{getSystemTypeLabel(selectedSystemData.systemType)}</div>
-                            </div>
-
-                            <div class="stat-card">
-                                <div class="stat-label">{t('galaxy.numberOfStars')}</div>
-                                <div class="stat-value">{selectedSystemData.stars.length}</div>
-                            </div>
-
-                            {#if selectedSystemData.metadata.hasExoplanets}
-                                <div class="stat-card">
-                                    <div class="stat-label">{t('galaxy.knownExoplanets')}</div>
-                                    <div class="stat-value">{selectedSystemData.metadata.numberOfPlanets ?? t('common.yes')}</div>
-                                </div>
-                            {/if}
-                        </div>
-
-                        {#if selectedSystemData.metadata.spectralClass}
-                            <div class="additional-info">
-                                <h4>{t('galaxy.spectralClassification')}</h4>
-                                <p>{selectedSystemData.metadata.spectralClass}</p>
-                            </div>
-                        {/if}
-
-                        {#if selectedSystemData.metadata.constellation}
-                            <div class="additional-info">
-                                <h4>{t('galaxy.constellation')}</h4>
-                                <p>{selectedSystemData.metadata.constellation}</p>
-                            </div>
-                        {/if}
-
-                        <div class="star-details">
-                            <h4>{t('galaxy.starInformation')}</h4>
-                            <div class="stars-grid">
-                                {#each selectedSystemData.stars as star, index}
-                                    <div class="star-card">
-                                        <div class="star-name">{t('galaxy.star')} {index + 1}</div>
-                                        <div class="star-type">{t('galaxy.starType')}: {star.stellarType}</div>
-                                        {#if star.temperature}
-                                            <div class="star-temp">{t('modal.temperature')}: {star.temperature} {t('unit.kelvin')}</div>
-                                        {/if}
-                                        {#if star.mass}
-                                            <div class="star-mass">{t('galaxy.mass')}: {star.mass} M☉</div>
-                                        {/if}
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
+                        {/each}
                     </div>
                 </div>
             </div>
-        {/if}
+
+            <svelte:fragment slot="actions">
+                <button class="action-button secondary" on:click={closeSystemDialog}>
+                    {t('action.close')}
+                </button>
+                <button
+                    type="button"
+                    class="action-button secondary"
+                    aria-disabled={observerEligibility?.eligible === false ? 'true' : undefined}
+                    aria-describedby={observerEligibility?.eligible === false ? 'galaxy-sky-unavailable' : undefined}
+                    on:click={navigateToObserverSky}
+                >
+                    {t('action.viewSkyFromHere')}
+                </button>
+                <button
+                    class="action-button primary"
+                    on:click={() => navigateToSystem(selectedSystemId!)}
+                >
+                    {canExplore ? t('action.explore') : t('common.comingSoon')}
+                </button>
+            </svelte:fragment>
+
+            <svelte:fragment slot="notices">
+                {#if observerEligibility?.eligible === false}
+                    <div id="galaxy-sky-unavailable" class="sky-unavailable-notice" role="status">
+                        {t('galaxy.skyUnavailable')}
+                    </div>
+                {/if}
+                {#if comingSoonNotice}
+                    <div class="coming-soon-notice" role="status">
+                        {t('galaxy.comingSoonNotice')}
+                    </div>
+                {/if}
+            </svelte:fragment>
+        </ModalShell>
+    {/if}
 
     <AccessibilityManager />
 </div>
@@ -480,18 +481,11 @@
     .row-count { font-size: 11px; opacity: 0.8; }
     .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
     .hud-setting input[type="range"] { flex: 1; }
-    .system-dialog-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.8); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; }
-    .system-dialog { background: rgba(0,0,17,0.95); border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 12px; width: min(700px, 90vw); max-height: 85vh; overflow: hidden; padding: 20px; color: #e0f7ff; display: flex; flex-direction: column; box-sizing: border-box; }
-    .dialog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .dialog-header h2 { margin: 0; color: var(--hud-cyan, #00f0ff); }
-    .dialog-close-button { background: transparent; border: none; color: var(--hud-cyan, #00f0ff); font-size: 24px; cursor: pointer; }
-    .dialog-content { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 6rem; overflow-y: auto; padding-right: 4px; }
     .system-overview { margin: 0; color: rgba(255,255,255,0.85); line-height: 1.5; }
-    .dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin: 0 0 16px; flex: 0 0 auto; }
     .action-button { padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; letter-spacing: 0.08em; }
     @media (max-width: 400px) {
-        .dialog-actions { flex-direction: column; }
-        .dialog-actions .action-button { width: 100%; }
+        :global(.modal-shell-actions) { flex-direction: column; }
+        :global(.modal-shell-actions) .action-button { width: 100%; }
     }
     .action-button.secondary { background: transparent; border: 1px solid var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
     .action-button.primary { background: var(--hud-cyan, #00f0ff); border: 1px solid var(--hud-cyan, #00f0ff); color: #001011; }
