@@ -5,11 +5,14 @@
   export let ariaPressed: boolean | undefined = undefined;
   export let disabled = false;
   export let type: "button" | "submit" = "button";
+  let className = "";
+  export { className as class };
 </script>
 
 <button
+  {...$$restProps}
   {type}
-  class="hud-btn"
+  class="hud-btn {className}"
   {disabled}
   aria-label={ariaLabel}
   aria-pressed={ariaPressed}

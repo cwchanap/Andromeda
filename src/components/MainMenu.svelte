@@ -1,5 +1,6 @@
 <script lang="ts">
-  import Button from "@/components/ui/Button.svelte";
+  import HudButton from "@/components/hud/HudButton.svelte";
+  import HudPanel from "@/components/hud/HudPanel.svelte";
   import SettingsModal from "@/components/SettingsModal.svelte";
   import AccessibilityManager from "@/components/AccessibilityManager.svelte";
   import ExploreSystems from "@/components/ExploreSystems.svelte";
@@ -79,11 +80,10 @@
   };
   
   $: menuItems = [
-    { label: t ? t('main.solar') : "Solar System", action: handleStartGame },
-    { label: t ? t('main.explore') : "Explore Systems", action: handleSystemSelector },
-    { label: t ? t('main.galaxy') : "Galaxy View", action: handleGalaxyView },
-    { label: t ? t('constellation.title') : "Constellation View", action: handleConstellationView },
-    { label: t ? t('main.settings') : "Settings", action: handleOpenSettings }
+    { label: t ? t('main.solar') : 'Solar System', action: handleStartGame, bracket: true },
+    { label: t ? t('main.explore') : 'Explore Systems', action: handleSystemSelector, bracket: false },
+    { label: t ? t('main.galaxy') : 'Galaxy View', action: handleGalaxyView, bracket: false },
+    { label: t ? t('constellation.title') : 'Constellation View', action: handleConstellationView, bracket: false },
   ];
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -180,77 +180,25 @@
       </p>
     </div>
 
-    <!-- Enhanced button grid with cosmic effects -->
-    <div class="mb-16 grid gap-6 max-w-lg mx-auto">
-      <Button
-        size="lg"
-        on:click={handleStartGame}
-        className="menu-button group relative h-16 w-full transform overflow-hidden rounded-2xl border-2 border-transparent bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-xl font-bold shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 hover:shadow-orange-500/50 hover:shadow-2xl active:scale-95"
-        aria-describedby="start-game-desc"
-      >
-        <span class="relative z-10 flex items-center justify-center gap-3">
-          <span class="text-2xl animate-twinkle">☀️</span>
-          {t ? t('main.solar') : 'Solar System'}
-        </span>
-        <div class="absolute inset-0 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-      </Button>
-      
-      <Button
-        variant="outline"
-        size="lg"
-        on:click={handleSystemSelector}
-        className="menu-button group relative h-14 w-full transform overflow-hidden rounded-xl border-2 border-cyan-400/50 bg-gradient-to-r from-cyan-900/20 to-blue-900/20 backdrop-blur-sm text-lg text-cyan-100 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:border-cyan-300 hover:bg-gradient-to-r hover:from-cyan-800/30 hover:to-blue-800/30 hover:shadow-cyan-400/50 hover:shadow-lg active:scale-95"
-        aria-describedby="systems-desc"
-      >
-        <span class="relative z-10 flex items-center justify-center gap-3">
-          <span class="text-xl animate-cosmic-drift">🌌</span>
-          {t ? t('main.explore') : 'Explore Exoplanets'}
-        </span>
-        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-      </Button>
-
-      <Button
-        variant="outline"
-        size="lg"
-        on:click={handleGalaxyView}
-        className="menu-button group relative h-14 w-full transform overflow-hidden rounded-xl border-2 border-violet-400/50 bg-gradient-to-r from-violet-900/20 to-purple-900/20 backdrop-blur-sm text-lg text-violet-100 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:border-violet-300 hover:bg-gradient-to-r hover:from-violet-800/30 hover:to-purple-800/30 hover:shadow-violet-400/50 hover:shadow-lg active:scale-95"
-        aria-describedby="galaxy-desc"
-      >
-        <span class="relative z-10 flex items-center justify-center gap-3">
-          <span class="text-xl animate-float">🌠</span>
-          {t ? t('main.galaxy') : 'Galaxy View'}
-        </span>
-        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-violet-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-      </Button>
-
-      <Button
-        variant="outline"
-        size="lg"
-        on:click={handleConstellationView}
-        className="menu-button group relative h-14 w-full transform overflow-hidden rounded-xl border-2 border-indigo-400/50 bg-gradient-to-r from-indigo-900/20 to-blue-900/20 backdrop-blur-sm text-lg text-indigo-100 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-800/30 hover:to-blue-800/30 hover:shadow-indigo-400/50 hover:shadow-lg active:scale-95"
-        aria-describedby="constellation-desc"
-      >
-        <span class="relative z-10 flex items-center justify-center gap-3">
-          <span class="text-xl animate-pulse">✨</span>
-          {t ? t('constellation.title') : 'Constellation View'}
-        </span>
-        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-      </Button>
-
-      <Button
-        variant="outline"
-        size="lg"
-        on:click={handleOpenSettings}
-        className="menu-button group relative h-14 w-full transform overflow-hidden rounded-xl border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 backdrop-blur-sm text-lg text-emerald-100 transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:border-emerald-300 hover:bg-gradient-to-r hover:from-emerald-800/30 hover:to-teal-800/30 hover:shadow-emerald-400/50 hover:shadow-lg active:scale-95"
-        aria-describedby="settings-desc"
-      >
-        <span class="relative z-10 flex items-center justify-center gap-3">
-          <span class="text-xl animate-pulse-glow">⚙️</span>
-          {t ? t('main.settings') : 'Settings'}
-        </span>
-        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-      </Button>
+    <!-- HUD command hub -->
+    <div class="home-command-hub mx-auto mb-16 max-w-lg">
+      <HudPanel title="COMMAND">
+        <div class="hud-rail">
+          {#each menuItems as item, index}
+            <HudButton
+              class="menu-button"
+              bracket={item.bracket}
+              aria-describedby={[
+                "start-game-desc",
+                "systems-desc",
+                "galaxy-desc",
+                "constellation-desc",
+              ][index]}
+              on:click={item.action}
+            >{item.label}</HudButton>
+          {/each}
+        </div>
+      </HudPanel>
     </div>
 
     <!-- Hidden accessibility descriptions -->
@@ -270,21 +218,13 @@
       {t ? t('aria.settings') : 'Adjust graphics, audio, and accessibility options'}
     </div>
 
-    <!-- Enhanced instructions with cosmic styling -->
-    <div class="relative animate-pulse opacity-70">
-      <div class="backdrop-blur-sm bg-black/20 rounded-xl p-4 border border-white/10">
-        <p class="text-sm text-slate-300">
-          <span class="text-cyan-300">{t ? t('instructions.mouse') : '🖱️ Mouse to rotate'}</span> • 
-          <span class="text-violet-300">{t ? t('instructions.scroll') : '📜 Scroll to zoom'}</span> • 
-          <span class="text-pink-300">{t ? t('instructions.click') : '🌍 Click planets to explore'}</span>
-          {#if $settings.enableKeyboardNavigation}
-            <br />
-            <span class="text-emerald-300">{t ? t('instructions.keyboard') : '⌨️ Arrow keys to navigate'}</span> • 
-            <span class="text-orange-300">{t ? t('instructions.enter') : '⏎ Enter to select'}</span>
-          {/if}
-        </p>
-      </div>
-    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="absolute right-4 top-4 z-30">
+    <HudButton aria-describedby="settings-desc" on:click={handleOpenSettings}>
+      {t ? t('main.settings') : 'Settings'}
+    </HudButton>
   </div>
 
   <!-- Accessibility Manager -->
@@ -486,27 +426,6 @@
     75% {
       transform: translateX(-40px) translateY(-10px) scale(1.05);
     }
-  }
-
-  /* Enhanced Button Animations */
-  :global(.menu-button) {
-    position: relative;
-    overflow: hidden;
-  }
-
-  :global(.menu-button::before) {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transition: left 0.5s;
-  }
-
-  :global(.menu-button:hover::before) {
-    left: 100%;
   }
 
   /* Title Glow Animation */
