@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, fireEvent, cleanup } from "@testing-library/svelte";
+import { render, fireEvent, cleanup, screen } from "@testing-library/svelte";
 import CelestialBodyInfoModal from "@/components/CelestialBodyInfoModal.svelte";
 import type { CelestialBodyData } from "@/types/game";
 
@@ -133,6 +133,20 @@ describe("CelestialBodyInfoModal", () => {
                 },
             });
             expect(container.querySelector("button")).toBeTruthy();
+        });
+
+        it("should render the shared modal shell and accessible close button", () => {
+            const { container } = render(CelestialBodyInfoModal, {
+                props: {
+                    isOpen: true,
+                    celestialBody: mockEarth,
+                    onClose: defaultOnClose,
+                    translations: { "modal.close": "Close" },
+                },
+            });
+
+            expect(container.querySelector(".modal-shell-dialog")).toBeTruthy();
+            expect(screen.getByRole("button", { name: /close earth/i })).toBeTruthy();
         });
 
         it("should have role=dialog on the overlay", () => {
