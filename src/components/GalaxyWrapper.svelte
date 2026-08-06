@@ -361,7 +361,7 @@
                         <h2>{systemName(selectedSystemData)}</h2>
                         <button class="dialog-close-button" on:click={closeSystemDialog} aria-label={t('action.close')}>×</button>
                     </div>
-                    <div class="dialog-actions dialog-primary-actions">
+                    <div class="dialog-actions">
                         <button
                             type="button"
                             class="action-button secondary"
@@ -485,7 +485,7 @@
     .dialog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .dialog-header h2 { margin: 0; color: var(--hud-cyan, #00f0ff); }
     .dialog-close-button { background: transparent; border: none; color: var(--hud-cyan, #00f0ff); font-size: 24px; cursor: pointer; }
-    .dialog-content { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; padding-right: 4px; }
+    .dialog-content { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 6rem; overflow-y: auto; padding-right: 4px; }
     .system-overview { margin: 0; color: rgba(255,255,255,0.85); line-height: 1.5; }
     .dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin: 0 0 16px; flex: 0 0 auto; }
     .action-button { padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; letter-spacing: 0.08em; }

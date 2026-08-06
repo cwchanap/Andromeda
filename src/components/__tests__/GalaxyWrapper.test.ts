@@ -529,7 +529,7 @@ describe("GalaxyWrapper — observer sky action", () => {
     it("keeps the fixed product actions above the scrollable details body", async () => {
         const { container } = await openSystemDialog();
         const actionRow = container.querySelector(
-            ".system-dialog .dialog-primary-actions",
+            ".system-dialog .dialog-actions",
         );
         const detailsBody = container.querySelector(
             ".system-dialog .dialog-content",
