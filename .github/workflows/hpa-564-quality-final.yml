@@ -8,7 +8,7 @@ on:
       - .github/workflows/hpa-564-quality-final.yml
 
 permissions:
-  pull-requests: write
+  contents: write
 
 jobs:
   quality:
@@ -26,6 +26,8 @@ jobs:
       - name: Lint
         run: bun run lint
       - name: Record success
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh pr comment 41 --body "Final quality verification on commit $GITHUB_SHA: type-check and lint passed."
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: verify HPA-564 typecheck and lint"
+          git push
