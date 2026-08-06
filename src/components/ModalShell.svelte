@@ -36,6 +36,9 @@
   } = {};
 
   function handleKeydown(event: KeyboardEvent) {
+    // Keep modal keystrokes from reaching page-level navigation handlers.
+    // focusTrap's Tab listener is attached to this same node, so it still runs.
+    event.stopPropagation();
     if (event.key !== "Escape") return;
     if (onEscape?.() === true) return;
     onClose();

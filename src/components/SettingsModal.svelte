@@ -323,4 +323,18 @@
     display: flex;
     gap: 12px;
   }
+
+  @media (max-width: 480px) {
+    .settings-actions,
+    .settings-actions-trailing {
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .settings-actions > :global(button),
+    .settings-actions-trailing > :global(button) {
+      width: 100%;
+    }
+  }
 </style>

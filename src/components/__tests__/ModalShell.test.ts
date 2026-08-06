@@ -110,6 +110,26 @@ describe("ModalShell", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it("stops keydown events inside the dialog from reaching window handlers", async () => {
+    const { container } = render(ModalShellHarness, {
+      props: { isOpen: true },
+    });
+    const dialogButton = container.querySelector(
+      ".modal-shell-dialog button:not(.modal-shell-close)",
+    ) as HTMLButtonElement;
+    const windowKeydown = vi.fn();
+    window.addEventListener("keydown", windowKeydown);
+
+    try {
+      dialogButton.focus();
+      await fireEvent.keyDown(dialogButton, { key: "ArrowDown" });
+
+      expect(windowKeydown).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("keydown", windowKeydown);
+    }
+  });
+
   it("moves focus into the dialog and restores it when the overlay is destroyed", async () => {
     const requestAnimationFrame = vi
       .spyOn(globalThis, "requestAnimationFrame")

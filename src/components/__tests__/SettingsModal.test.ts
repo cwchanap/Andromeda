@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, fireEvent, cleanup, waitFor } from "@testing-library/svelte";
 import SettingsModal from "@/components/SettingsModal.svelte";
+import settingsModalSource from "@/components/SettingsModal.svelte?raw";
 import SettingsModalHarness from "./fixtures/SettingsModalHarness.svelte";
 import type { GameSettings } from "@/stores/gameStore";
 
@@ -176,6 +177,44 @@ describe("SettingsModal", () => {
                 b.textContent?.toLowerCase().includes("reset"),
             );
             expect(resetBtn).toBeTruthy();
+        });
+
+        it("should keep the three action buttons in a narrow-viewport stack", () => {
+            const { container } = render(SettingsModal, {
+                props: {
+                    isOpen: true,
+                    currentSettings: defaultSettings,
+                    translations: testTranslations,
+                },
+            });
+            const actions = container.querySelector(".settings-actions");
+            const trailing = actions?.querySelector(
+                ".settings-actions-trailing",
+            );
+            const actionButtons = Array.from(actions?.querySelectorAll("button") ?? []);
+            const settingsStyles =
+                settingsModalSource.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
+            const narrowViewportRules = settingsStyles.slice(
+                settingsStyles.indexOf("@media (max-width: 480px)"),
+            );
+
+            // jsdom cannot measure the rendered bounds; the action slot's order
+            // plus the component's narrow-viewport CSS protects the layout contract.
+            expect(actions).not.toBeNull();
+            expect(trailing).not.toBeNull();
+            expect(actionButtons.map((button) => button.textContent?.trim())).toEqual([
+                "Reset to Defaults",
+                "Cancel",
+                "Save Settings",
+            ]);
+            expect(narrowViewportRules).toContain("@media (max-width: 480px)");
+            expect(narrowViewportRules).toMatch(
+                /\.settings-actions[^{}]*\{[^{}]*flex-direction:\s*column/,
+            );
+            expect(narrowViewportRules).toMatch(
+                /\.settings-actions-trailing[^{}]*\{[^{}]*flex-direction:\s*column/,
+            );
+            expect(narrowViewportRules).toMatch(/button[^{}]*\{[^{}]*width:\s*100%/);
         });
 
         it("should dispatch save and close when Save is clicked", async () => {
