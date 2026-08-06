@@ -510,9 +510,9 @@ test.describe("30 Nearest Systems", () => {
     test("system dialog actions do not overflow on narrow viewports", async ({
         page,
     }) => {
-        // 360px sits within the 320-375px range where three action buttons
-        // (Close, View sky from here, Explore) plus localized labels can
-        // overflow a non-wrapping flex row.
+        // 360px sits within the 320-375px range where the fixed navigation
+        // actions and localized labels must remain fully visible. The Close
+        // control is kept separately in the dialog header.
         await page.setViewportSize({ width: 360, height: 640 });
         await page.goto("/galaxy");
 
@@ -531,9 +531,11 @@ test.describe("30 Nearest Systems", () => {
         const dialog = page.locator(".system-dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
-        const actions = dialog.locator(".dialog-actions");
+        await expect(dialog.locator(".dialog-close-button")).toBeVisible();
+
+        const actions = dialog.locator(".dialog-primary-actions");
         const actionButtons = actions.locator(".action-button");
-        await expect(actionButtons).toHaveCount(3);
+        await expect(actionButtons).toHaveCount(2);
 
         // Every action button must be fully visible inside the dialog's
         // horizontal bounds (no horizontal overflow / clipping).
