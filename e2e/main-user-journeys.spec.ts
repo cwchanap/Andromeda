@@ -533,7 +533,7 @@ test.describe("30 Nearest Systems", () => {
 
         await expect(dialog.locator(".dialog-close-button")).toBeVisible();
 
-        const actions = dialog.locator(".dialog-primary-actions");
+        const actions = dialog.locator(".dialog-actions");
         const actionButtons = actions.locator(".action-button");
         await expect(actionButtons).toHaveCount(2);
 
@@ -556,6 +556,28 @@ test.describe("30 Nearest Systems", () => {
                 dialogBox!.x + dialogBox!.width,
             );
         }
+
+        // Short landscape-style viewports exercise the vertical flex split:
+        // fixed header/actions remain visible while the details body keeps a
+        // usable scroll area that can reach the final content.
+        await page.setViewportSize({ width: 360, height: 400 });
+        const details = dialog.locator(".dialog-content");
+        await expect(details).toBeVisible();
+        const scrollState = await details.evaluate((element) => {
+            element.scrollTop = element.scrollHeight;
+            return {
+                clientHeight: element.clientHeight,
+                scrollHeight: element.scrollHeight,
+                scrollTop: element.scrollTop,
+            };
+        });
+        expect(scrollState.clientHeight).toBeGreaterThan(0);
+        expect(scrollState.scrollHeight).toBeGreaterThan(
+            scrollState.clientHeight,
+        );
+        expect(
+            scrollState.scrollTop + scrollState.clientHeight,
+        ).toBeGreaterThanOrEqual(scrollState.scrollHeight - 1);
     });
 
     test("Alpha Centauri system page loads @smoke", async ({ page }) => {
