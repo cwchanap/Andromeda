@@ -29,8 +29,8 @@
 - Produces: `.dialog-primary-actions` before `.dialog-content`, with View Sky primary and Explore secondary.
 
 - [x] Write a failing component test asserting the fixed action row precedes the details body and has the desired hierarchy.
-- [ ] Restructure the dialog with fixed header/actions and a scrollable details body.
-- [ ] Run the focused Galaxy wrapper tests.
+- [x] Restructure the dialog with fixed header/actions and a scrollable details body.
+- [x] Verify the Galaxy wrapper behavior through the full unit-test suite.
 
 ### Task 2: Add observer reselection navigation
 
@@ -43,8 +43,8 @@
 - Produces: `chooseAnotherObserver(): void` and visible action pairs in working alternate mode and the observer WebGL fallback.
 
 - [x] Write failing component tests for localized Galaxy navigation and fallback visibility.
-- [ ] Implement the route callback and render the new action beside Return to Earth/Sol.
-- [ ] Run focused observer wrapper tests.
+- [x] Implement the route callback and render the new action beside Return to Earth/Sol.
+- [x] Verify the observer wrapper behavior through the full unit-test suite.
 
 ### Task 3: Add locale parity
 
@@ -58,13 +58,14 @@
 - Produces: `constellation.observer.chooseAnother` in all supported locales.
 
 - [x] Add the failing parity assertion.
-- [ ] Add concise English, Simplified Chinese, and Japanese copy.
-- [ ] Run the observer i18n parity test.
+- [x] Add concise English, Simplified Chinese, and Japanese copy.
+- [x] Verify locale parity through the full unit-test suite.
 
 ### Task 4: Verify the focused PR
 
-- [ ] Run `bun run test:run -- src/components/__tests__/GalaxyWrapper.test.ts src/components/__tests__/ConstellationWrapper.observer.test.ts src/i18n/__tests__/observerUiI18nSync.test.ts`.
-- [ ] Run `bun run type-check`.
-- [ ] Run `bun run lint`.
-- [ ] Run `bun run build`.
-- [ ] Review the final diff for unrelated redesign or duplicated HPA-436 scope.
+- [x] Run the full Vitest suite and coverage gate in GitHub Actions.
+- [x] Run `bun run type-check` in GitHub Actions.
+- [x] Run `bun run lint` in GitHub Actions.
+- [x] Run `bun run build` in GitHub Actions.
+- [x] Run the existing Playwright suite in GitHub Actions.
+- [x] Review the final diff for unrelated redesign or duplicated HPA-436 scope.
