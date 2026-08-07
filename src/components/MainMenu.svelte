@@ -103,13 +103,10 @@
         focusedIndex = focusedIndex === 0 ? menuItems.length - 1 : focusedIndex - 1;
         updateFocus();
         break;
-      
-      case 'Enter':
-      case ' ':
-        if (!document.activeElement?.classList.contains('menu-button')) break;
-        event.preventDefault();
-        menuItems[focusedIndex].action();
-        break;
+      // Enter/Space are intentionally not handled here. Native <button>
+      // activation invokes each destination button's own on:click, which
+      // avoids dispatching a potentially stale focusedIndex action when the
+      // user tabs to a non-first button instead of using arrow keys.
     }
   }
 

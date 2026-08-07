@@ -562,14 +562,11 @@ describe("GalaxyWrapper — observer sky action", () => {
             id: "solar-system",
             name: "Solar System",
         };
-        const { container } = await openSystemDialog(explorableSystem);
-        const actions = Array.from(
-            container.querySelectorAll<HTMLButtonElement>(
-                ".modal-shell-actions button",
-            ),
-        );
+        await openSystemDialog(explorableSystem);
 
-        expect(actions[2]?.textContent?.trim()).toBe("Explore");
+        // Locate the Explore action by accessible role + name so the
+        // assertion stays independent of the actions slot ordering.
+        expect(screen.getByRole("button", { name: "Explore" })).toBeDefined();
     });
 
     it("renders no decorative shell nodes for Galaxy dialogs", async () => {

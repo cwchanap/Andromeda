@@ -423,26 +423,75 @@ describe("MainMenu", () => {
             expect(gameActions.navigateToView).not.toHaveBeenCalled();
         });
 
-        it("should trigger Solar System action on Enter at index 0", async () => {
+        it("should trigger Solar System action on Enter via native button activation", async () => {
             const { container } = render(MainMenu, {
                 props: { translations: testTranslations },
             });
-            container.querySelector<HTMLButtonElement>(".menu-button")?.focus();
-            await fireEvent.keyDown(window, { key: "Enter" });
+            const solarButton =
+                container.querySelector<HTMLButtonElement>(".menu-button")!;
+            solarButton.focus();
+            // jsdom does not perform the browser's native button activation on
+            // Enter, so mirror that behavior: dispatch the keydown and, unless
+            // it was prevented, fire the click the browser would have fired.
+            const keydown = new KeyboardEvent("keydown", {
+                key: "Enter",
+                bubbles: true,
+                cancelable: true,
+            });
+            solarButton.dispatchEvent(keydown);
+            if (!keydown.defaultPrevented) {
+                await fireEvent.click(solarButton);
+            }
             expect(gameActions.navigateToView).toHaveBeenCalledWith(
                 "solar-system",
             );
         });
 
-        it("should trigger Solar System action on Space at index 0", async () => {
+        it("should trigger Solar System action on Space via native button activation", async () => {
             const { container } = render(MainMenu, {
                 props: { translations: testTranslations },
             });
-            container.querySelector<HTMLButtonElement>(".menu-button")?.focus();
-            await fireEvent.keyDown(window, { key: " " });
+            const solarButton =
+                container.querySelector<HTMLButtonElement>(".menu-button")!;
+            solarButton.focus();
+            const keydown = new KeyboardEvent("keydown", {
+                key: " ",
+                bubbles: true,
+                cancelable: true,
+            });
+            solarButton.dispatchEvent(keydown);
+            if (!keydown.defaultPrevented) {
+                await fireEvent.click(solarButton);
+            }
             expect(gameActions.navigateToView).toHaveBeenCalledWith(
                 "solar-system",
             );
+        });
+
+        it("should activate the focused non-first destination on Enter, not a stale focusedIndex", async () => {
+            const { container } = render(MainMenu, {
+                props: { translations: testTranslations },
+            });
+            const destinationButtons = Array.from(
+                container.querySelectorAll<HTMLButtonElement>(".menu-button"),
+            );
+            // Focus a non-first button directly (simulating Tab focus) so the
+            // internal focusedIndex stays at 0. Native activation must invoke
+            // the focused button's own on:click rather than the stale index.
+            const galaxyButton = destinationButtons[2];
+            galaxyButton.focus();
+            const keydown = new KeyboardEvent("keydown", {
+                key: "Enter",
+                bubbles: true,
+                cancelable: true,
+            });
+            galaxyButton.dispatchEvent(keydown);
+            if (!keydown.defaultPrevented) {
+                await fireEvent.click(galaxyButton);
+            }
+            expect(window.location.href).toBe("/galaxy");
+            // The stale index-0 (Solar System) action must not have run.
+            expect(gameActions.navigateToView).not.toHaveBeenCalled();
         });
     });
 

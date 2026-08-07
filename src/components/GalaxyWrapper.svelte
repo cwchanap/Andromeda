@@ -485,8 +485,7 @@
     .system-overview { margin: 0; color: rgba(255,255,255,0.85); line-height: 1.5; }
     .action-button { padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; letter-spacing: 0.08em; }
     @media (max-width: 400px) {
-        :global(.modal-shell-actions) { flex-direction: column; }
-        :global(.modal-shell-actions) .action-button { width: 100%; }
+        .action-button { width: 100%; }
     }
     .action-button.secondary { background: transparent; border: 1px solid var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
     .action-button.primary { background: var(--hud-cyan, #00f0ff); border: 1px solid var(--hud-cyan, #00f0ff); color: #001011; }
