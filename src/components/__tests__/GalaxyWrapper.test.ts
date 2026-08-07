@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import GalaxyWrapper from "@/components/GalaxyWrapper.svelte";
+import ModalShellHarness from "./fixtures/ModalShellHarness.svelte";
 import { GalaxyRenderer } from "@/lib/galaxy";
 import { settings, defaultSettings } from "@/stores/gameStore";
 
@@ -572,6 +573,28 @@ describe("GalaxyWrapper — observer sky action", () => {
     it("renders no decorative shell nodes for Galaxy dialogs", async () => {
         const { container } = await openSystemDialog();
 
+        // Positively verify the modal shell mounted for the Galaxy dialog.
+        expect(container.querySelector(".modal-shell-dialog")).not.toBeNull();
+
+        // Positive control: a decorated shell renders the expected nodes,
+        // proving the absence below is due to Galaxy's decoration choice
+        // and not a broken ModalShell.
+        const decorated = render(ModalShellHarness, {
+            props: { isOpen: true, decoration: "cosmic" },
+        });
+        expect(
+            decorated.container.querySelector(".modal-shell-decoration"),
+        ).not.toBeNull();
+        expect(
+            decorated.container.querySelectorAll(".modal-shell-star"),
+        ).toHaveLength(75);
+        expect(
+            decorated.container.querySelectorAll(".modal-shell-particle"),
+        ).toHaveLength(20);
+        decorated.unmount();
+
+        // Galaxy passes decoration="none", so its dialog renders none of
+        // the decorative nodes.
         expect(container.querySelector(".modal-shell-decoration")).toBeNull();
         expect(
             container.querySelectorAll(".modal-shell-star, .modal-shell-particle"),
