@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import GalaxyWrapper from "@/components/GalaxyWrapper.svelte";
-import ModalShellHarness from "./fixtures/ModalShellHarness.svelte";
+import ModalShellHarness from "@/components/__tests__/fixtures/ModalShellHarness.svelte";
 import { GalaxyRenderer } from "@/lib/galaxy";
 import { settings, defaultSettings } from "@/stores/gameStore";
 
