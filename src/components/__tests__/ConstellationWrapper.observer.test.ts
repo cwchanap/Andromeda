@@ -220,7 +220,7 @@ const {
 
 // Mock legacy/prepared renderer initialization
 vi.mock("@/lib/constellation/ConstellationRenderer", () => {
-    const mockRenderer = {
+    const createMockRenderer = () => ({
         initialize: initializeMock,
         initializePreparedCatalogs: initializePreparedCatalogsMock,
         dispose: vi.fn(),
@@ -238,10 +238,11 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         setReferenceVisible: setReferenceVisibleMock,
         getStarWorldPosition: getStarWorldPositionMock,
         focusStarById: focusStarByIdMock,
-    };
-    // Wire the default implementation onto the hoisted constructor mock so
-    // tests can override it per-call (e.g. throw to simulate a WebGL-creation
-    // failure). mockImplementation survives vi.clearAllMocks.
+    });
+    // Each construction gets its own disposable renderer resource. Tests can
+    // still override individual constructor calls (for example to simulate a
+    // WebGL-creation failure), while lifecycle coverage can detect a stale
+    // instance surviving an alternate-observer remount.
     constellationRendererCtorMock.mockImplementation(
         (
             _container: unknown,
@@ -251,7 +252,7 @@ vi.mock("@/lib/constellation/ConstellationRenderer", () => {
         ) => {
             rendererCallbacks.onConstellationClick =
                 callbacks?.onConstellationClick ?? null;
-            return mockRenderer;
+            return createMockRenderer();
         },
     );
     return {
@@ -1032,6 +1033,65 @@ describe("ConstellationWrapper observer actions", () => {
         expect(queryAllByText(FIND_SOL_ANNOUNCEMENT)).toHaveLength(1);
     });
 
+    it("propagates reduced motion and supports keyboard Find Sol announcements", async () => {
+        const mql = {
+            matches: true,
+            media: "(prefers-reduced-motion: reduce)",
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+        };
+        const matchMediaSpy = vi
+            .spyOn(window, "matchMedia")
+            .mockReturnValue(mql as unknown as MediaQueryList);
+        const { container, unmount } = mountAlternate(
+            solCatalog,
+            preparedReferenceCatalog,
+        );
+
+        try {
+            await waitFor(() => {
+                expect(initializePreparedCatalogsMock).toHaveBeenCalled();
+            });
+            const renderer =
+                constellationRendererCtorMock.mock.results.at(-1)?.value;
+            await waitFor(() => {
+                expect(renderer?.setReducedMotion).toHaveBeenCalledWith(true);
+            });
+
+            openSettings(container);
+            await waitFor(() => {
+                expect(findSolButton(container)).not.toBeUndefined();
+            });
+            const button = findSolButton(container) as HTMLButtonElement;
+            button.focus();
+            expect(document.activeElement).toBe(button);
+
+            // jsdom does not run the browser's native Enter-to-click default
+            // action, so mirror the real focused-button interaction.
+            const keydown = new KeyboardEvent("keydown", {
+                key: "Enter",
+                bubbles: true,
+                cancelable: true,
+            });
+            button.dispatchEvent(keydown);
+            if (!keydown.defaultPrevented) {
+                await fireEvent.click(button);
+            }
+
+            expect(focusStarByIdMock).toHaveBeenCalledWith("sol");
+            await waitFor(() => {
+                expect(
+                    container.querySelector(".observer-announcement")
+                        ?.textContent,
+                ).toBe(FIND_SOL_ANNOUNCEMENT);
+            });
+        } finally {
+            unmount();
+            matchMediaSpy.mockRestore();
+        }
+    });
+
     it("Find Sol announces the unavailable copy when focus fails", async () => {
         focusStarByIdMock.mockReturnValue(false);
         const { container, queryByText } = mountAlternate(
@@ -1052,6 +1112,96 @@ describe("ConstellationWrapper observer actions", () => {
         await waitFor(() => {
             expect(queryByText(FIND_SOL_UNAVAILABLE)).not.toBeNull();
         });
+    });
+
+    it("disposes alternate observer resources before creating one fresh set on remount", async () => {
+        const mql = {
+            matches: false,
+            media: "(prefers-reduced-motion: reduce)",
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+        };
+        const matchMediaSpy = vi
+            .spyOn(window, "matchMedia")
+            .mockReturnValue(mql as unknown as MediaQueryList);
+        // Test setup installs the stable animation stubs on `global`; spy on
+        // those actual wrapper call sites so the queued HUD frame is visible.
+        const requestAnimationFrameSpy = vi.spyOn(
+            global,
+            "requestAnimationFrame",
+        );
+        const cancelAnimationFrameSpy = vi.spyOn(
+            global,
+            "cancelAnimationFrame",
+        );
+        const firstMount = mountAlternate(
+            preparedPrimaryCatalog,
+            preparedReferenceCatalog,
+        );
+
+        try {
+            await waitFor(() => {
+                expect(initializePreparedCatalogsMock).toHaveBeenCalledTimes(1);
+            });
+            const firstRenderer =
+                constellationRendererCtorMock.mock.results[0]?.value;
+            const firstListener = mql.addEventListener.mock.calls[0]?.[1];
+            const firstHudFrame = requestAnimationFrameSpy.mock.results[0]
+                ?.value;
+
+            expect(firstRenderer).toBeDefined();
+            expect(firstListener).toEqual(expect.any(Function));
+            expect(requestAnimationFrameSpy).toHaveBeenCalledOnce();
+
+            firstMount.unmount();
+
+            expect(firstRenderer?.dispose).toHaveBeenCalledOnce();
+            expect(cancelAnimationFrameSpy).toHaveBeenCalledWith(
+                firstHudFrame,
+            );
+            expect(mql.removeEventListener).toHaveBeenCalledWith(
+                "change",
+                firstListener,
+            );
+
+            const secondMount = mountAlternate(
+                preparedPrimaryCatalog,
+                preparedReferenceCatalog,
+            );
+            await waitFor(() => {
+                expect(initializePreparedCatalogsMock).toHaveBeenCalledTimes(2);
+            });
+            const secondRenderer =
+                constellationRendererCtorMock.mock.results[1]?.value;
+            const secondListener = mql.addEventListener.mock.calls[1]?.[1];
+
+            // Exactly one renderer/HUD/listener set is created for each mount;
+            // the remount receives new ownership rather than reusing the
+            // disposed first renderer or its media-query listener.
+            expect(constellationRendererCtorMock).toHaveBeenCalledTimes(2);
+            expect(secondRenderer).toBeDefined();
+            expect(secondRenderer).not.toBe(firstRenderer);
+            expect(secondRenderer?.dispose).not.toHaveBeenCalled();
+            expect(requestAnimationFrameSpy).toHaveBeenCalledTimes(2);
+            expect(mql.addEventListener).toHaveBeenCalledTimes(2);
+            expect(secondListener).toEqual(expect.any(Function));
+            expect(secondListener).not.toBe(firstListener);
+
+            secondMount.unmount();
+
+            expect(secondRenderer?.dispose).toHaveBeenCalledOnce();
+            expect(cancelAnimationFrameSpy).toHaveBeenCalledTimes(2);
+            expect(mql.removeEventListener).toHaveBeenCalledTimes(2);
+            expect(mql.removeEventListener).toHaveBeenLastCalledWith(
+                "change",
+                secondListener,
+            );
+        } finally {
+            requestAnimationFrameSpy.mockRestore();
+            cancelAnimationFrameSpy.mockRestore();
+            matchMediaSpy.mockRestore();
+        }
     });
 
     it("alternate constellation selection averages primary world positions and never uses celestialToSphere", async () => {
