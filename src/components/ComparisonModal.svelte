@@ -50,6 +50,7 @@
     function handleShellEscape(): boolean {
         if (!showBodySelector) return false;
         showBodySelector = false;
+        searchQuery = "";
         return true;
     }
 
