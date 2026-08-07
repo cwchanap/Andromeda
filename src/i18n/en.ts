@@ -21,6 +21,7 @@ export const en = {
     "main.explore": "Explore Exoplanets",
     "main.galaxy": "Galaxy View",
     "main.settings": "Settings",
+    "main.command": "COMMAND",
 
     // Controls
     "controls.backToMenu": "← Back to Menu",

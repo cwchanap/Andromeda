@@ -20,6 +20,7 @@ export const zh = {
     "main.explore": "探索系外行星",
     "main.galaxy": "银河视图",
     "main.settings": "设置",
+    "main.command": "指令",
 
     // Controls
     "controls.backToMenu": "← 返回菜单",

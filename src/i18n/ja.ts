@@ -20,6 +20,7 @@ export const ja = {
     "main.explore": "系外惑星を探索",
     "main.galaxy": "銀河ビュー",
     "main.settings": "設定",
+    "main.command": "コマンド",
 
     // Controls
     "controls.backToMenu": "← メニューに戻る",

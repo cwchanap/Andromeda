@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/svelte";
 import ModalShellHarness from "./fixtures/ModalShellHarness.svelte";
+import ModalShellBareHarness from "./fixtures/ModalShellBareHarness.svelte";
 
 afterEach(() => {
   cleanup();
@@ -214,5 +215,19 @@ describe("ModalShell", () => {
     expect(container.querySelectorAll(".modal-shell-particle")).toHaveLength(
       20,
     );
+  });
+
+  it("omits the notices and actions chrome when those slots are not supplied", () => {
+    const { container, getByText } = render(ModalShellBareHarness, {
+      props: { isOpen: true },
+    });
+
+    expect(getByText("Bare heading")).toBeTruthy();
+    expect(getByText("Bare body content")).toBeTruthy();
+    expect(container.querySelector(".modal-shell-content")).not.toBeNull();
+    // Consumers that supply neither optional slot (e.g. ComparisonModal)
+    // must not get the empty padded footer chrome.
+    expect(container.querySelector(".modal-shell-notices")).toBeNull();
+    expect(container.querySelector(".modal-shell-actions")).toBeNull();
   });
 });
