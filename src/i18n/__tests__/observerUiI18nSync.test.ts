@@ -46,4 +46,10 @@ describe("HPA-432 observer UI i18n coverage", () => {
             expect(announcement).toContain("{distance}");
         },
     );
+
+    it("keeps the Japanese return-to-Sol observer action localized", () => {
+        expect(ui.ja["constellation.observer.returnToSol"]).toBe(
+            "地球／太陽へ戻る",
+        );
+    });
 });
