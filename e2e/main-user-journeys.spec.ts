@@ -641,7 +641,7 @@ test.describe("30 Nearest Systems", () => {
         // fixed header/actions remain visible while the details body keeps a
         // usable scroll area that can reach the final content.
         await page.setViewportSize({ width: 360, height: 400 });
-        const details = dialog.locator(".dialog-content");
+        const details = dialog.locator(".modal-shell-content");
         await expect(details).toBeVisible();
         const scrollState = await details.evaluate((element) => {
             element.scrollTop = element.scrollHeight;
