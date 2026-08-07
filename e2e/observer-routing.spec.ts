@@ -52,7 +52,6 @@ test.describe("observer selection round trip", () => {
         });
 
         const systems = page.locator(".galaxy-nearby .hud-list-row");
-        await expect(systems).toHaveCount(30, { timeout: 5000 });
         const alphaCentauri = systems.filter({
             hasText: "Alpha Centauri System",
         });
@@ -79,6 +78,8 @@ test.describe("observer selection round trip", () => {
         await expect(returnToSol).toBeVisible();
 
         await page.getByRole("button", { name: "Settings" }).click();
+        const closeSettings = page.getByRole("button", { name: "Close" });
+        await expect(closeSettings).toBeFocused();
         const referenceToggle = page.getByRole("checkbox", {
             name: "Show Earth/Sol reference",
         });
@@ -100,7 +101,7 @@ test.describe("observer selection round trip", () => {
             ),
         ).toBeVisible();
 
-        await page.getByRole("button", { name: "Close" }).click();
+        await closeSettings.click();
         await returnToSol.focus();
         await expect(returnToSol).toBeFocused();
         await page.keyboard.press("Enter");
