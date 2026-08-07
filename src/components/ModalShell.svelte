@@ -1,22 +1,54 @@
+<script context="module" lang="ts">
+  // Generator helpers live at module scope so they are defined once rather
+  // than re-created per instance. Decoration arrays are created reactively
+  // (see instance script) only for instances whose decoration is active, so
+  // "none" instances never generate random data.
+  function generateBackgroundStars() {
+    return Array.from({ length: 75 }, () => ({
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 4,
+      opacity: 0.2 + Math.random() * 0.8,
+      scale: 0.3 + Math.random() * 1.2,
+    }));
+  }
+
+  function generateBackgroundParticles() {
+    return Array.from({ length: 20 }, () => ({
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 6,
+      duration: 4 + Math.random() * 4,
+    }));
+  }
+</script>
+
 <script lang="ts">
   import { focusTrap } from "@/lib/hud/focusTrap";
 
   export type ModalDecoration = "none" | "stars" | "cosmic";
 
-  const BACKGROUND_STARS = Array.from({ length: 75 }, () => ({
-    left: Math.random() * 100,
-    top: Math.random() * 100,
-    delay: Math.random() * 4,
-    opacity: 0.2 + Math.random() * 0.8,
-    scale: 0.3 + Math.random() * 1.2,
-  }));
+  type BackgroundStar = {
+    left: number;
+    top: number;
+    delay: number;
+    opacity: number;
+    scale: number;
+  };
+  type BackgroundParticle = {
+    left: number;
+    top: number;
+    delay: number;
+    duration: number;
+  };
 
-  const BACKGROUND_PARTICLES = Array.from({ length: 20 }, () => ({
-    left: Math.random() * 100,
-    top: Math.random() * 100,
-    delay: Math.random() * 6,
-    duration: 4 + Math.random() * 4,
-  }));
+  let backgroundStars: BackgroundStar[] = [];
+  let backgroundParticles: BackgroundParticle[] = [];
+  // Generate decoration arrays only when the decoration is active so closed
+  // or "none" instances skip the random generation entirely.
+  $: backgroundStars = decoration !== "none" ? generateBackgroundStars() : [];
+  $: backgroundParticles =
+    decoration === "cosmic" ? generateBackgroundParticles() : [];
 
   export let isOpen = false;
   export let onClose: () => void = () => {};
@@ -61,6 +93,7 @@
       class="modal-shell-dialog"
       role="dialog"
       aria-modal="true"
+      tabindex="-1"
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledby}
       aria-describedby={ariaDescribedby}
@@ -75,7 +108,7 @@
     >
       {#if decoration !== "none"}
         <div class="modal-shell-decoration" aria-hidden="true">
-          {#each BACKGROUND_STARS as star}
+          {#each backgroundStars as star}
             <span
               class="modal-shell-star"
               style="
@@ -89,7 +122,7 @@
           {/each}
 
           {#if decoration === "cosmic"}
-            {#each BACKGROUND_PARTICLES as particle}
+            {#each backgroundParticles as particle}
               <span
                 class="modal-shell-particle"
                 style="
