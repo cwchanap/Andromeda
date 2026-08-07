@@ -154,13 +154,17 @@
         <slot />
       </div>
 
-      <div class="modal-shell-notices">
-        <slot name="notices" />
-      </div>
+      {#if $$slots.notices}
+        <div class="modal-shell-notices">
+          <slot name="notices" />
+        </div>
+      {/if}
 
-      <div class="modal-shell-actions">
-        <slot name="actions" />
-      </div>
+      {#if $$slots.actions}
+        <div class="modal-shell-actions">
+          <slot name="actions" />
+        </div>
+      {/if}
     </div>
   </div>
 {/if}

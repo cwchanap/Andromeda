@@ -180,7 +180,7 @@
 
     <!-- HUD command hub -->
     <div class="home-command-hub mx-auto mb-16 max-w-lg">
-      <HudPanel title="COMMAND">
+      <HudPanel title={t ? t('main.command') : 'COMMAND'}>
         <div class="hud-rail">
           {#each menuItems as item, index}
             <HudButton
