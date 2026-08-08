@@ -77,7 +77,7 @@ test.describe("observer selection round trip", () => {
         });
         await expect(returnToSol).toBeVisible();
 
-        await page.getByRole("button", { name: "Settings" }).click();
+        await page.getByLabel("Settings").click();
         const closeSettings = page.getByRole("button", { name: "Close" });
         await expect(closeSettings).toBeFocused();
         const referenceToggle = page.getByRole("checkbox", {
