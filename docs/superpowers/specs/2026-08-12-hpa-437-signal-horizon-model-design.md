@@ -164,7 +164,7 @@ For usable distance `d`:
 
 ```text
 wavefront radius = elapsedYears
-a rrival year = launchYear + d
+arrival year = launchYear + d
 earliest reply year = launchYear + 2d
 ```
 
