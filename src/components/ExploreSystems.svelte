@@ -2,10 +2,9 @@
   import { planetarySystemRegistry } from "@/lib/planetary-system";
   import { matchesQuery, paginate, pageLabel } from "@/lib/hud/list";
   import { knownCount } from "@/lib/hud/knownCount";
-  import HudPanel from "@/components/hud/HudPanel.svelte";
-  import HudButton from "@/components/hud/HudButton.svelte";
-  import HudSearch from "@/components/hud/HudSearch.svelte";
-  import GlitchText from "@/components/hud/GlitchText.svelte";
+  import Panel from "@/components/ui/Panel.svelte";
+  import Button from "@/components/ui/Button.svelte";
+  import SearchInput from "@/components/ui/SearchInput.svelte";
 
   export let t: (key: string) => string;
   export let currentSystemId: string | null = null;
@@ -48,7 +47,7 @@
 </script>
 
 <div
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+  class="explore-overlay"
   role="dialog"
   aria-modal="true"
   aria-label={t("explore.title")}
@@ -62,59 +61,117 @@
   }}
 >
   <div class="w-full max-w-4xl">
-    <HudPanel title={t("explore.title")}>
+    <Panel title={t("explore.title")}>
       <div class="mb-4 flex items-center gap-3">
         <div class="flex-1">
-          <HudSearch
+          <SearchInput
             bind:value={query}
             autofocus={true}
             placeholder={t("explore.searchPlaceholder")}
             ariaLabel={t("explore.searchPlaceholder")}
           />
         </div>
-        <HudButton bracket ariaLabel={t("finder.close")} on:click={onClose}>{t("finder.close")}</HudButton>
+        <Button variant="ghost" ariaLabel={t("finder.close")} on:click={onClose}>{t("finder.close")}</Button>
       </div>
 
       {#if pageResult.items.length === 0}
-        <div class="hud-section-label text-center py-8">{t("explore.empty")}</div>
+        <p class="explore-empty">{t("explore.empty")}</p>
       {:else}
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {#each pageResult.items as system (system.id)}
-            <div class="hud-readout mb-0">
-              <h4 class="hud-panel-title" style="font-size:13px;">
-                <GlitchText text={systemName(system).toUpperCase()} />
-              </h4>
-              <div class="readout-row">
-                <span class="readout-label">{t("explore.knownPlanets")}</span>
-                <span></span>
-                <span class="readout-value">{knownCount(system)}</span>
-              </div>
-              {#if system.systemData?.metadata?.distance}
-                <div class="readout-row">
-                  <span class="readout-label">{t("explore.distance")}</span>
-                  <span></span>
-                  <span class="readout-value">{system.systemData.metadata.distance}</span>
+            <article class="system-card" class:is-current={system.id === currentSystemId}>
+              <h4 class="system-name">{systemName(system)}</h4>
+              <dl class="system-stats">
+                <div class="ui-stat">
+                  <dt class="ui-stat-label">{t("explore.knownPlanets")}</dt>
+                  <dd class="ui-stat-value">{knownCount(system)}</dd>
                 </div>
-              {/if}
-              <div class="mt-2.5">
-                {#if system.id === currentSystemId}
-                  <HudButton disabled>{t("explore.current")}</HudButton>
-                {:else}
-                  <HudButton bracket on:click={() => onSelect(system.id)}>{t("explore.action")}</HudButton>
+                {#if system.systemData?.metadata?.distance}
+                  <div class="ui-stat">
+                    <dt class="ui-stat-label">{t("explore.distance")}</dt>
+                    <dd class="ui-stat-value">{system.systemData.metadata.distance}</dd>
+                  </div>
                 {/if}
-              </div>
-            </div>
+              </dl>
+              {#if system.id === currentSystemId}
+                <Button size="sm" disabled>{t("explore.current")}</Button>
+              {:else}
+                <Button size="sm" on:click={() => onSelect(system.id)}>{t("explore.action")} →</Button>
+              {/if}
+            </article>
           {/each}
         </div>
 
         {#if pageResult.totalPages > 1}
-          <div class="hud-pager">
-            <HudButton ariaLabel={t("explore.prev")} disabled={pageResult.page <= 1} on:click={() => (page = pageResult.page - 1)}>{t("explore.prev")}</HudButton>
-            <span class="hud-pager-label">{pageLabel(pageResult.page, pageResult.totalPages)}</span>
-            <HudButton ariaLabel={t("explore.next")} disabled={pageResult.page >= pageResult.totalPages} on:click={() => (page = pageResult.page + 1)}>{t("explore.next")}</HudButton>
+          <div class="ui-pager">
+            <Button ariaLabel={t("explore.prev")} disabled={pageResult.page <= 1} on:click={() => (page = pageResult.page - 1)}>{t("explore.prev")}</Button>
+            <span class="ui-pager-label">{pageLabel(pageResult.page, pageResult.totalPages)}</span>
+            <Button ariaLabel={t("explore.next")} disabled={pageResult.page >= pageResult.totalPages} on:click={() => (page = pageResult.page + 1)}>{t("explore.next")}</Button>
           </div>
         {/if}
       {/if}
-    </HudPanel>
+    </Panel>
   </div>
 </div>
+
+<style>
+  .explore-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: var(--color-scrim);
+  }
+  .system-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-panel);
+    background: var(--color-bg);
+  }
+  .system-card.is-current {
+    border-color: var(--color-accent);
+  }
+  .system-name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--color-text);
+  }
+  .system-stats {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 0;
+    border-top: 1px solid var(--color-line);
+  }
+  .system-stats .ui-stat {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .system-stats dd {
+    margin: 0;
+    white-space: nowrap;
+  }
+  .explore-empty {
+    margin: 0;
+    padding: 32px 0;
+    text-align: center;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--color-text-muted);
+  }
+</style>

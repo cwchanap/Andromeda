@@ -1554,7 +1554,7 @@ export const starSystems: PlanetarySystem[] = [
                     orbit: {
                         centerId: "yz-ceti",
                         semiMajorAxis: 12.011910038584274,
-                        visualPeriodSeconds: 15.8744718944818,
+                        visualPeriodSeconds: 15.874471894481799,
                         phaseDeg: 71.14816644228995,
                         inclinationDeg: 3.9526759134605527,
                         periodDays: 2.021,
@@ -1907,7 +1907,7 @@ export const starSystems: PlanetarySystem[] = [
                     orbit: {
                         centerId: "teegardens-star",
                         semiMajorAxis: 17.39441661291388,
-                        visualPeriodSeconds: 31.50857661769017,
+                        visualPeriodSeconds: 31.508576617690178,
                         phaseDeg: 55.82023241557181,
                         inclinationDeg: 3.1011240230873227,
                         periodDays: 26.13,
@@ -1988,7 +1988,7 @@ export const starSystems: PlanetarySystem[] = [
                     },
                     images: [],
                     position: new THREE.Vector3(14.821404754985902, 0, 0),
-                    scale: 1.0758910990012727,
+                    scale: 1.0758910990012724,
                     material: {
                         color: "#8B7355",
                         roughness: 0.7,
@@ -2146,7 +2146,7 @@ export const starSystems: PlanetarySystem[] = [
                             "-215°C (equilibrium, estimated)",
                     },
                     images: [],
-                    position: new THREE.Vector3(25.815618648049718, 0, 0),
+                    position: new THREE.Vector3(25.81561864804972, 0, 0),
                     scale: 1.9542425094393248,
                     material: {
                         color: "#8B7355",
@@ -2155,7 +2155,7 @@ export const starSystems: PlanetarySystem[] = [
                     },
                     orbit: {
                         centerId: "tz-arietis",
-                        semiMajorAxis: 25.815618648049718,
+                        semiMajorAxis: 25.81561864804972,
                         visualPeriodSeconds: 55.356923725506064,
                         phaseDeg: 228.5626141168177,
                         inclinationDeg: 12.697923006489873,
@@ -2361,7 +2361,7 @@ export const starSystems: PlanetarySystem[] = [
                             "183°C (equilibrium, estimated)",
                     },
                     images: [],
-                    position: new THREE.Vector3(14.955640722146867, 0, 0),
+                    position: new THREE.Vector3(14.95564072214687, 0, 0),
                     scale: 1.488126011936975,
                     material: {
                         color: "#8B7355",
@@ -2370,7 +2370,7 @@ export const starSystems: PlanetarySystem[] = [
                     },
                     orbit: {
                         centerId: "gliese-674",
-                        semiMajorAxis: 14.955640722146867,
+                        semiMajorAxis: 14.95564072214687,
                         visualPeriodSeconds: 20.388846390099353,
                         phaseDeg: 342.07129846327007,
                         inclinationDeg: 19.003961025737226,
@@ -2452,7 +2452,7 @@ export const starSystems: PlanetarySystem[] = [
                     },
                     images: [],
                     position: new THREE.Vector3(12.855989191501745, 0, 0),
-                    scale: 1.4152459319947692,
+                    scale: 1.4152459319947694,
                     material: {
                         color: "#8B7355",
                         roughness: 0.7,
@@ -2861,7 +2861,7 @@ export const starSystems: PlanetarySystem[] = [
                     },
                     images: [],
                     position: new THREE.Vector3(14.364140899910051, 0, 0),
-                    scale: 1.0899145328472646,
+                    scale: 1.0899145328472644,
                     material: {
                         color: "#8B7355",
                         roughness: 0.7,
@@ -4036,7 +4036,7 @@ export const starSystems: PlanetarySystem[] = [
                     orbit: {
                         centerId: "hd-219134",
                         semiMajorAxis: 19.526799790189724,
-                        visualPeriodSeconds: 30.5458728745657,
+                        visualPeriodSeconds: 30.545872874565706,
                         phaseDeg: 93.38380574248731,
                         inclinationDeg: 5.187989207915962,
                         periodDays: 22.7,

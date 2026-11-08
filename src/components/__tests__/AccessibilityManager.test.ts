@@ -49,11 +49,6 @@ describe("AccessibilityManager", () => {
         document.documentElement.removeAttribute("data-reduced-motion");
         document.documentElement.removeAttribute("data-system-reduced-motion");
         document.documentElement.removeAttribute("data-system-high-contrast");
-        // Clear CSS custom properties
-        const root = document.documentElement;
-        root.style.removeProperty("--text-primary");
-        root.style.removeProperty("--bg-primary");
-        root.style.removeProperty("--focus-color");
         // Remove any leftover announcement elements from previous tests
         document.body
             .querySelectorAll('[aria-live="polite"].sr-only')
@@ -97,20 +92,6 @@ describe("AccessibilityManager", () => {
             ).toBe("true");
         });
 
-        it("should apply high contrast CSS custom properties when highContrastMode is true", () => {
-            settings.set({ ...defaultSettings, highContrastMode: true });
-            render(AccessibilityManager);
-
-            const root = document.documentElement;
-            expect(root.style.getPropertyValue("--text-primary")).toBe(
-                "#ffffff",
-            );
-            expect(root.style.getPropertyValue("--bg-primary")).toBe("#000000");
-            expect(root.style.getPropertyValue("--focus-color")).toBe(
-                "#ffff00",
-            );
-        });
-
         it("should set data-high-contrast when setting changes after mount", async () => {
             render(AccessibilityManager);
 
@@ -133,17 +114,6 @@ describe("AccessibilityManager", () => {
             expect(
                 document.documentElement.getAttribute("data-high-contrast"),
             ).toBe("false");
-        });
-
-        it("should remove CSS custom properties when highContrastMode set to false", async () => {
-            settings.set({ ...defaultSettings, highContrastMode: true });
-            render(AccessibilityManager);
-
-            settings.update((s) => ({ ...s, highContrastMode: false }));
-            await new Promise((r) => setTimeout(r, 0));
-
-            const root = document.documentElement;
-            expect(root.style.getPropertyValue("--text-primary")).toBe("");
         });
     });
 

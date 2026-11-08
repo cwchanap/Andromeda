@@ -6,8 +6,8 @@
   import type { CelestialBodyData } from '@/types/game';
   import { planetarySystemRegistry } from '@/lib/planetary-system';
   import { routes, type AppLocale } from '@/i18n/routes';
-  import HudButton from '@/components/hud/HudButton.svelte';
-  import HudPanel from '@/components/hud/HudPanel.svelte';
+  import Button from '@/components/ui/Button.svelte';
+  import Panel from '@/components/ui/Panel.svelte';
   import * as THREE from 'three';
   
   // Props
@@ -337,7 +337,7 @@
       <div class="error-container">
         <h2>{t('terrain.errorLoading')}</h2>
         <p>{errorMessage}</p>
-        <button on:click={handleBackToSolar} class="error-button">
+        <button type="button" on:click={handleBackToSolar} class="ui-btn ui-btn--primary error-button">
           {t('controls.backToSolarSystem')}
         </button>
       </div>
@@ -350,11 +350,11 @@
   {#if isSceneReady && planetData}
     <!-- Planet Info Panel -->
     <div class="planet-info-panel">
-      <HudPanel
+      <Panel
         title={`${planetTitle} ${t('terrain.suffix')}`}
       >
         <div class="planet-header">
-          <span class="planet-type">{planetData.type.toUpperCase()}</span>
+          <span class="ui-tag planet-type">{planetData.type}</span>
         </div>
         <p class="planet-description">
           {t('terrain.descriptionPrefix')} {planetTitle}{t('terrain.descriptionSuffix')}
@@ -363,7 +363,7 @@
         <!-- Terrain Features -->
         {#if planetData.terrain}
           <div class="terrain-features">
-            <h3>{t('terrain.surfaceFeatures')}</h3>
+            <h3 class="ui-caption">{t('terrain.surfaceFeatures')}</h3>
             <div class="feature-tags">
               {#each planetData.terrain.features as feature}
                 <span class="feature-tag">{feature.type}</span>
@@ -371,15 +371,15 @@
             </div>
           </div>
         {/if}
-      </HudPanel>
+      </Panel>
     </div>
 
     <!-- Control Panel -->
     <div class="control-panel">
-      <HudButton bracket on:click={handleBackToSolar}>{t('controls.backToSolarSystemLabel')}</HudButton>
+      <Button on:click={handleBackToSolar}>{t('controls.backToSolarSystemLabel')}</Button>
 
       <div class="view-controls">
-        <button on:click={handleResetView} class="control-button">
+        <button type="button" on:click={handleResetView} class="ui-btn control-button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
             <path d="M21 3v5h-5"/>
@@ -389,7 +389,7 @@
           Reset View
         </button>
         
-        <button on:click={handleToggleWireframe} class="control-button">
+        <button type="button" on:click={handleToggleWireframe} class="ui-btn control-button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2L2 7v10c0 5.55 3.84 10 9 11 1.16.21 2.76.21 3.92 0 5.16-1 9-5.45 9-11V7l-10-5z"/>
             <path d="M12 22V12"/>
@@ -402,8 +402,8 @@
     </div>
     
     <!-- Instructions Panel -->
-    <div class="instructions-panel">
-      <h4>{t('terrain.navigationControls')}</h4>
+    <div class="ui-panel instructions-panel">
+      <h4 class="ui-caption">{t('terrain.navigationControls')}</h4>
       <div class="instruction-list">
         <div class="instruction-item">
           <strong>{t('terrain.pan')}:</strong> {t('terrain.panInstruction')}
@@ -425,187 +425,140 @@
     width: 100%;
     height: 100vh;
     overflow: hidden;
-    background: radial-gradient(ellipse at center, #001122 0%, #000011 100%);
+    background: radial-gradient(ellipse at center, var(--color-bg), var(--color-bg-deep) 100%);
   }
-  
+
   .terrain-container {
     width: 100%;
     height: 100%;
     position: relative;
   }
-  
+
   .error-container {
     position: absolute;
     top: 50%;
     left: 50%;
+    z-index: 20;
     transform: translate(-50%, -50%);
+    width: min(420px, calc(100vw - 32px));
+    padding: 24px;
     text-align: center;
-    color: white;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 2rem;
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-panel);
   }
-  
-  .error-button {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-top: 1rem;
+  .error-container h2 {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 26px;
+    color: var(--color-danger);
   }
-  
-  .error-button:hover {
-    background: #dc2626;
+  .error-container p {
+    margin: 0 0 16px;
+    color: var(--color-text-soft);
   }
-  
+
   .planet-info-panel {
     position: absolute;
     top: 20px;
     left: 20px;
-    max-width: 320px;
-    color: white;
     z-index: 10;
+    max-width: 320px;
   }
 
   .planet-header {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
   }
 
-  .planet-type {
-    display: inline-block;
-    background: rgba(96, 165, 250, 0.2);
-    color: #a5b4fc;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    border: 1px solid rgba(96, 165, 250, 0.3);
-  }
-  
   .planet-description {
-    margin: 0 0 20px 0;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.45;
+    color: var(--color-text-soft);
   }
-  
+
   .terrain-features h3 {
-    margin: 0 0 10px 0;
-    font-size: 1rem;
-    color: #34d399;
+    margin: 0 0 8px;
   }
-  
+
   .feature-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
   }
-  
+
   .feature-tag {
-    background: rgba(52, 211, 153, 0.2);
-    color: #6ee7b7;
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border: 1px solid rgba(52, 211, 153, 0.3);
+    padding: 4px 10px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--color-text);
+    text-transform: capitalize;
   }
-  
+
   .control-panel {
     position: absolute;
     top: 20px;
     right: 20px;
+    z-index: 10;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    z-index: 10;
+    gap: 8px;
   }
-  
+
   .view-controls {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .control-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(0, 0, 17, 0.9);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
-    backdrop-filter: blur(10px);
-    transition: all 0.2s ease;
-  }
-  
-  .control-button:hover {
-    background: rgba(0, 0, 17, 0.95);
-    border-color: rgba(96, 165, 250, 0.5);
-    transform: translateY(-1px);
+    justify-content: flex-start;
   }
 
   .instructions-panel {
     position: absolute;
     bottom: 20px;
     left: 20px;
-    background: rgba(0, 0, 17, 0.9);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 16px;
-    color: white;
     z-index: 10;
-    max-width: 250px;
+    max-width: 260px;
+    padding: 14px 16px;
   }
-  
+
   .instructions-panel h4 {
-    margin: 0 0 12px 0;
-    font-size: 0.9rem;
-    color: #fbbf24;
+    margin: 0 0 10px;
   }
-  
+
   .instruction-list {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
-  
+
   .instruction-item {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    color: var(--color-text-soft);
   }
-  
+
   .instruction-item strong {
-    color: #60a5fa;
     font-weight: 600;
+    color: var(--color-accent);
   }
-  
-  /* Responsive design */
+
   @media (max-width: 768px) {
     .planet-info-panel {
       max-width: calc(100vw - 40px);
-      font-size: 0.875rem;
     }
 
     .control-panel {
-      right: 10px;
       top: 10px;
+      right: 10px;
     }
-    
-    .control-button {
-      padding: 8px 12px;
-      font-size: 0.8rem;
-    }
-    
+
     .instructions-panel {
       bottom: 10px;
       left: 10px;

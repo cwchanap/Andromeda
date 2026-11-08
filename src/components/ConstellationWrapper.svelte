@@ -14,14 +14,12 @@
   import { OBSERVER_SOURCE_STAR_IDS } from "@/lib/constellation/observerSourceStarIds";
   import { localGalaxyData } from "@/lib/galaxy/LocalGalaxy";
   import type { StarSystemData } from "@/lib/galaxy/types";
-  import ScanLines from "@/components/hud/ScanLines.svelte";
-  import HudReticle from "@/components/hud/HudReticle.svelte";
-  import HudCallout from "@/components/hud/HudCallout.svelte";
-  import TargetLockOverlay from "@/components/hud/TargetLockOverlay.svelte";
-  import BootSequence from "@/components/hud/BootSequence.svelte";
-  import HudFrame from "@/components/hud/HudFrame.svelte";
-  import GlitchText from "@/components/hud/GlitchText.svelte";
-  import ViewHud from "./hud/ViewHud.svelte";
+  import Reticle from "@/components/view/Reticle.svelte";
+  import Callout from "@/components/view/Callout.svelte";
+  import TargetLockOverlay from "@/components/view/TargetLockOverlay.svelte";
+  import LoadingAnimation from "@/components/LoadingAnimation.svelte";
+  import { cssColor, canvasFont } from "@/lib/theme/palette";
+  import ViewOverlay from "./view/ViewOverlay.svelte";
   import { getCurrentView, type ViewId } from "@/lib/view/currentView";
   import { gameActions } from "@/stores/gameStore";
   import { addMediaQueryListener, removeMediaQueryListener } from "@/utils/mediaQuery";
@@ -141,14 +139,13 @@
     currentView = getCurrentView(window.location.pathname) ?? "constellation";
   }
   gameActions.setHudView(currentView);
-  let scanlinesOn = true;
   // Settings toggles wired to the renderer. Defaults match the skyConfig
   // passed to initialize() (showStarNames=true → labels on; auto-rotate off).
   let labelsOn = true;
   let autoRotateOn = false;
   // Reduced-motion preference — disables auto-rotate per WCAG §2.3.3.
   // Two sources are OR'd so EITHER the OS preference OR the in-app Settings
-  // toggle disables auto-rotate — matching ViewHud, which reads only
+  // toggle disables auto-rotate — matching ViewOverlay, which reads only
   // $settings.reducedMotion. Without this, enabling Reduced Motion via the
   // settings modal (without OS pref) would style the HUD but auto-rotate
   // could still run. Both inputs are subscribed so mid-session toggles
@@ -772,11 +769,11 @@
     const context = ctx2D;
 
     // Clear canvas with dark background
-    context.fillStyle = '#000011';
+    context.fillStyle = cssColor('bgDeep');
     context.fillRect(0, 0, width, height);
 
     // Draw star field background
-    context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    context.fillStyle = cssColor('text');
     for (let i = 0; i < 200; i++) {
       const x = Math.random() * width;
       const y = Math.random() * height;
@@ -802,8 +799,8 @@
       const centerY = row * constellationHeight + constellationHeight / 2;
       const scale = Math.min(constellationWidth, constellationHeight) * 0.3;
 
-      // Draw constellation lines with different colors
-      const colors = ['#4FC3F7', '#81C784', '#FFB74D', '#F48FB1', '#CE93D8', '#90CAF9', '#A5D6A7', '#FFE082', '#F8BBD9', '#B39DDB'];
+      // Constellation lines in brass, alternating with star blue
+      const colors = [cssColor('accent'), cssColor('info')];
       context.strokeStyle = colors[constellationIndex % colors.length];
       context.lineWidth = 2;
       context.beginPath();
@@ -851,8 +848,8 @@
 
         // Draw star name for brightest stars
         if (star.magnitude < 1.5) {
-          context.fillStyle = '#FFFFFF';
-          context.font = '12px Arial';
+          context.fillStyle = cssColor('text');
+          context.font = `12px ${canvasFont.ui}`;
           context.textAlign = 'center';
           context.fillText(starName(star), starX, starY - starSize - 8);
         }
@@ -860,7 +857,7 @@
 
       // Draw constellation name
       context.fillStyle = colors[constellationIndex % colors.length];
-      context.font = 'bold 16px Arial';
+      context.font = `600 18px ${canvasFont.display}`;
       context.textAlign = 'center';
       context.fillText(constellationName(constellation), centerX, centerY - constellationHeight * 0.35);
     });
@@ -868,14 +865,12 @@
 </script>
 
 <div class="constellation-view">
-  <ViewHud currentView={currentView} lang={currentLang} {translations}>
-    <div slot="controls" class="hud-panel-anim">
+  <ViewOverlay currentView={currentView} lang={currentLang} {translations}>
+    <div slot="controls" class="ui-panel-anim">
       {#if !loading && !error}
-        <HudFrame color="var(--hud-cyan)" bracketLength={18} glow={true}>
-          <div class="hud-panel">
-            <div class="hud-panel-header">
-              <h3 class="hud-panel-title">{t('constellation.title')}</h3>
-              <span class="hud-panel-tick"></span>
+          <section class="ui-panel constellation-panel">
+            <div class="ui-panel-header">
+              <h3 class="ui-panel-title">{t('constellation.title')}</h3>
             </div>
 
             <!-- Observer-mode notices: the generic fallback (route-level or
@@ -900,7 +895,7 @@
                  readout, compass/cardinal wording, "View from Earth" note,
                  and month strip are never rendered here. -->
             {#if observerHudActive}
-              <div class="hud-readout observer-readout">
+              <div class="ui-readout observer-readout">
                 <div class="readout-row">
                   <span class="readout-label">{t('constellation.observer.label')}</span>
                   <span></span>
@@ -930,14 +925,14 @@
                 <div class="observer-actions">
                   <button
                     type="button"
-                    class="observer-action-btn"
+                    class="ui-btn ui-btn--sm observer-action-btn"
                     on:click={chooseAnotherObserver}
                   >
                     {t('constellation.observer.chooseAnother')}
                   </button>
                   <button
                     type="button"
-                    class="observer-action-btn"
+                    class="ui-btn ui-btn--sm observer-action-btn"
                     on:click={returnToSol}
                   >
                     {t('constellation.observer.returnToSol')}
@@ -952,18 +947,18 @@
                    otherwise be click-through reachable. -->
               {#if !observerWebglFailed}
                 <div>
-                  <h4 class="hud-section-label">{t('constellation.visible')}</h4>
-                  <ul class="hud-list" aria-label={t('constellation.visible')}>
+                  <h4 class="ui-section-label">{t('constellation.visible')}</h4>
+                  <ul class="ui-list" aria-label={t('constellation.visible')}>
                     {#each renderedConstellations as constellation}
                       <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
                         <button
                           type="button"
-                          class="hud-list-row"
+                          class="ui-list-row"
                           class:is-selected={viewState.selectedConstellation === constellation.id}
                           on:click={() => handleSelectConstellation(constellation.id)}
                           data-constellation-id={constellation.id}
                         >
-                          <span class="row-abbr">[{constellation.abbreviation}]</span>
+                          <span class="row-abbr">{constellation.abbreviation}</span>
                           <span class="row-name">{constellationName(constellation)}</span>
                           <span class="row-leader"></span>
                           <span class="row-count">{constellation.stars.length}★ <span class="sr-only">{t('constellation.stars')}</span></span>
@@ -975,7 +970,7 @@
               {/if}
             {:else}
               <!-- Location/time HUD readout -->
-              <div class="hud-readout">
+              <div class="ui-readout">
                 <div class="readout-row">
                   <span class="readout-label">{t('constellation.geoLock')}</span>
                   <span class="readout-blink" data-state={viewState.locationPermissionGranted ? "live" : "fallback"}></span>
@@ -1002,19 +997,19 @@
 
               <!-- Visible constellations -->
               <div>
-                <h4 class="hud-section-label">{t('constellation.visible')}</h4>
-                <ul class="hud-list" aria-label={t('constellation.visible')}>
+                <h4 class="ui-section-label">{t('constellation.visible')}</h4>
+                <ul class="ui-list" aria-label={t('constellation.visible')}>
                   {#each viewState.visibleConstellations as constellationId}
                     {#each constellations.filter(c => c.id === constellationId) as constellation}
                       <li aria-selected={viewState.selectedConstellation === constellation.id ? "true" : undefined}>
                         <button
                           type="button"
-                          class="hud-list-row"
+                          class="ui-list-row"
                           class:is-selected={viewState.selectedConstellation === constellation.id}
                           on:click={() => handleSelectConstellation(constellation.id)}
                           data-constellation-id={constellation.id}
                         >
-                          <span class="row-abbr">[{constellation.abbreviation}]</span>
+                          <span class="row-abbr">{constellation.abbreviation}</span>
                           <span class="row-name">{constellationName(constellation)}</span>
                           <span class="row-leader"></span>
                           <span class="row-count">{constellation.stars.length}★ <span class="sr-only">{t('constellation.stars')}</span></span>
@@ -1032,33 +1027,33 @@
                 <!-- Alternate mode: prepared constellation details without
                      the Earth best-viewing-months strip. -->
                 {#each renderedConstellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
-                  <div class="hud-details">
-                    <div class="hud-divider">
-                      <span class="hud-divider-diamond"></span>
+                  <div class="ui-details">
+                    <div class="ui-divider">
+                      <span class="ui-divider-diamond"></span>
                     </div>
-                    <h4 class="hud-details-name">
-                      <GlitchText text={constellationName(constellation).toUpperCase()} />
+                    <h4 class="ui-details-name">
+                      {constellationName(constellation)}
                     </h4>
-                    <p class="hud-details-desc">{constellationDescription(constellation)}</p>
+                    <p class="ui-details-desc">{constellationDescription(constellation)}</p>
                     {#if constellation.mythology}
-                      <p class="hud-details-myth">// {constellationMythology(constellation)}</p>
+                      <p class="ui-details-myth">{constellationMythology(constellation)}</p>
                     {/if}
                   </div>
                 {/each}
               {:else}
                 {#each constellations.filter(c => c.id === viewState.selectedConstellation) as constellation}
-                  <div class="hud-details">
-                    <div class="hud-divider">
-                      <span class="hud-divider-diamond"></span>
+                  <div class="ui-details">
+                    <div class="ui-divider">
+                      <span class="ui-divider-diamond"></span>
                     </div>
-                    <h4 class="hud-details-name">
-                      <GlitchText text={constellationName(constellation).toUpperCase()} />
+                    <h4 class="ui-details-name">
+                      {constellationName(constellation)}
                     </h4>
-                    <p class="hud-details-desc">{constellationDescription(constellation)}</p>
+                    <p class="ui-details-desc">{constellationDescription(constellation)}</p>
                     {#if constellation.mythology}
-                      <p class="hud-details-myth">// {constellationMythology(constellation)}</p>
+                      <p class="ui-details-myth">{constellationMythology(constellation)}</p>
                     {/if}
-                    <div class="hud-month-strip" aria-label="{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
+                    <div class="ui-month-strip" aria-label="{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}">
                       <span class="sr-only">{t('constellation.bestViewingMonths')}: {constellation.visibility.bestMonths.map(m => new Date(2000, m - 1).toLocaleDateString(currentLang, { month: 'long' })).join(', ')}</span>
                       {#each Array(12) as _, m}
                         <div
@@ -1072,21 +1067,17 @@
                 {/each}
               {/if}
             {/if}
-          </div>
-        </HudFrame>
+          </section>
       {/if}
     </div>
 
     <div slot="overlay">
-      {#if scanlinesOn}
-        <ScanLines />
-      {/if}
       {#if hoveredConstellationId && hoverPos}
-        <HudReticle x={hoverPos.x} y={hoverPos.y} state="hover"
+        <Reticle x={hoverPos.x} y={hoverPos.y} state="hover"
           label={constellations.find(c => c.id === hoveredConstellationId)?.abbreviation ?? ""} />
       {/if}
       {#if hoverStarPos}
-        <HudCallout
+        <Callout
           x={hoverStarPos.x}
           y={hoverStarPos.y}
           title={hoverStarPos.name}
@@ -1103,22 +1094,19 @@
     </div>
 
     <div slot="settings">
-      <label class="hud-setting">
-        <input type="checkbox" bind:checked={scanlinesOn} />
-        {t('constellation.scanlines')}
-      </label>
-      <label class="hud-setting">
-        <input type="checkbox" bind:checked={labelsOn} />
+      <label class="ui-setting">
+        <input type="checkbox" class="ui-toggle" bind:checked={labelsOn} />
         {t('constellation.labels')}
       </label>
-      <label class="hud-setting" class:is-disabled={reducedMotion}>
-        <input type="checkbox" bind:checked={autoRotateOn} disabled={reducedMotion} />
+      <label class="ui-setting" class:is-disabled={reducedMotion}>
+        <input type="checkbox" class="ui-toggle" bind:checked={autoRotateOn} disabled={reducedMotion} />
         {t('constellation.autoRotate')}
       </label>
       {#if renderer && alternateCatalog?.referenceCatalog && !error}
-        <label class="hud-setting">
+        <label class="ui-setting">
           <input
             type="checkbox"
+            class="ui-toggle"
             checked={referenceVisible}
             on:change={handleReferenceToggle}
           />
@@ -1129,7 +1117,7 @@
         <div class="observer-actions">
           <button
             type="button"
-            class="observer-action-btn"
+            class="ui-btn ui-btn--sm observer-action-btn"
             on:click={handleFindSol}
           >
             {t('constellation.observer.findSol')}
@@ -1147,81 +1135,49 @@
         {/if}
       {/if}
     </div>
-  </ViewHud>
+  </ViewOverlay>
 
   <!-- Loading/Error overlay -->
   {#if loading}
-    <div class="absolute inset-0 z-30">
-      <BootSequence {debugInfo} {t} />
-    </div>
+    <LoadingAnimation progress={null} message={t('constellation.loading')} />
   {:else if !webglSupported}
-    <div class="absolute inset-0 z-30 pointer-events-none" style="background: transparent;">
-      <div class="flex items-center justify-center h-full">
-        <div class="text-center text-white max-w-md mx-auto px-4 pointer-events-auto">
-          <div class="mb-4">
-            <div class="text-amber-400 text-4xl">⚠️</div>
-          </div>
-          {#if observerWebglFailed}
-            <!-- Genuine alternate mode whose WebGL path failed: no Earth 2D
-                 fallback — show WebGL-required copy and Return to Earth/Sol. -->
-            <h2 class="text-xl font-semibold mb-2 text-amber-400">{t('constellation.observer.webglUnavailable')}</h2>
-            <div class="flex flex-wrap justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                on:click={chooseAnotherObserver}
-                className="text-white border-white/30 hover:bg-white/10"
-              >
-                {t('constellation.observer.chooseAnother')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                on:click={returnToSol}
-                className="text-white border-white/30 hover:bg-white/10"
-              >
-                {t('constellation.observer.returnToSol')}
-              </Button>
-            </div>
-          {:else}
-            <h2 class="text-xl font-semibold mb-2 text-amber-400">{t('constellation.webglNotAvailable')}</h2>
-            <p class="text-sm text-gray-300 mb-4">
-              {t('constellation.webglDescription')}
-            </p>
-            <div class="text-xs text-gray-400 mb-4">
-              <p class="mb-2">{t('constellation.trySolutions')}</p>
-              <ul class="text-left list-disc list-inside space-y-1">
-                <li>{t('constellation.solutionUpdateBrowser')}</li>
-                <li>{t('constellation.solutionEnableHardwareAcceleration')}</li>
-                <li>{t('constellation.solutionTryDifferentBrowser')}</li>
-              </ul>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              on:click={handleBackToMenu}
-              className="text-white border-white/30 hover:bg-white/10"
-            >
-              {t('constellation.return')}
+    <div class="state-overlay pointer-events-none">
+      <div class="state-card pointer-events-auto">
+        {#if observerWebglFailed}
+          <!-- Genuine alternate mode whose WebGL path failed: no Earth 2D
+               fallback — show WebGL-required copy and Return to Earth/Sol. -->
+          <h2 class="state-title">{t('constellation.observer.webglUnavailable')}</h2>
+          <div class="state-actions">
+            <Button size="sm" on:click={chooseAnotherObserver}>
+              {t('constellation.observer.chooseAnother')}
             </Button>
-          {/if}
-        </div>
+            <Button size="sm" on:click={returnToSol}>
+              {t('constellation.observer.returnToSol')}
+            </Button>
+          </div>
+        {:else}
+          <h2 class="state-title">{t('constellation.webglNotAvailable')}</h2>
+          <p class="state-body">{t('constellation.webglDescription')}</p>
+          <div class="state-hints">
+            <p>{t('constellation.trySolutions')}</p>
+            <ul>
+              <li>{t('constellation.solutionUpdateBrowser')}</li>
+              <li>{t('constellation.solutionEnableHardwareAcceleration')}</li>
+              <li>{t('constellation.solutionTryDifferentBrowser')}</li>
+            </ul>
+          </div>
+          <Button size="sm" on:click={handleBackToMenu}>
+            {t('constellation.return')}
+          </Button>
+        {/if}
       </div>
     </div>
   {:else if error}
-    <div class="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
-      <div class="text-center text-white max-w-md mx-auto px-4">
-        <div class="mb-4">
-          <div class="text-red-400 text-4xl">❌</div>
-        </div>
-        <h2 class="text-xl font-semibold mb-2 text-red-400">{t('constellation.error')}</h2>
-        <p class="text-sm text-gray-300 mb-4">{error}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          on:click={() => window.location.reload()}
-          className="text-white border-white/30 hover:bg-white/10"
-        >
+    <div class="state-overlay is-error">
+      <div class="state-card">
+        <h2 class="state-title is-danger">{t('constellation.error')}</h2>
+        <p class="state-body">{error}</p>
+        <Button variant="primary" size="sm" on:click={() => window.location.reload()}>
           {t('action.retry')}
         </Button>
       </div>
@@ -1231,8 +1187,7 @@
   <!-- Drag Instructions Overlay -->
   {#if !loading && !error && webglSupported && showDragInstructions}
     <div class="absolute bottom-12 left-12 z-10" style="pointer-events: none;">
-      <div class="hud-drag-card">
-        <span class="hud-drag-prefix">&gt;</span>
+      <div class="ui-drag-card">
         {t('constellation.dragInstructions')}
       </div>
     </div>
@@ -1251,7 +1206,7 @@
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background: #000; /* Pure black background for space */
+    background: var(--color-bg-deep);
   }
 
   .constellation-main-content {
@@ -1274,67 +1229,62 @@
     cursor: grabbing;
   }
 
-  .hud-drag-card {
-    font-family: var(--hud-font-mono);
-    font-size: 11px;
-    color: var(--hud-cyan);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    text-shadow: 0 0 4px var(--hud-cyan);
+  .ui-drag-card {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    color: var(--color-text-soft);
     padding: 8px 12px;
-    background: color-mix(in srgb, var(--hud-void) 60%, transparent);
-    border: 1px solid var(--hud-cyan);
-    animation: drag-fade-in var(--hud-dur-glide) var(--hud-ease-glide);
-  }
-  .hud-drag-prefix {
-    color: var(--hud-magenta);
-    margin-right: 6px;
+    background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-control);
+    animation: drag-fade-in var(--dur-glide) var(--ease-glide);
   }
   @keyframes drag-fade-in {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .hud-drag-card {
+    .ui-drag-card {
       animation: none;
     }
   }
 
-  .hud-details { margin-top: 12px; padding-top: 12px; }
-  .hud-details-name {
-    font-family: var(--hud-font-display);
-    font-size: 14px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+  .ui-details { margin-top: 12px; padding-top: 12px; }
+  .ui-details-name {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--color-accent);
     margin: 0 0 6px;
   }
-  .hud-details-desc {
-    font-family: var(--hud-font-mono);
-    font-size: 11px;
-    color: var(--hud-ivory);
-    opacity: 0.85;
+  .ui-details-desc {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-soft);
     margin: 0 0 8px;
   }
-  .hud-details-myth {
-    font-family: var(--hud-font-mono);
-    font-size: 10px;
+  .ui-details-myth {
+    font-family: var(--font-display);
+    font-size: 15px;
     font-style: italic;
-    color: var(--hud-cyan-dim);
+    line-height: 1.4;
+    color: var(--color-text-muted);
     margin: 0 0 10px;
   }
-  .hud-month-strip {
+  .ui-month-strip {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     gap: 2px;
   }
   .month-cell {
     height: 8px;
-    border: 1px solid var(--hud-cyan-dim);
+    border: 1px solid var(--color-line-strong);
+    border-radius: 2px;
   }
   .month-cell.is-best {
-    background: var(--hud-cyan);
-    border-color: var(--hud-cyan);
-    box-shadow: 0 0 4px var(--hud-cyan);
+    background: var(--color-accent);
+    border-color: var(--color-accent);
   }
 
   .sr-only {
@@ -1349,14 +1299,6 @@
     border: 0;
   }
 
-  .readout-row {
-    display: grid;
-    grid-template-columns: 64px 12px 1fr;
-    align-items: center;
-    gap: 8px;
-    padding: 2px 0;
-  }
-
   /* Alternate observer readout carries longer localized labels
      (e.g. "Frame: System barycenter"), so its label column flexes. */
   .observer-readout .readout-row {
@@ -1366,61 +1308,82 @@
   .compass-readout {
     display: flex;
     justify-content: space-between;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.85);
+    font-size: 13px;
+    color: var(--color-text);
     margin-top: 8px;
   }
   .compass-label {
-    letter-spacing: 0.2em;
-    color: var(--hud-cyan, #00f0ff);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
   }
   .view-from-earth {
-    margin: 4px 0 0;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: var(--hud-cyan, #00f0ff);
-    opacity: 0.8;
+    margin: 6px 0 0;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--color-text-muted);
   }
 
-  .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
-  .hud-setting.is-disabled { opacity: 0.5; }
+  .ui-setting { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--color-text); margin: 4px 0; }
+  .ui-setting.is-disabled { opacity: 0.5; }
 
-  .observer-actions { margin-top: 8px; }
-  .observer-action-btn {
-    font-family: var(--hud-font-mono);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--hud-cyan);
-    background: transparent;
-    border: 1px solid var(--hud-cyan);
-    padding: 4px 10px;
-    cursor: pointer;
-  }
-  .observer-action-btn:focus-visible {
-    outline: 2px solid var(--hud-ivory);
-    outline-offset: 2px;
-  }
+  .observer-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .observer-announcement {
     margin-top: 6px;
-    font-family: var(--hud-font-mono);
-    font-size: 11px;
+    font-family: var(--font-ui);
+    font-size: 12px;
     line-height: 1.5;
-    letter-spacing: 0.06em;
-    color: var(--hud-cyan);
-    opacity: 0.9;
+    color: var(--color-text-soft);
   }
 
   .observer-notice {
     margin-top: 10px;
     padding: 8px 10px;
-    font-family: var(--hud-font-mono);
-    font-size: 11px;
+    font-family: var(--font-ui);
+    font-size: 12px;
     line-height: 1.5;
-    letter-spacing: 0.08em;
-    color: var(--hud-amber);
-    border: 1px solid var(--hud-amber);
-    background: color-mix(in srgb, var(--hud-void) 60%, transparent);
+    color: var(--color-accent-strong);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-control);
   }
   .observer-notice-line { margin: 0; }
+
+  .constellation-panel { width: min(340px, 90vw); max-height: 70vh; overflow-y: auto; }
+
+  .state-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .state-overlay.is-error { background: var(--color-scrim); }
+  .state-card {
+    max-width: 440px;
+    padding: 24px;
+    text-align: center;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-panel);
+  }
+  .state-title {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+  .state-title.is-danger { color: var(--color-danger); }
+  .state-body { margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: var(--color-text-soft); }
+  .state-hints { margin-bottom: 16px; font-size: 12px; color: var(--color-text-muted); text-align: left; }
+  .state-hints p { margin: 0 0 6px; }
+  .state-hints ul { margin: 0; padding-left: 18px; }
+  .state-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 </style>

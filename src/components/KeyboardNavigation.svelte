@@ -237,9 +237,9 @@
 
 <!-- Keyboard navigation instructions (visible when screen reader mode is enabled) -->
 {#if $settings.screenReaderMode}
-  <div class="fixed bottom-4 left-4 max-w-md rounded-lg bg-black/80 p-4 text-white">
-    <h3 class="mb-2 text-sm font-semibold">{t('keyboard.controls')}</h3>
-    <ul class="space-y-1 text-xs">
+  <div class="ui-panel fixed bottom-4 left-4 max-w-md">
+    <h3 class="ui-caption mb-2">{t('keyboard.controls')}</h3>
+    <ul class="space-y-1 text-xs text-text-soft">
       <li>{t('keyboard.arrowKeys')}</li>
       <li>{t('keyboard.enterSpace')}</li>
       <li>{t('keyboard.zoom')}</li>

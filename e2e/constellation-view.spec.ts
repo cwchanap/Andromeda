@@ -9,7 +9,7 @@ test.describe("Constellation View Navigation", () => {
 
         // Wait for the page to fully load and Svelte to hydrate
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 15000 });
 
         // Wait for Svelte hydration to complete
@@ -61,14 +61,14 @@ test.describe("Constellation View Navigation", () => {
             page.getByRole("heading", { name: "Constellation View" }),
         ).toBeVisible({ timeout: 30000 });
 
-        // Click back to menu (shared ViewHud uses controls.backToMenu label)
+        // Click back to menu (shared ViewOverlay uses controls.backToMenu label)
         await page.getByRole("button", { name: /back to menu/i }).click();
 
         // Wait for navigation to complete
         await page.waitForURL(/\/($|\?)/, { timeout: 10000 });
         // Should return to main menu - use specific heading selector to avoid Astro toolbar h1
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible();
     });
 });
@@ -235,13 +235,13 @@ test.describe("Constellation View UI Controls", () => {
             timeout: 30000,
         });
 
-        // The shared ViewHud removed the PANEL ON/OFF toggle — the location
+        // The shared ViewOverlay removed the PANEL ON/OFF toggle — the location
         // readout is now always visible inside the controls panel once the
-        // scene is ready. Scope to .hud-readout so the text assertions don't
+        // scene is ready. Scope to .ui-readout so the text assertions don't
         // collide with the Astro dev toolbar's i18n inspector, which renders
         // a <code> dump of the translations JSON containing the same keys.
-        const readout = page.locator(".hud-readout");
-        await expect(readout.getByText(/GEO-LOCK/)).toBeVisible({
+        const readout = page.locator(".ui-readout");
+        await expect(readout.getByText(/Location/)).toBeVisible({
             timeout: 10000,
         });
         await expect(readout.getByText(/UTC/)).toBeVisible({
@@ -259,7 +259,7 @@ test.describe("Constellation View UI Controls", () => {
             timeout: 30000,
         });
 
-        // Back button should be visible (shared ViewHud uses controls.backToMenu)
+        // Back button should be visible (shared ViewOverlay uses controls.backToMenu)
         await expect(
             page.getByRole("button", { name: /back to menu/i }),
         ).toBeVisible();
@@ -340,7 +340,7 @@ test.describe("Constellation View Accessibility", () => {
             timeout: 30000,
         });
 
-        // Check button roles (shared ViewHud back button)
+        // Check button roles (shared ViewOverlay back button)
         await expect(
             page.getByRole("button", { name: /back to menu/i }),
         ).toHaveAttribute("type", "button");
@@ -359,7 +359,7 @@ test.describe("Constellation View Responsive Design", () => {
             timeout: 30000,
         });
 
-        // Back button should be visible (shared ViewHud uses controls.backToMenu)
+        // Back button should be visible (shared ViewOverlay uses controls.backToMenu)
         await expect(
             page.getByRole("button", { name: /back to menu/i }),
         ).toBeVisible();
@@ -525,7 +525,7 @@ test.describe("Constellation View Integration", () => {
 
         // Wait for page to fully load and Svelte to hydrate
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 15000 });
         await page.waitForTimeout(500);
 
@@ -545,10 +545,10 @@ test.describe("Constellation View Integration", () => {
             timeout: 30000,
         });
 
-        // Go back to main menu (shared ViewHud back button)
+        // Go back to main menu (shared ViewOverlay back button)
         await page.getByRole("button", { name: /back to menu/i }).click();
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 10000 });
 
         // Wait for hydration before clicking again
@@ -581,7 +581,7 @@ test.describe("Constellation View Integration", () => {
             timeout: 30000,
         });
 
-        // The page-level Language selector was removed by the shared ViewHud
+        // The page-level Language selector was removed by the shared ViewOverlay
         // refactor — language is now reachable inside the Settings panel.
         // Scope to the HUD's aria-labelled Settings button to avoid colliding
         // with the Astro dev toolbar's "Settings" item in strict mode.

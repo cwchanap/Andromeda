@@ -105,7 +105,7 @@ test.describe("Position indicators @smoke", () => {
     }) => {
         await page.goto("/constellation");
 
-        // The ViewHud (with settings button) renders regardless of WebGL.
+        // The ViewOverlay (with settings button) renders regardless of WebGL.
         // Scope to the HUD's aria-labelled button to avoid colliding with
         // the Astro dev toolbar's "Settings" item in strict mode.
         await expect(page.getByLabel("Settings")).toBeVisible({
@@ -118,11 +118,11 @@ test.describe("Position indicators @smoke", () => {
         const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
-        // Scanlines toggle is the first checkbox in the constellation
-        // settings slot (order: scanlines → labels → auto-rotate). Asserting
-        // visibility confirms the slotted settings rendered inside the dialog.
-        const scanlinesToggle = page.getByRole("checkbox").first();
-        await expect(scanlinesToggle).toBeVisible();
+        // Labels toggle is the first checkbox in the constellation settings
+        // slot (order: labels → auto-rotate). Asserting visibility confirms
+        // the slotted settings rendered inside the dialog.
+        const labelsToggle = page.getByRole("checkbox").first();
+        await expect(labelsToggle).toBeVisible();
 
         // Close the settings dialog so the HUD is visible again.
         await page.keyboard.press("Escape");

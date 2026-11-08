@@ -1,0 +1,88 @@
+<script lang="ts">
+  export let x: number = 0;
+  export let y: number = 0;
+  export let state: "hover" | "locked" = "hover";
+  export let label: string | null = null;
+</script>
+
+<div
+  class="ui-reticle"
+  data-state={state}
+  style="transform: translate(-50%, -50%) translate({x}px, {y}px);"
+  role={label ? "img" : undefined}
+  aria-label={label || undefined}
+  aria-hidden={label ? undefined : "true"}
+>
+  <svg class="reticle-svg" viewBox="-40 -40 80 80" width="80" height="80" aria-hidden="true">
+    <circle class="ring" cx="0" cy="0" r="22" fill="none" stroke-width="1" />
+    <line class="cross" x1="-32" y1="0" x2="-12" y2="0" />
+    <line class="cross" x1="12" y1="0" x2="32" y2="0" />
+    <line class="cross" x1="0" y1="-32" x2="0" y2="-12" />
+    <line class="cross" x1="0" y1="12" x2="0" y2="32" />
+    {#if state === "locked"}
+      <circle class="dot" cx="0" cy="0" r="2" />
+      <g class="ticks">
+        {#each Array(8) as _, i}
+          <line
+            x1="0" y1="-28" x2="0" y2="-32"
+            transform={`rotate(${i * 45})`}
+          />
+        {/each}
+      </g>
+    {/if}
+  </svg>
+  {#if label}
+    <span class="reticle-label">{label}</span>
+  {/if}
+</div>
+
+<style>
+  .ui-reticle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    color: var(--color-accent);
+    transition: opacity var(--dur-snap) var(--ease-snap);
+  }
+  .ring {
+    stroke: currentColor;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform var(--dur-snap) var(--ease-snap);
+  }
+  .cross {
+    stroke: currentColor;
+    stroke-width: 1;
+  }
+  .dot { fill: var(--color-accent); }
+  .ticks line { stroke: var(--color-accent); stroke-width: 1.5; }
+  [data-state="locked"] .ring {
+    transform: scale(1.18);
+  }
+  [data-state="locked"] .ticks {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: reticle-spin var(--dur-flow) linear infinite;
+  }
+  .reticle-label {
+    position: absolute;
+    left: 48px;
+    top: 50%;
+    transform: translateY(-50%);
+    font: 600 11px/1 var(--font-ui);
+    color: var(--color-accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  @keyframes reticle-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-state="locked"] .ticks {
+      animation: none;
+    }
+  }
+</style>

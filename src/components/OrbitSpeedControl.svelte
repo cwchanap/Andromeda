@@ -68,12 +68,12 @@
   };
 </script>
 
-<div class="orbit-speed-control">
+<div class="ui-panel orbit-speed-control">
   <div class="control-header">
-    <h3>{t ? t('controls.orbitSpeed') : 'Orbit Speed'}</h3>
+    <h3 class="ui-caption">{t ? t('controls.orbitSpeed') : 'Orbit Speed'}</h3>
     <button
       on:click={resetSpeed}
-      class="reset-button"
+      class="ui-btn ui-btn--sm reset-button"
       title={t ? t('controls.resetTitle') : 'Reset to normal speed'}
     >
       {t ? t('controls.reset') : 'Reset'}
@@ -106,142 +106,57 @@
 
 <style>
   .orbit-speed-control {
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 16px;
-    color: white;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     min-width: 200px;
+    padding: 14px 16px;
     user-select: none;
   }
-  
+
   .control-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
-  
+
   .control-header h3 {
     margin: 0;
-    font-size: 0.9rem;
-    font-weight: 600;
   }
-  
-  .reset-button {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    border-radius: 6px;
-    padding: 4px 8px;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-  
-  .reset-button:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-  
+
   .speed-slider-container {
     margin-bottom: 8px;
   }
-  
+
   .speed-slider {
     width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.3);
-    outline: none;
-    -webkit-appearance: none;
-    appearance: none;
+    accent-color: var(--color-accent);
     cursor: pointer;
   }
-  
-  .speed-slider::-webkit-slider-thumb {
-    appearance: -webkit-appearance;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #4a9eff;
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-  
-  .speed-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #4a9eff;
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-  
+
   .speed-labels {
     display: flex;
     justify-content: space-between;
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.7);
     margin-top: 4px;
+    font-size: 11px;
+    color: var(--color-text-muted);
   }
-  
+
   .speed-display {
+    padding-top: 6px;
+    border-top: 1px solid var(--color-line);
     text-align: center;
-    font-size: 0.9rem;
+    font-family: var(--font-display);
+    font-size: 22px;
     font-weight: 600;
-    color: #4a9eff;
-    padding: 4px;
-    background: rgba(74, 158, 255, 0.1);
-    border-radius: 6px;
+    color: var(--color-accent);
   }
-  
-  /* Mobile responsiveness */
+
   @media (max-width: 768px) {
     .orbit-speed-control {
       min-width: 160px;
       padding: 12px;
     }
-    
-    .control-header h3 {
-      font-size: 0.8rem;
-    }
-    
-    .reset-button {
-      font-size: 0.7rem;
-      padding: 3px 6px;
-    }
-    
     .speed-display {
-      font-size: 0.8rem;
-    }
-  }
-  
-  /* High contrast mode */
-  @media (prefers-contrast: high) {
-    .orbit-speed-control {
-      background: black;
-      border: 2px solid white;
-    }
-    
-    .speed-slider::-webkit-slider-thumb {
-      background: white;
-      border: 2px solid black;
-    }
-    
-    .speed-slider::-moz-range-thumb {
-      background: white;
-      border: 2px solid black;
-    }
-  }
-  
-  /* Reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    .reset-button {
-      transition: none;
+      font-size: 18px;
     }
   }
 </style>

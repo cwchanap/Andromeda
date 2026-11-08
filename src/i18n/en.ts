@@ -13,7 +13,7 @@ export const en = {
     "nav.settings": "Settings",
 
     // Main menu
-    "main.title": "ANDROMEDA",
+    "main.title": "Andromeda",
     "main.subtitle": "Space Explorer",
     "main.description":
         "Embark on an epic journey through multiple planetary systems and discover exoplanets through immersive 3D visualization. From our Solar System to Alpha Centauri and beyond the stars!",
@@ -21,7 +21,7 @@ export const en = {
     "main.explore": "Explore Exoplanets",
     "main.galaxy": "Galaxy View",
     "main.settings": "Settings",
-    "main.command": "COMMAND",
+    "main.command": "Navigation",
 
     // Controls
     "controls.backToMenu": "← Back to Menu",
@@ -40,21 +40,21 @@ export const en = {
     "controls.hideBarycenters": "Hide barycenters",
 
     // View switcher (shared HUD)
-    "viewSwitcher.label": "VIEW",
-    "viewSwitcher.star": "Star",
+    "viewSwitcher.label": "View",
+    "viewSwitcher.star": "Star system",
     "viewSwitcher.galaxy": "Galaxy",
-    "viewSwitcher.constellation": "Constellation",
+    "viewSwitcher.constellation": "Constellations",
     "settings.language": "Language",
 
     // Galaxy position indicator (used by Plan 2)
-    "galaxy.solMarkerLabel": "SOL · YOU ARE HERE",
+    "galaxy.solMarkerLabel": "Sol · You are here",
     "galaxy.distanceLines": "Distance Lines",
-    "galaxy.selectedSystem": "SELECTED SYSTEM",
+    "galaxy.selectedSystem": "Selected System",
     "galaxy.noSelection": "No system selected",
 
     // Constellation orientation indicator (used by Plan 2)
     "constellation.viewFromEarth": "View from Earth",
-    "constellation.compass": "FACING",
+    "constellation.compass": "Facing",
     "compass.n": "N",
     "compass.ne": "NE",
     "compass.e": "E",
@@ -66,8 +66,8 @@ export const en = {
 
     // HUD search / explore / finder
     "explore.title": "Star Systems",
-    "explore.searchPlaceholder": "SEARCH SYSTEMS…",
-    "explore.empty": "NO SYSTEMS MATCH QUERY",
+    "explore.searchPlaceholder": "Search systems…",
+    "explore.empty": "No systems match your search",
     "explore.knownPlanets": "Known Planets",
     "explore.distance": "Distance",
     "explore.action": "Explore",
@@ -77,12 +77,12 @@ export const en = {
     "explore.page": "Page",
     "finder.open": "Jump to body",
     "finder.title": "Jump To",
-    "finder.placeholder": "SEARCH BODIES…",
-    "finder.empty": "NO BODIES MATCH QUERY",
+    "finder.placeholder": "Search bodies…",
+    "finder.empty": "No bodies match your search",
     "finder.pinned": "Pinned",
     "finder.unpin": "Unpin",
     "finder.close": "Close",
-    "finder.locked": "TARGET LOCKED",
+    "finder.locked": "Selected",
 
     // Modal content
     "modal.celestialData": "Celestial Data",
@@ -120,9 +120,9 @@ export const en = {
     "comparison.footerText": "Compare celestial bodies across the universe",
 
     // Planet names and types
-    "planet.type.star": "STAR",
-    "planet.type.planet": "PLANET",
-    "planet.type.moon": "MOON",
+    "planet.type.star": "Star",
+    "planet.type.planet": "Planet",
+    "planet.type.moon": "Moon",
     "planet.sun.name": "Sun",
     "planet.sun.description":
         "The star at the center of our solar system, containing 99.86% of the system's mass",
@@ -461,11 +461,10 @@ export const en = {
     "constellation.magnitude": "Magnitude",
     "constellation.coordinates": "Coordinates",
     "constellation.backToMenu": "← Back to Menu",
-    "constellation.return": "RETURN",
-    "constellation.panelOn": "PANEL ON",
-    "constellation.panelOff": "PANEL OFF",
-    "constellation.dragInstructions": "AWAITING TARGET — DRAG TO ORIENT",
-    "constellation.scanlines": "Scanlines",
+    "constellation.return": "Return",
+    "constellation.panelOn": "Panel on",
+    "constellation.panelOff": "Panel off",
+    "constellation.dragInstructions": "Drag to look around the sky",
     "constellation.labels": "Star & Constellation Labels",
     "constellation.autoRotate": "Auto-Rotate",
 
@@ -634,12 +633,12 @@ export const en = {
         "Keyboard controls: Arrow keys to navigate between planets. Enter or Space to select. Plus to zoom in, Minus to zoom out. Zero to reset view. Home for first planet, End for last planet. H for help, Escape to clear selection.",
 
     // Constellation HUD labels
-    "constellation.geoLock": "GEO-LOCK",
+    "constellation.geoLock": "Location",
     "constellation.utc": "UTC",
-    "constellation.visible": "VISIBLE",
+    "constellation.visible": "Visible",
     "constellation.bestViewingMonths": "Best viewing months",
     "constellation.stars": "stars",
-    "constellation.mag": "MAG",
+    "constellation.mag": "Mag",
 
     // Alternate observer HUD (HPA-435): localized readout, actions, and
     // notices for the ?observer=<system> view. The findSolAnnouncement
@@ -675,11 +674,6 @@ export const en = {
     "terrain.rotateInstruction": "Right click + drag",
 
     // Boot sequence
-    "boot.init": "> INIT SKYMAP v2.5",
-    "boot.geoLock": "> GEO-LOCK ........... [OK]",
-    "boot.stellarDb": "> STELLAR DB ......... 4,184 OBJ",
-    "boot.renderPipeline": "> RENDER PIPELINE .... ONLINE",
-    "boot.awaitingTarget": "> AWAITING TARGET",
 
     // Constellation sky-map accessibility (screen-reader copy for the
     // keyboard-navigable canvas + aria-live region). The renderer accepts

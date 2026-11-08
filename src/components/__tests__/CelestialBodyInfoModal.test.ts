@@ -145,8 +145,10 @@ describe("CelestialBodyInfoModal", () => {
                 },
             });
 
-            expect(container.querySelector(".modal-shell-dialog")).toBeTruthy();
-            expect(screen.getByRole("button", { name: /close earth/i })).toBeTruthy();
+            expect(container.querySelector(".ui-modal-dialog")).toBeTruthy();
+            expect(
+                screen.getByRole("button", { name: /close earth/i }),
+            ).toBeTruthy();
         });
 
         it("should have role=dialog on the overlay", () => {

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { StarSystemData, GalaxyConfig } from "../types";
 import type { CelestialBodyData } from "../../../types/game";
+import { palette, cssColor, canvasFont } from "@/lib/theme/palette";
 
 /**
  * Manages the rendering of star systems in galaxy view
@@ -75,7 +76,7 @@ export class StarSystemManager {
 
         const core = new THREE.Mesh(
             new THREE.SphereGeometry(0.35, 16, 16),
-            new THREE.MeshBasicMaterial({ color: "#7dd3fc" }),
+            new THREE.MeshBasicMaterial({ color: palette.accentStrong }),
         );
         core.name = "sol-marker-core";
         core.castShadow = false;
@@ -85,7 +86,7 @@ export class StarSystemManager {
         const ring = new THREE.Mesh(
             new THREE.RingGeometry(0.6, 0.8, 32),
             new THREE.MeshBasicMaterial({
-                color: "#00f0ff",
+                color: palette.accent,
                 side: THREE.DoubleSide,
                 transparent: true,
                 opacity: 0.8,
@@ -113,11 +114,11 @@ export class StarSystemManager {
         canvas.width = 256;
         canvas.height = 64;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#7dd3fc";
-        ctx.font = "bold 24px Arial, sans-serif";
+        ctx.fillStyle = cssColor("accentStrong");
+        ctx.font = `600 24px ${canvasFont.ui}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.shadowColor = "#7dd3fc";
+        ctx.shadowColor = cssColor("bgDeep");
         ctx.shadowBlur = 10;
         ctx.fillText(text, 128, 32);
 
@@ -171,7 +172,7 @@ export class StarSystemManager {
      */
     private createDistanceLines(starSystems: StarSystemData[]): void {
         const material = new THREE.LineBasicMaterial({
-            color: 0x1b6b7a,
+            color: palette.accentDim,
             transparent: true,
             opacity: 0.35,
         });

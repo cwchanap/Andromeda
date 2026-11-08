@@ -1,0 +1,58 @@
+/*
+ * Observatory design tokens: the single source of truth for the UI theme.
+ *
+ * Declared with `@theme static` so Tailwind both generates utilities
+ * (`bg-surface`, `text-accent`, `font-display`, `rounded-panel`, ...) and
+ * always emits every token as a CSS variable on :root, which scoped Svelte
+ * styles read via `var(--color-accent)` etc.
+ *
+ * Re-theming = changing values here. Components must never hard-code colors
+ * (enforced by src/test/no-hardcoded-colors.test.ts). Three.js accents mirror
+ * these values in src/lib/theme/palette.ts.
+ */
+@theme static {
+  /* Color */
+  --color-bg-deep: #070d1a; /* 3D void, behind scenes */
+  --color-bg: #0b1426; /* page background */
+  --color-surface: #101c33; /* panels, modals */
+  --color-surface-2: #17284a; /* hover / selected rows */
+  --color-line: rgb(212 168 87 / 0.28); /* hairline rules */
+  --color-line-strong: rgb(212 168 87 / 0.55); /* panel borders, inputs */
+  --color-accent: #d4a857; /* brass gold */
+  --color-accent-strong: #e8c47c; /* hover on accent */
+  --color-on-accent: #0b1426; /* text on accent fills */
+  --color-text: #efe6d2; /* parchment */
+  --color-text-soft: #cfc6b2; /* long-form copy */
+  --color-text-muted: #a89f8a; /* captions, labels */
+  --color-info: #8fb8de; /* star blue: pins, selection, links in 3D */
+  --color-danger: #e0715c; /* terracotta */
+  --color-success: #9cc79a; /* sage */
+  --color-scrim: rgb(4 8 16 / 0.72); /* modal backdrop */
+
+  /* Type */
+  --font-display:
+    "Cormorant Garamond", "Noto Serif SC", "Noto Serif JP", Georgia, serif;
+  --font-ui:
+    "Inter", "Noto Sans SC", "Noto Sans JP", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Shape and depth */
+  --radius-control: 4px;
+  --radius-panel: 6px;
+  --shadow-panel: 0 20px 50px rgb(0 0 0 / 0.4);
+
+  /* Motion */
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-glide: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --dur-snap: 140ms;
+  --dur-glide: 320ms;
+  --dur-flow: 2600ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-snap: 0ms;
+    --dur-glide: 0ms;
+    --dur-flow: 0ms;
+  }
+}
