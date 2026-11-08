@@ -460,15 +460,15 @@ describe("ConstellationWrapper observer mode", () => {
         expect(getCurrentLocationMock).not.toHaveBeenCalled();
 
         // No reference toggle is exposed: opening the settings panel shows
-        // only the three pre-existing checkboxes (scanlines, labels,
-        // auto-rotate) and nothing else.
+        // only the two pre-existing checkboxes (labels, auto-rotate) and
+        // nothing else.
         fireEvent.click(
             container.querySelector('button[aria-label="Settings"]')!,
         );
         await waitFor(() => {
             expect(
                 container.querySelectorAll('input[type="checkbox"]'),
-            ).toHaveLength(3);
+            ).toHaveLength(2);
         });
     });
 });
@@ -623,7 +623,7 @@ describe("ConstellationWrapper observer omissions", () => {
         // flag is computed synchronously before prepared init, so a visible
         // panel means the decision is final.
         await waitFor(() => {
-            expect(container.querySelector(".hud-panel")).not.toBeNull();
+            expect(container.querySelector(".ui-panel")).not.toBeNull();
         });
         expect(queryByText(OMISSION_NOTICE)).toBeNull();
     });
@@ -656,7 +656,7 @@ describe("ConstellationWrapper observer omissions", () => {
                 expect(initializePreparedCatalogsMock).toHaveBeenCalled();
             });
             await waitFor(() => {
-                expect(container.querySelector(".hud-panel")).not.toBeNull();
+                expect(container.querySelector(".ui-panel")).not.toBeNull();
             });
             // The static notice surfaces non-blockingly; the injected string
             // carries no count, so an exact text match is the assertion.
@@ -794,7 +794,7 @@ describe("ConstellationWrapper observer WebGL gating", () => {
         fireEvent.click(queryByText("Settings")!);
         await waitFor(() => {
             // Panel is open when a non-observer setting renders.
-            expect(queryByText("constellation.scanlines")).not.toBeNull();
+            expect(queryByText("constellation.labels")).not.toBeNull();
         });
         expect(queryByText("Show Earth/Sol reference")).toBeNull();
         expect(queryByText("Find Sol")).toBeNull();
@@ -845,7 +845,7 @@ describe("ConstellationWrapper observer WebGL gating", () => {
         fireEvent.click(queryByText("Settings")!);
         await waitFor(() => {
             // Panel is open when a non-observer setting renders.
-            expect(queryByText("constellation.scanlines")).not.toBeNull();
+            expect(queryByText("constellation.labels")).not.toBeNull();
         });
         expect(queryByText("Show Earth/Sol reference")).toBeNull();
         expect(queryByText("Find Sol")).toBeNull();
@@ -942,7 +942,7 @@ describe("ConstellationWrapper observer actions", () => {
             const checkboxes = container.querySelectorAll(
                 'input[type="checkbox"]',
             );
-            expect(checkboxes).toHaveLength(4);
+            expect(checkboxes).toHaveLength(3);
         });
 
         const referenceCheckbox = Array.from(
@@ -969,7 +969,7 @@ describe("ConstellationWrapper observer actions", () => {
         await waitFor(() => {
             expect(
                 container.querySelectorAll('input[type="checkbox"]'),
-            ).toHaveLength(4);
+            ).toHaveLength(3);
         });
         const referenceCheckbox = Array.from(
             container.querySelectorAll('input[type="checkbox"]'),
@@ -1147,8 +1147,8 @@ describe("ConstellationWrapper observer actions", () => {
             const firstRenderer =
                 constellationRendererCtorMock.mock.results[0]?.value;
             const firstListener = mql.addEventListener.mock.calls[0]?.[1];
-            const firstHudFrame = requestAnimationFrameSpy.mock.results[0]
-                ?.value;
+            const firstHudFrame =
+                requestAnimationFrameSpy.mock.results[0]?.value;
 
             expect(firstRenderer).toBeDefined();
             expect(firstListener).toEqual(expect.any(Function));
@@ -1157,9 +1157,7 @@ describe("ConstellationWrapper observer actions", () => {
             firstMount.unmount();
 
             expect(firstRenderer?.dispose).toHaveBeenCalledOnce();
-            expect(cancelAnimationFrameSpy).toHaveBeenCalledWith(
-                firstHudFrame,
-            );
+            expect(cancelAnimationFrameSpy).toHaveBeenCalledWith(firstHudFrame);
             expect(mql.removeEventListener).toHaveBeenCalledWith(
                 "change",
                 firstListener,
@@ -1230,7 +1228,7 @@ describe("ConstellationWrapper observer actions", () => {
         // The Earth-relative projection is banned in alternate mode.
         expect(celestialToSphereMock).not.toHaveBeenCalled();
         await waitFor(() => {
-            expect(container.querySelector(".hud-panel")).not.toBeNull();
+            expect(container.querySelector(".ui-panel")).not.toBeNull();
         });
     });
 
@@ -1414,7 +1412,7 @@ describe("ConstellationWrapper observer HUD", () => {
             preparedReferenceCatalog,
         );
         await waitFor(() => {
-            expect(container.querySelector(".hud-panel")).not.toBeNull();
+            expect(container.querySelector(".ui-panel")).not.toBeNull();
         });
 
         // Observer readout: localized system name, locale-aware distance,
@@ -1463,7 +1461,7 @@ describe("ConstellationWrapper observer HUD", () => {
         await waitFor(() => {
             expect(queryByText("Orion description")).not.toBeNull();
         });
-        expect(container.querySelector(".hud-month-strip")).toBeNull();
+        expect(container.querySelector(".ui-month-strip")).toBeNull();
     });
 
     it("alternate mode renders the numeric azimuth/elevation view direction without cardinal wording", async () => {
@@ -1479,7 +1477,7 @@ describe("ConstellationWrapper observer HUD", () => {
                 preparedReferenceCatalog,
             );
             await waitFor(() => {
-                expect(container.querySelector(".hud-panel")).not.toBeNull();
+                expect(container.querySelector(".ui-panel")).not.toBeNull();
             });
 
             // The neutral direction readout renders the numeric
@@ -1522,7 +1520,7 @@ describe("ConstellationWrapper observer HUD", () => {
         });
 
         await waitFor(() => {
-            expect(container.querySelector(".hud-panel")).not.toBeNull();
+            expect(container.querySelector(".ui-panel")).not.toBeNull();
         });
         expect(queryByText("Unknown System")).not.toBeNull();
         expect(queryByText(OBSERVER_NAME)).toBeNull();
@@ -1533,14 +1531,14 @@ describe("ConstellationWrapper observer HUD", () => {
         const { container, queryByText } = render(ConstellationWrapper);
 
         await waitFor(() => {
-            expect(container.querySelector(".hud-panel")).not.toBeNull();
+            expect(container.querySelector(".ui-panel")).not.toBeNull();
         });
 
         // Earth HUD elements remain: geolocation, UTC, compass, and the
         // "View from Earth" note.
-        expect(queryByText("GEO-LOCK")).not.toBeNull();
+        expect(queryByText("Location")).not.toBeNull();
         expect(queryByText("UTC")).not.toBeNull();
-        expect(queryByText("FACING")).not.toBeNull();
+        expect(queryByText("Facing")).not.toBeNull();
         expect(queryByText("View from Earth")).not.toBeNull();
         expect(container.querySelector(".compass-readout")).not.toBeNull();
 
@@ -1560,7 +1558,7 @@ describe("ConstellationWrapper observer HUD", () => {
         expect(orionRow).not.toBeNull();
         fireEvent.click(orionRow!);
         await waitFor(() => {
-            expect(container.querySelector(".hud-month-strip")).not.toBeNull();
+            expect(container.querySelector(".ui-month-strip")).not.toBeNull();
         });
     });
 });

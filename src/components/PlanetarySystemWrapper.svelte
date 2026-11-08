@@ -1,16 +1,15 @@
 <script lang="ts">
   import LoadingAnimation from '@/components/LoadingAnimation.svelte';
-  import ErrorBoundary from '@/components/ErrorBoundary.svelte';
   import KeyboardNavigation from '@/components/KeyboardNavigation.svelte';
   import AccessibilityManager from '@/components/AccessibilityManager.svelte';
   import CelestialBodyInfoModal from '@/components/CelestialBodyInfoModal.svelte';
   import ComparisonModal from '@/components/ComparisonModal.svelte';
   import OrbitSpeedControl from '@/components/OrbitSpeedControl.svelte';
-  import HudPanel from '@/components/hud/HudPanel.svelte';
-  import HudButton from '@/components/hud/HudButton.svelte';
-  import HudSearch from '@/components/hud/HudSearch.svelte';
-  import TargetLockOverlay from '@/components/hud/TargetLockOverlay.svelte';
-  import ViewHud from '@/components/hud/ViewHud.svelte';
+  import Panel from '@/components/ui/Panel.svelte';
+  import Button from '@/components/ui/Button.svelte';
+  import SearchInput from '@/components/ui/SearchInput.svelte';
+  import TargetLockOverlay from '@/components/view/TargetLockOverlay.svelte';
+  import ViewOverlay from '@/components/view/ViewOverlay.svelte';
   import { matchesQuery } from '@/lib/hud/list';
   import { gameState, gameActions, settings } from '@/stores/gameStore';
   import { onMount, onDestroy } from 'svelte';
@@ -229,7 +228,7 @@
   };
   
   onMount(async () => {
-    // Wait for the container to be available (similar to SolarSystemWrapper)
+    // Wait for the container to be available (DOM may mount after this component)
     let attempts = 0;
     let rendererContainer: HTMLElement | null = null;
 
@@ -359,7 +358,7 @@
   }
 
   function focusFinderRow() {
-    const rows = finderEl?.querySelectorAll('.hud-list-row');
+    const rows = finderEl?.querySelectorAll('.ui-list-row');
     (rows?.[focusedFinderIndex] as HTMLElement | undefined)?.focus();
   }
 
@@ -367,7 +366,7 @@
     if (!showFinder) return;
     const target = event.target as HTMLElement;
     // Close if click is outside the finder panel and not on the finder toggle button
-    if (finderEl && !finderEl.contains(target) && !target.closest('.hud-rail')) {
+    if (finderEl && !finderEl.contains(target) && !target.closest('.ui-rail')) {
       showFinder = false;
     }
   }
@@ -384,48 +383,48 @@
       />
     {/if}
     {#if errorMessage}
-      <div class="hud-error" role="alert">
-        <p class="hud-error-title">⚠ Initialization Failed</p>
-        <p class="hud-error-msg">{errorMessage}</p>
-        <button class="hud-error-retry" on:click={() => { errorMessage = null; isLoading = true; initializePlanetarySystem(document.getElementById('planetary-system-renderer')!); }}>Retry</button>
+      <div class="ui-error" role="alert">
+        <p class="ui-error-title">Initialization failed</p>
+        <p class="ui-error-msg">{errorMessage}</p>
+        <button class="ui-btn ui-btn--primary ui-error-retry" on:click={() => { errorMessage = null; isLoading = true; initializePlanetarySystem(document.getElementById('planetary-system-renderer')!); }}>Retry</button>
       </div>
     {/if}
   </div>
   
-  <ViewHud currentView={currentView} {lang} {translations}>
+  <ViewOverlay currentView={currentView} {lang} {translations}>
     <div slot="info">
-      <HudPanel title={t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')}>
-        <p class="hud-details-desc m-0">
+      <Panel caption={t('viewSwitcher.star')} title={t(`systems.${systemId}.name`) || planetarySystemRegistry.getSystem(systemId)?.name || t('systems.unknown')}>
+        <p class="ui-details-desc">
           {t(`systems.${systemId}.description`) || planetarySystemRegistry.getSystem(systemId)?.description || ''}
         </p>
-      </HudPanel>
+      </Panel>
     </div>
 
-    <div slot="controls" class="hud-rail">
-      <HudButton ariaLabel={t('finder.open')} on:click={() => { showFinder = true; focusedFinderIndex = 0; }}>{t('finder.title')}</HudButton>
+    <div slot="controls" class="ui-rail">
+      <Button ariaLabel={t('finder.open')} on:click={() => { showFinder = true; focusedFinderIndex = 0; }}>{t('finder.title')}</Button>
       {#if zoomControls}
-        <HudButton on:click={zoomControls.zoomIn}>{t('controls.zoomIn')}</HudButton>
-        <HudButton on:click={zoomControls.zoomOut}>{t('controls.zoomOut')}</HudButton>
-        <HudButton on:click={zoomControls.resetView}>{t('controls.resetView')}</HudButton>
+        <Button on:click={zoomControls.zoomIn}>{t('controls.zoomIn')}</Button>
+        <Button on:click={zoomControls.zoomOut}>{t('controls.zoomOut')}</Button>
+        <Button on:click={zoomControls.resetView}>{t('controls.resetView')}</Button>
       {/if}
     </div>
 
     <div slot="settings">
       {#if hasBarycenterOverlay}
-        <label class="hud-setting"><input type="checkbox" bind:checked={showBarycenterOverlay}> {t('controls.showBarycenters')}</label>
+        <label class="ui-setting"><input type="checkbox" bind:checked={showBarycenterOverlay}> {t('controls.showBarycenters')}</label>
       {/if}
       {#if isSceneReady}
         <OrbitSpeedControl {lang} {translations} />
       {/if}
     </div>
-  </ViewHud>
+  </ViewOverlay>
 
   {#if isSceneReady}
     <!-- JUMP TO finder (toggle-open) -->
     {#if showFinder}
-      <div class="hud-finder" bind:this={finderEl}>
-        <HudPanel title={t('finder.title')}>
-          <HudSearch
+      <div class="ui-finder" bind:this={finderEl}>
+        <Panel title={t('finder.title')}>
+          <SearchInput
             bind:value={finderQuery}
             autofocus={true}
             placeholder={t('finder.placeholder')}
@@ -434,7 +433,7 @@
               if (e.key === 'ArrowDown' && finderResults.length > 0) {
                 e.preventDefault();
                 e.stopPropagation();
-                const firstBtn = finderEl?.querySelector('.hud-list-row') as HTMLElement | null;
+                const firstBtn = finderEl?.querySelector('.ui-list-row') as HTMLElement | null;
                 firstBtn?.focus();
                 focusedFinderIndex = 0;
               } else if (e.key === 'Enter' && finderResults[0]) {
@@ -445,20 +444,20 @@
             }}
           />
           {#if finderResults.length === 0}
-            <div class="hud-section-label text-center py-4">{t('finder.empty')}</div>
+            <p class="finder-empty">{t('finder.empty')}</p>
           {:else}
-            <ul class="hud-list mt-2" aria-label={t('finder.title')} on:keydown={handleFinderListKeydown}>
+            <ul class="ui-list mt-2" aria-label={t('finder.title')} on:keydown={handleFinderListKeydown}>
               {#each finderResults as body, i (body.id)}
                 <li aria-selected={body.id === pinnedBodyId ? "true" : undefined}>
                   <button
                     type="button"
-                    class="hud-list-row"
+                    class="ui-list-row"
                     class:is-selected={body.id === pinnedBodyId}
                     class:focus-visible-ring={i === focusedFinderIndex}
                     aria-current={body.id === pinnedBodyId ? "true" : undefined}
                     on:click={() => pinBody(body)}
                   >
-                    <span class="row-abbr">[{t(bodyTypeKey(body.type))}]</span>
+                    <span class="row-abbr">{t(bodyTypeKey(body.type))}</span>
                     <span class="row-name">{body.name}</span>
                     <span class="row-leader"></span>
                     <span class="row-count">{#if body.keyFacts?.moons != null}{body.keyFacts.moons}<span aria-hidden="true">☽</span><span class="sr-only"> moons</span>{/if}</span>
@@ -467,23 +466,23 @@
               {/each}
             </ul>
           {/if}
-        </HudPanel>
+        </Panel>
       </div>
     {/if}
 
     <!-- Pinned chip -->
     {#if pinnedBodyId}
-      <div class="hud-pinned">
-        <span class="hud-chip">
+      <div class="ui-pinned">
+        <span class="ui-chip">
           {t('finder.pinned')}: {pinnedName}
-          <button class="hud-chip-x" aria-label={t('finder.unpin')} on:click={unpin}>✕</button>
+          <button class="ui-chip-x" aria-label={t('finder.unpin')} on:click={unpin}>✕</button>
         </span>
       </div>
     {/if}
 
     <!-- Target-lock reticle overlay -->
     {#if pinnedBodyId && lockPos && lockPos.visible}
-      <div class="hud-lock-layer" aria-hidden="true">
+      <div class="ui-lock-layer" aria-hidden="true">
         <TargetLockOverlay x={lockPos.x} y={lockPos.y} name={pinnedName} lockedLabel={t('finder.locked')} />
       </div>
     {/if}
@@ -536,20 +535,37 @@
     height: 100%;
   }
   
-  .hud-rail {
+  .ui-rail {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    align-items: flex-end;
+    align-items: stretch;
+    min-width: 128px;
   }
-  .hud-setting {
+  .ui-setting {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-text);
   }
-  .hud-finder {
+  .ui-details-desc {
+    margin: 0;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.4;
+    color: var(--color-text-soft);
+  }
+  .finder-empty {
+    margin: 12px 0 0;
+    text-align: center;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--color-text-muted);
+  }
+  .ui-finder {
     position: absolute;
     top: 64px;
     left: 50%;
@@ -557,24 +573,24 @@
     width: min(420px, 90vw);
     z-index: 20;
   }
-  .hud-pinned {
+  .ui-pinned {
     position: absolute;
     bottom: 20px;
     left: 20px;
     z-index: 20;
   }
-  .hud-lock-layer {
+  .ui-lock-layer {
     position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 15;
   }
-  .hud-list {
+  .ui-list {
     list-style: none;
     padding: 0;
     margin: 0;
   }
-  .hud-list li {
+  .ui-list li {
     padding: 0;
     margin: 0;
   }
@@ -589,7 +605,7 @@
     white-space: nowrap;
     border-width: 0;
   }
-  .hud-error {
+  .ui-error {
     position: absolute;
     inset: 0;
     display: flex;
@@ -597,32 +613,25 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    background: rgba(0, 0, 0, 0.85);
-    color: var(--hud-cyan, #00e5ff);
+    background: var(--color-scrim);
+    color: var(--color-text);
     z-index: 30;
   }
-  .hud-error-title {
-    font-size: 1.25rem;
-    font-weight: bold;
+  .ui-error-title {
     margin: 0;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--color-danger);
   }
-  .hud-error-msg {
-    font-size: 0.9rem;
-    opacity: 0.8;
+  .ui-error-msg {
     margin: 0;
     max-width: 400px;
+    font-size: 14px;
     text-align: center;
+    color: var(--color-text-soft);
   }
-  .hud-error-retry {
+  .ui-error-retry {
     margin-top: 8px;
-    padding: 8px 24px;
-    background: transparent;
-    border: 1px solid var(--hud-cyan, #00e5ff);
-    color: var(--hud-cyan, #00e5ff);
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-  .hud-error-retry:hover {
-    background: rgba(0, 229, 255, 0.1);
   }
 </style>

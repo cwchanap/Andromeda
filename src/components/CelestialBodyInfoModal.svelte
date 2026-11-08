@@ -3,7 +3,7 @@
   import { gameState, gameActions } from '../stores/gameStore';
   import { routes, type AppLocale } from '../i18n/routes';
   import { getStatusBadge, factOrUnknown } from '@/lib/hud/statusBadge';
-  import ModalShell from '@/components/ModalShell.svelte';
+  import Modal from '@/components/ui/Modal.svelte';
 
   export let isOpen: boolean = false;
   export let celestialBody: CelestialBodyData | null = null;
@@ -30,7 +30,7 @@
   $: getTranslatedType = (body: CelestialBodyData | null) => {
     if (!body) return '';
     const translationKey = `planet.type.${body.type}`;
-    return t(translationKey) !== translationKey ? t(translationKey).toUpperCase() : body.type.toUpperCase();
+    return t(translationKey) !== translationKey ? t(translationKey) : body.type;
   };
   
   // Translate composition elements
@@ -164,57 +164,6 @@
     return translateFactValue(rawValue);
   };
   
-  // Get planet-specific styling
-  const getPlanetTheme = (body: CelestialBodyData | null) => {
-    if (!body) return { 
-      primary: '#60a5fa', 
-      secondary: '#3b82f6', 
-      accent: '#ddd6fe',
-      background: undefined,
-      textColor: undefined
-    };
-    
-    // Use custom theme if defined in the data
-    if (body.modalTheme) {
-      return {
-        primary: body.modalTheme.primary,
-        secondary: body.modalTheme.secondary,
-        accent: body.modalTheme.accent,
-        background: body.modalTheme.background,
-        textColor: body.modalTheme.textColor
-      };
-    }
-    
-    // Fallback to hardcoded themes based on planet ID
-    const defaultThemes: Record<string, { 
-      primary: string; 
-      secondary: string; 
-      accent: string;
-      background?: string;
-      textColor?: string;
-    }> = {
-      sun: { primary: '#fbbf24', secondary: '#f59e0b', accent: '#fcd34d' },
-      mercury: { primary: '#94a3b8', secondary: '#64748b', accent: '#cbd5e1' },
-      venus: { primary: '#fbbf24', secondary: '#d97706', accent: '#fed7aa' },
-      earth: { primary: '#3b82f6', secondary: '#1d4ed8', accent: '#34d399' },
-      mars: { primary: '#ef4444', secondary: '#dc2626', accent: '#fca5a5' },
-      jupiter: { primary: '#f59e0b', secondary: '#d97706', accent: '#fde68a' },
-      saturn: { primary: '#fbbf24', secondary: '#f59e0b', accent: '#fef3c7' },
-      uranus: { primary: '#06b6d4', secondary: '#0891b2', accent: '#a5f3fc' },
-      neptune: { primary: '#3b82f6', secondary: '#1e40af', accent: '#93c5fd' }
-    };
-    
-    return defaultThemes[body.id] || { 
-      primary: '#60a5fa', 
-      secondary: '#3b82f6', 
-      accent: '#ddd6fe',
-      background: undefined,
-      textColor: undefined
-    };
-  };
-  
-  $: theme = getPlanetTheme(celestialBody);
-
   // Comparison mode state
   $: isInComparison = $gameState.comparison?.selectedBodies.some(b => b.id === celestialBody?.id) || false;
   $: comparisonCount = $gameState.comparison?.selectedBodies.length || 0;
@@ -231,567 +180,223 @@
 </script>
 
 {#if isOpen && celestialBody}
-  <ModalShell
+  <Modal
     isOpen={isOpen && celestialBody !== null}
     {onClose}
     closeLabel={`${t("modal.close")} ${getTranslatedName(celestialBody)}`}
     ariaLabelledby="modal-title"
     ariaDescribedby="modal-description"
-    maxWidth="600px"
-    decoration="cosmic"
-    theme={theme}
+    maxWidth="400px"
+    placement="right"
   >
     <svelte:fragment slot="header">
-      <!-- Header section -->
       <div class="modal-header">
-        <div class="planet-icon">
-          <div class="planet-sphere" style="background-color: {celestialBody.material.color}"></div>
-          <div class="orbit-ring"></div>
-        </div>
+        <span class="planet-swatch" style="background-color: {celestialBody.material.color}" aria-hidden="true"></span>
         <div class="header-text">
+          <span class="ui-caption planet-type">{getTranslatedType(celestialBody)}</span>
           <h2 id="modal-title" class="planet-name">{getTranslatedName(celestialBody)}</h2>
-          <span class="planet-type">{getTranslatedType(celestialBody)}</span>
-          {#if getStatusBadge(celestialBody)}
-            <span class={getStatusBadge(celestialBody)!.className}>{t(getStatusBadge(celestialBody)!.label)}</span>
-          {/if}
         </div>
       </div>
+      {#if getStatusBadge(celestialBody)}
+        <span class="ui-tag {getStatusBadge(celestialBody)!.className}">{t(getStatusBadge(celestialBody)!.label)}</span>
+      {/if}
     </svelte:fragment>
 
-    <!-- Description section -->
     <div class="modal-body">
       <p id="modal-description" class="planet-description">{getTranslatedDescription(celestialBody)}</p>
 
-      <!-- Key facts section -->
-      <div class="facts-section">
-        <h3 class="facts-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="12,2 15.09,8.26 22,9 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9 8.91,8.26"></polygon>
-          </svg>
-          {t('modal.celestialData')}
-        </h3>
-        <div class="facts-grid">
-          <div class="fact-item">
-            <div class="fact-icon">🌍</div>
-            <div class="fact-content">
-              <span class="fact-label">{t('modal.diameter')}</span>
-              <span class="fact-value">{getTranslatedFact(celestialBody, 'diameter', factOrUnknown(celestialBody.keyFacts.diameter, t('common.unknown')))}</span>
-            </div>
+      <section class="facts-section" aria-labelledby="facts-title">
+        <h3 id="facts-title" class="ui-caption section-title">{t('modal.celestialData')}</h3>
+        <dl class="facts-grid">
+          <div class="ui-stat fact-item">
+            <dt class="ui-stat-label">{t('modal.diameter')}</dt>
+            <dd class="ui-stat-value">{getTranslatedFact(celestialBody, 'diameter', factOrUnknown(celestialBody.keyFacts.diameter, t('common.unknown')))}</dd>
           </div>
 
-          <div class="fact-item">
-            <div class="fact-icon">📏</div>
-            <div class="fact-content">
-              <span class="fact-label">{celestialBody.type === 'moon' ? t('modal.distanceFromParent') : t('modal.distanceFromSun')}</span>
-              <span class="fact-value">{celestialBody.type === 'moon'
-                ? getTranslatedFact(celestialBody, 'distanceFromParent', celestialBody.distanceFromParent?.formattedString ?? '-')
-                : getTranslatedFact(celestialBody, 'distanceFromSun', celestialBody.keyFacts.distanceFromSun ?? '-')}</span>
-            </div>
+          <div class="ui-stat fact-item">
+            <dt class="ui-stat-label">{celestialBody.type === 'moon' ? t('modal.distanceFromParent') : t('modal.distanceFromSun')}</dt>
+            <dd class="ui-stat-value">{celestialBody.type === 'moon'
+              ? getTranslatedFact(celestialBody, 'distanceFromParent', celestialBody.distanceFromParent?.formattedString ?? '-')
+              : getTranslatedFact(celestialBody, 'distanceFromSun', celestialBody.keyFacts.distanceFromSun ?? '-')}</dd>
           </div>
 
-          <div class="fact-item">
-            <div class="fact-icon">🔄</div>
-            <div class="fact-content">
-              <span class="fact-label">{t('modal.orbitalPeriod')}</span>
-              <span class="fact-value">{getTranslatedFact(celestialBody, 'orbitalPeriod', factOrUnknown(celestialBody.keyFacts.orbitalPeriod, t('common.unknown')))}</span>
-            </div>
+          <div class="ui-stat fact-item">
+            <dt class="ui-stat-label">{t('modal.orbitalPeriod')}</dt>
+            <dd class="ui-stat-value">{getTranslatedFact(celestialBody, 'orbitalPeriod', factOrUnknown(celestialBody.keyFacts.orbitalPeriod, t('common.unknown')))}</dd>
           </div>
 
-          <div class="fact-item">
-            <div class="fact-icon">🌡️</div>
-            <div class="fact-content">
-              <span class="fact-label">{t('modal.temperature')}</span>
-              <span class="fact-value">{getTranslatedFact(celestialBody, 'temperature', factOrUnknown(celestialBody.keyFacts.temperature, t('common.unknown')))}</span>
-            </div>
+          <div class="ui-stat fact-item">
+            <dt class="ui-stat-label">{t('modal.temperature')}</dt>
+            <dd class="ui-stat-value">{getTranslatedFact(celestialBody, 'temperature', factOrUnknown(celestialBody.keyFacts.temperature, t('common.unknown')))}</dd>
           </div>
 
           {#if celestialBody.keyFacts.equilibriumTemperature}
-            <div class="fact-item">
-              <div class="fact-icon">🌡️</div>
-              <div class="fact-content">
-                <span class="fact-label">{t('modal.equilibriumTemperature')}</span>
-                <span class="fact-value">{celestialBody.keyFacts.equilibriumTemperature}</span>
-              </div>
+            <div class="ui-stat fact-item">
+              <dt class="ui-stat-label">{t('modal.equilibriumTemperature')}</dt>
+              <dd class="ui-stat-value">{celestialBody.keyFacts.equilibriumTemperature}</dd>
             </div>
           {/if}
 
           {#if celestialBody.keyFacts.moons}
-            <div class="fact-item">
-              <div class="fact-icon">🌙</div>
-              <div class="fact-content">
-                <span class="fact-label">{t('modal.moons')}</span>
-                <span class="fact-value">{celestialBody.keyFacts.moons}</span>
-              </div>
+            <div class="ui-stat fact-item">
+              <dt class="ui-stat-label">{t('modal.moons')}</dt>
+              <dd class="ui-stat-value">{celestialBody.keyFacts.moons}</dd>
             </div>
           {/if}
-        </div>
-      </div>
+        </dl>
+      </section>
 
-      <!-- Composition section -->
       {#if celestialBody.keyFacts.composition && celestialBody.keyFacts.composition.length > 0}
-        <div class="composition-section">
-          <h3 class="composition-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
-            </svg>
-            {t('modal.composition')}
-          </h3>
-          <div class="composition-tags">
+        <section class="composition-section" aria-labelledby="composition-title">
+          <h3 id="composition-title" class="ui-caption section-title">{t('modal.composition')}</h3>
+          <ul class="composition-tags">
             {#each celestialBody.keyFacts.composition as element}
-              <span class="composition-tag">{translateComposition(element)}</span>
+              <li class="composition-tag">{translateComposition(element)}</li>
             {/each}
-          </div>
-        </div>
+          </ul>
+        </section>
       {/if}
-    </div>
 
-    <!-- Footer with cosmic decoration -->
-    <div class="modal-footer">
-      <div class="cosmic-divider"></div>
       <p class="footer-text">{t('modal.footerText')}</p>
     </div>
 
     <svelte:fragment slot="actions">
-      <!-- Comparison button section -->
-      <div class="action-section">
+      <div class="action-grid">
         {#if !isInComparison && comparisonCount < 4}
-          <button
-            class="compare-button"
-            on:click={handleAddToComparison}
-            type="button"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
+          <button class="ui-btn compare-button" on:click={handleAddToComparison} type="button">
             {t('comparison.addToCompare')}
           </button>
         {:else if isInComparison}
-          <div class="in-comparison-badge">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span>{t('comparison.inComparison')}</span>
-            <button class="view-comparison-btn" on:click={handleOpenComparison} type="button">
-              {t('comparison.viewComparison')} ({comparisonCount})
-            </button>
-          </div>
+          <button class="ui-btn view-comparison-btn" on:click={handleOpenComparison} type="button">
+            ✓ {t('comparison.viewComparison')} ({comparisonCount})
+          </button>
         {:else}
-          <div class="comparison-full">
-            {t('comparison.maxReached')}
-          </div>
+          <p class="comparison-full">{t('comparison.maxReached')}</p>
         {/if}
-      </div>
 
-      <!-- Action buttons section for terrain exploration -->
-      {#if celestialBody.terrain && ['mercury', 'venus', 'earth', 'mars'].includes(celestialBody.id)}
-        <div class="action-section">
+        {#if celestialBody.terrain && ['mercury', 'venus', 'earth', 'mars'].includes(celestialBody.id)}
           <button
-            class="terrain-button"
+            class="ui-btn ui-btn--primary terrain-button"
             on:click={() => {
               window.location.href = routes.terrain(celestialBody.id, lang);
             }}
             type="button"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
             {t('modal.viewTerrain')}
           </button>
-        </div>
-      {/if}
+        {/if}
+      </div>
     </svelte:fragment>
-  </ModalShell>
+  </Modal>
 {/if}
 
 <style>
   .modal-header {
     display: flex;
     align-items: center;
-    gap: 20px;
-    padding: 30px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    position: relative;
-    z-index: 1;
+    gap: 14px;
   }
-  
-  .planet-icon {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .planet-sphere {
-    width: 60px;
-    height: 60px;
+
+  .planet-swatch {
+    flex: none;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    position: relative;
-    box-shadow: 
-      0 0 20px rgba(255, 255, 255, 0.3),
-      inset -10px -10px 20px rgba(0, 0, 0, 0.3),
-      0 0 40px var(--primary-color);
-    animation: rotate 20s linear infinite, pulse 3s ease-in-out infinite;
+    box-shadow: inset -8px -8px 16px color-mix(in srgb, var(--color-bg-deep) 55%, transparent);
   }
-  
-  .planet-sphere::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: -10px;
-    right: -10px;
-    bottom: -10px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, var(--accent-color), transparent 70%);
-    opacity: 0.3;
-    animation: rotate 25s linear infinite reverse;
-  }
-  
-  .orbit-ring {
-    position: absolute;
-    width: 80px;
-    height: 80px;
-    border: 1px solid var(--primary-color);
-    border-radius: 50%;
-    opacity: 0.3;
-    animation: rotate 15s linear infinite reverse;
-  }
-  
+
   .header-text {
-    flex: 1;
-  }
-  
-  .planet-name {
-    margin: 0 0 8px 0;
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    text-shadow: 0 0 20px var(--primary-color);
-    background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .planet-type {
-    display: inline-block;
-    background: rgba(var(--primary-color), 0.2);
-    color: var(--accent-color);
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    border: 1px solid var(--primary-color);
-  }
-
-  .status-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    margin-left: 8px;
-  }
-
-  .status-badge--candidate {
-    background: rgba(251, 191, 36, 0.2);
-    color: #fbbf24;
-    border: 1px solid rgba(251, 191, 36, 0.4);
-  }
-
-  .status-badge--controversial {
-    background: rgba(249, 115, 22, 0.2);
-    color: #f97316;
-    border: 1px solid rgba(249, 115, 22, 0.4);
-  }
-  
-  .modal-body {
-    padding: 30px;
-    position: relative;
-    z-index: 1;
-  }
-  
-  .planet-description {
-    margin: 0 0 30px 0;
-    line-height: 1.7;
-    color: var(--modal-text-color, rgba(255, 255, 255, 0.9));
-    font-size: 1.1rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  }
-  
-  .facts-section {
-    margin-bottom: 30px;
-  }
-  
-  .facts-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 0 20px 0;
-    color: var(--accent-color);
-    font-size: 1.25rem;
-    font-weight: 600;
-  }
-  
-  .facts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
-  }
-  
-  .fact-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
-    transition: all 0.2s ease;
-  }
-  
-  .fact-item:hover {
-    background: rgba(var(--primary-color), 0.1);
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-  }
-  
-  .fact-icon {
-    font-size: 1.5rem;
-    filter: drop-shadow(0 0 10px var(--primary-color));
-  }
-  
-  .fact-content {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
+    min-width: 0;
   }
-  
-  .fact-label {
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 500;
-  }
-  
-  .fact-value {
-    color: white;
+
+  .planet-name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 36px;
     font-weight: 600;
-    font-size: 1rem;
+    line-height: 1;
+    color: var(--color-text);
   }
-  
-  .composition-section {
-    margin-bottom: 20px;
+
+  .modal-header + :global(.ui-tag) {
+    margin-top: 10px;
   }
-  
-  .composition-title {
+
+  :global(.status-badge--candidate) {
+    color: var(--color-info);
+  }
+  :global(.status-badge--controversial) {
+    color: var(--color-danger);
+  }
+
+  .modal-body {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 0 16px 0;
-    color: var(--accent-color);
-    font-size: 1.25rem;
-    font-weight: 600;
+    flex-direction: column;
+    gap: 20px;
   }
-  
+
+  .planet-description {
+    margin: 0;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 19px;
+    line-height: 1.4;
+    color: var(--color-text-soft);
+  }
+
+  .section-title {
+    margin: 0 0 10px;
+  }
+
+  .facts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 18px;
+    margin: 0;
+    padding: 14px 0;
+    border-top: 1px solid var(--color-line);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .facts-grid dd {
+    margin: 0;
+  }
+
   .composition-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
-  
   .composition-tag {
-    background: rgba(var(--secondary-color), 0.2);
-    color: var(--accent-color);
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    border: 1px solid var(--secondary-color);
-    backdrop-filter: blur(5px);
+    padding: 4px 10px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--color-text);
   }
-  
-  .modal-footer {
-    padding: 20px 30px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    position: relative;
-    z-index: 1;
-  }
-  
-  .cosmic-divider {
-    height: 2px;
-    background: linear-gradient(90deg, 
-      transparent 0%, 
-      var(--primary-color) 25%, 
-      var(--accent-color) 50%, 
-      var(--secondary-color) 75%, 
-      transparent 100%);
-    margin-bottom: 12px;
-    border-radius: 1px;
-  }
-  
+
   .footer-text {
     margin: 0;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.875rem;
-    font-style: italic;
+    font-size: 12px;
+    color: var(--color-text-muted);
   }
-  
-  .terrain-button {
-    display: flex;
-    align-items: center;
+
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 8px;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
-  }
-  
-  .terrain-button:hover {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
-  }
-  
-  .terrain-button:active {
-    transform: translateY(0);
-  }
-  
-  .terrain-button svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  /* Compare button styles */
-  .compare-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-  }
-
-  .compare-button:hover {
-    background: linear-gradient(135deg, #34d399, #10b981);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
-  }
-
-  .compare-button:active {
-    transform: translateY(0);
-  }
-
-  .in-comparison-badge {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 20px;
-    background: rgba(16, 185, 129, 0.1);
-    border: 2px solid #10b981;
-    border-radius: 12px;
-    color: #34d399;
-  }
-
-  .in-comparison-badge span {
-    font-weight: 500;
-  }
-
-  .view-comparison-btn {
-    background: #10b981;
-    color: white;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-  }
-
-  .view-comparison-btn:hover {
-    background: #059669;
+    width: 100%;
   }
 
   .comparison-full {
-    padding: 12px 20px;
-    background: rgba(251, 191, 36, 0.1);
-    border: 2px solid #fbbf24;
-    border-radius: 12px;
-    color: #fcd34d;
-    text-align: center;
-    font-weight: 500;
-  }
-
-  @keyframes pulse {
-    0%, 100% {
-      transform: scale(1);
-      box-shadow: 
-        0 0 20px rgba(255, 255, 255, 0.3),
-        inset -10px -10px 20px rgba(0, 0, 0, 0.3),
-        0 0 40px var(--primary-color);
-    }
-    50% {
-      transform: scale(1.05);
-      box-shadow: 
-        0 0 30px rgba(255, 255, 255, 0.5),
-        inset -10px -10px 20px rgba(0, 0, 0, 0.3),
-        0 0 60px var(--primary-color);
-    }
-  }
-  
-  @keyframes rotate {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  
-  /* Responsive design */
-  @media (max-width: 768px) {
-    .modal-header {
-      flex-direction: column;
-      text-align: center;
-      padding: 20px;
-    }
-    
-    .planet-name {
-      font-size: 2rem;
-    }
-    
-    .modal-body {
-      padding: 20px;
-    }
-    
-    .facts-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .modal-footer {
-      padding: 15px 20px;
-    }
+    margin: 0;
+    align-self: center;
+    font-size: 12px;
+    color: var(--color-text-muted);
   }
 </style>

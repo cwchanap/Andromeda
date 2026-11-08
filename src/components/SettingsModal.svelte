@@ -1,12 +1,7 @@
 <script lang="ts">
-  import ModalShell from "@/components/ModalShell.svelte";
-  import HudPanel from "@/components/hud/HudPanel.svelte";
+  import Modal from "@/components/ui/Modal.svelte";
   import LanguageOptions from "@/components/LanguageOptions.svelte";
-  import Button from "./ui/Button.svelte";
-  import Card from "./ui/Card.svelte";
-  import CardContent from "./ui/CardContent.svelte";
-  import CardHeader from "./ui/CardHeader.svelte";
-  import CardTitle from "./ui/CardTitle.svelte";
+  import Button from "@/components/ui/Button.svelte";
   import type { GameSettings } from "../stores/gameStore";
   import type { AppLocale } from "@/i18n/routes";
 
@@ -17,6 +12,32 @@
 
   // Translation function
   const t = (key: string) => translations[key] || key;
+
+  type ToggleKey =
+    | "enableAnimations"
+    | "showControlHints"
+    | "audioEnabled"
+    | "highContrastMode"
+    | "reducedMotion"
+    | "enableKeyboardNavigation"
+    | "announceSceneChanges"
+    | "screenReaderMode";
+  type ToggleRow = { key: ToggleKey; label: string; desc: string; describedby?: string };
+
+  const visualToggles: ToggleRow[] = [
+    { key: "enableAnimations", label: "settings.enableAnimations", desc: "settings.enableAnimationsDesc" },
+    { key: "showControlHints", label: "settings.showControlHints", desc: "settings.showControlHintsDesc" },
+  ];
+  const audioToggles: ToggleRow[] = [
+    { key: "audioEnabled", label: "settings.enableAudio", desc: "settings.enableAudioDesc" },
+  ];
+  const accessibilityToggles: ToggleRow[] = [
+    { key: "highContrastMode", label: "settings.highContrast", desc: "settings.highContrastDesc", describedby: "high-contrast-desc" },
+    { key: "reducedMotion", label: "settings.reducedMotion", desc: "settings.reducedMotionDesc", describedby: "reduced-motion-desc" },
+    { key: "enableKeyboardNavigation", label: "settings.keyboardNavigation", desc: "settings.keyboardNavigationDesc", describedby: "keyboard-nav-desc" },
+    { key: "announceSceneChanges", label: "settings.announceSceneChanges", desc: "settings.announceSceneChangesDesc", describedby: "announce-changes-desc" },
+    { key: "screenReaderMode", label: "settings.screenReaderMode", desc: "settings.screenReaderModeDesc", describedby: "screen-reader-desc" },
+  ];
 
   let settings: GameSettings = { ...currentSettings };
 
@@ -62,253 +83,205 @@
   }
 </script>
 
-<ModalShell
+<Modal
   {isOpen}
   onClose={onClose}
   closeLabel={t('action.close')}
-  ariaLabel={t('settings.title')}
-  maxWidth="672px"
-  decoration="none"
-  theme={{
-    primary: 'var(--hud-cyan)',
-    secondary: 'var(--hud-magenta)',
-    accent: 'var(--hud-ivory)',
-  }}
+  ariaLabelledby="settings-title"
+  maxWidth="600px"
 >
-  <HudPanel title={t('settings.title')} animate={false}>
-    <LanguageOptions {lang} {translations} />
+  <svelte:fragment slot="header">
+    <div class="ui-caption">{t('settings.configuration')}</div>
+    <h2 id="settings-title" class="settings-title">{t('settings.title')}</h2>
+  </svelte:fragment>
 
-    <div class="mt-4 space-y-6">
-      <!-- Visual Settings -->
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('settings.visual')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-semibold">{t('settings.enableAnimations')}</h4>
-              <p class="text-muted-foreground text-sm">
-                {t('settings.enableAnimationsDesc')}
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              bind:checked={settings.enableAnimations}
-              class="h-4 w-4"
-              aria-label={t('settings.enableAnimations')}
-            />
-          </div>
+  <div class="settings-body">
+    <section class="settings-section">
+      <h3 class="settings-heading">{t('settings.language')}</h3>
+      <LanguageOptions {lang} {translations} />
+    </section>
 
-          <hr class="settings-divider" />
+    <section class="settings-section">
+      <h3 class="settings-heading">{t('settings.visual')}</h3>
+      {#each visualToggles.slice(0, 1) as row (row.key)}
+        <label class="settings-row">
+          <span class="settings-text">
+            <span class="settings-label">{t(row.label)}</span>
+            <span class="settings-desc">{t(row.desc)}</span>
+          </span>
+          <input type="checkbox" class="ui-toggle" bind:checked={settings[row.key]} aria-label={t(row.label)} />
+        </label>
+      {/each}
+      <div class="settings-row">
+        <span class="settings-text">
+          <span class="settings-label">{t('settings.graphicsQuality')}</span>
+          <span class="settings-desc">{t('settings.graphicsQualityDesc')}</span>
+        </span>
+        <select bind:value={settings.graphicsQuality} class="ui-select" aria-label={t('settings.graphicsQuality')}>
+          <option value="low">{t('settings.qualityLow')}</option>
+          <option value="medium">{t('settings.qualityMedium')}</option>
+          <option value="high">{t('settings.qualityHigh')}</option>
+        </select>
+      </div>
+      {#each visualToggles.slice(1) as row (row.key)}
+        <label class="settings-row">
+          <span class="settings-text">
+            <span class="settings-label">{t(row.label)}</span>
+            <span class="settings-desc">{t(row.desc)}</span>
+          </span>
+          <input type="checkbox" class="ui-toggle" bind:checked={settings[row.key]} aria-label={t(row.label)} />
+        </label>
+      {/each}
+    </section>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-semibold">{t('settings.graphicsQuality')}</h4>
-              <p class="text-muted-foreground text-sm">
-                {t('settings.graphicsQualityDesc')}
-              </p>
-            </div>
-            <select
-              bind:value={settings.graphicsQuality}
-              class="rounded border px-2 py-1"
-            >
-              <option value="low">{t('settings.qualityLow')}</option>
-              <option value="medium">{t('settings.qualityMedium')}</option>
-              <option value="high">{t('settings.qualityHigh')}</option>
-            </select>
-          </div>
+    <section class="settings-section">
+      <h3 class="settings-heading">{t('settings.audio')}</h3>
+      {#each audioToggles as row (row.key)}
+        <label class="settings-row">
+          <span class="settings-text">
+            <span class="settings-label">{t(row.label)}</span>
+            <span class="settings-desc">{t(row.desc)}</span>
+          </span>
+          <input type="checkbox" class="ui-toggle" bind:checked={settings[row.key]} aria-label={t(row.label)} />
+        </label>
+      {/each}
+    </section>
 
-          <hr class="settings-divider" />
+    <section class="settings-section">
+      <h3 class="settings-heading">{t('settings.control')}</h3>
+      <div class="settings-row settings-row--stacked">
+        <span class="settings-text settings-text--inline">
+          <span class="settings-label">{t('settings.mouseSensitivity')}</span>
+          <span class="settings-desc">{settings.controlSensitivity.toFixed(1)}x</span>
+        </span>
+        <input
+          type="range"
+          min="0.1"
+          max="2.0"
+          step="0.1"
+          bind:value={settings.controlSensitivity}
+          class="settings-range"
+          aria-label={t('settings.mouseSensitivity')}
+        />
+        <span class="settings-range-labels">
+          <span>{t('settings.sensitivitySlow')}</span>
+          <span>{t('settings.sensitivityFast')}</span>
+        </span>
+      </div>
+    </section>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-semibold">{t('settings.showControlHints')}</h4>
-              <p class="text-muted-foreground text-sm">
-                {t('settings.showControlHintsDesc')}
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              bind:checked={settings.showControlHints}
-              class="h-4 w-4"
-              aria-label={t('settings.showControlHints')}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Audio Settings -->
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('settings.audio')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-semibold">{t('settings.enableAudio')}</h4>
-              <p class="text-muted-foreground text-sm">
-                {t('settings.enableAudioDesc')}
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              bind:checked={settings.audioEnabled}
-              class="h-4 w-4"
-              aria-label={t('settings.enableAudio')}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Control Settings -->
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('settings.control')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div class="mb-2 flex items-center justify-between">
-              <h4 class="text-sm font-semibold">{t('settings.mouseSensitivity')}</h4>
-              <span class="text-muted-foreground text-sm">
-                {settings.controlSensitivity.toFixed(1)}x
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0.1"
-              max="2.0"
-              step="0.1"
-              bind:value={settings.controlSensitivity}
-              class="w-full"
-            />
-            <div class="text-muted-foreground mt-1 flex justify-between text-xs">
-              <span>{t('settings.sensitivitySlow')}</span>
-              <span>{t('settings.sensitivityFast')}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Accessibility Settings -->
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('settings.accessibility')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-semibold">{t('settings.highContrast')}</h4>
-              <p class="text-muted-foreground text-sm">
-                {t('settings.highContrastDesc')}
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              bind:checked={settings.highContrastMode}
-              class="h-4 w-4"
-              aria-label={t('settings.highContrast')}
-              aria-describedby="high-contrast-desc"
-            />
-          </div>
-
-          <hr class="settings-divider" />
-
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-semibold">{t('settings.reducedMotion')}</h4>
-              <p class="text-muted-foreground text-sm">
-                {t('settings.reducedMotionDesc')}
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              bind:checked={settings.reducedMotion}
-              class="h-4 w-4"
-              aria-label={t('settings.reducedMotion')}
-              aria-describedby="reduced-motion-desc"
-            />
-          </div>
-
-          <hr class="settings-divider" />
-
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-semibold">{t('settings.keyboardNavigation')}</h4>
-              <p class="text-muted-foreground text-sm">
-                {t('settings.keyboardNavigationDesc')}
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              bind:checked={settings.enableKeyboardNavigation}
-              class="h-4 w-4"
-              aria-label={t('settings.keyboardNavigation')}
-              aria-describedby="keyboard-nav-desc"
-            />
-          </div>
-
-          <hr class="settings-divider" />
-
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-semibold">{t('settings.announceSceneChanges')}</h4>
-              <p class="text-muted-foreground text-sm">
-                {t('settings.announceSceneChangesDesc')}
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              bind:checked={settings.announceSceneChanges}
-              class="h-4 w-4"
-              aria-label={t('settings.announceSceneChanges')}
-              aria-describedby="announce-changes-desc"
-            />
-          </div>
-
-          <hr class="settings-divider" />
-
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-semibold">{t('settings.screenReaderMode')}</h4>
-              <p class="text-muted-foreground text-sm">
-                {t('settings.screenReaderModeDesc')}
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              bind:checked={settings.screenReaderMode}
-              class="h-4 w-4"
-              aria-label={t('settings.screenReaderMode')}
-              aria-describedby="screen-reader-desc"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-    </div>
-  </HudPanel>
+    <section class="settings-section">
+      <h3 class="settings-heading">{t('settings.accessibility')}</h3>
+      {#each accessibilityToggles as row (row.key)}
+        <label class="settings-row">
+          <span class="settings-text">
+            <span class="settings-label">{t(row.label)}</span>
+            <span class="settings-desc">{t(row.desc)}</span>
+          </span>
+          <input
+            type="checkbox"
+            class="ui-toggle"
+            bind:checked={settings[row.key]}
+            aria-label={t(row.label)}
+            aria-describedby={row.describedby}
+          />
+        </label>
+      {/each}
+    </section>
+  </div>
 
   <svelte:fragment slot="actions">
     <div class="settings-actions">
-      <Button variant="outline" on:click={handleReset}>
+      <Button variant="ghost" class="settings-reset" on:click={handleReset}>
         {t('settings.resetDefaults')}
       </Button>
       <div class="settings-actions-trailing">
-        <Button variant="outline" on:click={onClose}>
+        <Button on:click={onClose}>
           {t('action.cancel')}
         </Button>
-        <Button on:click={handleSave}>{t('settings.save')}</Button>
+        <Button variant="primary" on:click={handleSave}>{t('settings.save')}</Button>
       </div>
     </div>
   </svelte:fragment>
-</ModalShell>
+</Modal>
 
 <style>
-  .settings-divider {
-    border: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-    margin: 12px 0;
+  .settings-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .settings-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .settings-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .settings-heading {
+    margin: 0 0 6px;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-line);
+    cursor: pointer;
+  }
+  .settings-section > .settings-row:last-child {
+    border-bottom: none;
+  }
+  .settings-row--stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    cursor: default;
+  }
+
+  .settings-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .settings-text--inline {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .settings-label {
+    font-size: 14px;
+    color: var(--color-text);
+  }
+  .settings-desc {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .settings-range {
+    width: 100%;
+    accent-color: var(--color-accent);
+  }
+  .settings-range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--color-text-muted);
   }
 
   .settings-actions {
@@ -319,9 +292,13 @@
     gap: 12px;
   }
 
+  .settings-actions :global(.settings-reset) {
+    color: var(--color-danger);
+  }
+
   .settings-actions-trailing {
     display: flex;
-    gap: 12px;
+    gap: 8px;
   }
 
   @media (max-width: 480px) {

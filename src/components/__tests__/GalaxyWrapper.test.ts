@@ -2,7 +2,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import GalaxyWrapper from "@/components/GalaxyWrapper.svelte";
-import ModalShellHarness from "@/components/__tests__/fixtures/ModalShellHarness.svelte";
 import { GalaxyRenderer } from "@/lib/galaxy";
 import { settings, defaultSettings } from "@/stores/gameStore";
 
@@ -105,8 +104,8 @@ describe("GalaxyWrapper", () => {
     });
 
     it("shows loading indicator initially", () => {
-        render(GalaxyWrapper);
-        expect(screen.getByText(/Initializing 3D engine/i)).toBeDefined();
+        const { container } = render(GalaxyWrapper);
+        expect(container.querySelector(".loading-animation")).not.toBeNull();
     });
 
     it("does not show error overlay on initial render", () => {
@@ -152,9 +151,7 @@ describe("GalaxyWrapper", () => {
         await waitFor(() =>
             expect(container.querySelector(".view-hud")).not.toBeNull(),
         );
-        expect(
-            container.querySelector(".hud-top-right .hud-btn"),
-        ).not.toBeNull();
+        expect(container.querySelector(".ui-top-right .ui-btn")).not.toBeNull();
     });
 
     it("unmounts cleanly", () => {
@@ -257,9 +254,11 @@ describe("GalaxyWrapper – event callbacks", () => {
         const { container } = render(GalaxyWrapper);
         // The system dialog should appear
         await waitFor(() =>
-            expect(container.querySelector(".modal-shell-dialog")).not.toBeNull(),
+            expect(container.querySelector(".ui-modal-dialog")).not.toBeNull(),
         );
-        expect(screen.getByRole("dialog", { name: "Solar System" })).toBeDefined();
+        expect(
+            screen.getByRole("dialog", { name: "Solar System" }),
+        ).toBeDefined();
     });
 
     it("closeSystemDialog hides the dialog", async () => {
@@ -290,16 +289,16 @@ describe("GalaxyWrapper – event callbacks", () => {
 
         const { container } = render(GalaxyWrapper);
         await waitFor(() =>
-            expect(container.querySelector(".modal-shell-dialog")).not.toBeNull(),
+            expect(container.querySelector(".ui-modal-dialog")).not.toBeNull(),
         );
 
         const closeBtn = container.querySelector(
-            ".modal-shell-dialog .modal-shell-close",
+            ".ui-modal-dialog .ui-modal-close",
         ) as HTMLElement;
         expect(closeBtn).not.toBeNull();
         await fireEvent.click(closeBtn);
         await waitFor(() =>
-            expect(container.querySelector(".modal-shell-dialog")).toBeNull(),
+            expect(container.querySelector(".ui-modal-dialog")).toBeNull(),
         );
     });
 });
@@ -441,16 +440,16 @@ describe("GalaxyWrapper – reduced-motion & dialog a11y", () => {
         capturedEvents.onSystemLoad?.();
         capturedEvents.onStarSystemSelect?.(mockSystem);
         await waitFor(() =>
-            expect(container.querySelector(".modal-shell-dialog")).not.toBeNull(),
+            expect(container.querySelector(".ui-modal-dialog")).not.toBeNull(),
         );
         const overlay = container.querySelector(
-            ".modal-shell-overlay",
+            ".ui-modal-overlay",
         ) as HTMLElement;
         expect(overlay).toBeTruthy();
         // Escape on the shell overlay must close the dialog.
         await fireEvent.keyDown(overlay, { key: "Escape" });
         await waitFor(() =>
-            expect(container.querySelector(".modal-shell-dialog")).toBeNull(),
+            expect(container.querySelector(".ui-modal-dialog")).toBeNull(),
         );
     });
 });
@@ -504,7 +503,9 @@ async function openSystemDialog(
     galaxyHarness.capturedEvents?.onSystemLoad?.();
     galaxyHarness.capturedEvents?.onStarSystemSelect?.(system);
     await waitFor(() =>
-        expect(result.container.querySelector(".modal-shell-dialog")).not.toBeNull(),
+        expect(
+            result.container.querySelector(".ui-modal-dialog"),
+        ).not.toBeNull(),
     );
 
     return result;
@@ -530,12 +531,8 @@ describe("GalaxyWrapper — observer sky action", () => {
 
     it("keeps the fixed product actions after the scrollable details body", async () => {
         const { container } = await openSystemDialog();
-        const actionRow = container.querySelector(
-            ".modal-shell-actions",
-        );
-        const detailsBody = container.querySelector(
-            ".modal-shell-content",
-        );
+        const actionRow = container.querySelector(".ui-modal-actions");
+        const detailsBody = container.querySelector(".ui-modal-content");
 
         expect(actionRow).not.toBeNull();
         expect(detailsBody).not.toBeNull();
@@ -552,9 +549,9 @@ describe("GalaxyWrapper — observer sky action", () => {
             "View sky from here",
             "Coming Soon",
         ]);
-        expect(actions[0].classList.contains("secondary")).toBe(true);
-        expect(actions[1].classList.contains("secondary")).toBe(true);
-        expect(actions[2].classList.contains("primary")).toBe(true);
+        expect(actions[0].classList.contains("ui-btn--ghost")).toBe(true);
+        expect(actions[1].classList.contains("ui-btn--primary")).toBe(false);
+        expect(actions[2].classList.contains("ui-btn--primary")).toBe(true);
     });
 
     it("renders Explore for a registered system", async () => {
@@ -570,45 +567,16 @@ describe("GalaxyWrapper — observer sky action", () => {
         expect(screen.getByRole("button", { name: "Explore" })).toBeDefined();
     });
 
-    it("renders no decorative shell nodes for Galaxy dialogs", async () => {
-        const { container } = await openSystemDialog();
-
-        // Positively verify the modal shell mounted for the Galaxy dialog.
-        expect(container.querySelector(".modal-shell-dialog")).not.toBeNull();
-
-        // Positive control: a decorated shell renders the expected nodes,
-        // proving the absence below is due to Galaxy's decoration choice
-        // and not a broken ModalShell.
-        const decorated = render(ModalShellHarness, {
-            props: { isOpen: true, decoration: "cosmic" },
-        });
-        expect(
-            decorated.container.querySelector(".modal-shell-decoration"),
-        ).not.toBeNull();
-        expect(
-            decorated.container.querySelectorAll(".modal-shell-star"),
-        ).toHaveLength(75);
-        expect(
-            decorated.container.querySelectorAll(".modal-shell-particle"),
-        ).toHaveLength(20);
-        decorated.unmount();
-
-        // Galaxy passes decoration="none", so its dialog renders none of
-        // the decorative nodes.
-        expect(container.querySelector(".modal-shell-decoration")).toBeNull();
-        expect(
-            container.querySelectorAll(".modal-shell-star, .modal-shell-particle"),
-        ).toHaveLength(0);
-    });
-
     it("closes the system dialog when the shell backdrop is clicked", async () => {
         const { container } = await openSystemDialog();
-        const overlay = container.querySelector(".modal-shell-overlay") as HTMLElement;
+        const overlay = container.querySelector(
+            ".ui-modal-overlay",
+        ) as HTMLElement;
 
         expect(overlay).toBeTruthy();
         await fireEvent.click(overlay);
         await waitFor(() =>
-            expect(container.querySelector(".modal-shell-dialog")).toBeNull(),
+            expect(container.querySelector(".ui-modal-dialog")).toBeNull(),
         );
     });
 
@@ -616,7 +584,7 @@ describe("GalaxyWrapper — observer sky action", () => {
         const { container } = await openSystemDialog();
         const viewSky = Array.from(
             container.querySelectorAll<HTMLButtonElement>(
-                ".modal-shell-actions button",
+                ".ui-modal-actions button",
             ),
         ).find(
             (button) => button.textContent?.trim() === "View sky from here",
@@ -636,7 +604,7 @@ describe("GalaxyWrapper — observer sky action", () => {
         });
         const viewSky = Array.from(
             container.querySelectorAll<HTMLButtonElement>(
-                ".modal-shell-actions button",
+                ".ui-modal-actions button",
             ),
         ).find(
             (button) => button.textContent?.trim() === "View sky from here",
@@ -660,7 +628,7 @@ describe("GalaxyWrapper — observer sky action", () => {
             const { container } = await openSystemDialog();
             const viewSky = Array.from(
                 container.querySelectorAll<HTMLButtonElement>(
-                    ".modal-shell-actions button",
+                    ".ui-modal-actions button",
                 ),
             ).find(
                 (button) => button.textContent?.trim() === "View sky from here",
@@ -675,7 +643,9 @@ describe("GalaxyWrapper — observer sky action", () => {
                 container.querySelector(`#${descriptionId}`)?.textContent,
             ).toContain("Sky view is unavailable for this system.");
             expect(
-                container.querySelector(".sky-unavailable-notice")?.getAttribute("role"),
+                container
+                    .querySelector(".sky-unavailable-notice")
+                    ?.getAttribute("role"),
             ).toBe("status");
 
             viewSky.focus();
@@ -689,7 +659,7 @@ describe("GalaxyWrapper — observer sky action", () => {
         const { container } = await openSystemDialog();
         const actions = Array.from(
             container.querySelectorAll<HTMLButtonElement>(
-                ".modal-shell-actions button",
+                ".ui-modal-actions button",
             ),
         );
         const viewSky = actions.find(
@@ -706,7 +676,9 @@ describe("GalaxyWrapper — observer sky action", () => {
             container.querySelector(".coming-soon-notice")?.textContent,
         ).toContain("This planetary experience is coming soon.");
         expect(
-            container.querySelector(".coming-soon-notice")?.getAttribute("role"),
+            container
+                .querySelector(".coming-soon-notice")
+                ?.getAttribute("role"),
         ).toBe("status");
         expect(window.location.href).toBe("http://localhost/galaxy");
     });

@@ -449,8 +449,7 @@ export const ja = {
     "constellation.return": "戻る",
     "constellation.panelOn": "パネル ON",
     "constellation.panelOff": "パネル OFF",
-    "constellation.dragInstructions": "ターゲット待機 — ドラッグで方向調整",
-    "constellation.scanlines": "スキャンライン",
+    "constellation.dragInstructions": "ドラッグして空を見回す",
     "constellation.labels": "恒星・星座ラベル",
     "constellation.autoRotate": "自動回転",
 
@@ -813,11 +812,6 @@ export const ja = {
     "terrain.rotateInstruction": "右クリック + ドラッグ",
 
     // Boot sequence
-    "boot.init": "> スカイマップ初期化 v2.5",
-    "boot.geoLock": "> 地理ロック ........... [OK]",
-    "boot.stellarDb": "> 恒星DB ......... 4,184 天体",
-    "boot.renderPipeline": "> レンダーパイプライン .... オンライン",
-    "boot.awaitingTarget": "> ターゲット待機",
 
     // Constellation sky-map accessibility (screen-reader copy for the
     // keyboard-navigable canvas + aria-live region). The renderer accepts

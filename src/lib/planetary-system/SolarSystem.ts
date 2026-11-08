@@ -59,14 +59,6 @@ export const solarSystemData: PlanetarySystemData = {
             texture:
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=512&h=512&fit=crop",
         },
-        modalTheme: {
-            primary: "#FFA500",
-            secondary: "#FF6B35",
-            accent: "#FFCC33",
-            background:
-                "linear-gradient(135deg, rgba(255, 165, 0, 0.15) 0%, rgba(255, 107, 53, 0.1) 50%, rgba(255, 204, 51, 0.15) 100%)",
-            textColor: "#FFF8E1",
-        },
     },
     celestialBodies: [
         {
@@ -144,14 +136,6 @@ export const solarSystemData: PlanetarySystemData = {
                     persistence: 0.5,
                     lacunarity: 2,
                 },
-            },
-            modalTheme: {
-                primary: "#8C7853",
-                secondary: "#A89068",
-                accent: "#D4AF37",
-                background:
-                    "linear-gradient(135deg, #1a1612 0%, #2d1810 50%, #1a1612 100%)",
-                textColor: "#E5D5B8",
             },
             orbitRadius: 5.79,
             orbitSpeed: 0.048,
@@ -232,14 +216,6 @@ export const solarSystemData: PlanetarySystemData = {
                     persistence: 0.5,
                     lacunarity: 1.8,
                 },
-            },
-            modalTheme: {
-                primary: "#D6CDAF",
-                secondary: "#E2D6B9",
-                accent: "#F0E68C",
-                background:
-                    "linear-gradient(135deg, #2a2a2a 0%, #3d3d3d 50%, #2a2a2a 100%)",
-                textColor: "#FFFFFF",
             },
             orbitRadius: 10.82,
             orbitSpeed: 0.035,
@@ -326,14 +302,6 @@ export const solarSystemData: PlanetarySystemData = {
                     lacunarity: 2.2,
                 },
             },
-            modalTheme: {
-                primary: "#3E8EDE",
-                secondary: "#4DA3E0",
-                accent: "#A4D8E1",
-                background:
-                    "linear-gradient(135deg, #0d1b2a 0%, #1b2631 50%, #0d1b2a 100%)",
-                textColor: "#FFFFFF",
-            },
             orbitRadius: 14.96,
             orbitSpeed: 0.029,
         },
@@ -414,14 +382,6 @@ export const solarSystemData: PlanetarySystemData = {
                     lacunarity: 2.0,
                 },
             },
-            modalTheme: {
-                primary: "#C1440E",
-                secondary: "#D57E24",
-                accent: "#F2A900",
-                background:
-                    "linear-gradient(135deg, #2a2a2a 0%, #3d3d3d 50%, #2a2a2a 100%)",
-                textColor: "#FFFFFF",
-            },
             orbitRadius: 22.79,
             orbitSpeed: 0.024,
         },
@@ -459,14 +419,6 @@ export const solarSystemData: PlanetarySystemData = {
                 roughness: 0.4,
                 metalness: 0.1,
             },
-            modalTheme: {
-                primary: "#D9D9D9",
-                secondary: "#E6E6E6",
-                accent: "#FFFFFF",
-                background:
-                    "linear-gradient(135deg, #2a2a2a 0%, #3d3d3d 50%, #2a2a2a 100%)",
-                textColor: "#000000",
-            },
             orbitRadius: 77.85,
             orbitSpeed: 0.0082,
         },
@@ -503,14 +455,6 @@ export const solarSystemData: PlanetarySystemData = {
                 color: "#F2C94C",
                 roughness: 0.3,
                 metalness: 0.1,
-            },
-            modalTheme: {
-                primary: "#F2C94C",
-                secondary: "#F9D66D",
-                accent: "#FFFFFF",
-                background:
-                    "linear-gradient(135deg, #2a2a2a 0%, #3d3d3d 50%, #2a2a2a 100%)",
-                textColor: "#000000",
             },
             orbitRadius: 143.4,
             orbitSpeed: 0.0037,
@@ -564,14 +508,6 @@ export const solarSystemData: PlanetarySystemData = {
                 roughness: 0.5,
                 metalness: 0.1,
             },
-            modalTheme: {
-                primary: "#A7C6ED",
-                secondary: "#B7D3F1",
-                accent: "#FFFFFF",
-                background:
-                    "linear-gradient(135deg, #2a2a2a 0%, #3d3d3d 50%, #2a2a2a 100%)",
-                textColor: "#000000",
-            },
             orbitRadius: 287.1,
             orbitSpeed: 0.0022,
             rings: {
@@ -623,14 +559,6 @@ export const solarSystemData: PlanetarySystemData = {
                 color: "#4B6FBA",
                 roughness: 0.5,
                 metalness: 0.1,
-            },
-            modalTheme: {
-                primary: "#4B6FBA",
-                secondary: "#6A9BD1",
-                accent: "#FFFFFF",
-                background:
-                    "linear-gradient(135deg, #2a2a2a 0%, #3d3d3d 50%, #2a2a2a 100%)",
-                textColor: "#000000",
             },
             orbitRadius: 449.5,
             orbitSpeed: 0.0015,
@@ -718,14 +646,6 @@ export const solarSystemData: PlanetarySystemData = {
                     lacunarity: 2,
                 },
             },
-            modalTheme: {
-                primary: "#C0C0C0",
-                secondary: "#A0A0A0",
-                accent: "#E0E0E0",
-                background:
-                    "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)",
-                textColor: "#FFFFFF",
-            },
             parentId: "earth",
             orbitRadius: 0.4,
             orbitSpeed: 0.08,
@@ -759,14 +679,6 @@ export const solarSystemData: PlanetarySystemData = {
                 roughness: 0.95,
                 metalness: 0.05,
             },
-            modalTheme: {
-                primary: "#5C4033",
-                secondary: "#8B7355",
-                accent: "#A0522D",
-                background:
-                    "linear-gradient(135deg, #1a1510 0%, #2d251a 50%, #1a1510 100%)",
-                textColor: "#E5D5C0",
-            },
             parentId: "mars",
             orbitRadius: 0.25,
             orbitSpeed: 0.15,
@@ -798,14 +710,6 @@ export const solarSystemData: PlanetarySystemData = {
                 color: "#6B5B4F",
                 roughness: 0.9,
                 metalness: 0.05,
-            },
-            modalTheme: {
-                primary: "#6B5B4F",
-                secondary: "#8B7B6F",
-                accent: "#A09080",
-                background:
-                    "linear-gradient(135deg, #1a1815 0%, #2d2820 50%, #1a1815 100%)",
-                textColor: "#E5DDD5",
             },
             parentId: "mars",
             orbitRadius: 0.4,
@@ -886,14 +790,6 @@ export const solarSystemData: PlanetarySystemData = {
                     persistence: 0.6,
                     lacunarity: 2.2,
                 },
-            },
-            modalTheme: {
-                primary: "#E6C35C",
-                secondary: "#FF8C00",
-                accent: "#FFD700",
-                background:
-                    "linear-gradient(135deg, #2a1a0a 0%, #3d2810 50%, #2a1a0a 100%)",
-                textColor: "#FFF8E1",
             },
             parentId: "jupiter",
             orbitRadius: 0.35,
@@ -979,14 +875,6 @@ export const solarSystemData: PlanetarySystemData = {
                     lacunarity: 2,
                 },
             },
-            modalTheme: {
-                primary: "#E8E4D9",
-                secondary: "#A4B8C4",
-                accent: "#87CEEB",
-                background:
-                    "linear-gradient(135deg, #0a1520 0%, #152535 50%, #0a1520 100%)",
-                textColor: "#FFFFFF",
-            },
             parentId: "jupiter",
             orbitRadius: 0.5,
             orbitSpeed: 0.09,
@@ -1018,14 +906,6 @@ export const solarSystemData: PlanetarySystemData = {
                 color: "#9B8B7A",
                 roughness: 0.7,
                 metalness: 0.15,
-            },
-            modalTheme: {
-                primary: "#9B8B7A",
-                secondary: "#B0A090",
-                accent: "#C8B8A8",
-                background:
-                    "linear-gradient(135deg, #1a1815 0%, #2d2820 50%, #1a1815 100%)",
-                textColor: "#FFFFFF",
             },
             parentId: "jupiter",
             orbitRadius: 0.7,
@@ -1062,14 +942,6 @@ export const solarSystemData: PlanetarySystemData = {
                 color: "#5C5346",
                 roughness: 0.85,
                 metalness: 0.1,
-            },
-            modalTheme: {
-                primary: "#5C5346",
-                secondary: "#7A6F60",
-                accent: "#968B7A",
-                background:
-                    "linear-gradient(135deg, #151310 0%, #252018 50%, #151310 100%)",
-                textColor: "#E5E0D8",
             },
             parentId: "jupiter",
             orbitRadius: 0.9,
@@ -1156,14 +1028,6 @@ export const solarSystemData: PlanetarySystemData = {
                     persistence: 0.5,
                     lacunarity: 2,
                 },
-            },
-            modalTheme: {
-                primary: "#D4A574",
-                secondary: "#E8C496",
-                accent: "#F0D8B0",
-                background:
-                    "linear-gradient(135deg, #1a1510 0%, #2d2518 50%, #1a1510 100%)",
-                textColor: "#FFF8E8",
             },
             parentId: "saturn",
             orbitRadius: 0.6,

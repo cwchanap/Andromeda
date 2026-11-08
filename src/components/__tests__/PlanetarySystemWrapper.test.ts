@@ -36,7 +36,7 @@ const t = (key: string) => mockTranslations[key] || key;
 /** Helper to find the "Jump To" button via its translated text. */
 function findJumpBtn(container: HTMLElement): HTMLButtonElement | undefined {
     return Array.from(
-        container.querySelectorAll<HTMLButtonElement>(".hud-controls .hud-btn"),
+        container.querySelectorAll<HTMLButtonElement>(".ui-controls .ui-btn"),
     ).find((b) => b.textContent?.includes(t("finder.title")));
 }
 
@@ -433,12 +433,12 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         await waitFor(() =>
             expect(container.querySelector('[role="alert"]')).not.toBeNull(),
         );
-        expect(container.querySelector(".hud-error-msg")?.textContent).toBe(
+        expect(container.querySelector(".ui-error-msg")?.textContent).toBe(
             "system load failed",
         );
     });
 
-    it("onCameraChange callback triggers scene-ready UI (hud-info visible)", async () => {
+    it("onCameraChange callback triggers scene-ready UI (ui-info visible)", async () => {
         (
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mockImplementationOnce(
@@ -470,10 +470,10 @@ describe("PlanetarySystemWrapper – event callbacks", () => {
         const { container } = render(PlanetarySystemWrapper, {
             props: { systemId: "alpha-centauri" },
         });
-        // onSystemLoad sets isSceneReady=true, making the hud-info panel visible;
+        // onSystemLoad sets isSceneReady=true, making the ui-info panel visible;
         // onCameraChange must not crash for this to complete successfully
         await waitFor(() =>
-            expect(container.querySelector(".hud-info")).not.toBeNull(),
+            expect(container.querySelector(".ui-info")).not.toBeNull(),
         );
     });
 });
@@ -488,7 +488,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             props: { systemId: "alpha-centauri" },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
     });
 
@@ -500,13 +500,13 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         expect(jumpBtn).toBeTruthy();
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
         expect(container.querySelector("input")).not.toBeNull();
     });
@@ -519,15 +519,15 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
-        const rows = container.querySelectorAll(".hud-list-row");
+        const rows = container.querySelectorAll(".ui-list-row");
         expect(rows.length).toBeGreaterThan(0);
 
         const mockInstance = (
@@ -536,7 +536,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         await fireEvent.click(rows[0]);
         expect(mockInstance.focusOnBody).toHaveBeenCalled();
         await waitFor(() =>
-            expect(container.querySelector(".hud-pinned")).not.toBeNull(),
+            expect(container.querySelector(".ui-pinned")).not.toBeNull(),
         );
     });
 
@@ -548,16 +548,16 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
         // Before pinning, no row has aria-current
-        const rowsBeforePin = container.querySelectorAll(".hud-list-row");
+        const rowsBeforePin = container.querySelectorAll(".ui-list-row");
         rowsBeforePin.forEach((row) =>
             expect(row.getAttribute("aria-current")).toBeNull(),
         );
@@ -565,17 +565,17 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         // Pin the first body (this closes the finder)
         await fireEvent.click(rowsBeforePin[0]);
         await waitFor(() =>
-            expect(container.querySelector(".hud-pinned")).not.toBeNull(),
+            expect(container.querySelector(".ui-pinned")).not.toBeNull(),
         );
 
         // Re-open finder to check aria-current on the pinned row
         const jumpBtn2 = findJumpBtn(container);
         await fireEvent.click(jumpBtn2!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
-        const rowsAfterPin = container.querySelectorAll(".hud-list-row");
+        const rowsAfterPin = container.querySelectorAll(".ui-list-row");
         expect(rowsAfterPin[0].getAttribute("aria-current")).toBe("true");
     });
 
@@ -587,24 +587,24 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
-        const rows = container.querySelectorAll(".hud-list-row");
+        const rows = container.querySelectorAll(".ui-list-row");
         await fireEvent.click(rows[0]);
         await waitFor(() =>
-            expect(container.querySelector(".hud-pinned")).not.toBeNull(),
+            expect(container.querySelector(".ui-pinned")).not.toBeNull(),
         );
 
-        const unpinBtn = container.querySelector(".hud-chip-x");
+        const unpinBtn = container.querySelector(".ui-chip-x");
         expect(unpinBtn).toBeTruthy();
         await fireEvent.click(unpinBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-pinned")).toBeNull(),
+            expect(container.querySelector(".ui-pinned")).toBeNull(),
         );
     });
 
@@ -616,11 +616,11 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-info")).not.toBeNull(),
+            expect(container.querySelector(".ui-info")).not.toBeNull(),
         );
         await fireEvent.keyDown(window, { key: "/" });
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
     });
 
@@ -632,17 +632,17 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
         await fireEvent.keyDown(window, { key: "Escape" });
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).toBeNull(),
+            expect(container.querySelector(".ui-finder")).toBeNull(),
         );
     });
 
@@ -654,18 +654,18 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
         const input = container.querySelector("input");
         expect(input).toBeTruthy();
         await fireEvent.keyDown(input!, { key: "/" });
-        expect(container.querySelector(".hud-finder")).not.toBeNull();
+        expect(container.querySelector(".ui-finder")).not.toBeNull();
     });
 
     it("shows target lock overlay when pinned body is visible", async () => {
@@ -683,19 +683,19 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
                 },
             });
             await waitFor(() =>
-                expect(container.querySelector(".hud-controls")).not.toBeNull(),
+                expect(container.querySelector(".ui-controls")).not.toBeNull(),
             );
             const jumpBtn = findJumpBtn(container);
             await fireEvent.click(jumpBtn!);
             await waitFor(() =>
-                expect(container.querySelector(".hud-finder")).not.toBeNull(),
+                expect(container.querySelector(".ui-finder")).not.toBeNull(),
             );
-            const rows = container.querySelectorAll(".hud-list-row");
+            const rows = container.querySelectorAll(".ui-list-row");
             await fireEvent.click(rows[0]);
 
             await waitFor(() =>
                 expect(
-                    container.querySelector(".hud-lock-layer"),
+                    container.querySelector(".ui-lock-layer"),
                 ).not.toBeNull(),
             );
         } finally {
@@ -712,10 +712,10 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-info")).not.toBeNull(),
+            expect(container.querySelector(".ui-info")).not.toBeNull(),
         );
         await fireEvent.keyDown(window, { key: "/", ctrlKey: true });
-        expect(container.querySelector(".hud-finder")).toBeNull();
+        expect(container.querySelector(".ui-finder")).toBeNull();
     });
 
     it("does not open finder on Cmd+/", async () => {
@@ -726,10 +726,10 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-info")).not.toBeNull(),
+            expect(container.querySelector(".ui-info")).not.toBeNull(),
         );
         await fireEvent.keyDown(window, { key: "/", metaKey: true });
-        expect(container.querySelector(".hud-finder")).toBeNull();
+        expect(container.querySelector(".ui-finder")).toBeNull();
     });
 
     it("does not open finder on Alt+/", async () => {
@@ -740,10 +740,10 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-info")).not.toBeNull(),
+            expect(container.querySelector(".ui-info")).not.toBeNull(),
         );
         await fireEvent.keyDown(window, { key: "/", altKey: true });
-        expect(container.querySelector(".hud-finder")).toBeNull();
+        expect(container.querySelector(".ui-finder")).toBeNull();
     });
 
     it("closes finder when clicking outside the finder panel", async () => {
@@ -754,12 +754,12 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
         // Click on the system container (outside finder panel and rail)
@@ -767,7 +767,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         expect(systemContainer).toBeTruthy();
         await fireEvent.click(systemContainer!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).toBeNull(),
+            expect(container.querySelector(".ui-finder")).toBeNull(),
         );
     });
 
@@ -779,20 +779,20 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
         // Click inside the finder panel
-        const finderInput = container.querySelector(".hud-finder input");
+        const finderInput = container.querySelector(".ui-finder input");
         expect(finderInput).toBeTruthy();
         await fireEvent.click(finderInput!);
         // Finder should still be open
-        expect(container.querySelector(".hud-finder")).not.toBeNull();
+        expect(container.querySelector(".ui-finder")).not.toBeNull();
     });
 
     it("renders finder list with ul/li semantics", async () => {
@@ -803,15 +803,15 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
-        const list = container.querySelector(".hud-list");
+        const list = container.querySelector(".ui-list");
         expect(list).not.toBeNull();
         expect(list?.tagName).toBe("UL");
 
@@ -827,12 +827,12 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
         const mockInstance = (
@@ -841,7 +841,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
 
         // Enter on a focused <button> fires click natively in browsers.
         // jsdom does not simulate this, so we fire click directly.
-        const rows = container.querySelectorAll(".hud-list-row");
+        const rows = container.querySelectorAll(".ui-list-row");
         expect(rows.length).toBeGreaterThan(0);
         await fireEvent.click(rows[0]);
         expect(mockInstance.focusOnBody).toHaveBeenCalled();
@@ -913,20 +913,20 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
-        const rows = container.querySelectorAll(".hud-list-row");
+        const rows = container.querySelectorAll(".ui-list-row");
         expect(rows.length).toBeGreaterThanOrEqual(2);
 
         // Focus the first row, then ArrowDown should move focus to the second row
         (rows[0] as HTMLElement).focus();
-        const list = container.querySelector(".hud-list")!;
+        const list = container.querySelector(".ui-list")!;
         await fireEvent.keyDown(list, { key: "ArrowDown" });
 
         // After ArrowDown, the second row should have received focus
@@ -941,14 +941,14 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
 
         // Open finder via button
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
         // Enter on a focused <button> fires click natively in browsers.
@@ -957,7 +957,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             PlanetarySystemRenderer as ReturnType<typeof vi.fn>
         ).mock.results[0]?.value;
 
-        const rows = container.querySelectorAll(".hud-list-row");
+        const rows = container.querySelectorAll(".ui-list-row");
         expect(rows.length).toBeGreaterThan(0);
         await fireEvent.click(rows[0]);
         // Should pin the first (index 0) result
@@ -1023,7 +1023,7 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         // HUD chrome (incl. language selector in SettingsPanel) must remain
         // available even before the scene is ready, so users on the loading
         // or error screen can still switch languages.
-        expect(container.querySelector(".hud-controls")).not.toBeNull();
+        expect(container.querySelector(".ui-controls")).not.toBeNull();
         const jumpBtn = findJumpBtn(container);
         expect(jumpBtn).not.toBeNull();
 
@@ -1033,15 +1033,15 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
         // Open finder and verify it contains bodies (not "No bodies found")
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
         await waitFor(() =>
             expect(
-                container.querySelectorAll(".hud-list-row").length,
+                container.querySelectorAll(".ui-list-row").length,
             ).toBeGreaterThan(0),
         );
 
-        const rows = container.querySelectorAll(".hud-list-row");
+        const rows = container.querySelectorAll(".ui-list-row");
         expect(rows.length).toBeGreaterThan(0);
         expect(container.textContent).not.toContain(t("finder.empty"));
     });
@@ -1111,20 +1111,20 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
-        const rows = container.querySelectorAll(".hud-list-row");
+        const rows = container.querySelectorAll(".ui-list-row");
         expect(rows.length).toBeGreaterThanOrEqual(2);
 
         // Focus the first row, then ArrowUp should wrap to the last row
         (rows[0] as HTMLElement).focus();
-        const list = container.querySelector(".hud-list")!;
+        const list = container.querySelector(".ui-list")!;
         await fireEvent.keyDown(list, { key: "ArrowUp" });
 
         expect(document.activeElement).toBe(rows[rows.length - 1]);
@@ -1195,18 +1195,18 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
-        const rows = container.querySelectorAll(".hud-list-row");
+        const rows = container.querySelectorAll(".ui-list-row");
         expect(rows.length).toBe(2); // star + planet-b
 
-        const list = container.querySelector(".hud-list")!;
+        const list = container.querySelector(".ui-list")!;
 
         // Navigate to the last item: ArrowDown from index 0 → index 1 (last)
         await fireEvent.keyDown(list, { key: "ArrowDown" });
@@ -1224,15 +1224,15 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
-        const list = container.querySelector(".hud-list")!;
+        const list = container.querySelector(".ui-list")!;
         const arrowDownEvent = new KeyboardEvent("keydown", {
             key: "ArrowDown",
             bubbles: true,
@@ -1252,15 +1252,15 @@ describe("PlanetarySystemWrapper – finder and pinning", () => {
             },
         });
         await waitFor(() =>
-            expect(container.querySelector(".hud-controls")).not.toBeNull(),
+            expect(container.querySelector(".ui-controls")).not.toBeNull(),
         );
         const jumpBtn = findJumpBtn(container);
         await fireEvent.click(jumpBtn!);
         await waitFor(() =>
-            expect(container.querySelector(".hud-finder")).not.toBeNull(),
+            expect(container.querySelector(".ui-finder")).not.toBeNull(),
         );
 
-        const list = container.querySelector(".hud-list")!;
+        const list = container.querySelector(".ui-list")!;
         const arrowUpEvent = new KeyboardEvent("keydown", {
             key: "ArrowUp",
             bubbles: true,
@@ -1320,7 +1320,7 @@ describe("PlanetarySystemWrapper – retry after failed initialization", () => {
         await waitFor(() =>
             expect(container.querySelector('[role="alert"]')).not.toBeNull(),
         );
-        expect(container.querySelector(".hud-error-msg")?.textContent).toBe(
+        expect(container.querySelector(".ui-error-msg")?.textContent).toBe(
             "WebGL context lost",
         );
 
@@ -1331,7 +1331,7 @@ describe("PlanetarySystemWrapper – retry after failed initialization", () => {
         expect(firstRendererInstance?.cleanup).toHaveBeenCalled();
 
         // Click retry
-        const retryBtn = container.querySelector(".hud-error-retry");
+        const retryBtn = container.querySelector(".ui-error-retry");
         expect(retryBtn).toBeTruthy();
         await fireEvent.click(retryBtn!);
 

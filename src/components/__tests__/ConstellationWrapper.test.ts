@@ -92,11 +92,11 @@ describe("ConstellationWrapper", () => {
         const { container } = render(ConstellationWrapper);
         // In jsdom, WebGL is unavailable so onMount sets webglSupported=false
         // and the WebGL fallback overlay renders (pointer-events-none).
-        // If loading were still true the BootSequence would render instead.
+        // If loading were still true the LoadingAnimation would render instead.
         const webglFallback = container.querySelector(".pointer-events-none");
-        const bootSequence = container.querySelector(".boot-sequence");
+        const loadingAnimation = container.querySelector(".loading-animation");
         // At least one overlay should be present
-        expect(webglFallback !== null || bootSequence !== null).toBe(true);
+        expect(webglFallback !== null || loadingAnimation !== null).toBe(true);
     });
 
     it("prioritizes WebGL fallback over generic error when WebGL is unsupported", () => {
@@ -110,10 +110,14 @@ describe("ConstellationWrapper", () => {
         try {
             const { container } = render(ConstellationWrapper);
             // In jsdom, both webglSupported=false and error may be set.
-            // The WebGL fallback (with amber ⚠️) should take precedence over
-            // the generic error overlay (with red ❌).
-            const webglHeading = container.querySelector(".text-amber-400");
-            const errorHeading = container.querySelector(".text-red-400");
+            // The WebGL fallback should take precedence over the generic
+            // error overlay (whose heading carries the danger modifier).
+            const webglHeading = container.querySelector(
+                ".state-title:not(.is-danger)",
+            );
+            const errorHeading = container.querySelector(
+                ".state-title.is-danger",
+            );
             // WebGL fallback should be shown, generic error should NOT
             expect(webglHeading).not.toBeNull();
             expect(errorHeading).toBeNull();

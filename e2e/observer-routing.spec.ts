@@ -51,7 +51,7 @@ test.describe("observer selection round trip", () => {
             timeout: 15000,
         });
 
-        const systems = page.locator(".galaxy-nearby .hud-list-row");
+        const systems = page.locator(".galaxy-nearby .ui-list-row");
         const alphaCentauri = systems.filter({
             hasText: "Alpha Centauri System",
         });
@@ -120,7 +120,7 @@ test.describe("observer selection round trip", () => {
             timeout: 15000,
         });
 
-        const systems = page.locator(".galaxy-nearby .hud-list-row");
+        const systems = page.locator(".galaxy-nearby .ui-list-row");
         await expect(systems).toHaveCount(30, { timeout: 5000 });
         const alphaCentauri = systems.filter({
             hasText: "ケンタウルス座アルファ恒星系",
@@ -188,7 +188,7 @@ test.describe("observer selection round trip", () => {
         await expect(
             page.getByText("View from Earth", { exact: true }),
         ).toBeVisible();
-        await expect(page.getByText("GEO-LOCK", { exact: true })).toBeVisible();
+        await expect(page.getByText("Location", { exact: true })).toBeVisible();
         await expect(
             page.getByRole("button", { name: "Return to Earth/Sol" }),
         ).toHaveCount(0);

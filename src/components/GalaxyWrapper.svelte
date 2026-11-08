@@ -7,12 +7,11 @@
     import { getCurrentView, type ViewId } from '@/lib/view/currentView';
     import { gameActions, settings } from '@/stores/gameStore';
     import LoadingAnimation from '@/components/LoadingAnimation.svelte';
-    import ErrorBoundary from '@/components/ErrorBoundary.svelte';
     import AccessibilityManager from '@/components/AccessibilityManager.svelte';
-    import ViewHud from '@/components/hud/ViewHud.svelte';
-    import HudPanel from '@/components/hud/HudPanel.svelte';
-    import HudSearch from '@/components/hud/HudSearch.svelte';
-    import ModalShell from '@/components/ModalShell.svelte';
+    import ViewOverlay from '@/components/view/ViewOverlay.svelte';
+    import Panel from '@/components/ui/Panel.svelte';
+    import SearchInput from '@/components/ui/SearchInput.svelte';
+    import Modal from '@/components/ui/Modal.svelte';
     import { addMediaQueryListener, removeMediaQueryListener } from '@/utils/mediaQuery';
 
     export let lang: AppLocale = 'en';
@@ -22,7 +21,7 @@
     const t = (key: string) => translations[key] || key;
 
     // Publish HUD view + lang to the shared store so the HUD shell
-    // (ViewHud/ViewSwitcher/SettingsPanel) can subscribe via $gameState
+    // (ViewOverlay/ViewSwitcher/SettingsPanel) can subscribe via $gameState
     // instead of receiving drilled props.
     gameActions.setHudLang(lang);
 
@@ -231,7 +230,7 @@
     $: if (renderer) renderer.setSolLabelVisible(enableSolLabel);
     // Reduced-motion preference freezes the Sol ring pulse per the spec.
     // Two sources are OR'd so EITHER the OS preference OR the in-app
-    // Settings toggle freezes the ring — matching ViewHud, which reads only
+    // Settings toggle freezes the ring — matching ViewOverlay, which reads only
     // $settings.reducedMotion. Without this, enabling Reduced Motion via the
     // settings modal (without OS pref) would style the HUD but leave the
     // ring pulsing. Both inputs are subscribed so mid-session toggles apply
@@ -281,7 +280,7 @@
                 <div class="error-content">
                     <h3>{t('galaxy.loadFailed')}</h3>
                     <p>{error}</p>
-                    <button on:click={() => initializeRenderer()}>
+                    <button class="ui-btn ui-btn--primary" type="button" on:click={() => initializeRenderer()}>
                         {t('action.retry')}
                     </button>
                 </div>
@@ -289,9 +288,9 @@
         {/if}
     </div>
 
-    <ViewHud currentView={currentView} {lang} translations={translations}>
+    <ViewOverlay currentView={currentView} {lang} translations={translations}>
         <div slot="info" class="galaxy-info">
-            <HudPanel title={t('galaxy.selectedSystem')}>
+            <Panel title={t('galaxy.selectedSystem')}>
                 {#if selectedSystemData}
                     <div class="info-system-name">{systemName(selectedSystemData)}</div>
                     <div class="info-row">
@@ -305,16 +304,16 @@
                 {:else}
                     <div class="info-empty">{t('galaxy.noSelection')}</div>
                 {/if}
-            </HudPanel>
+            </Panel>
         </div>
 
         <div slot="controls" class="galaxy-nearby">
-            <HudPanel title={t('galaxy.starSystems')}>
-                <HudSearch bind:value={nearbyQuery} placeholder={t('explore.searchPlaceholder')} ariaLabel={t('explore.searchPlaceholder')} />
-                <ul class="hud-list mt-2">
+            <Panel title={t('galaxy.starSystems')}>
+                <SearchInput bind:value={nearbyQuery} placeholder={t('explore.searchPlaceholder')} ariaLabel={t('explore.searchPlaceholder')} />
+                <ul class="ui-list nearby-list">
                     {#each nearbyResults as system (system.id)}
                         <li>
-                            <button type="button" class="hud-list-row" on:click={() => handleSystemSelect(system.id)}>
+                            <button type="button" class="ui-list-row" on:click={() => handleSystemSelect(system.id)}>
                                 <span class="row-name">{systemName(system)}</span>
                                 <span class="row-leader"></span>
                                 <span class="row-count">{system.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</span>
@@ -322,83 +321,78 @@
                         </li>
                     {/each}
                 </ul>
-            </HudPanel>
+            </Panel>
         </div>
 
         <div slot="settings">
-            <label class="hud-setting"><input type="checkbox" bind:checked={enableAnimations}> {t('settings.enableAnimations')}</label>
-            <label class="hud-setting"><input type="checkbox" bind:checked={enableStarGlow}> {t('galaxy.starGlowEffects')}</label>
-            <label class="hud-setting"><input type="checkbox" bind:checked={enableSolLabel}> {t('galaxy.solLabel')}</label>
-            <label class="hud-setting"><input type="checkbox" bind:checked={enableDistanceLines}> {t('galaxy.distanceLines')}</label>
-            <label class="hud-setting">
+            <label class="ui-setting"><input type="checkbox" class="ui-toggle" bind:checked={enableAnimations}> {t('settings.enableAnimations')}</label>
+            <label class="ui-setting"><input type="checkbox" class="ui-toggle" bind:checked={enableStarGlow}> {t('galaxy.starGlowEffects')}</label>
+            <label class="ui-setting"><input type="checkbox" class="ui-toggle" bind:checked={enableSolLabel}> {t('galaxy.solLabel')}</label>
+            <label class="ui-setting"><input type="checkbox" class="ui-toggle" bind:checked={enableDistanceLines}> {t('galaxy.distanceLines')}</label>
+            <label class="ui-setting">
                 {t('galaxy.maxRenderDistance')}
                 <input type="range" min="10" max="100" bind:value={maxRenderDistance}>
-                <span>{maxRenderDistance} {t('unit.lightYears')}</span>
+                <span class="setting-value">{maxRenderDistance} {t('unit.lightYears')}</span>
             </label>
         </div>
-    </ViewHud>
+    </ViewOverlay>
 
     {#if selectedSystemData}
-        <ModalShell
+        <Modal
             isOpen={isSceneReady && showSystemDialog && selectedSystemData !== null}
             onClose={closeSystemDialog}
             closeLabel={t("action.close")}
             ariaLabel={systemName(selectedSystemData)}
             maxWidth="700px"
-            decoration="none"
-            theme={{
-                primary: "var(--hud-cyan)",
-                secondary: "var(--hud-magenta)",
-                accent: "var(--hud-ivory)",
-            }}
         >
             <svelte:fragment slot="header">
-                <h2>{systemName(selectedSystemData)}</h2>
+                <span class="ui-caption">{getSystemTypeLabel(selectedSystemData.systemType)}</span>
+                <h2 class="dialog-title">{systemName(selectedSystemData)}</h2>
             </svelte:fragment>
 
             <div class="galaxy-dialog-body">
                 <p class="system-overview">{systemDescription(selectedSystemData)}</p>
 
                 <div class="system-stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">{t('galaxy.distanceFromEarth')}</div>
-                        <div class="stat-value">{selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</div>
+                    <div class="ui-stat stat-card">
+                        <div class="ui-stat-label">{t('galaxy.distanceFromEarth')}</div>
+                        <div class="ui-stat-value">{selectedSystemData.distanceFromEarth.toFixed(2)} {t('unit.lightYears')}</div>
                     </div>
 
-                    <div class="stat-card">
-                        <div class="stat-label">{t('galaxy.systemType')}</div>
-                        <div class="stat-value">{getSystemTypeLabel(selectedSystemData.systemType)}</div>
+                    <div class="ui-stat stat-card">
+                        <div class="ui-stat-label">{t('galaxy.systemType')}</div>
+                        <div class="ui-stat-value">{getSystemTypeLabel(selectedSystemData.systemType)}</div>
                     </div>
 
-                    <div class="stat-card">
-                        <div class="stat-label">{t('galaxy.numberOfStars')}</div>
-                        <div class="stat-value">{selectedSystemData.stars.length}</div>
+                    <div class="ui-stat stat-card">
+                        <div class="ui-stat-label">{t('galaxy.numberOfStars')}</div>
+                        <div class="ui-stat-value">{selectedSystemData.stars.length}</div>
                     </div>
 
                     {#if selectedSystemData.metadata.hasExoplanets}
-                        <div class="stat-card">
-                            <div class="stat-label">{t('galaxy.knownExoplanets')}</div>
-                            <div class="stat-value">{selectedSystemData.metadata.numberOfPlanets ?? t('common.yes')}</div>
+                        <div class="ui-stat stat-card">
+                            <div class="ui-stat-label">{t('galaxy.knownExoplanets')}</div>
+                            <div class="ui-stat-value">{selectedSystemData.metadata.numberOfPlanets ?? t('common.yes')}</div>
                         </div>
                     {/if}
                 </div>
 
                 {#if selectedSystemData.metadata.spectralClass}
                     <div class="additional-info">
-                        <h4>{t('galaxy.spectralClassification')}</h4>
+                        <h4 class="ui-caption">{t('galaxy.spectralClassification')}</h4>
                         <p>{selectedSystemData.metadata.spectralClass}</p>
                     </div>
                 {/if}
 
                 {#if selectedSystemData.metadata.constellation}
                     <div class="additional-info">
-                        <h4>{t('galaxy.constellation')}</h4>
+                        <h4 class="ui-caption">{t('galaxy.constellation')}</h4>
                         <p>{selectedSystemData.metadata.constellation}</p>
                     </div>
                 {/if}
 
                 <div class="star-details">
-                    <h4>{t('galaxy.starInformation')}</h4>
+                    <h4 class="ui-caption">{t('galaxy.starInformation')}</h4>
                     <div class="stars-grid">
                         {#each selectedSystemData.stars as star, index}
                             <div class="star-card">
@@ -417,12 +411,12 @@
             </div>
 
             <svelte:fragment slot="actions">
-                <button class="action-button secondary" on:click={closeSystemDialog}>
+                <button type="button" class="ui-btn ui-btn--ghost action-button" on:click={closeSystemDialog}>
                     {t('action.close')}
                 </button>
                 <button
                     type="button"
-                    class="action-button secondary"
+                    class="ui-btn action-button"
                     aria-disabled={observerEligibility?.eligible === false ? 'true' : undefined}
                     aria-describedby={observerEligibility?.eligible === false ? 'galaxy-sky-unavailable' : undefined}
                     on:click={navigateToObserverSky}
@@ -430,7 +424,8 @@
                     {t('action.viewSkyFromHere')}
                 </button>
                 <button
-                    class="action-button primary"
+                    type="button"
+                    class="ui-btn ui-btn--primary action-button"
                     on:click={() => navigateToSystem(selectedSystemId!)}
                 >
                     {canExplore ? t('action.explore') : t('common.comingSoon')}
@@ -449,57 +444,44 @@
                     </div>
                 {/if}
             </svelte:fragment>
-        </ModalShell>
+        </Modal>
     {/if}
 
     <AccessibilityManager />
 </div>
 
 <style>
-    .galaxy-wrapper { position: relative; width: 100%; height: 100vh; overflow: hidden; background: #000011; }
+    .galaxy-wrapper { position: relative; width: 100%; height: 100vh; overflow: hidden; background: var(--color-bg-deep); }
     .galaxy-container { width: 100%; height: 100%; position: relative; }
-    .error-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 17, 0.9); color: #fff; z-index: 10; }
-    .error-content { text-align: center; max-width: 400px; padding: 2rem; }
-    .error-content h3 { color: #ff6b6b; margin-bottom: 1rem; }
-    .error-content button { background: #007acc; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; }
+    .error-overlay { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; background: var(--color-scrim); color: var(--color-text); }
+    .error-content { max-width: 400px; padding: 2rem; text-align: center; }
+    .error-content h3 { margin: 0 0 0.75rem; font-family: var(--font-display); font-size: 28px; color: var(--color-danger); }
+    .error-content p { margin: 0 0 1rem; color: var(--color-text-soft); }
     .galaxy-nearby { width: min(340px, 90vw); max-height: 60vh; overflow-y: auto; }
     .galaxy-info { width: min(280px, 80vw); }
-    .info-system-name { font-family: var(--hud-font-display, monospace); font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hud-cyan, #00f0ff); margin-bottom: 8px; }
-    .info-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 2px 0; color: rgba(255,255,255,0.85); }
-    .info-label { letter-spacing: 0.08em; opacity: 0.7; }
-    .info-value { color: var(--hud-cyan, #00f0ff); }
-    .info-empty { font-size: 12px; color: rgba(255,255,255,0.6); font-style: italic; }
-    .hud-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-    .hud-list-row {
-        display: flex; align-items: center; gap: 8px; width: 100%;
-        background: transparent; border: 1px solid transparent; color: rgba(255,255,255,0.8);
-        padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; text-align: left;
-    }
-    .hud-list-row:hover { border-color: var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
-    .row-name { white-space: nowrap; }
-    .row-leader { flex: 1; border-bottom: 1px dotted rgba(0,240,255,0.3); }
-    .row-count { font-size: 11px; opacity: 0.8; }
-    .hud-setting { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.85); margin: 2px 0; }
-    .hud-setting input[type="range"] { flex: 1; }
-    .galaxy-dialog-body { display: flex; flex-direction: column; gap: 12px; }
-    .system-overview { margin: 0; color: rgba(255,255,255,0.85); line-height: 1.5; }
-    .action-button { padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; letter-spacing: 0.08em; }
+    .info-system-name { margin-bottom: 8px; font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--color-accent); }
+    .info-row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; font-size: 12px; }
+    .info-label { color: var(--color-text-muted); }
+    .info-value { color: var(--color-text); }
+    .info-empty { font-family: var(--font-display); font-style: italic; font-size: 15px; color: var(--color-text-muted); }
+    .nearby-list { list-style: none; margin: 10px 0 0; padding: 0; }
+    .ui-setting { display: flex; align-items: center; gap: 10px; margin: 4px 0; font-size: 13px; color: var(--color-text); }
+    .ui-setting input[type="range"] { flex: 1; accent-color: var(--color-accent); }
+    .setting-value { font-size: 12px; color: var(--color-text-muted); }
+    .dialog-title { margin: 2px 0 0; font-family: var(--font-display); font-size: 34px; font-weight: 600; line-height: 1; color: var(--color-text); }
+    .galaxy-dialog-body { display: flex; flex-direction: column; gap: 16px; }
+    .system-overview { margin: 0; font-family: var(--font-display); font-style: italic; font-size: 18px; line-height: 1.45; color: var(--color-text-soft); }
+    .system-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px 18px; padding: 14px 0; border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); }
+    .additional-info h4, .star-details h4 { margin: 0 0 6px; }
+    .additional-info p { margin: 0; color: var(--color-text); }
+    .stars-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+    .star-card { padding: 10px 12px; border: 1px solid var(--color-line); border-radius: var(--radius-control); font-size: 12px; color: var(--color-text-soft); }
+    .star-name { margin-bottom: 4px; font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--color-text); }
+    .action-button[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
     @media (max-width: 400px) {
         .action-button { width: 100%; }
     }
-    .action-button.secondary { background: transparent; border: 1px solid var(--hud-cyan, #00f0ff); color: var(--hud-cyan, #00f0ff); }
-    .action-button.primary { background: var(--hud-cyan, #00f0ff); border: 1px solid var(--hud-cyan, #00f0ff); color: #001011; }
-    .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .action-button[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
-    .sky-unavailable-notice {
-        margin: 0 0 12px;
-        padding: 10px 14px;
-        border: 1px solid rgba(0, 240, 255, 0.45);
-        border-radius: 6px;
-        background: rgba(0, 240, 255, 0.06);
-        color: rgba(224, 247, 255, 0.85);
-        font-size: 13px;
-        text-align: center;
-    }
-    .coming-soon-notice { margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--hud-cyan, #00f0ff); border-radius: 6px; background: rgba(0,240,255,0.08); color: var(--hud-cyan, #00f0ff); font-size: 13px; text-align: center; }
+    .sky-unavailable-notice,
+    .coming-soon-notice { margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--color-line-strong); border-radius: var(--radius-control); color: var(--color-text-soft); font-size: 13px; text-align: center; }
+    .coming-soon-notice { border-color: var(--color-accent); color: var(--color-accent); }
 </style>

@@ -435,8 +435,7 @@ export const zh = {
     "constellation.return": "返回",
     "constellation.panelOn": "面板 开",
     "constellation.panelOff": "面板 关",
-    "constellation.dragInstructions": "等待目标 — 拖拽以定位",
-    "constellation.scanlines": "扫描线",
+    "constellation.dragInstructions": "拖动以环顾星空",
     "constellation.labels": "恒星与星座标签",
     "constellation.autoRotate": "自动旋转",
 
@@ -784,11 +783,6 @@ export const zh = {
     "terrain.rotateInstruction": "右键拖拽",
 
     // Boot sequence
-    "boot.init": "> 初始化星图 v2.5",
-    "boot.geoLock": "> 地理锁定 ........... [就绪]",
-    "boot.stellarDb": "> 恒星数据库 ......... 4,184 个天体",
-    "boot.renderPipeline": "> 渲染管线 ......... 在线",
-    "boot.awaitingTarget": "> 等待目标",
 
     // Constellation sky-map accessibility (screen-reader copy for the
     // keyboard-navigable canvas + aria-live region). The renderer accepts

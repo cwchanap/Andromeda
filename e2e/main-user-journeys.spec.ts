@@ -8,7 +8,7 @@ const ROUTES = {
 } as const;
 
 const PAGE_TITLES = {
-    MAIN: "ANDROMEDA",
+    MAIN: "Andromeda",
 } as const;
 
 test.describe("Main Menu Navigation", () => {
@@ -44,7 +44,7 @@ test.describe("Main Menu Navigation", () => {
 
         // Wait for page to fully load and Svelte to hydrate
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(500);
 
@@ -69,7 +69,7 @@ test.describe("Main Menu Navigation", () => {
 
         // Wait for page to fully load and Svelte to hydrate
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(500);
 
@@ -179,7 +179,7 @@ test.describe("Solar System View", () => {
         await sceneControl.focus();
         await page.keyboard.press("Home");
 
-        const bodyDialog = page.locator(".modal-shell-dialog").first();
+        const bodyDialog = page.locator(".ui-modal-dialog").first();
         await expect(bodyDialog).toBeVisible({ timeout: 10000 });
 
         const addToCompareButton = bodyDialog.getByRole("button", {
@@ -198,9 +198,9 @@ test.describe("Solar System View", () => {
             name: /Comparative Planetology/i,
         });
         await expect(comparisonDialog).toBeVisible({ timeout: 10000 });
-        await expect(comparisonDialog).toHaveClass(/modal-shell-dialog/);
+        await expect(comparisonDialog).toHaveClass(/ui-modal-dialog/);
 
-        await comparisonDialog.locator(".modal-shell-close").click();
+        await comparisonDialog.locator(".ui-modal-close").click();
         await expect(comparisonDialog).not.toBeVisible();
         await expect(viewComparisonButton).toBeFocused();
     });
@@ -212,7 +212,7 @@ test.describe("System Selector", () => {
 
         // Wait for page to fully load and Svelte to hydrate
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(500);
 
@@ -237,7 +237,7 @@ test.describe("System Selector", () => {
 
         // Wait for page to load
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 10000 });
 
         const home = page.locator(".home-command-hub");
@@ -281,7 +281,7 @@ test.describe("Settings Management", () => {
 
         // Wait for page to fully load and Svelte to hydrate
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(500);
 
@@ -310,7 +310,7 @@ test.describe("Settings Management", () => {
 
         // Wait for page to fully load and Svelte to hydrate
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 10000 });
         await page.waitForLoadState("networkidle");
         await page.waitForTimeout(1000);
@@ -402,7 +402,7 @@ test.describe("Accessibility", () => {
 
         // Wait for page to load
         await expect(
-            page.getByRole("heading", { level: 1, name: "ANDROMEDA" }),
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
         ).toBeVisible({ timeout: 10000 });
         const home = page.locator(".home-command-hub");
         await expect(home).toBeVisible();
@@ -561,19 +561,19 @@ test.describe("30 Nearest Systems", () => {
         const canvas = page.locator("canvas");
         await expect(canvas).toBeVisible({ timeout: 10000 });
 
-        // Wait for the scene to finish initializing. The shared ViewHud
+        // Wait for the scene to finish initializing. The shared ViewOverlay
         // refactor removed the hamburger menu that previously served as the
         // scene-ready indicator. The Nearby Systems panel (in the HUD
-        // controls slot) renders the system list as .hud-list-row items;
+        // controls slot) renders the system list as .ui-list-row items;
         // wait for the loading spinner to disappear so the renderer is
         // ready to handle system selection.
         await expect(page.locator(".animate-spin")).toHaveCount(0, {
             timeout: 15000,
         });
 
-        // The Nearby Systems panel lists all 30 systems as hud-list-row
+        // The Nearby Systems panel lists all 30 systems as ui-list-row
         // buttons (replacing the old hamburger menu's .system-item entries).
-        const systemItems = page.locator(".galaxy-nearby .hud-list-row");
+        const systemItems = page.locator(".galaxy-nearby .ui-list-row");
         await expect(systemItems).toHaveCount(30, { timeout: 5000 });
 
         // Click Alpha Centauri and assert dialog shows 2 confirmed exoplanets
@@ -582,7 +582,7 @@ test.describe("30 Nearest Systems", () => {
         });
         await expect(alphaCentauriItem).toBeVisible();
         await alphaCentauriItem.click();
-        const dialog = page.locator(".modal-shell-dialog");
+        const dialog = page.locator(".ui-modal-dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
         await expect(dialog.getByText(/Known Exoplanets.*2/i)).toBeVisible();
     });
@@ -601,19 +601,19 @@ test.describe("30 Nearest Systems", () => {
             timeout: 15000,
         });
 
-        const systemItems = page.locator(".galaxy-nearby .hud-list-row");
+        const systemItems = page.locator(".galaxy-nearby .ui-list-row");
         await expect(systemItems).toHaveCount(30, { timeout: 5000 });
 
         const alphaCentauriItem = systemItems.filter({
             hasText: /Alpha Centauri/i,
         });
         await alphaCentauriItem.click();
-        const dialog = page.locator(".modal-shell-dialog");
+        const dialog = page.locator(".ui-modal-dialog");
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
-        await expect(dialog.locator(".modal-shell-close")).toBeVisible();
+        await expect(dialog.locator(".ui-modal-close")).toBeVisible();
 
-        const actions = dialog.locator(".modal-shell-actions");
+        const actions = dialog.locator(".ui-modal-actions");
         const actionButtons = actions.getByRole("button");
         await expect(actionButtons).toHaveCount(3);
 
@@ -641,7 +641,7 @@ test.describe("30 Nearest Systems", () => {
         // fixed header/actions remain visible while the details body keeps a
         // usable scroll area that can reach the final content.
         await page.setViewportSize({ width: 360, height: 400 });
-        const details = dialog.locator(".modal-shell-content");
+        const details = dialog.locator(".ui-modal-content");
         await expect(details).toBeVisible();
         const scrollState = await details.evaluate((element) => {
             element.scrollTop = element.scrollHeight;
@@ -676,10 +676,10 @@ test.describe("30 Nearest Systems", () => {
 
         // Open finder and assert Proxima Centauri c is listed
         await finderBtn.click();
-        const finderSearch = page.locator(".hud-finder input[type='text']");
+        const finderSearch = page.locator(".ui-finder input[type='text']");
         await expect(finderSearch).toBeVisible();
         await finderSearch.fill("Proxima Centauri c");
-        const finderList = page.locator(".hud-finder .hud-list-row");
+        const finderList = page.locator(".ui-finder .ui-list-row");
         await expect(
             finderList.filter({ hasText: /Proxima Centauri c/i }),
         ).toBeVisible({ timeout: 5000 });
@@ -688,7 +688,7 @@ test.describe("30 Nearest Systems", () => {
         await finderList.filter({ hasText: /Proxima Centauri c/i }).click();
 
         // Wait for the target-lock reticle to appear (tracks the body's screen position)
-        const reticle = page.locator(".hud-reticle");
+        const reticle = page.locator(".ui-reticle");
         await expect(reticle).toBeVisible({ timeout: 5000 });
 
         // Click on the canvas at the reticle's screen position (converted to
@@ -711,7 +711,7 @@ test.describe("30 Nearest Systems", () => {
                 await canvas.click({
                     position: { x: centerX + off.x, y: centerY + off.y },
                 });
-                const modal = page.locator(".modal-shell-dialog");
+                const modal = page.locator(".ui-modal-dialog");
                 modalVisible = await modal.isVisible().catch(() => false);
                 if (modalVisible) {
                     await expect(

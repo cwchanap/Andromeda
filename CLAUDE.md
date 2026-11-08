@@ -43,7 +43,7 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
 **Frontend Framework:** Astro 5 with Svelte 5 integration for interactive components
 **3D Rendering:** Three.js through a custom `SolarSystemRenderer` class
 **State Management:** Svelte stores (`gameStore.ts`) for reactive state
-**Styling:** TailwindCSS 4 with custom accessibility themes
+**Styling:** TailwindCSS 4 with the Observatory design tokens (see Theme System below)
 **Deployment:** Vercel adapter with server-side rendering
 
 ### Key Architectural Components
@@ -82,7 +82,8 @@ This is an **Astro-based 3D space exploration game** with Svelte components, usi
   - `/src/lib/universe/` - Multi-system universe management
   - `/src/lib/performance/` - Performance optimization utilities
 - `/src/components/` - Svelte UI components
-- `/src/components/ui/` - Reusable UI components (Radix UI patterns)
+- `/src/components/ui/` - Shared UI primitives (Button, Panel, Modal, SearchInput, Progress)
+- `/src/components/view/` - In-view overlay chrome shared by the 3D views (ViewOverlay, ViewSwitcher, SettingsPanel, Reticle, Callout, TargetLockOverlay)
 - `/src/stores/` - Svelte reactive stores
 - `/src/types/` - TypeScript type definitions
 - `/src/pages/` - Astro page components
@@ -143,9 +144,9 @@ mesh.receiveShadow = false;
 
 ### Critical Loading Sequence
 
-The `SolarSystemWrapper.svelte` follows a specific 6-step initialization pattern:
+The `PlanetarySystemWrapper.svelte` follows a specific 6-step initialization pattern:
 
-1. **DOM Mounting**: Polls for `#solar-system-renderer` container (max 10 attempts)
+1. **DOM Mounting**: Polls for `#planetary-system-renderer` container (max 10 attempts)
 2. **WebGL Check**: Validates support via `webglStore` before renderer creation
 3. **Progress Simulation**: Shows loading animation while awaiting resources
 4. **Renderer Creation**: Async instantiation with error boundaries
@@ -154,6 +155,14 @@ The `SolarSystemWrapper.svelte` follows a specific 6-step initialization pattern
 
 **Why this order matters**: Skipping container check causes race conditions, missing WebGL check crashes on unsupported devices.
 
+### Theme System (Observatory)
+
+- `src/styles/tokens.css` is the single source of truth: colors (`--color-*`), fonts (`--font-display` serif, `--font-ui` sans), radii, shadow and motion tokens, declared with Tailwind 4 `@theme static` so they are both CSS variables and Tailwind utilities (`bg-surface`, `text-accent`, ...).
+- `src/styles/components.css` holds the shared `ui-*` classes (`ui-btn`, `ui-panel`, `ui-list-row`, `ui-readout`, `ui-tag`, `ui-stat`, `ui-toggle`, `ui-segmented`, ...). Prefer these and the `ui/` components over new one-off styles.
+- Components never hard-code colors in `<style>` blocks; use `var(--color-*)`. `src/test/no-hardcoded-colors.test.ts` enforces this.
+- Three.js materials and canvas labels can't read CSS variables, so they use `src/lib/theme/palette.ts`, which mirrors the tokens. Keep both in sync.
+- High contrast mode overrides tokens under `:root[data-high-contrast="true"]` in `src/styles/high-contrast.css`.
+
 ### Import Path Configuration
 
 Uses `@/*` path mapping to `./src/*` for cleaner imports.
@@ -161,7 +170,7 @@ Uses `@/*` path mapping to `./src/*` for cleaner imports.
 ### Key Dependencies
 
 **Core:** Astro 5, Svelte 5, Three.js 0.178+, TailwindCSS 4
-**UI:** Radix UI components, Lucide icons
+**UI:** Hand-rolled Svelte primitives in `src/components/ui/` styled by `src/styles/components.css`
 **Testing:** Vitest (unit), Playwright (e2e), Testing Library
 **Development:** ESLint, Prettier, TypeScript, Husky for git hooks
 **Deployment:** Vercel adapter with SSR support
@@ -205,5 +214,5 @@ Use Playwright MCP to interact with browser for testing. Check if dev server is 
 3. **Astro hydration**: Use `client:only="svelte"` for stores, not `client:load`
 4. **Tailwind 4**: No `@tailwind` directives needed with Vite plugin
 5. **Test isolation**: Three.js is mocked via `deps.inline: ["three"]` in vitest.config.ts
-6. **E2E timing**: Wait for `#solar-system-renderer` before interacting with 3D scene
+6. **E2E timing**: Wait for `#planetary-system-renderer` before interacting with 3D scene
 7. **Type safety**: `CelestialBodyData` requires `keyFacts` for info modal

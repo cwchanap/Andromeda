@@ -27,33 +27,6 @@
       previousReducedMotion = reducedMotion;
     }
 
-    // Update CSS custom properties for theme consistency
-    updateCSSCustomProperties();
-  }
-
-  function updateCSSCustomProperties() {
-    if (typeof document === 'undefined') return;
-
-    const root = document.documentElement;
-    const { highContrastMode } = $settings;
-
-    if (highContrastMode) {
-      // Set high contrast CSS custom properties
-      root.style.setProperty('--text-primary', '#ffffff');
-      root.style.setProperty('--text-secondary', '#ffffff');
-      root.style.setProperty('--bg-primary', '#000000');
-      root.style.setProperty('--bg-secondary', '#1a1a1a');
-      root.style.setProperty('--border-color', '#ffffff');
-      root.style.setProperty('--focus-color', '#ffff00');
-    } else {
-      // Reset to default theme
-      root.style.removeProperty('--text-primary');
-      root.style.removeProperty('--text-secondary');
-      root.style.removeProperty('--bg-primary');
-      root.style.removeProperty('--bg-secondary');
-      root.style.removeProperty('--border-color');
-      root.style.removeProperty('--focus-color');
-    }
   }
 
   // Apply system preferences on mount

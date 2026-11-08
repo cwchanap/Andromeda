@@ -61,7 +61,7 @@ describe("useTranslations", () => {
 
     it("handles translation with no replacements", () => {
         const t = useTranslations("en");
-        expect(t("main.title")).toBe("ANDROMEDA");
+        expect(t("main.title")).toBe("Andromeda");
     });
 
     it("replaces single placeholder in translation", () => {

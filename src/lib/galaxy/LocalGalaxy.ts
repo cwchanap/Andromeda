@@ -456,9 +456,9 @@ export const localGalaxyData: GalaxyData = {
             description: "Groombridge 34 system",
             systemType: "binary",
             position: new THREE.Vector3(
-                8.323153763409023,
+                8.323153763409021,
                 8.065398648789696,
-                0.8219592853369175,
+                0.8219592853369173,
             ),
             distanceFromEarth: 11.619,
             stars: [
@@ -629,7 +629,7 @@ export const localGalaxyData: GalaxyData = {
             position: new THREE.Vector3(
                 11.384319823597107,
                 -3.4367478462780467,
-                2.351363518292562,
+                2.3513635182925614,
             ),
             distanceFromEarth: 12.122,
             stars: [
@@ -1339,7 +1339,7 @@ export const localGalaxyData: GalaxyData = {
             position: new THREE.Vector3(
                 -12.025215473851363,
                 -7.778511878327967,
-                -14.520501739477064,
+                -14.52050173947706,
             ),
             distanceFromEarth: 20.395,
             stars: [

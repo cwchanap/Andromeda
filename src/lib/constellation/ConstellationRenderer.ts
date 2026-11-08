@@ -17,6 +17,7 @@ import type {
 } from "@/lib/constellation/rendererCatalog";
 import type { CatalogPlacementContext } from "@/lib/constellation/rendererPlacement";
 import type { RendererSkipWarningContext } from "@/lib/constellation/ConstellationCatalogLayer";
+import { palette, cssColor, canvasFont } from "@/lib/theme/palette";
 
 /**
  * Renderer development-warning adapter for catalog-layer skips (malformed
@@ -35,7 +36,6 @@ const warnCatalogSkip = (context: RendererSkipWarningContext): void => {
     }
 };
 
-const HUD_CYAN = 0x00f0ff;
 // Maximum elevation (pitch) the camera can reach, in radians. Slightly below
 // π/2 to avoid gimbal lock at the zenith while keeping a near-overhead view.
 // Used both as the drag/tween clamp and as the initial sky-camera elevation so
@@ -1212,7 +1212,7 @@ export class ConstellationRenderer {
             new THREE.Float32BufferAttribute(points, 3),
         );
         const ringMat = new THREE.LineBasicMaterial({
-            color: 0x1b6b7a,
+            color: palette.accentDim,
             transparent: true,
             opacity: 0.4,
         });
@@ -1237,12 +1237,12 @@ export class ConstellationRenderer {
             canvas.width = 128;
             canvas.height = 128;
             ctx.clearRect(0, 0, 128, 128);
-            ctx.fillStyle = "#4FC3F7";
-            ctx.font = "bold 64px Arial, sans-serif";
+            ctx.fillStyle = cssColor("accent");
+            ctx.font = `600 64px ${canvasFont.display}`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.shadowColor = "#4FC3F7";
-            ctx.shadowBlur = 12;
+            ctx.shadowColor = cssColor("bgDeep");
+            ctx.shadowBlur = 6;
             ctx.fillText(label, 64, 64);
             const texture = new THREE.CanvasTexture(canvas);
             texture.needsUpdate = true;
@@ -1582,7 +1582,7 @@ export class ConstellationRenderer {
             ),
         );
         const mat = new THREE.LineBasicMaterial({
-            color: HUD_CYAN,
+            color: palette.accentStrong,
             transparent: true,
             opacity: 0.9,
             depthWrite: false,

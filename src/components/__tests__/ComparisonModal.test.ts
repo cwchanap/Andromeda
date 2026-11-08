@@ -76,7 +76,7 @@ describe("ComparisonModal", () => {
             props: { ...defaultProps, isOpen: false },
         });
         // The {#if isOpen} block should be inactive
-        const overlay = container.querySelector(".modal-shell-overlay");
+        const overlay = container.querySelector(".ui-modal-overlay");
         expect(overlay).toBeNull();
     });
 
@@ -84,12 +84,10 @@ describe("ComparisonModal", () => {
         const { container, getByRole } = render(ComparisonModal, {
             props: defaultProps,
         });
-        const overlay = container.querySelector(".modal-shell-overlay");
+        const overlay = container.querySelector(".ui-modal-overlay");
         expect(overlay).not.toBeNull();
-        expect(container.querySelector(".modal-shell-dialog")).not.toBeNull();
-        expect(
-            getByRole("dialog", { name: "comparison.title" }),
-        ).toBeTruthy();
+        expect(container.querySelector(".ui-modal-dialog")).not.toBeNull();
+        expect(getByRole("dialog", { name: "comparison.title" })).toBeTruthy();
     });
 
     it("renders empty-state element when bodies array is empty", () => {
@@ -99,7 +97,7 @@ describe("ComparisonModal", () => {
 
     it("renders modal shell close button", () => {
         const { container } = render(ComparisonModal, { props: defaultProps });
-        expect(container.querySelector(".modal-shell-close")).not.toBeNull();
+        expect(container.querySelector(".ui-modal-close")).not.toBeNull();
     });
 
     it("clicking modal shell close button calls onClose", async () => {
@@ -108,7 +106,7 @@ describe("ComparisonModal", () => {
             props: { ...defaultProps, onClose },
         });
         const closeBtn = container.querySelector(
-            ".modal-shell-close",
+            ".ui-modal-close",
         ) as HTMLElement;
         await fireEvent.click(closeBtn);
         expect(onClose).toHaveBeenCalled();
@@ -120,7 +118,7 @@ describe("ComparisonModal", () => {
             props: { ...defaultProps, onClose },
         });
         const overlay = container.querySelector(
-            ".modal-shell-overlay",
+            ".ui-modal-overlay",
         ) as HTMLElement;
         await fireEvent.keyDown(overlay, { key: "Escape" });
         expect(onClose).toHaveBeenCalled();
@@ -132,7 +130,7 @@ describe("ComparisonModal", () => {
             props: { ...defaultProps, onClose },
         });
         const overlay = container.querySelector(
-            ".modal-shell-overlay",
+            ".ui-modal-overlay",
         ) as HTMLElement;
         // Simulate clicking directly on the overlay (not a child)
         await fireEvent.click(overlay);
@@ -146,13 +144,6 @@ describe("ComparisonModal", () => {
         });
         await Promise.resolve();
         expect(container.innerHTML).toContain("Earth");
-    });
-
-    it("renders star-field background stars", () => {
-        const { container } = render(ComparisonModal, { props: defaultProps });
-        const stars = container.querySelectorAll(".modal-shell-star");
-        // ModalShell renders 75 stars for the stars decoration
-        expect(stars.length).toBe(75);
     });
 
     it("renders modal-header", () => {

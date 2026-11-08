@@ -114,15 +114,20 @@ describe("SettingsModal", () => {
                     translations: testTranslations,
                 },
             });
-            const dialog = container.querySelector(".modal-shell-dialog");
+            const dialog = container.querySelector(".ui-modal-dialog");
             const languageGroup = container.querySelector(
                 '[role="group"][aria-label="Language"]',
             );
 
-            expect(dialog?.getAttribute("aria-label")).toBe("Game Settings");
+            const titleId = dialog?.getAttribute("aria-labelledby");
+            expect(titleId).toBe("settings-title");
+            expect(
+                container.querySelector(`#${titleId}`)?.textContent?.trim(),
+            ).toBe("Game Settings");
             expect(languageGroup).toBeTruthy();
             expect(
-                languageGroup?.querySelector('.lang-btn.is-active[aria-pressed="true"]')
+                languageGroup
+                    ?.querySelector('.lang-btn.is-active[aria-pressed="true"]')
                     ?.textContent?.trim(),
             ).toBe("中文");
         });
@@ -191,9 +196,12 @@ describe("SettingsModal", () => {
             const trailing = actions?.querySelector(
                 ".settings-actions-trailing",
             );
-            const actionButtons = Array.from(actions?.querySelectorAll("button") ?? []);
+            const actionButtons = Array.from(
+                actions?.querySelectorAll("button") ?? [],
+            );
             const settingsStyles =
-                settingsModalSource.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
+                settingsModalSource.match(/<style>([\s\S]*?)<\/style>/)?.[1] ??
+                "";
             const narrowViewportRules = settingsStyles.slice(
                 settingsStyles.indexOf("@media (max-width: 480px)"),
             );
@@ -202,11 +210,9 @@ describe("SettingsModal", () => {
             // plus the component's narrow-viewport CSS protects the layout contract.
             expect(actions).not.toBeNull();
             expect(trailing).not.toBeNull();
-            expect(actionButtons.map((button) => button.textContent?.trim())).toEqual([
-                "Reset to Defaults",
-                "Cancel",
-                "Save Settings",
-            ]);
+            expect(
+                actionButtons.map((button) => button.textContent?.trim()),
+            ).toEqual(["Reset to Defaults", "Cancel", "Save Settings"]);
             expect(narrowViewportRules).toContain("@media (max-width: 480px)");
             expect(narrowViewportRules).toMatch(
                 /\.settings-actions[^{}]*\{[^{}]*flex-direction:\s*column/,
@@ -214,7 +220,9 @@ describe("SettingsModal", () => {
             expect(narrowViewportRules).toMatch(
                 /\.settings-actions-trailing[^{}]*\{[^{}]*flex-direction:\s*column/,
             );
-            expect(narrowViewportRules).toMatch(/button[^{}]*\{[^{}]*width:\s*100%/);
+            expect(narrowViewportRules).toMatch(
+                /button[^{}]*\{[^{}]*width:\s*100%/,
+            );
         });
 
         it("should dispatch save and close when Save is clicked", async () => {
@@ -230,9 +238,9 @@ describe("SettingsModal", () => {
                 },
             });
 
-            const saveButton = Array.from(container.querySelectorAll("button")).find(
-                (button) => button.textContent?.includes("Save Settings"),
-            );
+            const saveButton = Array.from(
+                container.querySelectorAll("button"),
+            ).find((button) => button.textContent?.includes("Save Settings"));
             await fireEvent.click(saveButton!);
 
             expect(save).toHaveBeenCalledWith(
@@ -265,7 +273,7 @@ describe("SettingsModal", () => {
                 },
             });
             await fireEvent.click(
-                buttonRender.container.querySelector(".modal-shell-close")!,
+                buttonRender.container.querySelector(".ui-modal-close")!,
             );
             expect(closeFromButton).toHaveBeenCalledTimes(1);
             buttonRender.unmount();
@@ -280,7 +288,7 @@ describe("SettingsModal", () => {
                 },
             });
             await fireEvent.keyDown(
-                escapeRender.container.querySelector(".modal-shell-overlay")!,
+                escapeRender.container.querySelector(".ui-modal-overlay")!,
                 { key: "Escape" },
             );
             expect(closeFromEscape).toHaveBeenCalledTimes(1);
@@ -296,7 +304,7 @@ describe("SettingsModal", () => {
                 },
             });
             await fireEvent.click(
-                backdropRender.container.querySelector(".modal-shell-overlay")!,
+                backdropRender.container.querySelector(".ui-modal-overlay")!,
             );
             expect(closeFromBackdrop).toHaveBeenCalledTimes(1);
         });
@@ -325,12 +333,14 @@ describe("SettingsModal", () => {
                 await rerender({ isOpen: true });
                 await waitFor(() =>
                     expect(document.activeElement).toBe(
-                        container.querySelector(".modal-shell-close"),
+                        container.querySelector(".ui-modal-close"),
                     ),
                 );
 
                 await rerender({ isOpen: false });
-                await waitFor(() => expect(document.activeElement).toBe(trigger));
+                await waitFor(() =>
+                    expect(document.activeElement).toBe(trigger),
+                );
             } finally {
                 requestAnimationFrame.mockRestore();
                 trigger.remove();

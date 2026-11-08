@@ -62,14 +62,11 @@ describe("ExploreSystems", () => {
         const { container } = render(ExploreSystems, {
             props: { t: (k: string) => mockTranslations[k] || "" },
         });
-        // Both system names appear via GlitchText (aria-label)
-        const labels = Array.from(container.querySelectorAll("[aria-label]"))
-            .filter((el) =>
-                el.getAttribute("aria-label")?.match(/SYSTEM|CENTAURI/),
-            )
-            .map((el) => el.getAttribute("aria-label"));
-        expect(labels).toContain("SOLAR SYSTEM");
-        expect(labels).toContain("ALPHA CENTAURI");
+        const labels = Array.from(
+            container.querySelectorAll(".system-name"),
+        ).map((el) => el.textContent?.trim() ?? "");
+        expect(labels).toContain("Solar System");
+        expect(labels).toContain("Alpha Centauri");
     });
 
     it("uses the i18n system name when a translation exists", () => {
@@ -79,11 +76,11 @@ describe("ExploreSystems", () => {
             k === "systems.solar.name" ? "Sol (i18n)" : "";
         const { container } = render(ExploreSystems, { props: { t } });
         const labels = Array.from(
-            container.querySelectorAll("[aria-label]"),
-        ).map((el) => el.getAttribute("aria-label") ?? "");
-        expect(labels).toContain("SOL (I18N)");
+            container.querySelectorAll(".system-name"),
+        ).map((el) => el.textContent?.trim() ?? "");
+        expect(labels).toContain("Sol (i18n)");
         // The untranslated alpha-centauri must still fall back to registry name.
-        expect(labels).toContain("ALPHA CENTAURI");
+        expect(labels).toContain("Alpha Centauri");
     });
 
     it("falls back to registry name when t returns the key unchanged", () => {
@@ -92,14 +89,14 @@ describe("ExploreSystems", () => {
         const t = (k: string) => k;
         const { container } = render(ExploreSystems, { props: { t } });
         const labels = Array.from(
-            container.querySelectorAll("[aria-label]"),
-        ).map((el) => el.getAttribute("aria-label") ?? "");
+            container.querySelectorAll(".system-name"),
+        ).map((el) => el.textContent?.trim() ?? "");
         // Both systems lack translations, so both should show registry names.
-        expect(labels).toContain("SOLAR SYSTEM");
-        expect(labels).toContain("ALPHA CENTAURI");
+        expect(labels).toContain("Solar System");
+        expect(labels).toContain("Alpha Centauri");
         // Ensure raw translation keys never leak into the UI.
-        expect(labels).not.toContain("SYSTEMS.SOLAR.NAME");
-        expect(labels).not.toContain("SYSTEMS.ALPHA-CENTAURI.NAME");
+        expect(labels).not.toContain("systems.solar.name");
+        expect(labels).not.toContain("systems.alpha-centauri.name");
     });
 
     it("calls onClose when close button is clicked", async () => {
@@ -176,13 +173,11 @@ describe("ExploreSystems", () => {
         await fireEvent.input(searchInput!, {
             target: { value: "alpha" },
         });
-        const labels = Array.from(container.querySelectorAll("[aria-label]"))
-            .filter((el) =>
-                el.getAttribute("aria-label")?.match(/SYSTEM|CENTAURI/),
-            )
-            .map((el) => el.getAttribute("aria-label"));
-        expect(labels).toContain("ALPHA CENTAURI");
-        expect(labels).not.toContain("SOLAR SYSTEM");
+        const labels = Array.from(
+            container.querySelectorAll(".system-name"),
+        ).map((el) => el.textContent?.trim() ?? "");
+        expect(labels).toContain("Alpha Centauri");
+        expect(labels).not.toContain("Solar System");
     });
 
     it("has role=dialog with aria-modal", () => {
@@ -218,7 +213,7 @@ describe("ExploreSystems", () => {
         });
         const searchInput = container.querySelector("input");
         expect(searchInput).toBeTruthy();
-        // The autofocus attribute should be passed through to HudSearch
+        // The autofocus attribute should be passed through to SearchInput
         // which will focus the input on mount
         expect(searchInput).toBe(document.activeElement);
     });
@@ -248,7 +243,7 @@ describe("ExploreSystems", () => {
         });
 
         await waitFor(() =>
-            expect(container.querySelector(".hud-pager")).not.toBeNull(),
+            expect(container.querySelector(".ui-pager")).not.toBeNull(),
         );
 
         // Prev should be disabled on page 1
@@ -263,7 +258,7 @@ describe("ExploreSystems", () => {
         expect(nextBtn?.hasAttribute("disabled")).toBe(false);
 
         // Page label should show "01 / 02"
-        const label = container.querySelector(".hud-pager-label");
+        const label = container.querySelector(".ui-pager-label");
         expect(label?.textContent).toBe("01 / 02");
     });
 
@@ -291,7 +286,7 @@ describe("ExploreSystems", () => {
         });
 
         await waitFor(() =>
-            expect(container.querySelector(".hud-pager")).not.toBeNull(),
+            expect(container.querySelector(".ui-pager")).not.toBeNull(),
         );
 
         const nextBtn = Array.from(container.querySelectorAll("button")).find(
@@ -299,7 +294,7 @@ describe("ExploreSystems", () => {
         );
         await fireEvent.click(nextBtn!);
 
-        const label = container.querySelector(".hud-pager-label");
+        const label = container.querySelector(".ui-pager-label");
         expect(label?.textContent).toBe("02 / 02");
 
         // Now prev should be enabled and next disabled
@@ -311,7 +306,7 @@ describe("ExploreSystems", () => {
 
         // Go back to page 1
         await fireEvent.click(prevBtn!);
-        expect(container.querySelector(".hud-pager-label")?.textContent).toBe(
+        expect(container.querySelector(".ui-pager-label")?.textContent).toBe(
             "01 / 02",
         );
     });

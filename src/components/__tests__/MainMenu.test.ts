@@ -166,24 +166,23 @@ describe("MainMenu", () => {
             expect(container).toBeTruthy();
         });
 
-        it("should render the HUD command hub with four destinations in order", () => {
+        it("should render the command hub with four destinations in order", () => {
             const { container } = render(MainMenu, {
                 props: { translations: testTranslations },
             });
 
             expect(container.querySelector(".home-command-hub")).toBeTruthy();
-            expect(container.querySelector(".hud-panel")).toBeTruthy();
 
             const destinationButtons = Array.from(
                 container.querySelectorAll<HTMLButtonElement>(".menu-button"),
             );
             expect(destinationButtons).toHaveLength(4);
-            expect(destinationButtons[0].querySelector(".hud-btn-bracket")).toBeTruthy();
+            expect(destinationButtons[0].classList.contains("is-first")).toBe(
+                true,
+            );
             expect(
                 destinationButtons.map((button) =>
-                    (button.getAttribute("aria-label") ?? button.textContent ?? "")
-                        .replace(/^</, "")
-                        .trim(),
+                    button.querySelector(".menu-label")?.textContent?.trim(),
                 ),
             ).toEqual([
                 "Solar System",
@@ -213,7 +212,9 @@ describe("MainMenu", () => {
             ).find((button) => button.textContent?.includes("Settings"));
 
             expect(settingsButton).toBeTruthy();
-            expect(settingsButton?.classList.contains("menu-button")).toBe(false);
+            expect(settingsButton?.classList.contains("menu-button")).toBe(
+                false,
+            );
             expect(settingsButton?.tabIndex).toBeGreaterThanOrEqual(0);
             settingsButton?.focus();
             expect(document.activeElement).toBe(settingsButton);
@@ -245,16 +246,16 @@ describe("MainMenu", () => {
             const { container } = render(MainMenu, {
                 props: { lang: "zh", translations: testTranslations },
             });
-            const settingsBtn = Array.from(container.querySelectorAll("button")).find(
-                (button) => button.textContent?.includes("Settings"),
-            );
+            const settingsBtn = Array.from(
+                container.querySelectorAll("button"),
+            ).find((button) => button.textContent?.includes("Settings"));
 
             await fireEvent.click(settingsBtn!);
 
             expect(
-                container.querySelector(
-                    '.lang-btn.is-active[aria-pressed="true"]',
-                )?.textContent?.trim(),
+                container
+                    .querySelector('.lang-btn.is-active[aria-pressed="true"]')
+                    ?.textContent?.trim(),
             ).toBe("中文");
         });
     });
@@ -273,15 +274,13 @@ describe("MainMenu", () => {
             expect(exploreBtn).toBeTruthy();
             await fireEvent.click(exploreBtn!);
             // ExploreSystems modal should appear with the mocked systems.
-            // System names are rendered via GlitchText, which animates the
-            // visible text but always keeps the real name in aria-label.
             const dialog = container.querySelector('[role="dialog"]');
             expect(dialog).toBeTruthy();
             const systemNames = Array.from(
-                container.querySelectorAll('[data-testid="glitch-text"]'),
-            ).map((el) => el.getAttribute("aria-label"));
-            expect(systemNames).toContain("SOLAR SYSTEM");
-            expect(systemNames).toContain("ALPHA CENTAURI");
+                container.querySelectorAll(".system-name"),
+            ).map((el) => el.textContent?.trim());
+            expect(systemNames).toContain("Solar System");
+            expect(systemNames).toContain("Alpha Centauri");
         });
     });
 
@@ -335,7 +334,11 @@ describe("MainMenu", () => {
             expect(destinationButtons).toHaveLength(4);
             expect(settingsButton).toBeTruthy();
 
-            for (let index = 1; index <= destinationButtons.length; index += 1) {
+            for (
+                let index = 1;
+                index <= destinationButtons.length;
+                index += 1
+            ) {
                 await fireEvent.keyDown(window, { key: "ArrowDown" });
                 expect(destinationButtons).toContain(document.activeElement);
                 expect(document.activeElement).not.toBe(settingsButton);

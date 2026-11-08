@@ -22,14 +22,6 @@ export interface OrbitalElementsData {
     };
 }
 
-export interface ModalTheme {
-    primary: string;
-    secondary: string;
-    accent: string;
-    background?: string;
-    textColor?: string;
-}
-
 export interface CelestialBodyData {
     id: string;
     name: string;
@@ -77,7 +69,6 @@ export interface CelestialBodyData {
         opacity?: number;
         atmosphereColor?: string;
     };
-    modalTheme?: ModalTheme;
     orbitRadius?: number;
     orbitSpeed?: number;
     /**
@@ -118,7 +109,7 @@ export interface GameState {
     currentView: "menu" | "solar-system" | "system-selector";
     // HUD shell state — the active page view (for tab highlighting) and the
     // active locale. Written by wrapper components on mount so the shared
-    // HUD shell (ViewHud/ViewSwitcher/SettingsPanel) can subscribe via
+    // HUD shell (ViewOverlay/ViewSwitcher/SettingsPanel) can subscribe via
     // $gameState instead of receiving props drilled from each page.
     hudView?: "star" | "galaxy" | "constellation";
     hudLang?: "en" | "zh" | "ja";

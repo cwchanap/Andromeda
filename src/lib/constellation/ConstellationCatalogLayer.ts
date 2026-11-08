@@ -11,6 +11,7 @@ import type {
     CatalogPlacementError,
 } from "@/lib/constellation/rendererPlacement";
 import { placeCatalogCoordinate } from "@/lib/constellation/rendererPlacement";
+import { palette, cssColor, canvasFont } from "@/lib/theme/palette";
 
 /**
  * Role-owned ordinary-star, constellation-line, marker, and label layer.
@@ -748,8 +749,8 @@ export class ConstellationCatalogLayer {
                     uTime: { value: 0 },
                     uIsSelected: { value: 0 },
                     uIsDimmed: { value: 0 },
-                    uColorIdle: { value: new THREE.Color(0x1b6b7a) },
-                    uColorHot: { value: new THREE.Color(0x00f0ff) },
+                    uColorIdle: { value: new THREE.Color(palette.accentDim) },
+                    uColorHot: { value: new THREE.Color(palette.accent) },
                 },
                 vertexShader: PRIMARY_LINE_VERTEX_SHADER,
                 fragmentShader: PRIMARY_LINE_FRAGMENT_SHADER,
@@ -761,7 +762,7 @@ export class ConstellationCatalogLayer {
             uniforms: {
                 uDashPeriodWorld: { value: REFERENCE_LINE_DASH_PERIOD_WORLD },
                 uDashDutyCycle: { value: REFERENCE_LINE_DASH_DUTY_CYCLE },
-                uColorIdle: { value: new THREE.Color(0x1b6b7a) },
+                uColorIdle: { value: new THREE.Color(palette.accentDim) },
             },
             vertexShader: REFERENCE_LINE_VERTEX_SHADER,
             fragmentShader: REFERENCE_LINE_FRAGMENT_SHADER,
@@ -975,11 +976,11 @@ export class ConstellationCatalogLayer {
         canvas.height = 64;
 
         context.clearRect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = "#ffffff";
-        context.font = "bold 20px Arial";
+        context.fillStyle = cssColor("text");
+        context.font = `500 20px ${canvasFont.ui}`;
         context.textAlign = "center";
         context.textBaseline = "middle";
-        context.shadowColor = "#4488cc";
+        context.shadowColor = cssColor("bgDeep");
         context.shadowBlur = 4;
         context.fillText(star.name, 128, 32);
 
@@ -993,8 +994,8 @@ export class ConstellationCatalogLayer {
     }
 
     /**
-     * Mirrors the renderer's constellation-label idiom: bold cyan name with a
-     * green abbreviation line beneath it.
+     * Mirrors the renderer's constellation-label idiom: serif brass name with a
+     * muted abbreviation line beneath it.
      */
     private makeConstellationLabelSprite(
         constellation: RendererConstellation,
@@ -1006,17 +1007,17 @@ export class ConstellationCatalogLayer {
         canvas.height = 128;
 
         context.clearRect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = "#4FC3F7";
-        context.font = "bold 48px Arial, sans-serif";
+        context.fillStyle = cssColor("accent");
+        context.font = `600 48px ${canvasFont.display}`;
         context.textAlign = "center";
         context.textBaseline = "middle";
-        context.shadowColor = "#4FC3F7";
-        context.shadowBlur = 12;
+        context.shadowColor = cssColor("bgDeep");
+        context.shadowBlur = 6;
         context.fillText(constellation.name, 256, 48);
 
-        context.font = "32px Arial, sans-serif";
-        context.fillStyle = "#81C784";
-        context.shadowBlur = 8;
+        context.font = `32px ${canvasFont.ui}`;
+        context.fillStyle = cssColor("textMuted");
+        context.shadowBlur = 4;
         context.fillText(`(${constellation.abbreviation})`, 256, 90);
 
         return this.finishLabelSprite(canvas, position, {
