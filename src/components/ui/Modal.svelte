@@ -200,7 +200,8 @@
       padding: 12px;
       align-items: flex-end;
     }
-    .ui-modal-dialog {
+    .ui-modal-dialog,
+    .ui-modal-overlay.is-right .ui-modal-dialog {
       max-height: calc(100vh - 24px);
     }
     .ui-modal-actions {
