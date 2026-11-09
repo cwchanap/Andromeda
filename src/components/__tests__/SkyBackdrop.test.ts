@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { render, cleanup } from "@testing-library/svelte";
+import { render, cleanup, waitFor } from "@testing-library/svelte";
 import SkyBackdrop from "@/components/home/SkyBackdrop.svelte";
 
 describe("SkyBackdrop", () => {
@@ -12,10 +12,17 @@ describe("SkyBackdrop", () => {
         ).toBe("true");
     });
 
-    it("draws the same sky on every render, so SSR and hydration match", () => {
-        const first = render(SkyBackdrop).container.innerHTML;
+    it("draws the same seeded sky on every visit", async () => {
+        const draw = async () => {
+            const { container } = render(SkyBackdrop);
+            await waitFor(() =>
+                expect(container.querySelector(".sky-detail")).not.toBeNull(),
+            );
+            return container.innerHTML;
+        };
+        const first = await draw();
         cleanup();
-        const second = render(SkyBackdrop).container.innerHTML;
+        const second = await draw();
         expect(first).toBe(second);
         expect(first).toContain("Alpheratz");
     });

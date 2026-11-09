@@ -273,6 +273,39 @@ test.describe("System Selector", () => {
         // Close modal using Escape key
         await page.keyboard.press("Escape");
     });
+
+    test("keeps the system selector reachable on a short phone screen", async ({
+        page,
+    }) => {
+        await page.setViewportSize({ width: 390, height: 600 });
+        await page.goto(ROUTES.HOME);
+        await expect(
+            page.getByRole("heading", { level: 1, name: "Andromeda" }),
+        ).toBeVisible({ timeout: 10000 });
+        // Astro drops the `ssr` attribute once an island has hydrated.
+        await page.waitForFunction(
+            () => !document.querySelector("astro-island[ssr]"),
+            null,
+            { timeout: 10000 },
+        );
+
+        await page
+            .locator(".home-command-hub")
+            .getByRole("button", { name: /Explore Exoplanets/i })
+            .click({ force: true });
+        const dialog = page.getByRole("dialog", { name: /Star Systems/i });
+        await expect(dialog).toBeVisible({ timeout: 10000 });
+
+        // The header's Close button starts on screen...
+        const close = dialog.getByRole("button", { name: "Close" });
+        const closeBox = await close.boundingBox();
+        expect(closeBox?.y ?? -1).toBeGreaterThanOrEqual(0);
+
+        // ...and the last control (pagination) can be scrolled into view.
+        const last = dialog.getByRole("button").last();
+        await last.scrollIntoViewIfNeeded();
+        await expect(last).toBeInViewport();
+    });
 });
 
 test.describe("Settings Management", () => {

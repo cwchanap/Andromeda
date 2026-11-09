@@ -4,9 +4,23 @@
    * band, a seeded starfield, a few twinkling bright stars and a brass
    * astrolabe chart of the Andromeda constellation. Pure SVG/CSS, no images.
    *
-   * The starfield is seeded, so the server render and hydration draw the
-   * same sky.
+   * The detailed layers render only after mount and fade in. Painting them
+   * is heavy on machines without a GPU, and doing it before hydration held
+   * back the menu's `client:idle` hydration by about a second. The starfield
+   * is seeded, so every visit draws the same sky.
    */
+  import { onMount } from "svelte";
+
+  let ready = false;
+  onMount(() => {
+    const show = () => (ready = true);
+    if (typeof requestIdleCallback === "function") {
+      const id = requestIdleCallback(show, { timeout: 600 });
+      return () => cancelIdleCallback(id);
+    }
+    const id = setTimeout(show, 100);
+    return () => clearTimeout(id);
+  });
 
   type Tone = "white" | "cool" | "warm";
 
@@ -148,6 +162,8 @@
 </script>
 
 <div class="sky" aria-hidden="true">
+  {#if ready}
+  <div class="sky-detail">
   <!-- Milky Way glow -->
   <svg class="sky-layer" viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMid slice">
     <defs>
@@ -249,6 +265,8 @@
   {/each}
 
   <span class="sky-meteor"></span>
+  </div>
+  {/if}
   <div class="sky-scrim"></div>
   <p class="sky-coords">M31 · RA 00h 42m 44s · Dec +41° 16′ 09″</p>
 </div>
@@ -260,13 +278,27 @@
     overflow: hidden;
     pointer-events: none;
     background:
+      linear-gradient(160deg, var(--color-bg) 0%, var(--color-bg-deep) 55%, var(--color-bg) 100%);
+  }
+
+  /* Nebula glows live here too: layered radial gradients are expensive to
+     paint without a GPU. */
+  .sky-detail {
+    position: absolute;
+    inset: 0;
+    background:
       radial-gradient(ellipse 42% 38% at 80% 26%, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 70%),
       radial-gradient(ellipse 36% 30% at 56% 4%, color-mix(in srgb, var(--color-danger) 16%, transparent), transparent 70%),
       radial-gradient(ellipse 48% 46% at 94% 88%, color-mix(in srgb, var(--color-info) 22%, transparent), transparent 72%),
       radial-gradient(ellipse 40% 36% at 30% 96%, color-mix(in srgb, color-mix(in srgb, var(--color-info), var(--color-danger)) 18%, transparent), transparent 70%),
       radial-gradient(ellipse 34% 40% at 6% 18%, color-mix(in srgb, var(--color-info) 9%, transparent), transparent 70%),
-      radial-gradient(ellipse 30% 26% at 22% 30%, color-mix(in srgb, var(--color-accent) 7%, transparent), transparent 70%),
-      linear-gradient(160deg, var(--color-bg) 0%, var(--color-bg-deep) 55%, var(--color-bg) 100%);
+      radial-gradient(ellipse 30% 26% at 22% 30%, color-mix(in srgb, var(--color-accent) 7%, transparent), transparent 70%);
+    animation: sky-in 900ms var(--ease-glide) both;
+  }
+  @keyframes sky-in {
+    from {
+      opacity: 0;
+    }
   }
 
   .sky-layer {
@@ -450,6 +482,9 @@
   /* High contrast: plain black sky, stars and a quieter chart only. */
   :global(:root[data-high-contrast="true"]) .sky {
     background: var(--color-bg-deep);
+  }
+  :global(:root[data-high-contrast="true"]) .sky-detail {
+    background: none;
   }
   :global(:root[data-high-contrast="true"]) .sky-band,
   :global(:root[data-high-contrast="true"]) .sky-meteor,

@@ -60,7 +60,7 @@
     }
   }}
 >
-  <div class="w-full max-w-4xl">
+  <div class="explore-dialog w-full max-w-4xl">
     <Panel title={t("explore.title")}>
       <div class="mb-4 flex items-center gap-3">
         <div class="flex-1">
@@ -115,15 +115,20 @@
 </div>
 
 <style>
+  /* The overlay scrolls; auto margins centre the dialog when it fits and
+     top-align it when it's taller than the screen, so the header and the
+     pager stay reachable on short phones. */
   .explore-overlay {
     position: fixed;
     inset: 0;
     z-index: 50;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow-y: auto;
     padding: 16px;
     background: var(--color-scrim);
+  }
+  .explore-dialog {
+    margin: auto;
   }
   .system-card {
     display: flex;
