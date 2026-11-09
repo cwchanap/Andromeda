@@ -3,6 +3,7 @@
   import SettingsModal from "@/components/SettingsModal.svelte";
   import AccessibilityManager from "@/components/AccessibilityManager.svelte";
   import ExploreSystems from "@/components/ExploreSystems.svelte";
+  import SkyBackdrop from "@/components/home/SkyBackdrop.svelte";
   import { gameState, settings, gameActions } from "@/stores/gameStore";
   import { onMount, onDestroy } from "svelte";
   import { getLangFromUrl, useTranslations } from "@/i18n/utils";
@@ -130,30 +131,10 @@
 </script>
 
 <div class="home">
-  <!-- Star-chart line art (decorative) -->
-  <svg class="home-chart" viewBox="0 0 760 760" aria-hidden="true">
-    <g class="chart-lines">
-      <circle cx="380" cy="380" r="360"></circle>
-      <circle cx="380" cy="380" r="270"></circle>
-      <circle cx="380" cy="380" r="180"></circle>
-      <line x1="20" y1="380" x2="740" y2="380"></line>
-      <line x1="380" y1="20" x2="380" y2="740"></line>
-      <path d="M120 230 L210 170 L300 200 L360 120 L450 150"></path>
-    </g>
-    <g class="chart-stars">
-      <circle cx="120" cy="230" r="2.5"></circle>
-      <circle cx="210" cy="170" r="3"></circle>
-      <circle cx="300" cy="200" r="2"></circle>
-      <circle cx="360" cy="120" r="3.5"></circle>
-      <circle cx="450" cy="150" r="2.5"></circle>
-      <circle cx="560" cy="300" r="1.5"></circle>
-      <circle cx="620" cy="520" r="1.5"></circle>
-      <circle cx="250" cy="560" r="1.5"></circle>
-    </g>
-  </svg>
+  <SkyBackdrop />
 
   <header class="home-header">
-    <span class="ui-caption home-wordmark">✦ {t ? t('main.title') : 'Andromeda'}</span>
+    <span class="ui-caption home-wordmark"><span class="wordmark-star" aria-hidden="true">✦</span> {t ? t('main.title') : 'Andromeda'}</span>
     <div class="home-settings-control">
       <Button aria-describedby="settings-desc" on:click={handleOpenSettings}>
         {t ? t('main.settings') : 'Settings'}
@@ -164,6 +145,7 @@
   <main class="home-main">
     <p class="ui-caption menu-subtitle">{t ? t('main.subtitle') : 'Space Explorer'}</p>
     <h1 class="menu-title">{t ? t('main.title') : 'Andromeda'}</h1>
+    <div class="menu-ornament" aria-hidden="true"></div>
     <p class="menu-description">
       {t ? t('main.description') : 'Embark on an epic journey through multiple planetary systems and discover exoplanets through immersive 3D visualization. From our Solar System to Alpha Centauri and beyond the stars!'}
     </p>
@@ -242,24 +224,8 @@
     position: relative;
     min-height: 100vh;
     overflow: hidden;
-    background: radial-gradient(ellipse at 70% 40%, var(--color-surface), var(--color-bg) 60%);
+    background: var(--color-bg-deep);
     color: var(--color-text);
-  }
-
-  .home-chart {
-    position: absolute;
-    top: 4vh;
-    right: -10vw;
-    width: min(760px, 90vw);
-    height: auto;
-    pointer-events: none;
-  }
-  .chart-lines {
-    fill: none;
-    stroke: var(--color-line);
-  }
-  .chart-stars {
-    fill: var(--color-text);
   }
 
   .home-header {
@@ -272,6 +238,11 @@
   }
   .home-wordmark {
     color: var(--color-accent);
+    letter-spacing: 0.28em;
+  }
+  .wordmark-star {
+    color: var(--color-accent-strong);
+    text-shadow: 0 0 10px color-mix(in srgb, var(--color-accent) 80%, transparent);
   }
 
   .home-main {
@@ -280,41 +251,99 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
-    max-width: 560px;
+    max-width: 600px;
     padding: 4vh clamp(16px, 4vw, 56px) 48px;
   }
+
   .menu-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 14px;
     margin: 0;
+    color: var(--color-accent);
+    letter-spacing: 0.34em;
   }
+  .menu-subtitle::before {
+    content: "";
+    width: 40px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-accent));
+  }
+
+  /* Gilded title: warm ivory at the top shading into brass. */
   .menu-title {
+    /* Size to the word, so background-clip paints every glyph. */
+    align-self: flex-start;
     margin: 0;
+    padding-bottom: 0.04em;
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: clamp(64px, 10vw, 112px);
-    line-height: 0.9;
+    font-size: clamp(64px, 10vw, 120px);
+    line-height: 1;
     letter-spacing: -0.01em;
-    color: var(--color-text);
+    background: linear-gradient(
+      180deg,
+      var(--color-text) 12%,
+      var(--color-accent-strong) 46%,
+      var(--color-accent) 70%,
+      color-mix(in srgb, var(--color-accent) 62%, var(--color-bg-deep)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 2px 22px color-mix(in srgb, var(--color-accent) 30%, transparent));
   }
+
+  .menu-ornament {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: -6px;
+  }
+  .menu-ornament::before {
+    content: "✦";
+    font-size: 11px;
+    color: var(--color-accent-strong);
+    text-shadow: 0 0 8px var(--color-accent);
+  }
+  .menu-ornament::after {
+    content: "";
+    width: 180px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--color-accent), transparent);
+  }
+
   .menu-description {
     margin: 0;
-    max-width: 470px;
-    font-size: 15px;
-    line-height: 1.65;
+    max-width: 480px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.5;
     color: var(--color-text-soft);
+  }
+  .menu-description:lang(zh),
+  .menu-description:lang(ja) {
+    font-style: normal;
+    font-size: 17px;
+    line-height: 1.75;
   }
 
   .home-command-hub {
     display: flex;
     flex-direction: column;
-    margin-top: 6px;
+    margin-top: 10px;
     border-top: 1px solid var(--color-line-strong);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--color-bg-deep) 55%, transparent), transparent 90%);
   }
   .menu-button {
+    position: relative;
     display: grid;
-    grid-template-columns: 48px 1fr 24px;
+    grid-template-columns: 56px 1fr 28px;
     align-items: center;
-    min-height: 58px;
-    padding: 0 4px;
+    min-height: 62px;
+    padding: 0 8px 0 0;
     background: transparent;
     border: none;
     border-bottom: 1px solid var(--color-line);
@@ -323,41 +352,77 @@
     cursor: pointer;
     transition: background var(--dur-snap) var(--ease-snap);
   }
+  /* Brass bar on the left edge marks the primary and hovered rows. */
+  .menu-button::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    background: var(--color-accent);
+    box-shadow: 0 0 10px var(--color-accent);
+    transform: scaleY(0);
+    transition: transform var(--dur-snap) var(--ease-snap);
+  }
+  .menu-button.is-first::before,
+  .menu-button:hover::before,
+  .menu-button:focus-visible::before {
+    transform: scaleY(1);
+  }
   .menu-button:hover,
   .menu-button:focus-visible {
-    background: color-mix(in srgb, var(--color-surface-2) 60%, transparent);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 85%);
   }
   .menu-numeral {
+    padding-left: 18px;
     font-family: var(--font-display);
     font-style: italic;
-    font-size: 18px;
+    font-weight: 500;
+    font-size: 19px;
     color: var(--color-accent);
   }
   .menu-label {
     font-family: var(--font-display);
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 600;
+    transition:
+      color var(--dur-snap) var(--ease-snap),
+      transform var(--dur-snap) var(--ease-snap);
   }
   .menu-arrow {
     color: var(--color-text-muted);
-    transition: transform var(--dur-snap) var(--ease-snap);
+    transition:
+      color var(--dur-snap) var(--ease-snap),
+      transform var(--dur-snap) var(--ease-snap);
   }
   .menu-button.is-first .menu-label,
-  .menu-button.is-first .menu-arrow,
-  .menu-button:hover .menu-label,
-  .menu-button:hover .menu-arrow {
-    color: var(--color-accent);
+  .menu-button.is-first .menu-arrow {
+    color: var(--color-accent-strong);
   }
-  .menu-button:hover .menu-arrow {
+  .menu-button:hover .menu-label,
+  .menu-button:focus-visible .menu-label {
+    color: var(--color-accent-strong);
     transform: translateX(4px);
+  }
+  .menu-button:hover .menu-arrow,
+  .menu-button:focus-visible .menu-arrow {
+    color: var(--color-accent);
+    transform: translateX(6px);
+  }
+
+  :global(:root[data-high-contrast="true"]) .menu-title {
+    background: none;
+    color: var(--color-text);
+    filter: none;
   }
 
   @media (max-width: 640px) {
-    .home-chart {
-      opacity: 0.5;
-    }
     .menu-label {
-      font-size: 22px;
+      font-size: 23px;
+    }
+    .menu-description {
+      font-size: 18px;
     }
   }
 </style>
