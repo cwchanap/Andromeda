@@ -44,7 +44,8 @@ jobs:
   e2e-tests:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     name: E2E Tests
-    runs-on: ubuntu-latest
+    # Playwright 1.57 can't install browsers on ubuntu-latest (26.04) yet.
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
